@@ -24,14 +24,15 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 - [x] Raw, processed, evaluation, export, and version data directories are defined.
 - [-] Repository is still organized as `frontend/`, `backend/`, and `ml_pipeline/`; the target workspace structure is not implemented.
 - [-] Both `/api` and `/api/v1` routes are registered; the unversioned duplicate still needs removal after compatibility review.
-- [-] CI now runs backend tests plus frontend lint, type-check, and build; data validation and secret scanning still need to be added, and the first hosted run is pending.
+- [-] CI runs PostgreSQL migration rollback checks, backend tests, frontend lint, type-check, and build; data validation and secret scanning still need to be added.
 - [ ] Add deployment environments for development, staging, and production.
-- [ ] Add structured configuration validation and a secrets manager.
+- [-] Structured environment configuration and production database validation exist; a secrets manager is still needed.
 
 ### Current quality checks
 
-- [x] Backend language-engine and API-contract tests pass: 13 tests.
+- [x] Backend language-engine, API-contract, settings, database, schema, identity, and authorization tests pass locally and in PostgreSQL-backed container checks.
 - [x] Frontend lint and TypeScript checks pass.
+- [x] Upgrade Next.js to patched 16.3.6 and add a zero-high-severity production dependency audit to CI.
 - [x] Fix state-in-effect errors in `DictionaryShell.tsx` and `TranslateClient.tsx`.
 - [x] Fix the missing effect dependency and unused `searchTranslate` import.
 - [ ] Add API integration, frontend component, accessibility, and end-to-end tests.
@@ -97,7 +98,7 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 - [ ] Fix frontend lint before new feature work.
 - [ ] Add consistent loading, empty, offline, and retry states.
 - [ ] Add keyboard, screen-reader, color-contrast, and focus-order accessibility audits.
-- [ ] Add a typed client generated from the FastAPI OpenAPI contract.
+- [x] Generate the shared TypeScript client contract from FastAPI OpenAPI and reject schema drift in CI.
 - [ ] Replace hard-coded and JSON-backed editable content with APIs and editorial storage.
 - [ ] Add privacy policy, terms, dataset disclosures, and content/source pages.
 
@@ -133,21 +134,21 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 - [x] FastAPI application and health endpoint exist.
 - [x] Dictionary, translation, search, Bible, learning, and assistant routers exist.
 - [x] Inputs use Pydantic validation and parameterized SQLite queries.
-- [-] Liveness and readiness checks now report content and language-data state; PostgreSQL, object storage, queue, and inference checks will be added with those services.
+- [-] Liveness and readiness report content, language-data, and PostgreSQL state; object storage, queue, and inference checks will be added with those services.
 
 ### Needed
 
-- [ ] Add PostgreSQL to local and deployed environments.
-- [ ] Add migrations and automated migration testing.
+- [-] PostgreSQL is integrated locally and in CI; staging and production services are not provisioned.
+- [x] Add reversible Alembic migrations and automated migration testing.
 - [ ] Reorganize FastAPI into explicit domain modules without changing public behavior.
 - [ ] Add repository and service layers for mutable application state.
-- [ ] Integrate a mature OpenID Connect identity provider.
-- [ ] Add user, external identity, device, session, role, and consent models.
-- [ ] Add learner, contributor, reviewer, editor, moderator, and administrator roles.
-- [ ] Enforce authorization in backend services.
+- [-] Provider-neutral OpenID Connect verification and JWKS support exist; a production identity provider and credentials are not yet configured.
+- [x] Add user, external identity, device, session, role, and consent models.
+- [x] Define learner, contributor, reviewer, editor, moderator, and administrator roles in the database schema.
+- [-] Internal role authorization protects identity administration; future editorial, library, learning, and moderation mutations still need role enforcement.
 - [x] Add request IDs and standard API error responses.
 - [ ] Add production structured-log shipping, downstream timeouts, and rate limits.
-- [ ] Add audit events for security, editorial, and moderation actions.
+- [-] User provisioning and role grants emit append-only audit events; future editorial and moderation services still need to emit events.
 - [ ] Add backup, restore, migration rollback, and disaster-recovery procedures.
 - [ ] Remove unversioned `/api` aliases after all clients use `/api/v1`.
 
@@ -324,16 +325,16 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 ### P0 — stabilize what exists
 
 - [x] Fix frontend lint.
-- [-] Add CI and integration smoke tests. Local tests and browser smoke checks pass; the first hosted CI run is pending.
+- [x] Add CI and integration smoke tests. Local tests, browser smoke checks, and the first hosted CI run pass.
 - [x] Correct the Citizenship prototype’s displayed counts/version behavior.
 - [x] Remove or clearly label the current prototype-only UI.
 - [x] Consolidate API errors, request IDs, and health reporting.
-- [ ] Confirm the first hosted CI run after the repository is pushed.
+- [x] Confirm the first hosted CI run after the repository is pushed.
 
 ### P1 — product foundation
 
-- [ ] Add PostgreSQL, migrations, identity, roles, audit events, and object storage.
-- [ ] Generate the typed API client.
+- [-] Add PostgreSQL, migrations, identity, roles, audit events, and object storage. The database, migrations, OIDC verification, session tracking, internal authorization, and initial audit events are complete; production provider configuration and object storage remain.
+- [x] Generate the typed API client with consistent timeout, caching, and standard error handling.
 - [ ] Create the Expo app, localization, device database, and offline dictionary.
 - [ ] Implement saved-item and learning-progress synchronization.
 

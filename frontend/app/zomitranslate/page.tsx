@@ -14,7 +14,7 @@ export default async function TranslatePage({ searchParams }: Props) {
     try {
       const data = await searchTranslate(query);
       results = data.results;
-      note = data.note;
+      note = data.note ?? undefined;
     } catch {
       error = "Could not reach the API. Start the backend on port 8001 after building the language database.";
     }

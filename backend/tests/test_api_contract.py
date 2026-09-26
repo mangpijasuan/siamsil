@@ -7,10 +7,11 @@ from unittest.mock import Mock, patch
 
 from fastapi.testclient import TestClient
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "backend"))
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(BACKEND_ROOT))
 
 from main import app  # type: ignore  # noqa: E402
+from database import DatabaseReadiness  # type: ignore  # noqa: E402
 
 
 class ApiContractTests(unittest.TestCase):
@@ -41,7 +42,11 @@ class ApiContractTests(unittest.TestCase):
         store = Mock()
         store.metadata = {"dataset": "test"}
 
-        with patch("main.get_engine", return_value=engine), patch("main.get_store", return_value=store):
+        database = DatabaseReadiness(ready=True, detail={"status": "ok", "required": True})
+
+        with patch("main.get_engine", return_value=engine), patch(
+            "main.get_store", return_value=store
+        ), patch("main.check_application_database", return_value=database):
             response = self.client.get("/health/ready")
 
         self.assertEqual(response.status_code, 200)
@@ -49,6 +54,7 @@ class ApiContractTests(unittest.TestCase):
         self.assertEqual(payload["status"], "ok")
         self.assertEqual(payload["checks"]["language_database"]["status"], "ok")
         self.assertEqual(payload["checks"]["content_data"]["status"], "ok")
+        self.assertEqual(payload["checks"]["application_database"]["status"], "ok")
 
     def test_validation_errors_use_standard_envelope(self) -> None:
         response = self.client.get("/api/v1/search", headers={"X-Request-ID": "validation-test"})
@@ -66,6 +72,19 @@ class ApiContractTests(unittest.TestCase):
         payload = response.json()["error"]
         self.assertEqual(payload["code"], "http_404")
         self.assertEqual(payload["request_id"], "missing-test")
+
+    def test_public_v1_success_responses_have_openapi_models(self) -> None:
+        schema = app.openapi()
+        versioned_paths = {
+            path: methods for path, methods in schema["paths"].items() if path.startswith("/api/v1/")
+        }
+
+        self.assertTrue(versioned_paths)
+        for path, methods in versioned_paths.items():
+            for method, operation in methods.items():
+                with self.subTest(path=path, method=method):
+                    response_schema = operation["responses"]["200"]["content"]["application/json"]["schema"]
+                    self.assertTrue(response_schema)
 
 
 if __name__ == "__main__":

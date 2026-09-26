@@ -5,6 +5,7 @@ import re
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from api_schemas import AskResponse
 from services.data_loader import get_store
 from services.language_engine import get_engine
 
@@ -35,7 +36,7 @@ def _intent(message: str) -> str:
     return "dictionary"
 
 
-@router.post("/ask")
+@router.post("/ask", response_model=AskResponse)
 def ask(request: AskRequest):
     engine = get_engine()
     if not engine.available:

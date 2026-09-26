@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import sqlite3
 import threading
@@ -9,8 +8,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DB = ROOT / "data" / "processed" / "language" / "siamsil_language.sqlite"
+from settings import get_settings
 
 FTS_UNSAFE = re.compile(r'["\'*:^(){}[\]~-]')
 
@@ -337,5 +335,4 @@ class LanguageEngine:
 
 @lru_cache(maxsize=1)
 def get_engine() -> LanguageEngine:
-    path = Path(os.getenv("SIAMSIL_LANGUAGE_DB", DEFAULT_DB))
-    return LanguageEngine(path)
+    return LanguageEngine(get_settings().language_db)

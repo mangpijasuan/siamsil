@@ -7,10 +7,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from api_schemas import HealthResponse, LivenessResponse
+from database import check_application_database
 from http_contract import install_http_contract
+from identity import router as identity
 from routers import ai, bible, dictionary, learning, search, translate
 from services.data_loader import get_store
 from services.language_engine import get_engine
+from settings import get_settings
 
 
 @asynccontextmanager
@@ -18,6 +22,7 @@ async def lifespan(app: FastAPI):
     # Construct the read-only language adapter without forcing a database query.
     # Readiness performs dependency checks and reports a degraded state instead
     # of preventing the process from exposing its liveness endpoint.
+    get_settings()
     get_engine()
     yield
 
@@ -31,14 +36,11 @@ app = FastAPI(
 
 install_http_contract(app)
 
+settings = get_settings()
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3002",
-        "http://127.0.0.1:3002",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=settings.cors_origins,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
     expose_headers=["X-Request-ID"],
@@ -47,6 +49,9 @@ app.add_middleware(
 for module in (dictionary, bible, translate, learning, search, ai):
     app.include_router(module.router, prefix="/api/v1")
     app.include_router(module.router, prefix="/api")
+
+# New authenticated APIs are versioned-only; no legacy unversioned alias is created.
+app.include_router(identity.router, prefix="/api/v1")
 
 
 def readiness_payload() -> tuple[dict[str, Any], bool]:
@@ -76,6 +81,13 @@ def readiness_payload() -> tuple[dict[str, Any], bool]:
         checks["content_data"] = {"status": "error", "error": type(exc).__name__}
         ready = False
 
+    database = check_application_database()
+    checks["application_database"] = database.detail
+    ready = ready and database.ready
+    checks["identity"] = {
+        "status": "configured" if settings.oidc_enabled else "disabled",
+    }
+
     payload = {
         "status": "ok" if ready else "degraded",
         "version": app.version,
@@ -89,18 +101,18 @@ def readiness_payload() -> tuple[dict[str, Any], bool]:
     return payload, ready
 
 
-@app.get("/health/live")
+@app.get("/health/live", response_model=LivenessResponse)
 def liveness():
     return {"status": "ok", "version": app.version}
 
 
-@app.get("/health/ready")
+@app.get("/health/ready", response_model=HealthResponse)
 def readiness():
     payload, ready = readiness_payload()
     return JSONResponse(status_code=200 if ready else 503, content=payload)
 
 
-@app.get("/health")
+@app.get("/health", response_model=HealthResponse)
 def health():
     """Backward-compatible health summary; use /health/ready for probes."""
     payload, _ = readiness_payload()

@@ -1,4 +1,9 @@
-// Server-side: prefer SIAMSIL_API_URL (e.g. Docker service name), fall back to public URL.
+import createClient from "openapi-fetch";
+
+import type { components, paths } from "@/lib/generated/api-types";
+
+// Server-side requests use the private service URL; browser requests use the
+// public URL baked into the client bundle by Next.js.
 const SERVER_API_URL =
   process.env.SIAMSIL_API_URL ??
   process.env.NEXT_PUBLIC_API_URL ??
@@ -7,197 +12,251 @@ const SERVER_API_URL =
 const CLIENT_API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8001";
 
-function resolveUrl(path: string): string {
-  if (typeof window === "undefined") {
-    return `${SERVER_API_URL}${path}`;
-  }
-  return `${CLIENT_API_URL}${path}`;
-}
+const configuredTimeout = Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS ?? 10_000);
+const API_TIMEOUT_MS = Number.isFinite(configuredTimeout) && configuredTimeout > 0
+  ? configuredTimeout
+  : 10_000;
 
-async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const isServer = typeof window === "undefined";
-  const response = await fetch(resolveUrl(path), {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-    ...(isServer ? { next: { revalidate: 60 } } : { cache: "no-store" }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`API error ${response.status} for ${path}`);
-  }
-
-  return response.json() as Promise<T>;
-}
-
-export type DictionaryEntry = {
-  id: number;
-  english: string;
-  source_word?: string;
-  part_of_speech: string | null;
-  part_of_speech_full?: string | null;
-  domain: string | null;
-  zomi: string | null;
-  definition: string | null;
-  usage_notes?: string | null;
-  verified: boolean;
-  verification_status?: string;
-  flagged?: boolean;
-  source: string | null;
-  confidence?: number;
-  suggested_correction?: string | null;
-  examples?: TranslateMatch[];
+type ErrorDetail = {
+  location?: string[];
+  message?: string;
+  type?: string;
 };
 
-export type BibleVerse = {
-  testament: string;
-  book_id: number;
-  book_english: string;
-  book_zomi: string;
-  chapter: number;
-  verse: number;
-  reference: string;
-  english: string | null;
-  zomi_original: string;
-  zomi_iso: string;
-  changes_applied: string | null;
-};
-
-export type BibleBook = {
-  book_id: number;
-  book_english: string;
-  book_zomi: string;
-  testament: string;
-};
-
-export type TranslateMatch = {
-  source: string;
-  english: string;
-  zomi: string;
-  reference?: string;
-  category?: string;
-  domain?: string;
-  verified?: boolean;
-  flagged?: boolean;
-  label?: string;
-  exact?: boolean;
-  quality_score?: number;
-  model?: string;
-};
-
-export type LearningEntry = {
-  id: number;
-  category: string;
-  sub_category: string;
-  english: string;
-  zomi: string;
-  notes: string | null;
-  verified: boolean;
-  source: string;
-};
-
-export type HealthResponse = {
-  status: string;
-  metadata: Record<string, unknown>;
-  language?: {
-    database: boolean;
-    dictionary_entries: number;
-    verified_dictionary: number;
-    parallel_sentences: number;
+type ErrorEnvelope = {
+  error?: {
+    code?: string;
+    message?: string;
+    request_id?: string | null;
+    details?: ErrorDetail[];
   };
 };
 
-export type AskResponse = {
-  mode: string;
-  intent: string;
-  confidence: string;
-  answer: string;
-  note: string;
-  sources: Array<{
-    type: string;
-    english?: string;
-    zomi?: string;
-    verified?: boolean;
-    source?: string;
-    label?: string;
-    reference?: string;
-  }>;
+type ApiResult<T> = {
+  data?: T;
+  error?: unknown;
+  response: Response;
 };
 
-export function getHealth() {
-  return fetchJson<HealthResponse>("/health");
+export class ApiError extends Error {
+  readonly status: number;
+  readonly code: string;
+  readonly requestId?: string;
+  readonly details?: ErrorDetail[];
+
+  constructor(options: {
+    message: string;
+    status: number;
+    code: string;
+    requestId?: string;
+    details?: ErrorDetail[];
+    cause?: unknown;
+  }) {
+    super(options.message, { cause: options.cause });
+    this.name = "ApiError";
+    this.status = options.status;
+    this.code = options.code;
+    this.requestId = options.requestId;
+    this.details = options.details;
+  }
+}
+
+function resolveBaseUrl(): string {
+  return typeof window === "undefined" ? SERVER_API_URL : CLIENT_API_URL;
+}
+
+async function fetchWithPolicy(request: Request): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => {
+    controller.abort(new DOMException("Siamsil API request timed out", "TimeoutError"));
+  }, API_TIMEOUT_MS);
+  const forwardAbort = () => controller.abort(request.signal.reason);
+  request.signal.addEventListener("abort", forwardAbort, { once: true });
+
+  try {
+    if (typeof window === "undefined" && request.method === "GET") {
+      return await fetch(request, {
+        signal: controller.signal,
+        next: { revalidate: 60 },
+      });
+    }
+    return await fetch(request, {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+    request.signal.removeEventListener("abort", forwardAbort);
+  }
+}
+
+function apiClient(accessToken?: string) {
+  return createClient<paths>({
+    baseUrl: resolveBaseUrl(),
+    fetch: fetchWithPolicy,
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+  });
+}
+
+function errorEnvelope(value: unknown): ErrorEnvelope | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  return value as ErrorEnvelope;
+}
+
+async function expectData<T>(request: Promise<ApiResult<T>>, path: string): Promise<T> {
+  try {
+    const result = await request;
+    if (result.data !== undefined) return result.data;
+
+    const envelope = errorEnvelope(result.error);
+    const error = envelope?.error;
+    throw new ApiError({
+      message: error?.message ?? `Siamsil API request failed for ${path}.`,
+      status: result.response.status,
+      code: error?.code ?? `http_${result.response.status}`,
+      requestId: error?.request_id ?? undefined,
+      details: error?.details,
+    });
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    const timedOut = error instanceof DOMException && error.name === "TimeoutError";
+    throw new ApiError({
+      message: timedOut
+        ? "The Siamsil service took too long to respond."
+        : "The Siamsil service could not be reached.",
+      status: timedOut ? 408 : 0,
+      code: timedOut ? "request_timeout" : "network_error",
+      cause: error,
+    });
+  }
+}
+
+export type DictionaryEntry = components["schemas"]["DictionaryEntry"];
+export type BibleVerse = components["schemas"]["BibleVerse"];
+export type BibleBook = components["schemas"]["BibleBook"];
+export type TranslateMatch = components["schemas"]["TranslateMatch"];
+export type LearningEntry = components["schemas"]["LearningEntry"];
+export type HealthResponse = components["schemas"]["HealthResponse"];
+export type AskResponse = components["schemas"]["AskResponse"];
+export type IdentityResponse = components["schemas"]["IdentityResponse"];
+export type RoleName = components["schemas"]["RoleName"];
+
+type DictionarySearchResponse = components["schemas"]["DictionarySearchResponse"];
+type DictionaryLettersResponse = components["schemas"]["DictionaryLettersResponse"];
+type TranslationSearchResponse = components["schemas"]["TranslationSearchResponse"];
+type BibleBooksResponse = components["schemas"]["BibleBooksResponse"];
+type BibleChapterResponse = components["schemas"]["BibleChapterResponse"];
+type BibleSearchResponse = components["schemas"]["BibleSearchResponse"];
+type LearningGroupsResponse = components["schemas"]["LearningGroupsResponse"];
+type RoleAssignmentResponse = components["schemas"]["RoleAssignmentResponse"];
+
+export function getHealth(): Promise<HealthResponse> {
+  return expectData(apiClient().GET("/health"), "/health");
 }
 
 export function searchDictionary(
   query: string,
   options?: { letter?: string; direction?: "en-zom" | "zom-en"; limit?: number },
-) {
-  const params = new URLSearchParams();
-  if (query) params.set("q", query);
-  if (options?.letter) params.set("letter", options.letter);
-  if (options?.direction) params.set("direction", options.direction);
-  params.set("limit", String(options?.limit ?? 40));
-  return fetchJson<{ query: string; count: number; results: DictionaryEntry[] }>(
-    `/api/v1/dictionary?${params.toString()}`,
+): Promise<DictionarySearchResponse> {
+  return expectData(
+    apiClient().GET("/api/v1/dictionary", {
+      params: {
+        query: {
+          q: query,
+          letter: options?.letter,
+          direction: options?.direction ?? "en-zom",
+          limit: options?.limit ?? 40,
+        },
+      },
+    }),
+    "/api/v1/dictionary",
   );
 }
 
-export function getDictionaryEntry(id: number) {
-  return fetchJson<DictionaryEntry>(`/api/v1/dictionary/${id}`);
-}
-
-export function getDictionaryLetters() {
-  return fetchJson<{ letters: Array<{ letter: string; count: number }> }>("/api/v1/dictionary/letters");
-}
-
-export function searchTranslate(query: string) {
-  return fetchJson<{ query: string; count: number; results: TranslateMatch[]; note?: string }>(
-    `/api/v1/translate/search?q=${encodeURIComponent(query)}`,
+export function getDictionaryEntry(id: number): Promise<DictionaryEntry> {
+  return expectData(
+    apiClient().GET("/api/v1/dictionary/{entry_id}", {
+      params: { path: { entry_id: id } },
+    }),
+    "/api/v1/dictionary/{entry_id}",
   );
 }
 
-export function getBibleBooks() {
-  return fetchJson<{ count: number; books: BibleBook[] }>("/api/v1/bible/books");
+export function getDictionaryLetters(): Promise<DictionaryLettersResponse> {
+  return expectData(apiClient().GET("/api/v1/dictionary/letters"), "/api/v1/dictionary/letters");
 }
 
-export function getBibleChapter(bookId: number, chapter: number) {
-  return fetchJson<{
-    book_id: number;
-    chapter: number;
-    book_english: string;
-    book_zomi: string;
-    verse_count: number;
-    verses: BibleVerse[];
-  }>(`/api/v1/bible/chapter?book_id=${bookId}&chapter=${chapter}`);
-}
-
-export function searchBible(query: string) {
-  return fetchJson<{ query: string; count: number; results: BibleVerse[] }>(
-    `/api/v1/bible/search?q=${encodeURIComponent(query)}`,
+export function searchTranslate(query: string): Promise<TranslationSearchResponse> {
+  return expectData(
+    apiClient().GET("/api/v1/translate/search", {
+      params: { query: { q: query } },
+    }),
+    "/api/v1/translate/search",
   );
 }
 
-export function getLearningGroups() {
-  return fetchJson<{ count: number; groups: Record<string, LearningEntry[]> }>(
-    "/api/v1/learning/groups",
+export function getBibleBooks(): Promise<BibleBooksResponse> {
+  return expectData(apiClient().GET("/api/v1/bible/books"), "/api/v1/bible/books");
+}
+
+export function getBibleChapter(bookId: number, chapter: number): Promise<BibleChapterResponse> {
+  return expectData(
+    apiClient().GET("/api/v1/bible/chapter", {
+      params: { query: { book_id: bookId, chapter } },
+    }),
+    "/api/v1/bible/chapter",
   );
 }
 
-export function getDailyVerse() {
-  return fetchJson<BibleVerse>("/api/v1/bible/random");
+export function searchBible(query: string): Promise<BibleSearchResponse> {
+  return expectData(
+    apiClient().GET("/api/v1/bible/search", {
+      params: { query: { q: query } },
+    }),
+    "/api/v1/bible/search",
+  );
 }
 
-export function getWordOfDay() {
-  return fetchJson<DictionaryEntry>("/api/v1/dictionary/word-of-day");
+export function getLearningGroups(): Promise<LearningGroupsResponse> {
+  return expectData(apiClient().GET("/api/v1/learning/groups"), "/api/v1/learning/groups");
 }
 
-export function askSiamsil(message: string) {
-  return fetchJson<AskResponse>("/api/v1/ai/ask", {
-    method: "POST",
-    body: JSON.stringify({ message }),
-  });
+export function getDailyVerse(): Promise<BibleVerse> {
+  return expectData(apiClient().GET("/api/v1/bible/random"), "/api/v1/bible/random");
+}
+
+export function getWordOfDay(): Promise<DictionaryEntry> {
+  return expectData(
+    apiClient().GET("/api/v1/dictionary/word-of-day"),
+    "/api/v1/dictionary/word-of-day",
+  );
+}
+
+export function askSiamsil(message: string): Promise<AskResponse> {
+  return expectData(
+    apiClient().POST("/api/v1/ai/ask", { body: { message } }),
+    "/api/v1/ai/ask",
+  );
+}
+
+export function getCurrentIdentity(accessToken: string): Promise<IdentityResponse> {
+  return expectData(
+    apiClient(accessToken).GET("/api/v1/identity/me"),
+    "/api/v1/identity/me",
+  );
+}
+
+export function grantUserRole(
+  accessToken: string,
+  userId: string,
+  role: RoleName,
+): Promise<RoleAssignmentResponse> {
+  return expectData(
+    apiClient(accessToken).POST("/api/v1/identity/users/{user_id}/roles/{role}", {
+      params: { path: { user_id: userId, role } },
+    }),
+    "/api/v1/identity/users/{user_id}/roles/{role}",
+  );
 }
 
 export { SERVER_API_URL as API_URL };

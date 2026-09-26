@@ -8,10 +8,11 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "backend"))
-sys.path.insert(0, str(ROOT / "backend" / "services"))
-sys.path.insert(0, str(ROOT / "ml_pipeline" / "scripts"))
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = BACKEND_ROOT.parent
+sys.path.insert(0, str(BACKEND_ROOT))
+sys.path.insert(0, str(BACKEND_ROOT / "services"))
+sys.path.insert(0, str(PROJECT_ROOT / "ml_pipeline" / "scripts"))
 
 from language_engine import LanguageEngine, fts_match  # type: ignore  # noqa: E402
 from build_language_db import (  # type: ignore  # noqa: E402

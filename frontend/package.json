@@ -7,10 +7,14 @@
     "build": "next build",
     "start": "next start -p 3002",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "api:export": "python3 ../backend/scripts/export_openapi.py openapi.json",
+    "api:generate": "npm run api:export && openapi-typescript openapi.json -o lib/generated/api-types.ts",
+    "api:check": "npm run api:generate && git diff --exit-code -- openapi.json lib/generated/api-types.ts"
   },
   "dependencies": {
-    "next": "16.2.9",
+    "next": "^16.3.6",
+    "openapi-fetch": "^0.17.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -20,7 +24,8 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.9",
+    "eslint-config-next": "^16.3.6",
+    "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

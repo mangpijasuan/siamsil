@@ -1,4 +1,20 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "${SIAMSIL_POSTGRES_PORT:-55433}:5432"
+    environment:
+      POSTGRES_DB: siamsil
+      POSTGRES_USER: siamsil
+      POSTGRES_PASSWORD: ${SIAMSIL_POSTGRES_PASSWORD:-siamsil-local-only}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U siamsil -d siamsil"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - siamsil_postgres_data:/var/lib/postgresql/data
+
   backend:
     build:
       context: ./backend
@@ -6,11 +22,18 @@ services:
     ports:
       - "8001:8000"
     environment:
+      SIAMSIL_ENVIRONMENT: development
       SIAMSIL_DATA_DIR: /app/data
       SIAMSIL_LANGUAGE_DB: /app/language/siamsil_language.sqlite
+      SIAMSIL_DATABASE_URL: postgresql+psycopg://siamsil:${SIAMSIL_POSTGRES_PASSWORD:-siamsil-local-only}@postgres:5432/siamsil
+      SIAMSIL_DATABASE_REQUIRED: "true"
+    command: ["sh", "-c", "alembic upgrade head && exec uvicorn main:app --host 0.0.0.0 --port 8000"]
     volumes:
       - ./backend/data:/app/data:ro
       - ./data/processed/language:/app/language:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   frontend:
     build:
@@ -25,3 +48,6 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:8001
     depends_on:
       - backend
+
+volumes:
+  siamsil_postgres_data:

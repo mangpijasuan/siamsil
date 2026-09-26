@@ -4,12 +4,18 @@ from datetime import date
 
 from fastapi import APIRouter, HTTPException, Query
 
+from api_schemas import (
+    DictionaryEntry,
+    DictionaryLettersResponse,
+    DictionarySearchResponse,
+    DictionarySuggestionsResponse,
+)
 from services.language_engine import get_engine
 
 router = APIRouter(prefix="/dictionary", tags=["dictionary"])
 
 
-@router.get("")
+@router.get("", response_model=DictionarySearchResponse)
 def search_dictionary(
     q: str = Query("", max_length=200),
     letter: str | None = Query(None, min_length=1, max_length=1),
@@ -28,7 +34,7 @@ def search_dictionary(
     return {"query": q, "letter": letter, "direction": direction, "count": len(results), "results": results}
 
 
-@router.get("/suggest")
+@router.get("/suggest", response_model=DictionarySuggestionsResponse)
 def suggest(q: str = Query(..., min_length=1, max_length=80), limit: int = Query(8, ge=1, le=20)):
     engine = get_engine()
     if not engine.available:
@@ -36,7 +42,7 @@ def suggest(q: str = Query(..., min_length=1, max_length=80), limit: int = Query
     return {"query": q, "results": engine.suggest_dictionary(q, limit)}
 
 
-@router.get("/letters")
+@router.get("/letters", response_model=DictionaryLettersResponse)
 def letters():
     engine = get_engine()
     if not engine.available:
@@ -44,7 +50,7 @@ def letters():
     return {"letters": engine.letter_counts()}
 
 
-@router.get("/word-of-day")
+@router.get("/word-of-day", response_model=DictionaryEntry)
 def word_of_day():
     engine = get_engine()
     if not engine.available:
@@ -55,7 +61,7 @@ def word_of_day():
     return entry
 
 
-@router.get("/{entry_id}")
+@router.get("/{entry_id}", response_model=DictionaryEntry)
 def get_entry(entry_id: int):
     engine = get_engine()
     if not engine.available:

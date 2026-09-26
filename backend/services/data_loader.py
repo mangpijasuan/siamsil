@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import json
-import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DATA_DIR = ROOT / "data"
+from settings import get_settings
 
 
 class DataStore:
@@ -182,7 +180,6 @@ class DataStore:
 
 @lru_cache(maxsize=1)
 def get_store() -> DataStore:
-    data_dir = Path(os.getenv("SIAMSIL_DATA_DIR", DEFAULT_DATA_DIR))
-    store = DataStore(data_dir)
+    store = DataStore(get_settings().data_dir)
     store.load()
     return store

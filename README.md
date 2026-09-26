@@ -7,6 +7,7 @@ Latest audit: [`docs/AUDIT.md`](docs/AUDIT.md)
 Target architecture and migration plan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 Mobile and language-AI target architecture: [`docs/MOBILE_AI_ARCHITECTURE.md`](docs/MOBILE_AI_ARCHITECTURE.md)
 Implementation status and prioritized to-do list: [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md)
+Identity and authorization setup: [`docs/IDENTITY_AND_AUTHORIZATION.md`](docs/IDENTITY_AND_AUTHORIZATION.md)
 
 ## What is live (Release 1)
 
@@ -31,6 +32,20 @@ siamsil/
 
 ## Quick start
 
+### Docker (recommended)
+
+Build the language database once, then start the complete local stack:
+
+```bash
+python3 -m pip install -r ml_pipeline/requirements.txt
+python3 ml_pipeline/scripts/build_language_db.py
+docker compose up --build
+```
+
+Docker starts PostgreSQL on host port **55433**, applies Alembic migrations,
+starts the API on **8001**, and starts the web app on **3002**. Override the
+database port with `SIAMSIL_POSTGRES_PORT` if needed.
+
 ### 1. Build the language database (required once)
 
 ```bash
@@ -43,8 +58,11 @@ This reads `data/raw/` and writes `data/processed/language/siamsil_language.sqli
 ### 2. API
 
 ```bash
+cp .env.example .env
+docker compose up -d postgres
 cd backend
 python3 -m pip install -r requirements.txt
+alembic upgrade head
 uvicorn main:app --reload --port 8001
 ```
 
@@ -67,11 +85,32 @@ python3 -m pip install -r backend/requirements-dev.txt -r ml_pipeline/requiremen
 python3 -m unittest discover -s backend/tests -p "test_*.py"
 
 cd frontend
+npm run api:check
 npm run lint
 npm run typecheck
 npm run build
 ```
 
+`frontend/openapi.json` and `frontend/lib/generated/api-types.ts` are generated
+from FastAPI. Run `npm run api:generate` after changing API routes or schemas;
+CI rejects contract drift.
+
 ## Ports
 
-Siamsil uses **3002** (web) and **8001** (API) so it does not collide with other local apps on 3000/8000.
+Siamsil uses **3002** (web), **8001** (API), and **55433** (PostgreSQL) so it
+does not collide with common defaults.
+
+## Data responsibilities
+
+- PostgreSQL stores mutable application data such as users, identities,
+  devices, roles, consent records, and audit events.
+- SQLite stores the immutable, versioned dictionary and parallel-language
+  release used for fast retrieval.
+- Alembic migrations under `backend/migrations/` manage PostgreSQL only.
+
+## Authentication
+
+Identity endpoints use provider-neutral OpenID Connect. Public language routes
+continue to work without sign-in. To enable identity, configure the OIDC issuer,
+audience, and JWKS URL described in
+[`docs/IDENTITY_AND_AUTHORIZATION.md`](docs/IDENTITY_AND_AUTHORIZATION.md).

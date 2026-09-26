@@ -263,7 +263,11 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
                   <button
                     type="button"
                     className={`dict-save-btn${isSaved(selected.id) ? " saved" : ""}`}
-                    onClick={() => toggle({ id: selected.id, english: selected.english, zomi: selected.zomi })}
+                    onClick={() => toggle({
+                      id: selected.id,
+                      english: selected.english,
+                      zomi: selected.zomi ?? null,
+                    })}
                     aria-label={isSaved(selected.id) ? "Unsave" : "Save word"}
                     title={isSaved(selected.id) ? "Saved on this device" : "Save word on this device"}
                   >

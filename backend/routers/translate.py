@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from api_schemas import TranslationResponse, TranslationSearchResponse
 from services.data_loader import get_store
 from services.language_engine import get_engine
 
@@ -19,7 +20,7 @@ def _overlay_matches(query: str, limit: int) -> list[dict]:
     return store.search_translate(query, limit)
 
 
-@router.get("/search")
+@router.get("/search", response_model=TranslationSearchResponse)
 def search_matches(q: str = Query(..., min_length=1, max_length=500), limit: int = Query(20, ge=1, le=50)):
     engine = get_engine()
     if not engine.available:
@@ -68,7 +69,7 @@ def search_matches(q: str = Query(..., min_length=1, max_length=500), limit: int
     }
 
 
-@router.post("")
+@router.post("", response_model=TranslationResponse)
 def translate(request: TranslateRequest):
     payload = search_matches(request.text, limit=8)
     exact = next((item for item in payload["results"] if item.get("exact") or item.get("source") == "dictionary"), None)
