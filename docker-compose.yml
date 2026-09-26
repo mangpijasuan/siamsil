@@ -1,0 +1,27 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      SIAMSIL_DATA_DIR: /app/data
+      SIAMSIL_LANGUAGE_DB: /app/language/siamsil_language.sqlite
+    volumes:
+      - ./backend/data:/app/data:ro
+      - ./data/processed/language:/app/language:ro
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      # Server-side (SSR) fetches use the Docker service name
+      SIAMSIL_API_URL: http://backend:8000
+      # Client-side fetches use the host-accessible URL
+      NEXT_PUBLIC_API_URL: http://localhost:8001
+    depends_on:
+      - backend

@@ -1,0 +1,43 @@
+{
+  "generated_at": "2026-08-18T15:27:53.784474+00:00",
+  "script_version": "1.0.0",
+  "dataset_version": "v1",
+  "dictionary": {
+    "source_rows": 20827,
+    "ingested": 20826,
+    "flagged_for_review": 1773,
+    "verified": 0,
+    "empty_headword": 1,
+    "empty_definition": 13,
+    "note": "Zomi Standard Dictionary is the sole dictionary source."
+  },
+  "parallel": {
+    "source_rows": 1777002,
+    "unique_pairs_kept": 1775043,
+    "duplicates_dropped": 1959,
+    "empty_dropped": 0,
+    "clean": 1769602,
+    "needs_review": 5441,
+    "verified": 0,
+    "splits": {
+      "train": 1597938,
+      "validation": 88612,
+      "test": 88493
+    },
+    "quality_flags": {
+      "possible_language_mismatch": 3437,
+      "extremely_short": 759,
+      "identical": 1492,
+      "extremely_long": 55,
+      "html_or_script": 7,
+      "suspicious_repeat": 3
+    },
+    "models": {
+      "gemini-pro": 450619,
+      "gemini-3-pro-preview": 7983,
+      "gemini-3-flash-preview": 906543,
+      "gemini-2.5-flash": 403972
+    },
+    "note": "Zomi side is machine-translated and unverified. Do not treat as gold data."
+  }
+}

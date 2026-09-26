@@ -1,0 +1,15 @@
+{
+  "name": "siamsil-language",
+  "version": "v1",
+  "created_at": "2026-08-18T15:27:53.784474+00:00",
+  "script_version": "1.0.0",
+  "database": "data/processed/language/siamsil_language.sqlite",
+  "counts": {
+    "dictionary_entries": 20826,
+    "parallel_sentences": 1775043
+  },
+  "source_files": {
+    "dictionary_master": "data/raw/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx",
+    "parallel_csv": "data/raw/parallel/zomi_english_sentences.csv"
+  }
+}

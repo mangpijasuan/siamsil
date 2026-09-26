@@ -1,0 +1,15 @@
+{
+  "dataset": "zomi_dictionary",
+  "files": [
+    {
+      "original_filename": "Zomi_Standard_Dictionary_AI_Cleaned.xlsx",
+      "path": "data/raw/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx",
+      "acquisition_date": "2026-08-15",
+      "source": "Zomi Standard Dictionary",
+      "source_author": "needs_review",
+      "license": "needs_review",
+      "review_status": "unreviewed",
+      "notes": "Sole live dictionary source."
+    }
+  ]
+}
