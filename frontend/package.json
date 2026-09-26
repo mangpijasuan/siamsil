@@ -10,7 +10,10 @@
     "typecheck": "tsc --noEmit",
     "api:export": "python3 ../backend/scripts/export_openapi.py openapi.json",
     "api:generate": "npm run api:export && openapi-typescript openapi.json -o lib/generated/api-types.ts",
-    "api:check": "npm run api:generate && git diff --exit-code -- openapi.json lib/generated/api-types.ts"
+    "api:check": "npm run api:generate && git diff --exit-code -- openapi.json lib/generated/api-types.ts",
+    "pages:build": "npx @cloudflare/next-on-pages",
+    "pages:deploy": "npm run pages:build && wrangler pages deploy",
+    "pages:preview": "npm run pages:build && wrangler pages dev"
   },
   "dependencies": {
     "next": "^16.3.6",
@@ -19,6 +22,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.16",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -27,6 +31,7 @@
     "eslint-config-next": "^16.3.6",
     "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.141.0"
   }
 }
