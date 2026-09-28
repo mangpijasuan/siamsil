@@ -1,14 +1,13 @@
 import type { NextConfig } from "next";
-import { setupDevPlatform } from "@cloudflare/next-on-pages/next-dev";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
+// Rewrites are resolved at build time, so SIAMSIL_API_URL must be set in the build environment.
 const backendUrl =
   process.env.SIAMSIL_API_URL ??
   process.env.NEXT_PUBLIC_API_URL ??
   "http://127.0.0.1:8001";
 
-if (process.env.NODE_ENV === "development") {
-  await setupDevPlatform();
-}
+initOpenNextCloudflareForDev();
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1", "localhost"],
