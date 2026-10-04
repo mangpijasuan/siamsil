@@ -38,6 +38,7 @@ DEFAULT_RAW = ROOT / "data" / "raw"
 DEFAULT_OUT_DB = ROOT / "data" / "processed" / "language" / "siamsil_language.sqlite"
 DEFAULT_REPORT = ROOT / "data" / "processed" / "language" / "quality_report.json"
 DEFAULT_MANIFEST = ROOT / "data" / "processed" / "language" / "manifest.json"
+DEFAULT_VERSIONS = ROOT / "data" / "versions"
 EVAL_TRANSLATION = ROOT / "data" / "evaluation" / "translation" / "sample.jsonl"
 EVAL_DICTIONARY = ROOT / "data" / "evaluation" / "dictionary" / "sample.jsonl"
 
@@ -608,6 +609,54 @@ def apply_corpus_checks(con: sqlite3.Connection, eval_items: list[dict] | None =
     }
 
 
+def file_fingerprint(path: Path) -> dict:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    try:
+        shown = str(path.resolve().relative_to(ROOT))
+    except ValueError:
+        shown = path.name
+    return {"path": shown, "bytes": path.stat().st_size, "sha256": digest.hexdigest()}
+
+
+def release_manifest(
+    database: Path,
+    source_files: dict[str, Path],
+    eval_files: list[Path],
+    counts: dict,
+    created_at: str,
+) -> dict:
+    """Describe a language release precisely enough to verify or reproduce it.
+
+    Evaluation sets are recorded by hash only; their content stays hidden.
+    """
+    return {
+        "name": "siamsil-language",
+        "version": DATASET_VERSION,
+        "created_at": created_at,
+        "script_version": SCRIPT_VERSION,
+        "database": file_fingerprint(database),
+        "counts": counts,
+        "source_files": {key: file_fingerprint(path) for key, path in source_files.items()},
+        "evaluation_sets": [
+            {"file": path.name, "sha256": file_fingerprint(path)["sha256"]} for path in eval_files
+        ],
+    }
+
+
+def write_release_manifest(manifest: dict, current: Path, versions_dir: Path) -> Path:
+    """Write the current manifest and an immutable copy named by version and database hash."""
+    text = json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
+    current.parent.mkdir(parents=True, exist_ok=True)
+    current.write_text(text, encoding="utf-8")
+    versions_dir.mkdir(parents=True, exist_ok=True)
+    versioned = versions_dir / f"siamsil-language-{manifest['version']}-{manifest['database']['sha256'][:12]}.json"
+    versioned.write_text(text, encoding="utf-8")
+    return versioned
+
+
 def load_eval_items(paths: list[Path]) -> list[dict]:
     from eval_set import load_items
 
@@ -779,26 +828,6 @@ def main() -> None:
 
     DEFAULT_REPORT.parent.mkdir(parents=True, exist_ok=True)
     DEFAULT_REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    DEFAULT_MANIFEST.write_text(
-        json.dumps(
-            {
-                "name": "siamsil-language",
-                "version": DATASET_VERSION,
-                "created_at": created_at,
-                "script_version": SCRIPT_VERSION,
-                "database": str(args.out.relative_to(ROOT)),
-                "counts": {
-                    "dictionary_entries": dict_total,
-                    "parallel_sentences": parallel_total,
-                },
-                "source_files": source_files,
-            },
-            ensure_ascii=False,
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
-
     print("Exporting evaluation samples…")
     export_evaluation_samples(con)
     con.commit()
@@ -808,7 +837,18 @@ def main() -> None:
         pass
     con.close()
 
+    print("Hashing inputs and database for the release manifest…")
+    manifest = release_manifest(
+        database=args.out,
+        source_files={"dictionary_master": dictionary_xlsx, "parallel_csv": parallel_csv},
+        eval_files=args.eval,
+        counts={"dictionary_entries": dict_total, "parallel_sentences": parallel_total},
+        created_at=created_at,
+    )
+    version_file = write_release_manifest(manifest, DEFAULT_MANIFEST, DEFAULT_VERSIONS)
+
     print(f"Wrote {args.out}")
+    print(f"Wrote {version_file}")
     print(f"Wrote {DEFAULT_REPORT}")
     print(
         "Dataset quality report\n"

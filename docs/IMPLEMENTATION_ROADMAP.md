@@ -64,7 +64,7 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 - [-] Add number, entity, punctuation, truncation, alignment, and repeated-batch checks. Number mismatch, corpus-relative length-ratio outliers, and reused Zomi output are flagged; entity, punctuation, and truncation checks need Zomi conventions first.
 - [ ] Add dataset tiers: gold, silver, and bronze.
 - [ ] Preserve all original corpus metadata, including timestamps and batch information, in archival Parquet.
-- [ ] Create immutable named releases under `data/versions/` with checksums and rollback metadata.
+- [-] Create immutable named releases under `data/versions/` with checksums and rollback metadata. Builds write a checksummed manifest there; rollback metadata (which release a deployment replaces) is not recorded yet.
 - [ ] Produce smaller signed mobile dictionary and lesson packs.
 - [ ] Move Bible and reviewed phrase data into a reproducible language/content release instead of API-memory JSON loading.
 
