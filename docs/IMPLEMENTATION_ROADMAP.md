@@ -58,7 +58,7 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 
 ### Needed
 
-- [ ] Resolve and document the complete license chain for dictionary, OPUS/Tatoeba sources, generated translations, model training, and redistribution.
+- [-] Resolve and document the complete license chain for dictionary, OPUS/Tatoeba sources, generated translations, model training, and redistribution. The register and open questions are in `DATA_RIGHTS.md`; no source is cleared yet.
 - [ ] Add near-duplicate detection and document/source-level grouping.
 - [ ] Add stronger language identification for English and Zomi.
 - [ ] Add number, entity, punctuation, truncation, alignment, and repeated-batch checks.
@@ -174,6 +174,7 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 
 - [ ] Publish Zomi translation and review guidelines covering spelling, dialect, borrowing, punctuation, names, and ambiguity.
 - [ ] Recruit qualified translators, reviewers, and an adjudicator.
+- [-] Specify the hidden test-set process, format, and validation/leakage tooling (`EVALUATION_SET.md`, `ml_pipeline/scripts/eval_set.py`).
 - [ ] Build a balanced, hidden, independently reviewed English→Zomi test set.
 - [ ] Build a balanced, hidden, independently reviewed Zomi→English test set.
 - [ ] Cover conversation, education, government, health, religion, news, and informal language.
