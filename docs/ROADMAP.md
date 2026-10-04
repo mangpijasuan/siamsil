@@ -24,7 +24,7 @@ The 1,775,043 retained parallel pairs are Tatoeba/OPUS English with **machine-ge
 2. The corpus test split is also Gemini output. BLEU/chrF on it measures agreement with Gemini, not correctness. It is a regression check, never a quality claim.
 3. Training and redistribution rights for both the Tatoeba source and the generated output are `needs_review`. This blocks any commercial use in Phase 5 until resolved.
 
-Human-made sources already in the repository — the Bible (30,734 verses) and the dictionary (20,826 entries) — are the only non-generated bilingual signal today and must be tracked as separate, higher-trust sources.
+Human-made or human-reviewed sources already in the repository — the Bible (30,734 verses), the dictionary (20,826 entries), and the teacher-reviewed daily-use phrases (62 pairs) — are the only non-generated bilingual signal today and must be tracked as separate, higher-trust sources.
 
 ## Phase 0 — Foundations (new; runs first and continuously)
 
