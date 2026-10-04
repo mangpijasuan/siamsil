@@ -52,7 +52,7 @@ Add:
 - **Zomi language identification** — likely in-house: dictionary-coverage scoring plus a small classifier trained on Bible and dictionary text.
 - **Alignment checks** — length ratio, numbers, named entities, punctuation, truncation, repeated batches. *Started:* numbers, length ratio, and reused Zomi output are flagged.
 - **Source and generator scoring** — record which model produced each Zomi side; human spot-check ~200 pairs per generator to estimate relative quality. *Tooling ready:* blind export and summary in [`GENERATOR_REVIEW.md`](GENERATOR_REVIEW.md); the review itself needs native speakers.
-- **Domain labels** and **gold / silver / bronze tiers**: gold = human-reviewed or human-authored; silver = best-scoring generated; bronze = everything else retained.
+- **Domain labels** and **gold / silver / bronze tiers**: gold = human-reviewed or human-authored; silver = best-scoring generated; bronze = everything else retained. *Tiers started:* `export_datasets.py` writes tiered train/validation/test files, gated by `data/rights.json`; domain labels not started.
 - Named, checksummed dataset releases under `data/versions/`. *Done:* each build writes a manifest with SHA-256 of the raw inputs, evaluation sets (hash only), and database.
 
 Exit gate: a versioned dataset release with tier counts, a quality report, and documented split isolation from Phase 0 evaluation sets.

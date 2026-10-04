@@ -68,5 +68,5 @@ Decision needed from native-speaker editors: which ISO 639-3 code correctly desc
 ## Closing an item
 
 1. Record the evidence (email, signed agreement, license URL and version) in this file with the date.
-2. Update the matching `data/raw/**/provenance.json` `license` field.
+2. Update the matching `data/raw/**/provenance.json` `license` field, and the `train` status in `data/rights.json`, which `export_datasets.py` enforces.
 3. Update the table above. A change to `cleared` needs a second person to confirm.

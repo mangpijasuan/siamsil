@@ -1,0 +1,21 @@
+{
+  "_comment": "Machine-readable training rights, mirroring docs/DATA_RIGHTS.md. Change a status only when that document records the evidence.",
+  "sources": {
+    "parallel_corpus": {
+      "description": "Tatoeba/OPUS English with Gemini-generated Zomi",
+      "train": "needs_review"
+    },
+    "bible_original": {
+      "description": "KJV English with the 'Original ZSF Text' Zomi column",
+      "train": "needs_review"
+    },
+    "bible_iso_improved": {
+      "description": "'ISO Improved Text' Zomi column; authorship of the changes unknown",
+      "train": "blocked"
+    },
+    "daily_use_phrases": {
+      "description": "Teacher-reviewed daily-use phrase pairs",
+      "train": "needs_review"
+    }
+  }
+}
