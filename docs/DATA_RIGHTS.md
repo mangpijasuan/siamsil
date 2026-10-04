@@ -28,7 +28,7 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 | Bible, Zomi "ISO Improved Text" | Modified version of the above, with a "Changes Applied" column | live | — | — | — | `needs_review` |
 | Daily-use phrases ("Daily Use (Ms. Nem)" sheet) | 62 teacher-reviewed pairs | live | — | — | — | `needs_review` |
 | Human evaluation sets (planned) | See [EVALUATION_SET.md](EVALUATION_SET.md) | never | never | — | — | to be contracted |
-| Community audio (planned) | Consent-based recordings | — | — | — | — | consent form needed |
+| Community audio (planned) | Consent-based recordings; per-speaker choices in [AUDIO_CONSENT.md](AUDIO_CONSENT.md) | — | — | — | — | draft form, needs legal review |
 
 "—" means not yet permitted.
 
