@@ -114,7 +114,7 @@ def validate_items(items: list[dict]) -> tuple[list[str], list[str]]:
     return errors, warnings
 
 
-def _sides(item: dict) -> tuple[list[str], list[str]]:
+def item_texts(item: dict) -> tuple[list[str], list[str]]:
     """Return (english_texts, zomi_texts) for an item."""
     source = [_text(item.get("source_text"))]
     references = [_text(r) for r in item.get("references") or [] if isinstance(r, str)]
@@ -132,7 +132,7 @@ def find_leaks(items: list[dict], corpus_rows) -> dict[str, set[str]]:
     zomi_index: dict[str, set[str]] = {}
     for item in items:
         item_id = _text(item.get("id")) or f"line {item['_line']}"
-        english, zomi = _sides(item)
+        english, zomi = item_texts(item)
         for text in english:
             key = normalize_word(text)
             if key:

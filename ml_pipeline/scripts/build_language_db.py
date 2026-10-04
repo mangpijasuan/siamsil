@@ -5,6 +5,8 @@ Reads:
   data/raw/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx
   data/raw/parallel/zomi_english_sentences.csv
 
+Optionally reads human evaluation sets (--eval) so matching pairs are held out.
+
 Writes (never touches raw files):
   data/processed/language/siamsil_language.sqlite
   data/processed/language/quality_report.json
@@ -19,6 +21,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import re
 import sqlite3
 import sys
@@ -27,8 +30,8 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCRIPT_VERSION = "1.0.0"
-DATASET_VERSION = "v1"
+SCRIPT_VERSION = "1.1.0"
+DATASET_VERSION = "v2"
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RAW = ROOT / "data" / "raw"
@@ -43,6 +46,13 @@ REPEAT_RE = re.compile(r"(.)\1{8,}")
 CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 NON_WORD_RE = re.compile(r"[^\w\s'-]+", re.UNICODE)
 WS_RE = re.compile(r"\s+")
+WORD_RE = re.compile(r"[^\W_]+", re.UNICODE)
+DIGITS_RE = re.compile(r"\d+")
+
+RATIO_MIN_CHARS = 20
+RATIO_OUTLIER_FRACTION = 0.005  # flag this share of pairs at each end of the length-ratio range
+TARGET_REUSE_MIN_FAMILIES = 3
+EVAL_HOLDOUT_SPLIT = "eval_holdout"
 
 ENGLISH_FUNCTION_WORDS = {
     "the", "a", "an", "is", "are", "was", "were", "be", "to", "of", "and", "in",
@@ -79,7 +89,10 @@ def english_family_key(english: str) -> str:
 
 def dataset_split_for(english: str) -> str:
     """Hash split on normalized English to reduce sentence-family leakage."""
-    digest = hashlib.sha1(normalize_word(english).encode("utf-8")).hexdigest()
+    return split_for_key(hashlib.sha1(normalize_word(english).encode("utf-8")).hexdigest())
+
+
+def split_for_key(digest: str) -> str:
     bucket = int(digest[:8], 16) % 100
     if bucket < 90:
         return "train"
@@ -115,6 +128,64 @@ def quality_flags(source: str, target: str) -> list[str]:
     return flags
 
 
+def name_tokens(english_sentences, min_count: int = 5, min_share: float = 0.9) -> set[str]:
+    """Learn proper names from the English side itself.
+
+    A word counts as a name when, away from the start of a sentence, it is
+    capitalized at least min_count times and in at least min_share of its uses.
+    Returns lowercase forms.
+    """
+    capitalized: Counter[str] = Counter()
+    lowercase: Counter[str] = Counter()
+    for sentence in english_sentences:
+        for token in WORD_RE.findall(sentence)[1:]:
+            if len(token) < 2 or not token.isalpha():
+                continue
+            if token[0].isupper():
+                capitalized[token.lower()] += 1
+            elif token.islower():
+                lowercase[token] += 1
+    return {
+        word
+        for word, count in capitalized.items()
+        if count >= min_count and count >= min_share * (count + lowercase[word])
+    }
+
+
+def template_key(english: str, names: set[str]) -> str:
+    """Hash of the English with names and numbers masked.
+
+    "Tom is 30." and "Mary is 25." share a key, so template variants land in
+    the same split instead of leaking across train and test.
+    """
+    tokens = []
+    for token in WORD_RE.findall(normalize_text(english)):
+        lower = token.lower()
+        if lower in names:
+            tokens.append("<name>")
+        elif DIGITS_RE.fullmatch(token):
+            tokens.append("<num>")
+        else:
+            tokens.append(lower)
+    return hashlib.sha1(" ".join(tokens).encode("utf-8")).hexdigest()
+
+
+def number_mismatch(source: str, target: str) -> bool:
+    return sorted(DIGITS_RE.findall(source)) != sorted(DIGITS_RE.findall(target))
+
+
+def length_log_ratio(source: str, target: str) -> float | None:
+    """log(target chars / source chars), or None when either side is too short to judge."""
+    if len(source) < RATIO_MIN_CHARS or len(target) < RATIO_MIN_CHARS:
+        return None
+    return math.log(len(target) / len(source))
+
+
+def percentile(sorted_values: list[float], fraction: float) -> float:
+    index = min(len(sorted_values) - 1, max(0, round(fraction * (len(sorted_values) - 1))))
+    return sorted_values[index]
+
+
 def quality_score(flags: list[str]) -> float:
     penalties = {
         "empty": 1.0,
@@ -125,6 +196,9 @@ def quality_score(flags: list[str]) -> float:
         "possible_language_mismatch": 0.35,
         "extremely_long": 0.2,
         "extremely_short": 0.15,
+        "target_reused": 0.4,
+        "number_mismatch": 0.3,
+        "length_ratio_outlier": 0.25,
     }
     score = 1.0
     for flag in flags:
@@ -206,6 +280,7 @@ def create_schema(con: sqlite3.Connection) -> None:
             dataset_split TEXT NOT NULL,
             pair_hash TEXT NOT NULL,
             family_hash TEXT NOT NULL,
+            template_hash TEXT,
             version TEXT NOT NULL,
             created_at TEXT NOT NULL
         );
@@ -213,6 +288,7 @@ def create_schema(con: sqlite3.Connection) -> None:
         CREATE INDEX idx_parallel_split ON parallel_sentences(dataset_split);
         CREATE INDEX idx_parallel_hash ON parallel_sentences(pair_hash);
         CREATE INDEX idx_parallel_family ON parallel_sentences(family_hash);
+        CREATE INDEX idx_parallel_template ON parallel_sentences(template_hash);
         CREATE INDEX idx_parallel_score ON parallel_sentences(quality_score);
 
         CREATE VIRTUAL TABLE parallel_fts USING fts5(
@@ -417,6 +493,135 @@ def ingest_parallel(con: sqlite3.Connection, path: Path, created_at: str) -> dic
     }
 
 
+def apply_corpus_checks(con: sqlite3.Connection, eval_items: list[dict] | None = None, batch: int = 10_000) -> dict:
+    """Second pass over ingested pairs: checks that need the whole corpus.
+
+    - masks learned names and numbers to group template variants, and assigns
+      the split by template family
+    - flags numbers that differ between sides, length-ratio outliers relative
+      to this corpus, and Zomi text reused for unrelated English sentences
+    - moves pairs matching a human evaluation item to the eval_holdout split
+    """
+    from eval_set import item_texts
+
+    def column(sql: str):
+        return (row[0] for row in con.execute(sql))
+
+    names = name_tokens(column("SELECT normalized_source_text FROM parallel_sentences"))
+
+    ratios = sorted(
+        ratio
+        for ratio in (
+            length_log_ratio(en, zom)
+            for en, zom in con.execute(
+                "SELECT normalized_source_text, normalized_target_text FROM parallel_sentences"
+            )
+        )
+        if ratio is not None
+    )
+    bounds = (
+        (percentile(ratios, RATIO_OUTLIER_FRACTION), percentile(ratios, 1 - RATIO_OUTLIER_FRACTION))
+        if ratios
+        else None
+    )
+
+    reused_targets = set(
+        column(
+            f"""
+            SELECT normalized_target_text FROM parallel_sentences
+            GROUP BY normalized_target_text
+            HAVING COUNT(DISTINCT family_hash) >= {TARGET_REUSE_MIN_FAMILIES}
+            """
+        )
+    )
+
+    eval_english: set[str] = set()
+    eval_zomi: set[str] = set()
+    for item in eval_items or []:
+        english, zomi = item_texts(item)
+        eval_english.update(template_key(text, names) for text in english if normalize_word(text))
+        eval_zomi.update(key for key in (normalize_word(text) for text in zomi) if key)
+
+    splits: Counter[str] = Counter()
+    flag_counts: Counter[str] = Counter()
+    flagged = 0
+    last_id = 0
+    while True:
+        rows = con.execute(
+            """
+            SELECT id, normalized_source_text, normalized_target_text, quality_flags
+            FROM parallel_sentences WHERE id > ? ORDER BY id LIMIT ?
+            """,
+            (last_id, batch),
+        ).fetchall()
+        if not rows:
+            break
+        updates = []
+        for row_id, en, zom, flags_json in rows:
+            flags = json.loads(flags_json or "[]")
+            extra = []
+            if zom in reused_targets:
+                extra.append("target_reused")
+            if number_mismatch(en, zom):
+                extra.append("number_mismatch")
+            ratio = length_log_ratio(en, zom)
+            if bounds and ratio is not None and not bounds[0] <= ratio <= bounds[1]:
+                extra.append("length_ratio_outlier")
+            flags += [flag for flag in extra if flag not in flags]
+
+            key = template_key(en, names)
+            if key in eval_english or normalize_word(zom) in eval_zomi:
+                split = EVAL_HOLDOUT_SPLIT
+            else:
+                split = split_for_key(key)
+
+            splits[split] += 1
+            flag_counts.update(flags)
+            flagged += bool(flags)
+            updates.append((json.dumps(flags, ensure_ascii=False), quality_score(flags), key, split, row_id))
+        con.executemany(
+            """
+            UPDATE parallel_sentences
+            SET quality_flags = ?, quality_score = ?, template_hash = ?, dataset_split = ?
+            WHERE id = ?
+            """,
+            updates,
+        )
+        con.commit()
+        last_id = rows[-1][0]
+
+    total = sum(splits.values())
+    return {
+        "splits": dict(splits),
+        "flags": dict(flag_counts),
+        "clean": total - flagged,
+        "flagged": flagged,
+        "template_families": con.execute(
+            "SELECT COUNT(DISTINCT template_hash) FROM parallel_sentences"
+        ).fetchone()[0],
+        "largest_template_family": con.execute(
+            "SELECT COALESCE(MAX(n), 0) FROM (SELECT COUNT(*) AS n FROM parallel_sentences GROUP BY template_hash)"
+        ).fetchone()[0],
+        "names_learned": len(names),
+        "length_log_ratio_bounds": [round(b, 4) for b in bounds] if bounds else None,
+        "eval_items_checked": len(eval_items or []),
+    }
+
+
+def load_eval_items(paths: list[Path]) -> list[dict]:
+    from eval_set import load_items
+
+    items: list[dict] = []
+    for path in paths:
+        if not path.exists():
+            sys.exit(f"Evaluation set not found: {path}")
+        loaded, errors = load_items(path)
+        if errors:
+            sys.exit(f"Evaluation set {path} is not valid JSONL: {errors[0]}")
+        items.extend(loaded)
+    return items
+
+
 def export_evaluation_samples(con: sqlite3.Connection) -> None:
     EVAL_TRANSLATION.parent.mkdir(parents=True, exist_ok=True)
     EVAL_DICTIONARY.parent.mkdir(parents=True, exist_ok=True)
@@ -484,7 +689,16 @@ def main() -> None:
     parser.add_argument("--raw", type=Path, default=DEFAULT_RAW)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT_DB)
     parser.add_argument("--limit-parallel", type=int, default=0, help="Optional cap for tests")
+    parser.add_argument(
+        "--eval",
+        type=Path,
+        action="append",
+        default=[],
+        help="Human evaluation set (JSONL); matching corpus pairs go to the eval_holdout split. Repeatable.",
+    )
     args = parser.parse_args()
+
+    eval_items = load_eval_items(args.eval)
 
     dictionary_xlsx = args.raw / "dictionary" / "Zomi_Standard_Dictionary_AI_Cleaned.xlsx"
     parallel_csv = args.raw / "parallel" / "zomi_english_sentences.csv"
@@ -504,6 +718,11 @@ def main() -> None:
     print("Ingesting parallel corpus (this can take a few minutes)…")
     parallel_stats = ingest_parallel(con, parallel_csv, created_at)
     print(f"  unique pairs kept: {parallel_stats['counts'].get('ingested', 0):,}")
+
+    print("Running whole-corpus checks (template families, alignment, evaluation holdout)…")
+    checks = apply_corpus_checks(con, eval_items)
+    print(f"  template families: {checks['template_families']:,}")
+    print(f"  evaluation holdout pairs: {checks['splits'].get(EVAL_HOLDOUT_SPLIT, 0):,}")
 
     source_files = {
         "dictionary_master": str(dictionary_xlsx.relative_to(ROOT)),
@@ -542,11 +761,17 @@ def main() -> None:
             "unique_pairs_kept": parallel_total,
             "duplicates_dropped": parallel_stats["counts"].get("duplicates", 0),
             "empty_dropped": parallel_stats["counts"].get("empty", 0),
-            "clean": parallel_stats["counts"].get("clean_rows", 0),
-            "needs_review": parallel_stats["counts"].get("flagged_rows", 0),
+            "clean": checks["clean"],
+            "needs_review": checks["flagged"],
             "verified": 0,
-            "splits": parallel_stats["splits"],
-            "quality_flags": parallel_stats["flags"],
+            "splits": checks["splits"],
+            "split_key": "template family (English with learned names and numbers masked)",
+            "template_families": checks["template_families"],
+            "largest_template_family": checks["largest_template_family"],
+            "names_learned": checks["names_learned"],
+            "length_log_ratio_bounds": checks["length_log_ratio_bounds"],
+            "evaluation_items_checked": checks["eval_items_checked"],
+            "quality_flags": checks["flags"],
             "models": parallel_stats["models"],
             "note": "Zomi side is machine-translated and unverified. Do not treat as gold data.",
         },
