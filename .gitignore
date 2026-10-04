@@ -14,7 +14,8 @@ data/processed/parallel/
 data/datasets/
 data/evaluation/**/*.jsonl
 data/exports/
-data/versions/
+data/versions/*
+!data/versions/*.json
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm

@@ -51,9 +51,9 @@ Add:
 - **Near-duplicate removal** — Tatoeba contains many template variants that differ only by a name or tense. *Started:* template variants (names and numbers) are grouped and split together; tense and fuzzy variants are not yet.
 - **Zomi language identification** — likely in-house: dictionary-coverage scoring plus a small classifier trained on Bible and dictionary text.
 - **Alignment checks** — length ratio, numbers, named entities, punctuation, truncation, repeated batches. *Started:* numbers, length ratio, and reused Zomi output are flagged.
-- **Source and generator scoring** — record which model produced each Zomi side; human spot-check ~200 pairs per generator to estimate relative quality.
+- **Source and generator scoring** — record which model produced each Zomi side; human spot-check ~200 pairs per generator to estimate relative quality. *Tooling ready:* blind export and summary in [`GENERATOR_REVIEW.md`](GENERATOR_REVIEW.md); the review itself needs native speakers.
 - **Domain labels** and **gold / silver / bronze tiers**: gold = human-reviewed or human-authored; silver = best-scoring generated; bronze = everything else retained.
-- Named, checksummed dataset releases under `data/versions/`.
+- Named, checksummed dataset releases under `data/versions/`. *Done:* each build writes a manifest with SHA-256 of the raw inputs, evaluation sets (hash only), and database.
 
 Exit gate: a versioned dataset release with tier counts, a quality report, and documented split isolation from Phase 0 evaluation sets.
 
