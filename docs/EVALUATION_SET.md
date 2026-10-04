@@ -46,7 +46,7 @@ Translators and reviewers are credited by their chosen name and paid or formally
 
 - The JSONL files are excluded from git (`data/evaluation/**/*.jsonl` in `.gitignore`). Store them in restricted storage; commit only the manifest (counts and SHA-256).
 - Never use them for training, prompt examples, few-shot demonstrations, filter tuning, or dataset debugging.
-- Phase 1 dataset builds must exclude any training pair whose normalized English or Zomi matches an evaluation item.
+- Phase 1 dataset builds must exclude any training pair whose normalized English or Zomi matches an evaluation item. Pass each set to the build with `--eval`; matching pairs, including English template variants of an item, go to the `eval_holdout` split.
 - Anyone who has read the evaluation items should not hand-tune the training data filters.
 
 ## File format

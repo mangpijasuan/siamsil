@@ -59,9 +59,9 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 ### Needed
 
 - [-] Resolve and document the complete license chain for dictionary, OPUS/Tatoeba sources, generated translations, model training, and redistribution. The register and open questions are in `DATA_RIGHTS.md`; no source is cleared yet.
-- [ ] Add near-duplicate detection and document/source-level grouping.
+- [-] Add near-duplicate detection and document/source-level grouping. Template families (learned names and numbers masked) now decide the split; MinHash-style fuzzy matching is not done.
 - [ ] Add stronger language identification for English and Zomi.
-- [ ] Add number, entity, punctuation, truncation, alignment, and repeated-batch checks.
+- [-] Add number, entity, punctuation, truncation, alignment, and repeated-batch checks. Number mismatch, corpus-relative length-ratio outliers, and reused Zomi output are flagged; entity, punctuation, and truncation checks need Zomi conventions first.
 - [ ] Add dataset tiers: gold, silver, and bronze.
 - [ ] Preserve all original corpus metadata, including timestamps and batch information, in archival Parquet.
 - [ ] Create immutable named releases under `data/versions/` with checksums and rollback metadata.

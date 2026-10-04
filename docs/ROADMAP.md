@@ -48,9 +48,9 @@ Builds on the existing pipeline (`ml_pipeline/scripts/build_language_db.py`), wh
 
 Add:
 
-- **Near-duplicate removal** — Tatoeba contains many template variants that differ only by a name or tense.
+- **Near-duplicate removal** — Tatoeba contains many template variants that differ only by a name or tense. *Started:* template variants (names and numbers) are grouped and split together; tense and fuzzy variants are not yet.
 - **Zomi language identification** — likely in-house: dictionary-coverage scoring plus a small classifier trained on Bible and dictionary text.
-- **Alignment checks** — length ratio, numbers, named entities, punctuation, truncation, repeated batches.
+- **Alignment checks** — length ratio, numbers, named entities, punctuation, truncation, repeated batches. *Started:* numbers, length ratio, and reused Zomi output are flagged.
 - **Source and generator scoring** — record which model produced each Zomi side; human spot-check ~200 pairs per generator to estimate relative quality.
 - **Domain labels** and **gold / silver / bronze tiers**: gold = human-reviewed or human-authored; silver = best-scoring generated; bronze = everything else retained.
 - Named, checksummed dataset releases under `data/versions/`.

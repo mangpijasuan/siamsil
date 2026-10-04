@@ -17,6 +17,8 @@ Large raw files are gitignored. Place them locally, then build the language data
 ```bash
 python3 -m pip install -r ml_pipeline/requirements.txt
 python3 ml_pipeline/scripts/build_language_db.py
+# with hidden evaluation sets held out of every split:
+python3 ml_pipeline/scripts/build_language_db.py --eval data/evaluation/human/en-zomi-v1.jsonl
 ```
 
 Expected raw files:
