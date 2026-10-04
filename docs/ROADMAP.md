@@ -38,6 +38,8 @@ Deliverables:
 
 Exit gate: evaluation sets frozen with measured reviewer agreement; license status for each source is either cleared or explicitly restricted.
 
+Working documents: [`DATA_RIGHTS.md`](DATA_RIGHTS.md) (rights register and language-code decision) and [`EVALUATION_SET.md`](EVALUATION_SET.md) (evaluation-set process, format, and `eval_set.py` tooling).
+
 Checklist: *Translation-model program → Data and evaluation*; *Language data foundation → Needed* (licensing).
 
 ## Phase 1 — Data

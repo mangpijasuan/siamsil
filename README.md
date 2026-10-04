@@ -7,6 +7,8 @@ Latest audit: [`docs/AUDIT.md`](docs/AUDIT.md)
 Target architecture and migration plan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 Mobile and language-AI target architecture: [`docs/MOBILE_AI_ARCHITECTURE.md`](docs/MOBILE_AI_ARCHITECTURE.md)
 Phase roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md)
+Data rights register: [`docs/DATA_RIGHTS.md`](docs/DATA_RIGHTS.md)
+Human evaluation sets: [`docs/EVALUATION_SET.md`](docs/EVALUATION_SET.md)
 Implementation status and prioritized to-do list: [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md)
 Identity and authorization setup: [`docs/IDENTITY_AND_AUTHORIZATION.md`](docs/IDENTITY_AND_AUTHORIZATION.md)
 
