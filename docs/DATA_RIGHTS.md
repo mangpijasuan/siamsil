@@ -59,11 +59,11 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 
 The pipeline stores Zomi text with the code `zom` (for example `target_language` in `build_language_db.py`). In ISO 639-3, `zom` is **Zou**, a different Kuki-Chin language. Tedim, the language Zolai/Zomi writing is based on, is `ctd`.
 
-Decision needed from native-speaker editors: which ISO 639-3 code correctly describes Siamsil's Zomi text (likely `ctd`). Until decided:
+**Decision (2026-10-04, project owner):** Siamsil labels its Zomi text `zom`. `ctd` (Tedim) is the reference code for source material, such as Tedim Bible text, that is being transferred into Siamsil's Zomi.
 
-- keep `zom` internally so existing databases and API responses do not change;
-- never publish a dataset, model card, or API documentation that labels Zomi as `zom`;
-- after the decision, migrate the stored code in one versioned language release.
+- Stored data, API responses, and dataset records keep `zom`; no migration is planned.
+- Source records that are Tedim text before transfer are described as `ctd` in their provenance.
+- Because ISO 639-3 assigns `zom` to Zou, outside tools (dataset hubs, language-ID models, translation benchmarks) will read `zom` as Zou. Every published dataset, model card, or API document must say so explicitly, for example: "`zom` is Siamsil's label for Zomi (Tedim-based, related ISO 639-3 code `ctd`); it is not ISO 639-3 Zou."
 
 ## Closing an item
 
