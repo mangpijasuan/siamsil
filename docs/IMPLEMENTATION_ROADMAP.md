@@ -180,7 +180,7 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 - [ ] Cover conversation, education, government, health, religion, news, and informal language.
 - [ ] Measure reviewer agreement and adjudicate disagreements.
 - [ ] Ensure test families and sources cannot enter training, prompt examples, or filtering development.
-- [ ] Establish translation-memory and suitable hosted/model baselines.
+- [-] Establish translation-memory and suitable hosted/model baselines. The retrieval baseline runs in `mt_eval.py`; the hosted-model adapter is not built.
 
 ### Training
 
@@ -196,11 +196,11 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 
 ### Evaluation and production
 
-- [ ] Measure SacreBLEU and chrF++ on frozen test sets.
+- [-] Measure SacreBLEU and chrF++ on frozen test sets. `mt_eval.py score` is ready; the frozen human sets do not exist yet.
 - [ ] Validate whether any learned metric is reliable for Zomi before using it as a gate.
 - [ ] Run blinded native-speaker evaluation for meaning, naturalness, grammar, terminology, omission, addition, and hallucination.
 - [ ] Add named-entity, number, URL, punctuation, long-input, repetition, toxicity, and code-switching test suites.
-- [ ] Define minimum quality, latency, cost, and safety promotion thresholds.
+- [-] Define minimum quality, latency, cost, and safety promotion thresholds. The quality gate (beat every baseline on chrF++ in both directions, p < 0.05) is implemented; latency, cost, and safety thresholds are not.
 - [ ] Build a separate inference service with batching, limits, timeouts, and model metadata.
 - [ ] Add translation-memory-first routing and inference fallback.
 - [ ] Add shadow evaluation, canary rollout, monitoring, and instant model rollback.

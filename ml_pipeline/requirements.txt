@@ -3,3 +3,4 @@ openpyxl>=3.1.0
 pdf2image>=1.17.0
 Pillow>=10.0.0
 pytesseract>=0.3.10
+sacrebleu>=2.4.0,<3.0.0
