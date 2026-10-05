@@ -52,7 +52,7 @@ Add:
 - **Zomi language identification** — likely in-house: dictionary-coverage scoring plus a small classifier trained on Bible and dictionary text.
 - **Alignment checks** — length ratio, numbers, named entities, punctuation, truncation, repeated batches. *Started:* numbers, length ratio, and reused Zomi output are flagged.
 - **Source and generator scoring** — record which model produced each Zomi side; human spot-check ~200 pairs per generator to estimate relative quality. *Tooling ready:* blind export and summary in [`GENERATOR_REVIEW.md`](GENERATOR_REVIEW.md); the review itself needs native speakers.
-- **Domain labels** and **gold / silver / bronze tiers**: gold = human-reviewed or human-authored; silver = best-scoring generated; bronze = everything else retained.
+- **Domain labels** and **gold / silver / bronze tiers**: gold = human-reviewed or human-authored; silver = best-scoring generated; bronze = everything else retained. *Tiers started:* `export_datasets.py` writes tiered train/validation/test files, gated by `data/rights.json`; domain labels not started.
 - Named, checksummed dataset releases under `data/versions/`. *Done:* each build writes a manifest with SHA-256 of the raw inputs, evaluation sets (hash only), and database.
 
 Exit gate: a versioned dataset release with tier counts, a quality report, and documented split isolation from Phase 0 evaluation sets.
@@ -90,7 +90,7 @@ Order matters:
 
 1. **translate** — first, with a visible **"suggest a better translation"** action feeding the editorial review queue. Native-speaker corrections are the data that cannot be bought; this loop should go live as early as possible.
 2. **dictionary** — already live on the 20k index; improve through the reviewed dictionary workflow.
-3. **learn** — Release 2 scope.
+3. **learn** — Release 2; see *Learning track — first pathway* below.
 4. **mobile app** — Release 5 scope, offline dictionary first.
 
 Exit gate per product: privacy policy, dataset disclosures, and machine-translation labeling are in place.
@@ -112,12 +112,33 @@ The paying market for a Zomi API is small; community trust is worth more than ea
 - **OCR** — consider moving earlier: digitizing hymnals and printed Zomi material yields new human-authored text for Phase 1.
 - **Document translation, multimodal, Siamsil Chat, Siamsil Intelligence** — only after text translation passes Phase 2 gates; generated Zomi stays labeled.
 
+## Learning track — first pathway
+
+Direction and principles: [`VISION.md`](VISION.md). This track starts after the Language MVP (Release 1) ships, because learning in Zomi depends on language quality. It replaces the `learn` item in Phase 4 and is Release 2.
+
+**First pathway: "New American Pathway", taught in Zomi, for adults.**
+
+1. English basics
+2. Citizenship (the existing 10-question prototype, completed from the official question bank)
+3. Digital basics: phone and computer use, email, online safety
+4. Money basics: budgeting, banking, credit
+
+Build order:
+
+1. **Learning core, in the existing FastAPI/PostgreSQL backend.** A small skill graph (a few hundred skills with prerequisite links), lessons, a question bank with provenance and review status, attempts, and mastery with evidence and scheduled review.
+2. **Content for the four areas**, written or adapted from licensed sources and reviewed in Zomi before publishing. Scope is set by reviewer capacity.
+3. **Mobile-first and offline:** downloadable lessons and offline practice.
+4. **One tutor** that answers from approved lessons only, in Zomi and English, and says when it does not know.
+5. **Simple cohorts** for partner churches and community organizations, who are the main way learners will arrive.
+
+Exit gate: learners complete the pathway on a phone, mastery is backed by recorded evidence, and every published lesson and question passed human review. More domains, GED preparation, credentials, and Studio follow the "Deferred" table in `VISION.md`.
+
 ## Mapping to releases
 
 | Release (master prompt) | Phases |
 |---|---|
 | Release 1 — Language MVP | Phase 0, Phase 1, retrieval-only Phase 3, translate + dictionary from Phase 4 |
-| Release 2 — Learning | learn from Phase 4 |
+| Release 2 — Learning | Learning track — first pathway |
 | Release 3 — Community | correction loop moderation; community per *Community and chat* checklist |
 | Release 4 — Intelligence | Phase 2 model in production, Phase 6 |
 | Release 5 — Native iOS / Android | mobile app from Phase 4 |

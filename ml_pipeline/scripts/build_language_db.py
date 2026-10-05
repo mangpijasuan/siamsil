@@ -171,6 +171,19 @@ def template_key(english: str, names: set[str]) -> str:
     return hashlib.sha1(" ".join(tokens).encode("utf-8")).hexdigest()
 
 
+def eval_match_keys(eval_items: list[dict], names: set[str]) -> tuple[set[str], set[str]]:
+    """Keys that identify evaluation items: English template keys and normalized Zomi."""
+    from eval_set import item_texts
+
+    english_keys: set[str] = set()
+    zomi_keys: set[str] = set()
+    for item in eval_items:
+        english, zomi = item_texts(item)
+        english_keys.update(template_key(text, names) for text in english if normalize_word(text))
+        zomi_keys.update(key for key in (normalize_word(text) for text in zomi) if key)
+    return english_keys, zomi_keys
+
+
 def number_mismatch(source: str, target: str) -> bool:
     return sorted(DIGITS_RE.findall(source)) != sorted(DIGITS_RE.findall(target))
 
@@ -503,8 +516,6 @@ def apply_corpus_checks(con: sqlite3.Connection, eval_items: list[dict] | None =
       to this corpus, and Zomi text reused for unrelated English sentences
     - moves pairs matching a human evaluation item to the eval_holdout split
     """
-    from eval_set import item_texts
-
     def column(sql: str):
         return (row[0] for row in con.execute(sql))
 
@@ -536,12 +547,7 @@ def apply_corpus_checks(con: sqlite3.Connection, eval_items: list[dict] | None =
         )
     )
 
-    eval_english: set[str] = set()
-    eval_zomi: set[str] = set()
-    for item in eval_items or []:
-        english, zomi = item_texts(item)
-        eval_english.update(template_key(text, names) for text in english if normalize_word(text))
-        eval_zomi.update(key for key in (normalize_word(text) for text in zomi) if key)
+    eval_english, eval_zomi = eval_match_keys(eval_items or [], names)
 
     splits: Counter[str] = Counter()
     flag_counts: Counter[str] = Counter()
