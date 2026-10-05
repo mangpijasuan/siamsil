@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from api_schemas import TranslationResponse, TranslationSearchResponse
+from rate_limit import rate_limited
 from services.data_loader import get_store
 from services.language_engine import get_engine
+from services.translation import active_system
 
-router = APIRouter(prefix="/translate", tags=["translate"])
+router = APIRouter(prefix="/translate", tags=["translate"], dependencies=[Depends(rate_limited("translate"))])
 
 
 class TranslateRequest(BaseModel):
@@ -73,11 +75,15 @@ def search_matches(q: str = Query(..., min_length=1, max_length=500), limit: int
 def translate(request: TranslateRequest):
     payload = search_matches(request.text, limit=8)
     exact = next((item for item in payload["results"] if item.get("exact") or item.get("source") == "dictionary"), None)
+    system = active_system()
     return {
         "input": request.text,
         "direction": request.direction,
         "mode": "retrieval",
         "note": "No neural translation model is enabled. Showing retrieved Siamsil data only.",
+        "system": system.name,
+        "system_version": system.version,
+        "language_release": get_engine().release(),
         "primary": exact or (payload["results"][0] if payload["results"] else None),
         "matches": payload["results"],
     }

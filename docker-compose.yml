@@ -27,7 +27,7 @@ services:
       SIAMSIL_LANGUAGE_DB: /app/language/siamsil_language.sqlite
       SIAMSIL_DATABASE_URL: postgresql+psycopg://siamsil:${SIAMSIL_POSTGRES_PASSWORD:-siamsil-local-only}@postgres:5432/siamsil
       SIAMSIL_DATABASE_REQUIRED: "true"
-    command: ["sh", "-c", "alembic upgrade head && exec uvicorn main:app --host 0.0.0.0 --port 8000"]
+    command: ["sh", "-c", "alembic upgrade head && exec uvicorn main:app --host 0.0.0.0 --port 8000 --no-access-log"]
     volumes:
       - ./backend/data:/app/data:ro
       - ./data/processed/language:/app/language:ro

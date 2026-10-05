@@ -41,6 +41,14 @@ class Settings(BaseSettings):
     oidc_clock_skew_seconds: int = Field(default=30, ge=0, le=300)
     bootstrap_admin_subjects: list[str] = Field(default_factory=list)
 
+    # Requests per client per minute on translate, search, and assistant routes; 0 disables.
+    # Limits are per process. Behind a proxy, set uvicorn's FORWARDED_ALLOW_IPS so the
+    # client address is the real client, not the proxy, before enabling.
+    rate_limit_per_minute: int = Field(default=0, ge=0, le=10_000)
+
+    # The system that answers /translate. Rolling back a model is a change to this value.
+    translation_system: Literal["retrieval"] = "retrieval"
+
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:3002",

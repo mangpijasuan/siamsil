@@ -84,6 +84,13 @@ class LanguageEngine:
             "parallel_sentences": parallel,
         }
 
+    def release(self) -> str | None:
+        """Version of the loaded language release, e.g. "v2", from its dataset_versions table."""
+        if not self.available:
+            return None
+        row = self.connect().execute("SELECT version FROM dataset_versions ORDER BY id DESC LIMIT 1").fetchone()
+        return row[0] if row else None
+
     def letter_counts(self) -> list[dict[str, Any]]:
         con = self.connect()
         rows = con.execute(

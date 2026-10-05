@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Siamsil API",
     description="Zomi language platform — dictionary, translation retrieval, Bible, and learning.",
-    version="0.3.0",
+    version="0.4.0",
     lifespan=lifespan,
 )
 
@@ -46,12 +46,8 @@ app.add_middleware(
     expose_headers=["X-Request-ID"],
 )
 
-for module in (dictionary, bible, translate, learning, search, ai):
+for module in (dictionary, bible, translate, learning, search, ai, identity):
     app.include_router(module.router, prefix="/api/v1")
-    app.include_router(module.router, prefix="/api")
-
-# New authenticated APIs are versioned-only; no legacy unversioned alias is created.
-app.include_router(identity.router, prefix="/api/v1")
 
 
 def readiness_payload() -> tuple[dict[str, Any], bool]:

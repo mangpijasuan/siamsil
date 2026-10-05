@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import re
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from api_schemas import AskResponse
+from rate_limit import rate_limited
 from services.data_loader import get_store
 from services.language_engine import get_engine
 
-router = APIRouter(prefix="/ai", tags=["ai"])
+router = APIRouter(prefix="/ai", tags=["ai"], dependencies=[Depends(rate_limited("assistant"))])
 
 STOPWORDS = {
     "what", "whats", "does", "do", "did", "mean", "meaning", "the", "a", "an", "in",

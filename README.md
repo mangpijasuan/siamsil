@@ -70,7 +70,7 @@ docker compose up -d postgres
 cd backend
 python3 -m pip install -r requirements.txt
 alembic upgrade head
-uvicorn main:app --reload --port 8001
+uvicorn main:app --reload --port 8001 --no-access-log
 ```
 
 Health: [http://127.0.0.1:8001/health](http://127.0.0.1:8001/health)

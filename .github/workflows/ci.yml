@@ -93,7 +93,7 @@ jobs:
 
       - name: Check generated API types
         run: |
-          npm exec openapi-typescript openapi.json -o lib/generated/api-types.ts
+          npm exec -- openapi-typescript openapi.json -o lib/generated/api-types.ts
           git diff --exit-code -- lib/generated/api-types.ts
 
       - name: Lint
