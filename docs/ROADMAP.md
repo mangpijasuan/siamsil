@@ -69,6 +69,8 @@ Checklist: *Language data foundation → Needed*.
 
 Exit gate: a candidate beats retrieval and the untuned LLM on the Phase 0 human evaluation sets and passes the safety/robustness suites. Until then, production stays retrieval-only and generated Zomi is not shown as a translation.
 
+*Started:* evaluation harness with chrF++/BLEU, bootstrap intervals, paired comparisons, the automatic gate, and the retrieval baseline; see [`MODEL_EVALUATION.md`](MODEL_EVALUATION.md). Scoring needs the human evaluation sets.
+
 Checklist: *Translation-model program → Training*, *Evaluation and production*.
 
 ## Phase 3 — API

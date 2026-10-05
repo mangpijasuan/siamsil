@@ -12,6 +12,7 @@ Data rights register: [`docs/DATA_RIGHTS.md`](docs/DATA_RIGHTS.md)
 Human evaluation sets: [`docs/EVALUATION_SET.md`](docs/EVALUATION_SET.md)
 Audio recording consent (draft): [`docs/AUDIO_CONSENT.md`](docs/AUDIO_CONSENT.md)
 Generator spot-check: [`docs/GENERATOR_REVIEW.md`](docs/GENERATOR_REVIEW.md)
+Model evaluation: [`docs/MODEL_EVALUATION.md`](docs/MODEL_EVALUATION.md)
 Implementation status and prioritized to-do list: [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md)
 Identity and authorization setup: [`docs/IDENTITY_AND_AUTHORIZATION.md`](docs/IDENTITY_AND_AUTHORIZATION.md)
 
