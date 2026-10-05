@@ -6,6 +6,7 @@ Durable product rules: [`docs/PRODUCTION_MASTER_BUILD_PROMPT.md`](docs/PRODUCTIO
 Latest audit: [`docs/AUDIT.md`](docs/AUDIT.md)
 Target architecture and migration plan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 Mobile and language-AI target architecture: [`docs/MOBILE_AI_ARCHITECTURE.md`](docs/MOBILE_AI_ARCHITECTURE.md)
+Long-term vision: [`docs/VISION.md`](docs/VISION.md)
 Phase roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md)
 Data rights register: [`docs/DATA_RIGHTS.md`](docs/DATA_RIGHTS.md)
 Human evaluation sets: [`docs/EVALUATION_SET.md`](docs/EVALUATION_SET.md)
