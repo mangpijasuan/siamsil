@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
 from api_schemas import UnifiedSearchResponse
+from rate_limit import rate_limited
 from services.data_loader import get_store
 from services.language_engine import get_engine
 
-router = APIRouter(prefix="/search", tags=["search"])
+router = APIRouter(prefix="/search", tags=["search"], dependencies=[Depends(rate_limited("search"))])
 
 
 @router.get("", response_model=UnifiedSearchResponse)

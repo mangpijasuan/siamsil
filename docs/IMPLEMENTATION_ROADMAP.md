@@ -23,7 +23,7 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 - [x] Mobile/AI target architecture is documented.
 - [x] Raw, processed, evaluation, export, and version data directories are defined.
 - [-] Repository is still organized as `frontend/`, `backend/`, and `ml_pipeline/`; the target workspace structure is not implemented.
-- [-] Both `/api` and `/api/v1` routes are registered; the unversioned duplicate still needs removal after compatibility review.
+- [x] Only `/api/v1` routes are registered; the unversioned `/api` aliases were removed after confirming the web client uses `/api/v1` only.
 - [-] CI runs PostgreSQL migration rollback checks, backend tests, frontend lint, type-check, and build; data validation and secret scanning still need to be added.
 - [ ] Add deployment environments for development, staging, and production.
 - [-] Structured environment configuration and production database validation exist; a secrets manager is still needed.
@@ -147,10 +147,10 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 - [x] Define learner, contributor, reviewer, editor, moderator, and administrator roles in the database schema.
 - [-] Internal role authorization protects identity administration; future editorial, library, learning, and moderation mutations still need role enforcement.
 - [x] Add request IDs and standard API error responses.
-- [ ] Add production structured-log shipping, downstream timeouts, and rate limits.
+- [-] Add production structured-log shipping, downstream timeouts, and rate limits. Access logs record route patterns only (never query text); an opt-in per-process rate limit exists; log shipping, timeouts, and a shared limiter for multiple instances do not.
 - [-] User provisioning and role grants emit append-only audit events; future editorial and moderation services still need to emit events.
 - [ ] Add backup, restore, migration rollback, and disaster-recovery procedures.
-- [ ] Remove unversioned `/api` aliases after all clients use `/api/v1`.
+- [x] Remove unversioned `/api` aliases after all clients use `/api/v1`.
 
 ## Editorial and translation-review system
 

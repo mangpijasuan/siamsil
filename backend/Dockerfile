@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 8000
 # First boot downloads the ~1.3 GB data bundle into the volume, hence the long healthcheck timeout.
-CMD ["sh", "-c", "python scripts/fetch_data.py && alembic upgrade head && exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "python scripts/fetch_data.py && alembic upgrade head && exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --no-access-log"]

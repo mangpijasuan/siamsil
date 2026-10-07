@@ -137,6 +137,9 @@ class TranslationResponse(ApiModel):
     direction: str
     mode: str
     note: str
+    system: str
+    system_version: str
+    language_release: str | None = None
     primary: TranslateMatch | None = None
     matches: list[TranslateMatch]
 

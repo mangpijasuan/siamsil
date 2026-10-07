@@ -86,6 +86,14 @@ Checklist: *Translation-model program → Training*, *Evaluation and production*
 
 Exit gate: a model can be promoted, canaried, and rolled back without a client release.
 
+*Started:*
+- Access logs record route patterns, status, and timing only, never query strings or bodies; uvicorn's raw access log is off.
+- `/translate` responses name `system`, `system_version`, and `language_release`; the active system is the `SIAMSIL_TRANSLATION_SYSTEM` setting, so rollback is a configuration change.
+- Opt-in per-client rate limits on translate, search, and assistant routes (`SIAMSIL_RATE_LIMIT_PER_MINUTE`).
+- Unversioned `/api` aliases removed.
+
+Not yet: the inference service, canary routing, and a shared rate limiter for multiple instances.
+
 ## Phase 4 — Products
 
 Order matters:

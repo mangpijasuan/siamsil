@@ -16,8 +16,9 @@ export default async function Home() {
 
   try {
     const health = await getHealth();
-    dictionaryCount = health.language?.dictionary_entries ?? 0;
-    parallelCount = health.language?.parallel_sentences ?? 0;
+    const language = health.language as Record<string, number> | null | undefined;
+    dictionaryCount = language?.dictionary_entries ?? 0;
+    parallelCount = language?.parallel_sentences ?? 0;
     const counts = health.metadata?.counts as Record<string, number> | undefined;
     bibleCount = counts?.bible_verses ?? 0;
   } catch {
