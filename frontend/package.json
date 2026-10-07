@@ -33,5 +33,8 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "wrangler": "^4.141.0"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.35.5"
   }
 }
