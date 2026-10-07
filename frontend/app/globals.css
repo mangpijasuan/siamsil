@@ -1147,10 +1147,6 @@ input:focus-visible, button:focus-visible, a:focus-visible {
     padding: 0 22px;
     gap: 16px;
   }
-  .shell-menu-btn,
-  .shell-brand-mobile {
-    display: none;
-  }
   .shell-page-context {
     display: flex;
   }
@@ -1171,34 +1167,6 @@ input:focus-visible, button:focus-visible, a:focus-visible {
     background: #fbfaf7;
     border-right: 1px solid rgba(27,42,74,0.09);
     transition: width 0.22s ease, min-width 0.22s ease;
-  }
-  .desktop-sidebar-brand {
-    min-height: 76px;
-    padding: 14px 10px 14px 16px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    border-bottom: 1px solid rgba(27,42,74,0.08);
-  }
-  .sidebar-collapse-btn {
-    width: 32px;
-    height: 32px;
-    margin-left: auto;
-    border: 1px solid rgba(27,42,74,0.09);
-    border-radius: 9px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    background: var(--white);
-    color: var(--gray);
-    cursor: pointer;
-    transition: color 0.15s, background 0.15s, border-color 0.15s;
-  }
-  .sidebar-collapse-btn:hover {
-    color: var(--navy);
-    background: var(--cream);
-    border-color: rgba(201,168,76,0.4);
   }
   .desktop-sidebar .side-panel-foot {
     display: flex;
@@ -1229,20 +1197,6 @@ input:focus-visible, button:focus-visible, a:focus-visible {
   .desktop-sidebar.collapsed {
     width: 72px;
     min-width: 72px;
-  }
-  .desktop-sidebar.collapsed .desktop-sidebar-brand {
-    min-height: 76px;
-    padding: 14px 8px;
-    justify-content: center;
-  }
-  .desktop-sidebar.collapsed .sidebar-brand-link,
-  .desktop-sidebar.collapsed .sidebar-brand-copy,
-  .desktop-sidebar.collapsed .side-panel-copy,
-  .desktop-sidebar.collapsed .sidebar-foot-copy {
-    display: none;
-  }
-  .desktop-sidebar.collapsed .sidebar-collapse-btn {
-    margin: 0;
   }
   .desktop-sidebar.collapsed .side-panel-nav {
     align-items: center;
@@ -3032,3 +2986,124 @@ a.library-card:hover {
 }
 .dict-suggestion:hover { border-color: var(--navy); }
 .dict-review-badge { background: rgba(180,83,9,0.08); color: #b45309; border: 1px solid rgba(180,83,9,0.22); }
+
+/* ══════════════════════════════════════════════════
+   NAV GROUPS + SLEEK DESKTOP SIDEBAR
+   ☰ in the top bar toggles full sidebar ↔ icon rail on desktop,
+   and opens the drawer on smaller screens.
+══════════════════════════════════════════════════ */
+.side-panel-group { display: flex; flex-direction: column; gap: 2px; }
+.side-panel-group-title {
+  padding: 10px 12px 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gray);
+}
+.side-panel-group-end {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid rgba(27,42,74,0.08);
+}
+.side-panel-short { display: none; }
+.mobile-drawer .side-panel-item.active .side-panel-label { color: var(--navy); font-weight: 700; }
+
+@media (min-width: 1024px) {
+  .shell-topbar-inner { padding: 0 20px 0 12px; gap: 12px; }
+  .shell-menu-btn { display: inline-flex; }
+  .shell-menu-btn:focus-visible { outline: 2px solid var(--gold2); outline-offset: 2px; }
+  .shell-brand-mobile { display: inline-flex; }
+  .shell-page-context {
+    margin-left: 8px;
+    padding-left: 18px;
+    border-left: 1px solid rgba(255,255,255,0.14);
+  }
+
+  .desktop-sidebar {
+    width: 232px;
+    min-width: 232px;
+    background: #fbfaf7;
+    overflow: hidden;
+  }
+  .desktop-sidebar .side-panel-nav {
+    gap: 6px;
+    padding: 10px 10px 12px;
+  }
+  .desktop-sidebar .side-panel-item {
+    min-height: 40px;
+    padding: 6px 10px;
+    gap: 12px;
+    border-radius: 10px;
+    color: var(--text-soft);
+  }
+  .desktop-sidebar .side-panel-item:hover { background: rgba(27,42,74,0.055); color: var(--navy); }
+  .desktop-sidebar .side-panel-item:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+  .desktop-sidebar .side-panel-item.active {
+    background: rgba(27,42,74,0.07);
+    box-shadow: none;
+    color: var(--navy);
+  }
+  .desktop-sidebar .side-panel-item.active::before {
+    content: "";
+    display: block;
+    position: absolute;
+    left: -10px;
+    top: 9px;
+    bottom: 9px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--gold);
+  }
+  .desktop-sidebar .side-panel-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--gray);
+  }
+  .desktop-sidebar .side-panel-item.active .side-panel-icon { background: transparent; color: var(--navy); }
+  .desktop-sidebar .side-panel-label { font-size: 13px; font-weight: 600; }
+  .desktop-sidebar .side-panel-item.active .side-panel-label { font-weight: 700; color: var(--navy); }
+  .desktop-sidebar .side-panel-hint { display: none; }
+
+  /* Collapsed: icon rail with small labels under each icon */
+  .desktop-sidebar.collapsed { width: 76px; min-width: 76px; }
+  .desktop-sidebar.collapsed .side-panel-nav { align-items: stretch; padding: 8px 6px 12px; }
+  .desktop-sidebar.collapsed .side-panel-group-title {
+    font-size: 0;
+    padding: 0;
+    margin: 6px 14px;
+    height: 1px;
+    background: rgba(27,42,74,0.08);
+  }
+  .desktop-sidebar.collapsed .side-panel-group:first-child .side-panel-group-title { display: none; }
+  .desktop-sidebar.collapsed .side-panel-item {
+    width: auto;
+    min-height: 58px;
+    padding: 8px 2px 6px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+  }
+  .desktop-sidebar.collapsed .side-panel-item.active::before { left: -6px; top: 14px; bottom: 14px; }
+  .desktop-sidebar.collapsed .side-panel-copy,
+  .desktop-sidebar.collapsed .sidebar-foot-copy { display: none; }
+  .desktop-sidebar.collapsed .side-panel-foot { justify-content: center; padding: 14px 8px; }
+  .desktop-sidebar.collapsed .side-panel-short {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.1;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .desktop-sidebar.collapsed .side-panel-item.active .side-panel-short { font-weight: 700; }
+}
+
+@media (min-width: 1440px) {
+  .desktop-sidebar { width: 248px; min-width: 248px; }
+  .desktop-sidebar.collapsed { width: 76px; min-width: 76px; }
+}
