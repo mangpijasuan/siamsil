@@ -1,32 +1,77 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { TranslateMatch } from "@/lib/api";
-import { pushHistory } from "@/lib/localData";
+import { pushHistory, useRecentSearches } from "@/lib/localData";
 
-const SOURCE_HELP: Record<string, string> = {
-  dictionary: "From the Siamsil dictionary",
-  daily_use: "Teacher-reviewed daily phrase",
-  translation_pair: "Workbook translation pair",
-  bible: "Bible ISO text",
-  parallel_corpus: "Machine-translated corpus example — unverified",
+const MAX_LENGTH = 500;
+const VISIBLE_ALTERNATES = 5;
+const EXAMPLES = ["water", "thank you", "good morning", "family", "school"];
+
+const SOURCE_LABEL: Record<string, string> = {
+  dictionary: "Dictionary",
+  daily_use: "Teacher-reviewed phrase",
+  translation_pair: "Workbook pair",
+  bible: "Bible",
+  parallel_corpus: "Corpus example",
 };
+
+function sourceLabel(match: TranslateMatch) {
+  return SOURCE_LABEL[match.source] ?? match.label ?? match.source;
+}
+
+function IconSwap() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 4 3 8l4 4" /><path d="M3 8h13" /><path d="m17 20 4-4-4-4" /><path d="M21 16H8" />
+    </svg>
+  );
+}
+function IconCopy() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+function IconInfo() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" />
+    </svg>
+  );
+}
+function IconClose() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function StatusChip({ verified }: { verified?: boolean }) {
+  return verified
+    ? <span className="tr-chip tr-chip-verified">Verified</span>
+    : <span className="tr-chip tr-chip-unverified">Unverified</span>;
+}
 
 export default function TranslateClient({
   query,
   initialResults,
-  note,
   error,
 }: {
   query: string;
   initialResults: TranslateMatch[];
-  note?: string;
   error: string | null;
 }) {
   const router = useRouter();
   const [text, setText] = useState(query);
   const [copied, setCopied] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const recent = useRecentSearches("translate");
 
   useEffect(() => {
     if (query) pushHistory("translate", query);
@@ -34,18 +79,13 @@ export default function TranslateClient({
 
   const primary = initialResults[0] ?? null;
   const alternates = initialResults.slice(1);
+  const shownAlternates = showAll ? alternates : alternates.slice(0, VISIBLE_ALTERNATES);
 
   function submit(next: string) {
     const value = next.trim();
-    if (!value) {
-      router.push("/zomitranslate");
-      return;
-    }
-    router.push(`/zomitranslate?q=${encodeURIComponent(value)}`);
-  }
-
-  function swap() {
-    if (primary?.zomi) submit(primary.zomi);
+    startTransition(() => {
+      router.push(value ? `/zomitranslate?q=${encodeURIComponent(value)}` : "/zomitranslate");
+    });
   }
 
   async function copy(value: string) {
@@ -58,114 +98,149 @@ export default function TranslateClient({
     }
   }
 
-  const warning = useMemo(
-    () => note ?? "Corpus matches are machine-translated and not human-verified.",
-    [note],
-  );
-
   return (
-    <>
-      <header className="page-header-compact">
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-          <span className="font-playfair" style={{ color: "var(--white)", fontSize: 18, fontWeight: 700 }}>Zomi Translate</span>
+    <div className="tr-root">
+      <header className="tr-header">
+        <p className="gold-label" style={{ marginBottom: 6 }}>Siamsil</p>
+        <h1 className="font-playfair tr-h1">Zomi Translate</h1>
+        <div className="tr-langs" aria-hidden="true">
+          <span>English</span>
+          <IconSwap />
+          <span>Zomi</span>
         </div>
+
         <form
+          className="tr-input-card"
           onSubmit={(event) => {
             event.preventDefault();
             submit(text);
           }}
-          className="search-bar-navy"
         >
-          <button type="button" onClick={swap} aria-label="Swap using top result" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer" }}>
-            ⇄
-          </button>
-          <input
+          <textarea
+            className="tr-input"
             value={text}
+            maxLength={MAX_LENGTH}
+            rows={3}
             onChange={(event) => setText(event.target.value)}
-            type="search"
-            placeholder="English or Zomi text…"
-            autoFocus
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                submit(text);
+              }
+            }}
+            placeholder="Type English or Zomi…"
+            aria-label="Text to look up"
+            autoFocus={!query}
           />
+          <div className="tr-input-bar">
+            <span className="tr-count">{text.length}/{MAX_LENGTH}</span>
+            {text && (
+              <button type="button" className="tr-clear" onClick={() => { setText(""); submit(""); }} aria-label="Clear">
+                <IconClose />
+              </button>
+            )}
+            <button type="submit" className="tr-submit" disabled={!text.trim() || pending}>
+              {pending ? "Looking up…" : "Translate"}
+            </button>
+          </div>
         </form>
       </header>
 
-      <p style={{ margin: "12px 16px 0", fontSize: 12, color: "var(--gray)", lineHeight: 1.5 }}>
-        Retrieval only — Siamsil does not generate new translations yet. {warning}
-      </p>
+      <div className="tr-body">
+        <div className="tr-notice">
+          <IconInfo />
+          <p>
+            Siamsil shows translations it already has. It never makes one up.
+            Corpus examples are machine-translated and not yet checked by people.
+          </p>
+        </div>
 
-      {primary && (
-        <div style={{ margin: "16px 16px 0", background: "var(--white)", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 20px rgba(27,42,74,0.1)" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-            <div style={{ padding: "20px 18px", borderRight: "1px solid var(--gray2)" }}>
-              <div className="gold-label" style={{ marginBottom: 6 }}>English</div>
-              <p style={{ fontSize: 15, color: "var(--navy)", lineHeight: 1.5, margin: 0 }}>{primary.english}</p>
+        {error && <div className="tr-error" role="alert">{error}</div>}
+
+        {primary && (
+          <section className={`tr-result${pending ? " is-pending" : ""}`} aria-label="Best match">
+            <div className="tr-result-side">
+              <div className="tr-side-label">English</div>
+              <p className="tr-result-en">{primary.english}</p>
             </div>
-            <div style={{ padding: "20px 18px", background: "rgba(201,168,76,0.06)" }}>
-              <div className="gold-label" style={{ marginBottom: 6 }}>Zomi</div>
-              <p className="font-playfair" style={{ fontSize: 18, color: "var(--navy)", lineHeight: 1.4, margin: 0 }}>{primary.zomi}</p>
-              <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                <span style={{ fontSize: 9, background: "var(--cream)", color: "var(--gray)", padding: "3px 8px", borderRadius: 20, fontWeight: 600 }}>
-                  {primary.label ?? SOURCE_HELP[primary.source] ?? primary.source}
-                </span>
-                {primary.verified ? (
-                  <span style={{ fontSize: 9, color: "#15803d", fontWeight: 700 }}>Verified</span>
-                ) : (
-                  <span style={{ fontSize: 9, color: "#b45309", fontWeight: 700 }}>Unverified</span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => copy(primary.zomi)}
-                  style={{ marginLeft: "auto", border: "1px solid var(--border)", background: "var(--white)", borderRadius: 8, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}
-                >
-                  {copied ? "Copied" : "Copy Zomi"}
+            <div className="tr-result-side tr-result-zomi-side">
+              <div className="tr-side-label">Zomi</div>
+              <p className="font-playfair tr-result-zomi">{primary.zomi}</p>
+              {primary.reference && <p className="tr-reference">{primary.reference}</p>}
+            </div>
+            <div className="tr-result-meta">
+              <span className="tr-chip">{sourceLabel(primary)}</span>
+              <StatusChip verified={primary.verified} />
+              <div className="tr-actions">
+                <button type="button" className="tr-action" onClick={() => copy(primary.zomi)}>
+                  <IconCopy /> {copied ? "Copied" : "Copy"}
+                </button>
+                <button type="button" className="tr-action" onClick={() => { setText(primary.zomi); submit(primary.zomi); }}>
+                  <IconSwap /> Look up Zomi
                 </button>
               </div>
             </div>
+          </section>
+        )}
+
+        {!error && query && !primary && (
+          <div className="tr-empty">
+            <p className="font-playfair tr-empty-title">No stored match for &ldquo;{query}&rdquo;</p>
+            <p className="tr-empty-text">Try a single word, check the spelling, or search the dictionary.</p>
+            <Link className="tr-link" href={`/zomidictionary?q=${encodeURIComponent(query)}`}>Search the dictionary →</Link>
           </div>
-        </div>
-      )}
+        )}
 
-      {error && (
-        <div style={{ margin: "16px 16px 0", padding: "12px 16px", borderRadius: 12, background: "#FEE2E2", color: "#B91C1C", fontSize: 13 }}>{error}</div>
-      )}
-
-      {!error && query && initialResults.length === 0 && (
-        <div style={{ padding: "48px 20px", textAlign: "center" }}>
-          <p className="font-playfair" style={{ fontSize: 16, fontWeight: 600, color: "var(--navy)" }}>No stored match for “{query}”</p>
-          <p style={{ fontSize: 13, color: "var(--gray)", marginTop: 8 }}>Siamsil will not invent a translation.</p>
-        </div>
-      )}
-
-      {alternates.length > 0 && (
-        <div style={{ padding: "0 16px" }}>
-          <div className="word-section-label">Other matches ({alternates.length})</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {alternates.map((match, i) => (
-              <div key={`${match.source}-${i}`} style={{ background: "var(--white)", borderRadius: 12, overflow: "hidden", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-                <div style={{ padding: "12px 14px", borderRight: "1px solid var(--gray2)" }}>
-                  <div style={{ fontSize: 9, fontWeight: 600, background: "var(--cream)", color: "var(--gray)", display: "inline-block", padding: "2px 7px", borderRadius: 20, marginBottom: 6 }}>
-                    {match.label ?? match.source}
+        {alternates.length > 0 && (
+          <section aria-label="Other matches">
+            <div className="word-section-label">Other matches ({alternates.length})</div>
+            <ul className="tr-alt-list">
+              {shownAlternates.map((match, index) => (
+                <li key={`${match.source}-${match.id ?? index}`} className="tr-alt">
+                  <div className="tr-alt-chips">
+                    <span className="tr-chip">{sourceLabel(match)}</span>
+                    <StatusChip verified={match.verified} />
                   </div>
-                  <p style={{ fontSize: 13, color: "var(--navy)", lineHeight: 1.5, margin: 0 }}>{match.english}</p>
+                  <p className="tr-alt-en">{match.english}</p>
+                  <p className="tr-alt-zomi">{match.zomi}</p>
+                  {match.reference && <p className="tr-reference">{match.reference}</p>}
+                </li>
+              ))}
+            </ul>
+            {alternates.length > VISIBLE_ALTERNATES && (
+              <button type="button" className="tr-more" onClick={() => setShowAll((value) => !value)}>
+                {showAll ? "Show fewer" : `Show ${alternates.length - VISIBLE_ALTERNATES} more`}
+              </button>
+            )}
+          </section>
+        )}
+
+        {!query && (
+          <div className="tr-start">
+            <p className="font-playfair tr-empty-title">Look up English and Zomi</p>
+            <p className="tr-empty-text">
+              Results come from the dictionary, teacher-reviewed phrases, the Bible, then corpus examples.
+            </p>
+            {recent.length > 0 && (
+              <>
+                <div className="word-section-label">Recent</div>
+                <div className="tr-suggestions">
+                  {recent.map((item) => (
+                    <button key={item} type="button" className="tr-suggestion" onClick={() => { setText(item); submit(item); }}>{item}</button>
+                  ))}
                 </div>
-                <div style={{ padding: "12px 14px" }}>
-                  <p style={{ fontSize: 13, color: "var(--navy)", lineHeight: 1.5, margin: 0 }}>{match.zomi}</p>
-                  {match.reference && <p style={{ fontSize: 10, color: "var(--gray)", marginTop: 4 }}>{match.reference}</p>}
-                </div>
-              </div>
-            ))}
+              </>
+            )}
+            <div className="word-section-label">Try</div>
+            <div className="tr-suggestions">
+              {EXAMPLES.map((item) => (
+                <button key={item} type="button" className="tr-suggestion" onClick={() => { setText(item); submit(item); }}>{item}</button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-
-      {!query && (
-        <div style={{ padding: "48px 20px", textAlign: "center" }}>
-          <p className="font-playfair" style={{ fontSize: 16, fontWeight: 600, color: "var(--navy)" }}>Look up stored English ↔ Zomi pairs</p>
-          <p style={{ fontSize: 13, color: "var(--gray)", marginTop: 6 }}>Dictionary, reviewed phrases, Bible, then unverified corpus examples</p>
-        </div>
-      )}
-
+        )}
+      </div>
       <div className="screen-pad" />
-    </>
+    </div>
   );
 }

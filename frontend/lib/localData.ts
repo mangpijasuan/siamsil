@@ -62,6 +62,20 @@ export function pushHistory(kind: "dictionary" | "translate", query: string) {
   }
 }
 
+/** Most recent distinct searches of one kind on this device, newest first. */
+export function useRecentSearches(kind: "dictionary" | "translate", limit = 6) {
+  const [recent, setRecent] = useState<string[]>([]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() =>
+      setRecent(readHistory().filter((item) => item.kind === kind).map((item) => item.query).slice(0, limit)),
+    );
+    return () => window.cancelAnimationFrame(frame);
+  }, [kind, limit]);
+
+  return recent;
+}
+
 export function readHistory() {
   try {
     const raw = localStorage.getItem(HISTORY_KEY);
