@@ -1,0 +1,16 @@
+{
+  "dataset": "zomi_worship_songs",
+  "files": [
+    {
+      "original_filename": "songs.jsonl",
+      "path": "data/raw/songs/zomi-worship-collective/songs.jsonl",
+      "acquisition_date": "needs_review",
+      "source": "Zomi Worship Collective (https://zomiworshipcollective.com/lyrics/), lyrics originally from the songbook",
+      "source_author": "Songwriters and translators as credited per song; songbook publisher: needs_review",
+      "language": "zom (some songs may use older Tedim spelling, ctd)",
+      "license": "Written permission from songbook publisher and Zomi Worship Collective: display with credit, language data, model training. Not commercial use, not redistribution.",
+      "review_status": "unreviewed",
+      "notes": "Lyrics are not committed to git. Original English lyrics of translated songs are not imported."
+    }
+  ]
+}
