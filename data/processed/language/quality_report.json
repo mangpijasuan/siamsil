@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-08-18T15:27:53.784474+00:00",
-  "script_version": "1.0.0",
-  "dataset_version": "v1",
+  "generated_at": "2026-10-17T21:16:08.700710+00:00",
+  "script_version": "1.1.0",
+  "dataset_version": "v2",
   "dictionary": {
     "source_rows": 20827,
-    "ingested": 20826,
+    "ingested": 20827,
     "flagged_for_review": 1773,
     "verified": 0,
-    "empty_headword": 1,
+    "empty_headword": 0,
     "empty_definition": 13,
     "note": "Zomi Standard Dictionary is the sole dictionary source."
   },
@@ -16,15 +16,27 @@
     "unique_pairs_kept": 1775043,
     "duplicates_dropped": 1959,
     "empty_dropped": 0,
-    "clean": 1769602,
-    "needs_review": 5441,
+    "clean": 1708112,
+    "needs_review": 66931,
     "verified": 0,
     "splits": {
-      "train": 1597938,
-      "validation": 88612,
-      "test": 88493
+      "train": 1597924,
+      "test": 88474,
+      "validation": 88645
     },
+    "split_key": "template family (English with learned names and numbers masked)",
+    "template_families": 1703253,
+    "largest_template_family": 177,
+    "names_learned": 2724,
+    "length_log_ratio_bounds": [
+      -0.4754,
+      0.6931
+    ],
+    "evaluation_items_checked": 0,
     "quality_flags": {
+      "number_mismatch": 4324,
+      "target_reused": 42553,
+      "length_ratio_outlier": 15634,
       "possible_language_mismatch": 3437,
       "extremely_short": 759,
       "identical": 1492,

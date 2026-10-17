@@ -94,6 +94,13 @@ The pipeline stores Zomi text with the code `zom` (for example `target_language`
 - Source records that are Tedim text before transfer are described as `ctd` in their provenance.
 - Because ISO 639-3 assigns `zom` to Zou, outside tools (dataset hubs, language-ID models, translation benchmarks) will read `zom` as Zou. Every published dataset, model card, or API document must say so explicitly, for example: "`zom` is Siamsil's label for Zomi (Tedim-based, related ISO 639-3 code `ctd`); it is not ISO 639-3 Zou."
 
+## Non-profit use
+
+**Decision (2026-10-17, project owner):** Siamsil is a non-profit app, offered free of charge.
+
+- Licenses that allow only non-commercial use are acceptable for Siamsil, including NLLB-200 model weights (CC BY-NC 4.0) and the Bible permissions recorded above.
+- "Non-commercial" describes how the app is used, not only who runs it. Donations are fine. Paid features, a paid API, advertising, or selling data or models would be commercial use: before adding any of them, review every non-commercial license and permission in this register.
+
 ## Closing an item
 
 1. Record the evidence (email, signed agreement, license URL and version) in this file with the date.

@@ -17,7 +17,9 @@ from build_language_db import (  # type: ignore  # noqa: E402
     DATASET_VERSION,
     apply_corpus_checks,
     connect,
+    ROOT,
     create_schema,
+    display_path,
     ingest_parallel,
     release_manifest,
     write_release_manifest,
@@ -57,6 +59,11 @@ class ReleaseManifestTests(unittest.TestCase):
             manifest["evaluation_sets"],
             [{"file": "en-zomi-v1.jsonl", "sha256": hashlib.sha256(b'{"id": "x"}\n').hexdigest()}],
         )
+
+    def test_paths_outside_the_repository_show_the_file_name(self) -> None:
+        # Raw files may live outside the repository, e.g. a checkout of the private data repo.
+        self.assertEqual(display_path(Path(tempfile.gettempdir()) / "raw" / "corpus.csv"), "corpus.csv")
+        self.assertEqual(display_path(ROOT / "data" / "rights.json"), "data/rights.json")
 
     def test_versioned_copy_is_named_by_database_hash(self) -> None:
         database = self.write("language.sqlite", b"database bytes")
