@@ -28,8 +28,8 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 | Bible, Zomi "ISO Improved Text" | Modified version of the above, with a "Changes Applied" column | live | — | — | — | `needs_review` |
 | Daily-use phrases ("Daily Use (Ms. Nem)" sheet) | 62 teacher-reviewed pairs | live | — | — | — | `needs_review` |
 | Human evaluation sets (planned) | See [EVALUATION_SET.md](EVALUATION_SET.md) | never | never | — | — | to be contracted |
-| Bible, Tedim 2011 (TDB), USX | 30,712 verses, © Bible Society of Myanmar 2011 | live, labeled | — | — | — | `needs_review` |
-| Bible, Tedim 1977 (TB77), USX | 30,485 verses, © Bible Society of Myanmar 1977 | live, labeled | — | — | — | `needs_review` |
+| Bible, Zomi / Tedim 2011 (TDB), USX | 30,712 verses, © Bible Society of Myanmar 2011 | live, labeled | — | — | — | `needs_review` |
+| Bible, Zomi / Tedim 1977 (TB77), USX | 30,485 verses, © Bible Society of Myanmar 1977 | live, labeled | — | — | — | `needs_review` |
 | Bible, Falam (FCL), USX | 29,661 verses, © Bible Society of Myanmar 2002 | live, labeled | — | — | — | `needs_review` |
 | Bible, Hakha (HCL06), USX | 28,201 verses (incomplete copy), © Bible Society of Myanmar 2006 | live, labeled | — | — | — | `needs_review` |
 | Bible, KJV (USX) | 31,102 verses | live, labeled | — | — | — | `needs_review` |
@@ -65,6 +65,8 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 - KJV: public domain outside the United Kingdom. Judson (Burmese, 1835) is generally public domain, but this file is a Digital Bible Library edition whose `license.xml` covers 2012-02-29 to 2015-02-28; confirm the edition's terms.
 - The bundle has two HCL06 copies. The complete-looking one marks about 2,600 verse numbers with `#` and leaves 598 unnumbered; the clean one is missing about 2,900 verses (Genesis 1:1 among them). The clean copy is imported; a clean, complete source is needed.
 - Setting `display` to `blocked` in `data/rights.json` and rebuilding hides a version from the app.
+- TDB and TB77 are shown in the app as Zomi Bibles (`zom`), following the language-code decision below; the publisher's titles, `ctd` code, and copyright lines are kept unchanged in the data and shown under each chapter.
+- Training is a separate permission from display. Ask the Bible Society of Myanmar for both. Until `train` is `cleared` for both versions in a pair (for example `bible_tdb` and `bible_kjv`), `export_datasets.py --bible-versions` exports nothing from them.
 
 **Zomi worship songs**
 - Written permission from both the songbook publisher and Zomi Worship Collective, reported by the project owner on 2026-10-16. Covers display in the app with credit, use as language data, and model training. Does **not** cover commercial use or redistribution (publishing the lyrics as a dataset).

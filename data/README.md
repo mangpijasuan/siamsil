@@ -36,6 +36,10 @@ python3 ml_pipeline/scripts/import_usx_bibles.py --dry-run   # report versions, 
 python3 ml_pipeline/scripts/import_usx_bibles.py
 ```
 
+`data/bible_versions.json` sets how versions are named in the app. The Tedim Bibles (TDB, TB77) are shown as Zomi Bibles with code `zom`; the publisher's title, language code (`ctd`), and copyright are kept as `source_name`, `source_language_iso`, and `copyright`.
+
+Add the Bible versions to a dataset export with `--bible-versions data/processed/bible/bible_versions.sqlite`. Each Zomi version is paired verse by verse with each English version (a modern public-domain English version such as the World English Bible can be imported the same way and is paired automatically). A pair is exported only when both versions' training rights allow it. Splits are by whole book for every version and the workbook: Ruth, Mark, and 1 John are test; Joel, Jonah, Philippians, and Titus are validation. Merged verse ranges are not paired.
+
 Expected raw files:
 
 - `raw/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx`

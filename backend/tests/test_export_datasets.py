@@ -9,6 +9,7 @@ import unittest
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "ml_pipeline" / "scripts"))
@@ -17,6 +18,7 @@ import openpyxl  # noqa: E402
 
 from build_language_db import apply_corpus_checks, connect, create_schema, ingest_parallel  # type: ignore  # noqa: E402
 from export_datasets import admitted_sources, export, load_workbook_sources, main, silver_models  # type: ignore  # noqa: E402
+from import_usx_bibles import main as import_bibles  # type: ignore  # noqa: E402
 
 # Zomi-side strings are placeholders, never real language data.
 
@@ -151,6 +153,65 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(manifest["silver_models"], [])
         self.assertIn("parallel_corpus", manifest["uncleared_sources_included"])
         self.assertEqual(set(manifest["files"]), {"train", "validation", "test"})
+
+
+BIBLE_METADATA = """<DBLMetadata><identification><name>{abbr} name</name><abbreviation>{abbr}</abbreviation>
+</identification><language><iso>{iso}</iso><name>x</name></language></DBLMetadata>"""
+BIBLE_BOOK = """<usx version="2.0"><book code="{code}" style="id" /><chapter number="1" style="c" />
+<para style="p"><verse number="1" style="v" />{text} one<verse number="2-3" style="v" />{text} range
+<verse number="4" style="v" />{text} four</para></usx>"""
+
+
+class BibleVersionExportTests(ExportTests):
+    def build_versions(self, versions: dict[str, tuple[str, str]]) -> Path:
+        source = self.dir / "usx"
+        for abbr, (iso, text) in versions.items():
+            usx = source / abbr / "USX_1"
+            usx.mkdir(parents=True)
+            (source / abbr / "metadata.xml").write_text(BIBLE_METADATA.format(abbr=abbr, iso=iso), encoding="utf-8")
+            for code in ("JHN", "MRK"):
+                (usx / f"{code}.usx").write_text(BIBLE_BOOK.format(code=code, text=f"{text} {code}"), encoding="utf-8")
+        config = self.dir / "bible_versions.json"
+        config.write_text(json.dumps({"versions": {"zt": {"name": "Zomi Test", "language_iso": "zom"}}}))
+        db = self.dir / "bible_versions.sqlite"
+        with redirect_stdout(StringIO()), patch("sys.stderr"):
+            import_bibles(["--source", str(source), "--out", str(db), "--manifest", str(self.dir / "m.json"),
+                           "--config", str(config), "--rights", str(self.dir / "none.json")])
+        return db
+
+    def setUp(self) -> None:
+        super().setUp()
+        # ZT is configured as Zomi (source code ctd); OTHER is neither Zomi nor English.
+        self.versions = self.build_versions({
+            "ZT": ("ctd", "ZOMI_PLACEHOLDER"), "EN": ("eng", "English"), "OTHER": ("cnh", "OTHER_PLACEHOLDER"),
+        })
+        self.rights = dict(ALL_NEEDS_REVIEW, bible_zt="needs_review", bible_en="needs_review", bible_other="needs_review")
+
+    def test_pairs_zomi_with_english_by_book_split(self) -> None:
+        result, rows = self.run_export(rights=self.rights, bible_versions=self.versions)
+        pairs = {k: v for k, v in self.all_rows(rows).items() if k.startswith("bible-zt-")}
+        self.assertEqual(sorted(pairs), ["bible-zt-en-41-1-1", "bible-zt-en-41-1-4", "bible-zt-en-43-1-1", "bible-zt-en-43-1-4"])
+        self.assertEqual(pairs["bible-zt-en-43-1-1"]["english"], "English JHN one")
+        self.assertEqual(pairs["bible-zt-en-43-1-1"]["split"], "train")
+        self.assertEqual(pairs["bible-zt-en-41-1-1"]["split"], "test")  # Mark is a test book
+        self.assertEqual(result["skipped"]["bible_verse_range"], 2)
+        self.assertNotIn("OTHER_PLACEHOLDER", json.dumps(rows))
+
+    def test_pairs_need_both_versions_cleared(self) -> None:
+        rights = dict(self.rights, bible_en="blocked")
+        result, rows = self.run_export(rights=rights, bible_versions=self.versions)
+        self.assertFalse([k for k in self.all_rows(rows) if k.startswith("bible-zt-")])
+        self.assertEqual(result["skipped"]["rights:bible_en"], 4)
+
+    def test_workbook_and_versions_share_book_splits(self) -> None:
+        bible = [{"book_english": "Mark", "book_id": 99, "chapter": 1, "verse": 1, "reference": "Mark 1:1",
+                  "english": "Workbook Mark.", "zomi_original": "ZOMI_PLACEHOLDER_WB"},
+                 {"book_english": "Unknown Book", "book_id": 1, "chapter": 1, "verse": 1, "reference": "x",
+                  "english": "Lost.", "zomi_original": "ZOMI_PLACEHOLDER_LOST"}]
+        result, rows = self.run_export(rights=self.rights, bible=bible, bible_versions=self.versions)
+        by_id = self.all_rows(rows)
+        self.assertEqual(by_id["bible-99-1-1"]["split"], by_id["bible-zt-en-41-1-1"]["split"])
+        self.assertEqual(result["skipped"]["bible_unknown_book"], 1)
 
 
 class WorkbookTests(unittest.TestCase):
