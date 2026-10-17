@@ -28,6 +28,7 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 | Bible, Zomi "ISO Improved Text" | Modified version of the above, with a "Changes Applied" column | live | — | — | — | `needs_review` |
 | Daily-use phrases ("Daily Use (Ms. Nem)" sheet) | 62 teacher-reviewed pairs | live | — | — | — | `needs_review` |
 | Human evaluation sets (planned) | See [EVALUATION_SET.md](EVALUATION_SET.md) | never | never | — | — | to be contracted |
+| Zomi worship songs (songbook, via Zomi Worship Collective) | Song lyrics in Zomi | yes, with credit | yes | — | **no** | `restricted` |
 | Community audio (planned) | Consent-based recordings; per-speaker choices in [AUDIO_CONSENT.md](AUDIO_CONSENT.md) | — | — | — | — | draft form, needs legal review |
 
 "—" means not yet permitted.
@@ -51,6 +52,12 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 - Who produced the "ISO Improved Text", by what process (human or model), and does the copyright holder accept modified text being shown?
 - KJV is public domain in most countries but is under Crown letters patent in the United Kingdom. Confirm this does not affect intended uses.
 - Only the human-authored column should be treated as human-made data for training; the "improved" column needs its own review.
+
+**Zomi worship songs**
+- Written permission from both the songbook publisher and Zomi Worship Collective, reported by the project owner on 2026-10-16. Covers display in the app with credit, use as language data, and model training. Does **not** cover commercial use or redistribution (publishing the lyrics as a dataset).
+- Still to record here: the publisher's and collective's names as they appear in the permission, the date of each permission, and where the written copies are kept. Keep the documents in private storage, not in this repository.
+- Credit each song's songwriter and translator where the source gives them.
+- Many songs are Zomi translations of English songs. The permission covers the Zomi text; it does not grant rights to the original English lyrics, which are not imported.
 
 **Daily-use phrases**
 - Confirm the teacher who reviewed them agrees to their use in training and redistribution, and how they want to be credited.

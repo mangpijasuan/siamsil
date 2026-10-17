@@ -3,8 +3,9 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import type { DictionaryEntry, TranslateMatch } from "@/lib/api";
 import { getDictionaryEntry } from "@/lib/api";
-import { pushHistory, useSavedWords } from "@/lib/localData";
+import { pushHistory, useRecentSearches, useSavedWords } from "@/lib/localData";
 
+const EXAMPLE_WORDS = ["water", "house", "mother", "eat", "love"];
 const LETTERS = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
 
 function IconSearch() {
@@ -51,6 +52,7 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
   const [exampleState, setExampleState] = useState<{ entryId: number; items: TranslateMatch[] } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const { isSaved, toggle } = useSavedWords();
+  const recent = useRecentSearches("dictionary");
   const letterSet = new Set(letters.map((item) => item.letter));
   const selectedId = selected?.id;
   const examples = exampleState && exampleState.entryId === selectedId ? exampleState.items : [];
@@ -171,13 +173,42 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
               </div>
               <p className="font-playfair" style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginBottom: 4 }}>Search the Zomi Dictionary</p>
               <p style={{ fontSize: 12, color: "var(--gray)" }}>Type a word above or tap a letter</p>
+              {recent.length > 0 && (
+                <div className="dict-suggest-group">
+                  <div className="word-section-label">Recent</div>
+                  <div className="dict-suggestions">
+                    {recent.map((word) => (
+                      <Link key={word} href={hrefFor({ q: word, letter: "All" })} className="dict-suggestion">{word}</Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="dict-suggest-group">
+                <div className="word-section-label">Try</div>
+                <div className="dict-suggestions">
+                  {EXAMPLE_WORDS.map((word) => (
+                    <Link key={word} href={hrefFor({ q: word, letter: "All" })} className="dict-suggestion">{word}</Link>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
           {showNoResults && (
             <div className="dict-empty">
-              <p style={{ fontWeight: 600, color: "var(--navy)", marginBottom: 8 }}>No results for &ldquo;{query || activeLetter}&rdquo;</p>
-              <Link href="/zomidictionary" style={{ fontSize: 12, color: "var(--gold)" }}>Clear search</Link>
+              <p className="font-playfair" style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)" }}>No results for &ldquo;{query || activeLetter}&rdquo;</p>
+              <p style={{ fontSize: 12, color: "var(--gray)" }}>
+                {direction === "en-zom" ? "Try searching from Zomi instead, or check the spelling." : "Try searching from English instead, or check the spelling."}
+              </p>
+              <div className="dict-suggestions">
+                <Link href={hrefFor({ dir: direction === "en-zom" ? "zom-en" : "en-zom" })} className="dict-suggestion">
+                  {direction === "en-zom" ? "Search Zomi → EN" : "Search EN → Zomi"}
+                </Link>
+                {query && (
+                  <Link href={`/zomitranslate?q=${encodeURIComponent(query)}`} className="dict-suggestion">Try Translate</Link>
+                )}
+                <Link href="/zomidictionary" className="dict-suggestion">Clear search</Link>
+              </div>
             </div>
           )}
 
@@ -289,7 +320,7 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
                     </span>
                   )}
                   {selected.flagged && (
-                    <span className="badge badge-cream">Needs review</span>
+                    <span className="badge dict-review-badge">Needs review</span>
                   )}
                   {!selected.verified && !selected.flagged && (
                     <span className="badge badge-cream">Unreviewed</span>
@@ -308,9 +339,6 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
                     ) : (
                       <p className="dict-detail-def">{selected.definition || selected.zomi}</p>
                     )}
-                    <p className="dict-detail-source" style={{ marginTop: 8 }}>
-                      This dictionary defines English headwords in Zomi. No separate English definition is stored for this entry.
-                    </p>
                   </div>
                 )}
 
@@ -340,7 +368,7 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
                 {selected.source && (
                   <div className="dict-detail-section">
                     <div className="dict-detail-label">Source</div>
-                    <p className="dict-detail-source">{selected.source}</p>
+                    <p className="dict-detail-source">{selected.source} · English headwords defined in Zomi</p>
                   </div>
                 )}
               </>
