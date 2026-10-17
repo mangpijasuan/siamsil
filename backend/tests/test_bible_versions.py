@@ -45,6 +45,22 @@ def write_version(root: Path, folder: str, abbr: str, iso: str, john: str = JOHN
     (usx / "JHN.usx").write_text(john, encoding="utf-8")
 
 
+USFM_JOHN = """\\id JHN 43-JHN-tst.sfm Test English Bible (TEB)
+\\h John
+\\mt1 John
+\\c 1
+\\s1 A heading
+\\p
+\\v 1 \\w In|strong="G1722"\\w* the beginning\\f + \\fr 1:1 \\ft a note
+that spans lines\\f* was the word.
+\\q1 \\wj \\+w Poetry|strong="G1"\\+w* line\\wj*
+\\v 2 Second verse.
+\\c 2
+\\p
+\\v 1 Chapter two.
+"""
+
+
 class ImportUsxTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
@@ -56,10 +72,15 @@ class ImportUsxTests(unittest.TestCase):
         write_version(self.source, "a", "TST", "ctd")
         write_version(self.source, "b", "ENG", "eng")
         write_version(self.source, "c", "HID", "ctd")
+        (self.source / "usfm").mkdir()
+        (self.source / "usfm" / "43-JHN.usfm").write_text(USFM_JOHN, encoding="utf-8")
         # A second, damaged copy of TST: the clean copy must win.
         write_version(self.source, "d", "TST", "ctd", JOHN.replace('number="2-3"', 'number="#"'))
         self.config = self.root / "bible_versions.json"
-        self.config.write_text(json.dumps({"versions": {"tst": {"name": "Zomi Test", "language_name": "Zomi", "language_iso": "zom"}}}))
+        self.config.write_text(json.dumps({"versions": {
+            "tst": {"name": "Zomi Test", "language_name": "Zomi", "language_iso": "zom"},
+            "teb": {"language_name": "English", "language_iso": "eng", "copyright": "Public domain."},
+        }}))
         with patch("sys.stdout"), patch("sys.stderr"):
             code = import_main([
                 "--source", str(self.source), "--out", str(self.db),
@@ -79,7 +100,16 @@ class ImportUsxTests(unittest.TestCase):
         self.assertEqual(self.versions.chapter("tst", 43, 2)[0]["text"], "second chapter")
 
     def test_blocked_versions_are_hidden_and_order_puts_english_last(self) -> None:
-        self.assertEqual([v["id"] for v in self.versions.versions()], ["tst", "eng"])
+        self.assertEqual([v["id"] for v in self.versions.versions()], ["tst", "eng", "teb"])
+
+    def test_usfm_strips_markup_notes_and_headings(self) -> None:
+        version = self.versions.version("teb")
+        self.assertEqual((version["name"], version["language_iso"], version["copyright"]), ("Test English Bible", "eng", "Public domain."))
+        self.assertEqual(
+            [v["text"] for v in self.versions.chapter("teb", 43, 1)],
+            ["In the beginning was the word. Poetry line", "Second verse."],
+        )
+        self.assertEqual(self.versions.chapter("teb", 43, 2)[0]["text"], "Chapter two.")
 
     def test_configured_name_keeps_publisher_source(self) -> None:
         version = self.versions.version("tst")
@@ -101,7 +131,7 @@ class ImportUsxTests(unittest.TestCase):
         client = TestClient(app)
         with patch("routers.bible.get_bible_versions", return_value=self.versions):
             listing = client.get("/api/v1/bible/versions").json()
-            self.assertEqual([v["id"] for v in listing["versions"]], ["tst", "eng"])
+            self.assertEqual([v["id"] for v in listing["versions"]], ["tst", "eng", "teb"])
             chapter = client.get("/api/v1/bible/versions/tst/chapter", params={"book_id": 43, "chapter": 1})
             self.assertEqual(chapter.status_code, 200)
             self.assertEqual(chapter.json()["book"]["chapter_count"], 2)

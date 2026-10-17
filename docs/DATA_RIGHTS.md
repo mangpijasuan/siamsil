@@ -32,6 +32,7 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 | Bible, Zomi / Tedim 1977 (TB77), USX | 30,485 verses, © Bible Society of Myanmar 1977 | live, labeled | — | — | — | `needs_review` |
 | Bible, Falam (FCL), USX | 29,661 verses, © Bible Society of Myanmar 2002 | live, labeled | — | — | — | `needs_review` |
 | Bible, Hakha (HCL06), USX | 28,201 verses (incomplete copy), © Bible Society of Myanmar 2006 | live, labeled | — | — | — | `needs_review` |
+| Bible, World English Bible (WEB, eBible.org `engwebu`), USFM | 31,098 verses, modern English | yes | yes | yes | yes | `cleared` (public domain) |
 | Bible, KJV (USX) | 31,102 verses | live, labeled | — | — | — | `needs_review` |
 | Bible, Burmese Judson (BJB), USX | 30,938 verses | live, labeled | — | — | — | `needs_review` |
 | Zomi worship songs (songbook, via Zomi Worship Collective) | Song lyrics in Zomi | yes, with credit | yes | — | **no** | `restricted` |
@@ -66,6 +67,7 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 - The bundle's `license.xml` belongs to the Judson Bible folder; it is an expired (2012-02-29 to 2015-02-28) Digital Bible Library distribution record that names no licensee. It is not evidence for any version.
 - Received 2026-10-17 from the project owner as `Chin-Bible.zip`, a ProPresenter bundle ("Tedim-Chin-Bible-OneClick", by Peter Pau Sian Lian). It is a repackaging; it does not carry a license from the publishers.
 - TDB, TB77, FCL and HCL06 are © Bible Society of Myanmar. Displaying a whole Bible publicly normally needs the Society's written permission. Ask for display (and, separately, training) permission before the public site shows these versions.
+- World English Bible (WEB): public domain, per the `copr.htm` in the eBible.org download (received 2026-10-17). "World English Bible" is an eBible.org trademark, so the name is used only for the unchanged text. Footnotes, cross-references, and Strong's tags are dropped on import; verse text is unchanged. WEB is the English side for Zomi Bible training pairs.
 - KJV: public domain outside the United Kingdom. Judson (Burmese, 1835) is generally public domain, but this file is a Digital Bible Library edition whose `license.xml` covers 2012-02-29 to 2015-02-28; confirm the edition's terms.
 - The bundle has two HCL06 copies. The complete-looking one marks about 2,600 verse numbers with `#` and leaves 598 unnumbered; the clean one is missing about 2,900 verses (Genesis 1:1 among them). The clean copy is imported; a clean, complete source is needed.
 - Setting `display` to `blocked` in `data/rights.json` and rebuilding hides a version from the app.

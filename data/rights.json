@@ -72,6 +72,14 @@
       "redistribute": "not_permitted",
       "commercial": "not_permitted",
       "evidence": "Judson translation (1835) is generally public domain, but this edition's DBL license.xml covers 2012-02-29 to 2015-02-28 and names no licensee; edition rights unconfirmed"
+    },
+    "bible_web": {
+      "description": "World English Bible, Updated edition (WEB, eBible.org engwebu), USFM",
+      "display": "cleared",
+      "train": "cleared",
+      "redistribute": "cleared",
+      "commercial": "cleared",
+      "evidence": "Public domain dedication in the download's copr.htm (eBible.org, received 2026-10-17). 'World English Bible' is an eBible.org trademark: use the name only for unchanged text."
     }
   }
 }

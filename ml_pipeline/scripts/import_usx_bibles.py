@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
-"""Import Bible versions from USX folders into a read-only SQLite database.
+"""Import Bible versions from USX or USFM folders into a read-only SQLite database.
 
-Each version is a folder holding `metadata.xml` (Digital Bible Library format) and
-`USX_1/` or `USX/` with one `.usx` file per book, as in ProPresenter Bible bundles.
+Each version is a folder holding either
+  - `metadata.xml` (Digital Bible Library format) and `USX_1/` or `USX/` with one
+    `.usx` file per book, as in ProPresenter Bible bundles, or
+  - one `.usfm` / `.sfm` file per book, as in eBible.org downloads. Name and
+    language come from data/bible_versions.json, keyed by the abbreviation in
+    the `\id` line, for example "(WEB)".
 
 Reads (never modifies):
-  data/raw/bible/usx/**/metadata.xml
+  data/raw/bible/usx/**
 
 Names versions as configured in data/bible_versions.json (for example, the Tedim
 Bibles as "Zomi Bible", language zom), keeping the publisher's title, language code,
@@ -32,7 +36,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCRIPT_VERSION = "1.1.0"
+SCRIPT_VERSION = "1.2.0"
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SOURCE = ROOT / "data" / "raw" / "bible" / "usx"
@@ -176,13 +180,79 @@ def parse_book(path: Path) -> tuple[str, list[tuple[int, int, str, str]], Counte
     return code.upper(), parser.verses(), parser.issues
 
 
+USFM_SKIP_MARKERS = re.compile(r"^(id|ide|h\d*|toc\w*|rem|sts|usfm|cl|mt\d*|mte\d*|imt\d*|is\d*|ip\w*|ili\d*|iot|io\d*|s\d*|ms\d*|mr|sr|r|d|sp|qa|periph)$")
+USFM_NOTE_RE = re.compile(r"\\(f|fe|x|ef|ex)\s.*?\\\1\*", re.S)
+USFM_WORD_RE = re.compile(r"\\\+?w\s+([^|\\]*?)(?:\|[^\\]*)?\\\+?w\*")
+USFM_MARKER_RE = re.compile(r"\\\+?[a-z]+\d*\*?")
+USFM_LINE_RE = re.compile(r"^\\(\S+)\s?(.*)$")
+USFM_VERSE_RE = re.compile(r"\\v\s+(\S+)\s*")
+USFM_ID_ABBR_RE = re.compile(r"\(([^)]+)\)")
+
+
+def usfm_files(folder: Path) -> list[Path]:
+    return sorted(p for p in folder.iterdir() if p.suffix.lower() in {".usfm", ".sfm"} and p.is_file())
+
+
 def find_versions(source: Path) -> list[Path]:
     folders = []
     for metadata in sorted(source.rglob("metadata.xml")):
         folder = metadata.parent
         if any((folder / name).is_dir() for name in ("USX_1", "USX")):
             folders.append(folder)
+    for folder in sorted({p.parent for p in source.rglob("*") if p.suffix.lower() in {".usfm", ".sfm"}}):
+        if not (folder / "metadata.xml").exists():
+            folders.append(folder)
     return folders
+
+
+def parse_usfm_book(path: Path) -> tuple[str, str, list[tuple[int, int, str, str]], Counter[str]]:
+    """Returns (book code, \\id description, verses, issues)."""
+    raw = path.read_text(encoding="utf-8-sig")
+    code, description = "", ""
+    parser = BookParser()
+    # Notes can span lines; remove them before reading line by line.
+    raw = USFM_NOTE_RE.sub("", raw)
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        match = USFM_LINE_RE.match(line)
+        marker, rest = (match.group(1), match.group(2)) if match else ("", line)
+        if marker == "id":
+            code, _, description = rest.partition(" ")
+            continue
+        if marker == "c":
+            parser.chapter = int(VERSE_NUMBER_RE.match(rest).group(1))
+            parser.verse = None
+            continue
+        if USFM_SKIP_MARKERS.match(marker):
+            continue
+        text = f"\\v {rest}" if marker == "v" else rest if match else line
+        text = USFM_WORD_RE.sub(r"\1", text)
+        pieces = USFM_VERSE_RE.split(text)
+        parser._add(USFM_MARKER_RE.sub("", pieces[0]))
+        for number, content in zip(pieces[1::2], pieces[2::2]):
+            parser._start_verse(number)
+            parser._add(USFM_MARKER_RE.sub("", content))
+    return code.upper() or path.stem.upper(), description, parser.verses(), parser.issues
+
+
+def usfm_metadata(description: str, config: dict[str, dict[str, str]]) -> dict[str, str]:
+    """Metadata for a USFM folder, from the \\id line and data/bible_versions.json."""
+    abbr_match = USFM_ID_ABBR_RE.search(description)
+    abbreviation = abbr_match.group(1).strip() if abbr_match else ""
+    # For example "43-JHN-web.sfm World English Bible (WEB)" -> "World English Bible"
+    name = WS_RE.sub(" ", re.sub(r"^\S+\.u?sfm\s*", "", USFM_ID_ABBR_RE.sub("", description))).strip()
+    named = config.get(abbreviation.lower(), {})
+    return {
+        "abbreviation": abbreviation,
+        "name": named.get("source_name", name),
+        "name_local": "",
+        "description": description.strip(),
+        "language_iso": named.get("language_iso", ""),
+        "language_name": named.get("language_name", ""),
+        "copyright": named.get("copyright", ""),
+    }
 
 
 def usx_dir(folder: Path) -> Path:
@@ -195,14 +265,20 @@ def load_rights(path: Path) -> dict[str, dict[str, str]]:
     return json.loads(path.read_text(encoding="utf-8")).get("sources", {})
 
 
-def import_version(folder: Path) -> dict:
-    meta = read_metadata(folder / "metadata.xml")
+def import_version(folder: Path, config: dict[str, dict[str, str]] | None = None) -> dict:
+    is_usx = (folder / "metadata.xml").exists()
+    meta = read_metadata(folder / "metadata.xml") if is_usx else {}
     verses: list[tuple[int, int, int, str, str]] = []
     issues: Counter[str] = Counter()
     files = []
     unknown_books = []
-    for path in sorted(usx_dir(folder).glob("*.usx")):
-        code, rows, book_issues = parse_book(path)
+    for path in sorted(usx_dir(folder).glob("*.usx")) if is_usx else usfm_files(folder):
+        if is_usx:
+            code, rows, book_issues = parse_book(path)
+        else:
+            code, description, rows, book_issues = parse_usfm_book(path)
+            if not meta and code in BOOK_INDEX:
+                meta = usfm_metadata(description, config or {})
         files.append({"file": path.name, "sha256": sha256(path)})
         if code not in BOOK_INDEX:
             unknown_books.append(code)
@@ -302,8 +378,9 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     by_id: dict[str, list[dict]] = {}
+    config = load_config(args.config)
     for folder in folders:
-        version = import_version(folder)
+        version = import_version(folder, config)
         abbreviation = version["meta"]["abbreviation"] or folder.name
         by_id.setdefault(abbreviation.lower(), []).append(version)
 
@@ -345,7 +422,7 @@ def main(argv: list[str] | None = None) -> int:
     # Tedim first (newest edition first), English last; the reader's default is the first version.
     preferred = {"tdb": 0, "tb77": 1}
     versions.sort(key=lambda v: (preferred.get(v["id"], 2), v["meta"]["language_iso"] == "eng", v["id"]))
-    write_db(args.out, versions, rights, load_config(args.config))
+    write_db(args.out, versions, rights, config)
     manifest = {
         "script": "import_usx_bibles.py",
         "script_version": SCRIPT_VERSION,
