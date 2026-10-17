@@ -60,3 +60,6 @@ data/raw/bible/**
 !data/raw/bible/*/
 !data/raw/bible/**/provenance.json
 data/processed/bible/
+
+# Trained model checkpoints (large; keep out of git)
+models/
