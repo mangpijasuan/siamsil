@@ -3406,11 +3406,9 @@ a.library-card:hover {
 .tr-header .word-section-label {
   color: var(--gold2);
 }
-.dict-header input,
 .tr-input {
   color: var(--navy);
 }
-.dict-header input::placeholder,
 .tr-input::placeholder {
   color: var(--gray);
 }
@@ -3446,4 +3444,56 @@ a.library-card:hover {
 }
 .tr-link {
   border-bottom-color: var(--gold);
+}
+
+/* Reference-inspired Dictionary and Translate surfaces.
+   Scoped to these two tools; the home daily-verse block is untouched. */
+.dict-root, .tr-root { background: var(--cream); }
+.dict-header, .tr-header {
+  background: var(--navy);
+  border-radius: 24px;
+  box-shadow: 0 10px 28px rgba(27,42,74,.12);
+}
+.dict-search-form {
+  background: rgba(255,255,255,.12);
+  border-radius: 999px;
+  border-color: rgba(255,255,255,.22);
+}
+.dict-search-input { color: var(--white); }
+.dict-search-input::placeholder { color: rgba(255,255,255,.68); }
+.dict-body { gap: 12px; padding: 12px; }
+.dict-list-col, .dict-detail {
+  background: #eef4fc;
+  border: 1px solid rgba(27,42,74,.09);
+  border-radius: 22px;
+}
+.dict-word-btn {
+  background: #f7faff;
+  border: 1px solid rgba(27,42,74,.08);
+  border-radius: 18px;
+  box-shadow: 0 3px 9px rgba(27,42,74,.07);
+}
+.dict-word-btn.featured {
+  background: #eef4fc;
+  border-left: 3px solid var(--gold);
+}
+.dict-detail-section {
+  background: #f7faff;
+  border: 1px solid rgba(27,42,74,.06);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(27,42,74,.06);
+}
+.tr-body { padding-top: 16px; }
+.tr-input-card, .tr-result, .tr-alt {
+  border-radius: 22px;
+  box-shadow: 0 5px 16px rgba(27,42,74,.09);
+}
+.tr-result-side { background: #f7faff; }
+.tr-result-zomi-side { background: #eef4fc; }
+.tr-suggestion, .dict-suggestion { border-radius: 999px; }
+@media (max-width: 959px) {
+  .dict-body { padding: 8px; }
+  .dict-list-col { border-radius: 18px; }
+  .dict-detail { border-radius: 22px 22px 0 0; }
 }
