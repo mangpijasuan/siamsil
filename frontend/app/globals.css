@@ -3497,3 +3497,46 @@ a.library-card:hover {
   .dict-list-col { border-radius: 18px; }
   .dict-detail { border-radius: 22px 22px 0 0; }
 }
+
+/* Siamsil tools: balanced desktop workspace, preserving mobile and home styles. */
+@media (min-width: 960px) {
+  .tr-root { min-height: calc(100vh - 64px); }
+  .tr-header {
+    padding: 28px clamp(28px, 4vw, 72px);
+    display: grid;
+    grid-template-columns: minmax(210px, .7fr) minmax(400px, 1.3fr);
+    column-gap: clamp(28px, 4vw, 72px);
+    align-items: center;
+  }
+  .tr-header > .gold-label,
+  .tr-header > .tr-h1,
+  .tr-header > .tr-langs { grid-column: 1; }
+  .tr-header > .tr-input-card {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+  .tr-body {
+    width: min(100% - 64px, 1180px);
+    margin: 0 auto;
+    padding: 28px 0 64px;
+  }
+  .tr-body > .tr-notice { max-width: 100%; }
+  .tr-body > .tr-start {
+    background: #f7faff;
+    border: 1px solid rgba(27,42,74,.08);
+    border-radius: 22px;
+    padding: 28px;
+    box-shadow: 0 5px 16px rgba(27,42,74,.06);
+  }
+  .dict-body { align-items: stretch; }
+  .dict-list-col { padding: 12px; }
+  .dict-detail { padding: 24px; }
+  .dict-word-btn { margin-bottom: 8px; }
+}
+@media (max-width: 959px) {
+  .tr-header { border-radius: 0 0 22px 22px; }
+  .tr-body { padding-left: 16px; padding-right: 16px; }
+}
