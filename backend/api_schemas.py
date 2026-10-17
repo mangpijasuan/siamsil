@@ -125,6 +125,67 @@ class BibleChapterResponse(ApiModel):
     verses: list[BibleVerse]
 
 
+class ApiErrorBody(ApiModel):
+    code: str
+    message: str
+    request_id: str | None = None
+    details: list[dict[str, Any]] | None = None
+
+
+class ApiErrorResponse(ApiModel):
+    error: ApiErrorBody
+
+
+class BibleVersionInfo(ApiModel):
+    id: str
+    abbreviation: str
+    name: str
+    name_local: str | None = None
+    description: str | None = None
+    language_iso: str | None = None
+    language_name: str | None = None
+    copyright: str | None = None
+    source_name: str | None = None
+    source_language_iso: str | None = None
+    display_status: str
+    book_count: int
+    verse_count: int
+
+
+class BibleVersionsResponse(ApiModel):
+    count: int
+    versions: list[BibleVersionInfo]
+
+
+class BibleVersionBook(ApiModel):
+    book_id: int
+    code: str
+    name: str
+    testament: str
+    chapter_count: int
+    chapters: list[int]
+
+
+class BibleVersionBooksResponse(ApiModel):
+    version: BibleVersionInfo
+    count: int
+    books: list[BibleVersionBook]
+
+
+class BibleVersionVerse(ApiModel):
+    verse: int
+    label: str
+    text: str
+
+
+class BibleVersionChapterResponse(ApiModel):
+    version: BibleVersionInfo
+    book: BibleVersionBook
+    chapter: int
+    verse_count: int
+    verses: list[BibleVersionVerse]
+
+
 class TranslationSearchResponse(ApiModel):
     query: str
     count: int

@@ -29,6 +29,17 @@ python3 ml_pipeline/scripts/export_datasets.py --workbook ml_pipeline/raw_data/Z
   --generator-summary data/exports/generator-review-v1/summary.json
 ```
 
+Import Bible versions from USX folders (each with `metadata.xml` and `USX_1/` or `USX/`, as in ProPresenter bundles) or USFM folders (one `.usfm` file per book, as in eBible.org downloads; name and language come from `data/bible_versions.json`) into `data/processed/bible/bible_versions.sqlite`. Unzip the bundle under `data/raw/bible/usx/`; the text stays out of git. When the folder is elsewhere, pass `--source`; point the backend at a database elsewhere with `SIAMSIL_BIBLE_VERSIONS_DB`.
+
+```bash
+python3 ml_pipeline/scripts/import_usx_bibles.py --dry-run   # report versions, verse counts, issues
+python3 ml_pipeline/scripts/import_usx_bibles.py
+```
+
+`data/bible_versions.json` sets how versions are named in the app. The Tedim Bibles (TDB, TB77) are shown as Zomi Bibles with code `zom`; the publisher's title, language code (`ctd`), and copyright are kept as `source_name`, `source_language_iso`, and `copyright`.
+
+Add the Bible versions to a dataset export with `--bible-versions data/processed/bible/bible_versions.sqlite`. Each Zomi version is paired verse by verse with each English version (for example the World English Bible, unzipped to `data/raw/bible/usx/web/`). A pair is exported only when both versions' training rights allow it. Splits are by whole book for every version and the workbook: Ruth, Mark, and 1 John are test; Joel, Jonah, Philippians, and Titus are validation. Merged verse ranges are not paired.
+
 Expected raw files:
 
 - `raw/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx`

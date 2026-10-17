@@ -89,6 +89,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bible/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Versions */
+        get: operations["list_versions_api_v1_bible_versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bible/versions/{version_id}/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Version Books */
+        get: operations["list_version_books_api_v1_bible_versions__version_id__books_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bible/versions/{version_id}/chapter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Version Chapter */
+        get: operations["get_version_chapter_api_v1_bible_versions__version_id__chapter_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dictionary": {
         parameters: {
             query?: never;
@@ -334,6 +385,27 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ApiErrorBody */
+        ApiErrorBody: {
+            /** Code */
+            code: string;
+            /** Details */
+            details?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Message */
+            message: string;
+            /** Request Id */
+            request_id?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ApiErrorResponse */
+        ApiErrorResponse: {
+            error: components["schemas"]["ApiErrorBody"];
+        } & {
+            [key: string]: unknown;
+        };
         /** AskRequest */
         AskRequest: {
             /** Message */
@@ -453,6 +525,97 @@ export interface components {
             zomi_iso: string;
             /** Zomi Original */
             zomi_original: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** BibleVersionBook */
+        BibleVersionBook: {
+            /** Book Id */
+            book_id: number;
+            /** Chapter Count */
+            chapter_count: number;
+            /** Chapters */
+            chapters: number[];
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Testament */
+            testament: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** BibleVersionBooksResponse */
+        BibleVersionBooksResponse: {
+            /** Books */
+            books: components["schemas"]["BibleVersionBook"][];
+            /** Count */
+            count: number;
+            version: components["schemas"]["BibleVersionInfo"];
+        } & {
+            [key: string]: unknown;
+        };
+        /** BibleVersionChapterResponse */
+        BibleVersionChapterResponse: {
+            book: components["schemas"]["BibleVersionBook"];
+            /** Chapter */
+            chapter: number;
+            /** Verse Count */
+            verse_count: number;
+            /** Verses */
+            verses: components["schemas"]["BibleVersionVerse"][];
+            version: components["schemas"]["BibleVersionInfo"];
+        } & {
+            [key: string]: unknown;
+        };
+        /** BibleVersionInfo */
+        BibleVersionInfo: {
+            /** Abbreviation */
+            abbreviation: string;
+            /** Book Count */
+            book_count: number;
+            /** Copyright */
+            copyright?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Display Status */
+            display_status: string;
+            /** Id */
+            id: string;
+            /** Language Iso */
+            language_iso?: string | null;
+            /** Language Name */
+            language_name?: string | null;
+            /** Name */
+            name: string;
+            /** Name Local */
+            name_local?: string | null;
+            /** Source Language Iso */
+            source_language_iso?: string | null;
+            /** Source Name */
+            source_name?: string | null;
+            /** Verse Count */
+            verse_count: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** BibleVersionVerse */
+        BibleVersionVerse: {
+            /** Label */
+            label: string;
+            /** Text */
+            text: string;
+            /** Verse */
+            verse: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** BibleVersionsResponse */
+        BibleVersionsResponse: {
+            /** Count */
+            count: number;
+            /** Versions */
+            versions: components["schemas"]["BibleVersionInfo"][];
         } & {
             [key: string]: unknown;
         };
@@ -924,6 +1087,136 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_versions_api_v1_bible_versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BibleVersionsResponse"];
+                };
+            };
+            /** @description Bible versions database not loaded or unreadable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    list_version_books_api_v1_bible_versions__version_id__books_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BibleVersionBooksResponse"];
+                };
+            };
+            /** @description Bible version or chapter not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Bible versions database not loaded or unreadable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    get_version_chapter_api_v1_bible_versions__version_id__chapter_get: {
+        parameters: {
+            query: {
+                book_id: number;
+                chapter: number;
+            };
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BibleVersionChapterResponse"];
+                };
+            };
+            /** @description Bible version or chapter not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Bible versions database not loaded or unreadable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
