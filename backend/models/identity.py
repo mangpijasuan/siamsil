@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, JSON, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -127,5 +127,5 @@ class AuditEvent(Base):
     target_type: Mapped[Optional[str]] = mapped_column(String(100))
     target_id: Mapped[Optional[str]] = mapped_column(String(255))
     request_id: Mapped[Optional[str]] = mapped_column(String(128), index=True)
-    event_data: Mapped[dict[str, Any]] = mapped_column("metadata", JSONB, default=dict, server_default="{}")
+    event_data: Mapped[dict[str, Any]] = mapped_column("metadata", JSONB().with_variant(JSON(), "sqlite"), default=dict, server_default="{}")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

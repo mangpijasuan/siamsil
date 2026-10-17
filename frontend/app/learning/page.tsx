@@ -1,5 +1,6 @@
 import LearningClient from "@/components/LearningClient";
 import { getLearningGroups } from "@/lib/api";
+import "./learning.css";
 
 export default async function LearningPage() {
   let groups: Record<string, import("@/lib/api").LearningEntry[]> = {};
@@ -9,7 +10,7 @@ export default async function LearningPage() {
     const data = await getLearningGroups();
     groups = data.groups;
   } catch {
-    error = "Could not reach the API. Start the backend on port 8001.";
+    error = "Learning collections could not be loaded. Check your connection and try again.";
   }
 
   return <LearningClient groups={groups} error={error} />;

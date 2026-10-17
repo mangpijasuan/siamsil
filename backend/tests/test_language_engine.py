@@ -14,7 +14,7 @@ sys.path.insert(0, str(BACKEND_ROOT))
 sys.path.insert(0, str(BACKEND_ROOT / "services"))
 sys.path.insert(0, str(PROJECT_ROOT / "ml_pipeline" / "scripts"))
 
-from language_engine import LanguageEngine, fts_match  # type: ignore  # noqa: E402
+from language_engine import LanguageEngine, fts_match, has_embedded_dictionary_entry  # type: ignore  # noqa: E402
 from build_language_db import (  # type: ignore  # noqa: E402
     dataset_split_for,
     normalize_text,
@@ -47,6 +47,46 @@ class NormalizationTests(unittest.TestCase):
 class FtsTests(unittest.TestCase):
     def test_fts_match_strips_operators(self) -> None:
         self.assertEqual(fts_match('hope" OR 1=1'), '"hope" AND "OR" AND "1=1"*')
+
+    def test_embedded_headword_is_flagged_without_changing_source(self) -> None:
+        corrupted = "(gil a laai)navigable adj. tembaw tawh pai theih"
+        self.assertTrue(has_embedded_dictionary_entry(corrupted))
+        self.assertFalse(has_embedded_dictionary_entry("sehtaak; sehneel leh suangpum neute kihel"))
+
+    def test_word_of_day_skips_unflagged_ocr_leak(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            db = Path(tmp) / "test.sqlite"
+            con = sqlite3.connect(db)
+            con.executescript(
+                """
+                CREATE TABLE dictionary_entries (
+                    id INTEGER PRIMARY KEY, source_word TEXT, normalized_word TEXT,
+                    language TEXT, dialect TEXT, part_of_speech TEXT, part_of_speech_full TEXT,
+                    definition TEXT, pronunciation TEXT, usage_notes TEXT, source TEXT,
+                    source_reference TEXT, confidence REAL, verification_status TEXT,
+                    flagged INTEGER, suggested_correction TEXT, letter TEXT, version TEXT
+                );
+                """
+            )
+            con.executemany(
+                """
+                INSERT INTO dictionary_entries (
+                    id, source_word, normalized_word, language, part_of_speech,
+                    definition, source, confidence, verification_status, flagged, letter, version
+                ) VALUES (?, ?, ?, 'en', 'n.', ?, 'test', 0.7, 'unreviewed', ?, 'N', 'v1')
+                """,
+                [
+                    (1, "navel", "navel", "laai; (gil a laai)navigable adj. leaked text", 0),
+                    (2, "navel", "navel", "sehtaak; sehneel leh suangpum", 0),
+                    (3, "noise", "noise", "flagged source", 1),
+                ],
+            )
+            con.commit()
+            con.close()
+            engine = LanguageEngine(db)
+            self.assertTrue(engine.get_entry(1)["flagged"])
+            self.assertEqual(engine.get_entry(1)["verification_status"], "needs_review")
+            self.assertEqual(engine.word_of_day(seed=0)["id"], 2)
 
     def test_engine_searches_temp_db(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

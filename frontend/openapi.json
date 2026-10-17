@@ -175,6 +175,10 @@
             "title": "Book Zomi",
             "type": "string"
           },
+          "chapter_count": {
+            "title": "Chapter Count",
+            "type": "integer"
+          },
           "testament": {
             "title": "Testament",
             "type": "string"
@@ -184,7 +188,8 @@
           "book_id",
           "book_english",
           "book_zomi",
-          "testament"
+          "testament",
+          "chapter_count"
         ],
         "title": "BibleBook",
         "type": "object"
@@ -280,6 +285,109 @@
         "title": "BibleSearchResponse",
         "type": "object"
       },
+      "BibleTextVerse": {
+        "additionalProperties": true,
+        "properties": {
+          "book_english": {
+            "title": "Book English",
+            "type": "string"
+          },
+          "book_id": {
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "book_zomi": {
+            "title": "Book Zomi",
+            "type": "string"
+          },
+          "chapter": {
+            "title": "Chapter",
+            "type": "integer"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          },
+          "testament": {
+            "title": "Testament",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "verse": {
+            "title": "Verse",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "book_id",
+          "book_english",
+          "book_zomi",
+          "testament",
+          "chapter",
+          "verse",
+          "reference",
+          "text"
+        ],
+        "title": "BibleTextVerse",
+        "type": "object"
+      },
+      "BibleTextVersion": {
+        "additionalProperties": true,
+        "properties": {
+          "abbreviation": {
+            "title": "Abbreviation",
+            "type": "string"
+          },
+          "attribution": {
+            "title": "Attribution",
+            "type": "string"
+          },
+          "edition_group": {
+            "title": "Edition Group",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "rights_status": {
+            "title": "Rights Status",
+            "type": "string"
+          },
+          "scope": {
+            "title": "Scope",
+            "type": "string"
+          },
+          "separate_edition": {
+            "title": "Separate Edition",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "language",
+          "abbreviation",
+          "edition_group",
+          "separate_edition",
+          "rights_status",
+          "scope",
+          "attribution"
+        ],
+        "title": "BibleTextVersion",
+        "type": "object"
+      },
       "BibleVerse": {
         "additionalProperties": true,
         "properties": {
@@ -354,6 +462,131 @@
           "zomi_iso"
         ],
         "title": "BibleVerse",
+        "type": "object"
+      },
+      "BibleVersionBooksResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "books": {
+            "items": {
+              "$ref": "#/components/schemas/BibleBook"
+            },
+            "title": "Books",
+            "type": "array"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "version": {
+            "$ref": "#/components/schemas/BibleTextVersion"
+          }
+        },
+        "required": [
+          "version",
+          "count",
+          "books"
+        ],
+        "title": "BibleVersionBooksResponse",
+        "type": "object"
+      },
+      "BibleVersionChapterResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "book_english": {
+            "title": "Book English",
+            "type": "string"
+          },
+          "book_id": {
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "book_zomi": {
+            "title": "Book Zomi",
+            "type": "string"
+          },
+          "chapter": {
+            "title": "Chapter",
+            "type": "integer"
+          },
+          "verse_count": {
+            "title": "Verse Count",
+            "type": "integer"
+          },
+          "verses": {
+            "items": {
+              "$ref": "#/components/schemas/BibleTextVerse"
+            },
+            "title": "Verses",
+            "type": "array"
+          },
+          "version": {
+            "$ref": "#/components/schemas/BibleTextVersion"
+          }
+        },
+        "required": [
+          "version",
+          "book_id",
+          "chapter",
+          "book_english",
+          "book_zomi",
+          "verse_count",
+          "verses"
+        ],
+        "title": "BibleVersionChapterResponse",
+        "type": "object"
+      },
+      "BibleVersionSearchResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/BibleTextVerse"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "version": {
+            "$ref": "#/components/schemas/BibleTextVersion"
+          }
+        },
+        "required": [
+          "version",
+          "query",
+          "count",
+          "results"
+        ],
+        "title": "BibleVersionSearchResponse",
+        "type": "object"
+      },
+      "BibleVersionsResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/BibleTextVersion"
+            },
+            "title": "Versions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "count",
+          "versions"
+        ],
+        "title": "BibleVersionsResponse",
         "type": "object"
       },
       "DictionaryEntry": {
@@ -960,6 +1193,262 @@
         "title": "LivenessResponse",
         "type": "object"
       },
+      "ProgressListResponse": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProgressResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "count",
+          "items"
+        ],
+        "title": "ProgressListResponse",
+        "type": "object"
+      },
+      "ProgressResponse": {
+        "properties": {
+          "completed": {
+            "default": false,
+            "title": "Completed",
+            "type": "boolean"
+          },
+          "lesson_id": {
+            "title": "Lesson Id",
+            "type": "string"
+          },
+          "percent": {
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Percent",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "percent",
+          "lesson_id",
+          "updated_at"
+        ],
+        "title": "ProgressResponse",
+        "type": "object"
+      },
+      "ProgressUpdate": {
+        "properties": {
+          "completed": {
+            "default": false,
+            "title": "Completed",
+            "type": "boolean"
+          },
+          "percent": {
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Percent",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "percent"
+        ],
+        "title": "ProgressUpdate",
+        "type": "object"
+      },
+      "ReviewDecisionRequest": {
+        "properties": {
+          "corrected_zomi": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrected Zomi"
+          },
+          "decision": {
+            "enum": [
+              "approve",
+              "edit",
+              "reject",
+              "uncertain"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 3000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "title": "ReviewDecisionRequest",
+        "type": "object"
+      },
+      "ReviewDecisionResponse": {
+        "properties": {
+          "job_id": {
+            "format": "uuid",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "publication_status": {
+            "default": "unpublished",
+            "title": "Publication Status",
+            "type": "string"
+          },
+          "review_id": {
+            "format": "uuid",
+            "title": "Review Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "status",
+          "review_id"
+        ],
+        "title": "ReviewDecisionResponse",
+        "type": "object"
+      },
+      "ReviewJobResponse": {
+        "properties": {
+          "claimed_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claimed By"
+          },
+          "dataset_version": {
+            "title": "Dataset Version",
+            "type": "string"
+          },
+          "english_source": {
+            "title": "English Source",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "lease_expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lease Expires At"
+          },
+          "license_status": {
+            "title": "License Status",
+            "type": "string"
+          },
+          "quality_flags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Quality Flags",
+            "type": "array"
+          },
+          "sentence_id": {
+            "title": "Sentence Id",
+            "type": "integer"
+          },
+          "source_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Reference"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "zomi_candidate": {
+            "title": "Zomi Candidate",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sentence_id",
+          "english_source",
+          "zomi_candidate",
+          "source_reference",
+          "dataset_version",
+          "quality_flags",
+          "license_status",
+          "status",
+          "claimed_by",
+          "lease_expires_at"
+        ],
+        "title": "ReviewJobResponse",
+        "type": "object"
+      },
+      "ReviewJobsResponse": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewJobResponse"
+            },
+            "title": "Jobs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "count",
+          "jobs"
+        ],
+        "title": "ReviewJobsResponse",
+        "type": "object"
+      },
       "RoleAssignmentResponse": {
         "properties": {
           "roles": {
@@ -993,6 +1482,56 @@
         ],
         "title": "RoleName",
         "type": "string"
+      },
+      "SavedItemResponse": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "item_key": {
+            "title": "Item Key",
+            "type": "string"
+          },
+          "item_type": {
+            "enum": [
+              "bible_verse",
+              "dictionary_entry",
+              "translation"
+            ],
+            "title": "Item Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_type",
+          "item_key",
+          "created_at"
+        ],
+        "title": "SavedItemResponse",
+        "type": "object"
+      },
+      "SavedItemsResponse": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SavedItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "count",
+          "items"
+        ],
+        "title": "SavedItemsResponse",
+        "type": "object"
       },
       "TranslateMatch": {
         "additionalProperties": true,
@@ -1530,6 +2069,196 @@
           }
         },
         "summary": "Search Bible",
+        "tags": [
+          "bible"
+        ]
+      }
+    },
+    "/api/bible/versions": {
+      "get": {
+        "operationId": "list_versions_api_bible_versions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BibleVersionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Versions",
+        "tags": [
+          "bible"
+        ]
+      }
+    },
+    "/api/bible/versions/{version_id}/books": {
+      "get": {
+        "operationId": "list_version_books_api_bible_versions__version_id__books_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BibleVersionBooksResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Version Books",
+        "tags": [
+          "bible"
+        ]
+      }
+    },
+    "/api/bible/versions/{version_id}/chapter": {
+      "get": {
+        "operationId": "get_version_chapter_api_bible_versions__version_id__chapter_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Book Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "chapter",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Chapter",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BibleVersionChapterResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Version Chapter",
+        "tags": [
+          "bible"
+        ]
+      }
+    },
+    "/api/bible/versions/{version_id}/search": {
+      "get": {
+        "operationId": "search_version_api_bible_versions__version_id__search_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BibleVersionSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search Version",
         "tags": [
           "bible"
         ]
@@ -2137,6 +2866,196 @@
         ]
       }
     },
+    "/api/v1/bible/versions": {
+      "get": {
+        "operationId": "list_versions_api_v1_bible_versions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BibleVersionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Versions",
+        "tags": [
+          "bible"
+        ]
+      }
+    },
+    "/api/v1/bible/versions/{version_id}/books": {
+      "get": {
+        "operationId": "list_version_books_api_v1_bible_versions__version_id__books_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BibleVersionBooksResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Version Books",
+        "tags": [
+          "bible"
+        ]
+      }
+    },
+    "/api/v1/bible/versions/{version_id}/chapter": {
+      "get": {
+        "operationId": "get_version_chapter_api_v1_bible_versions__version_id__chapter_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Book Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "chapter",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Chapter",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BibleVersionChapterResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Version Chapter",
+        "tags": [
+          "bible"
+        ]
+      }
+    },
+    "/api/v1/bible/versions/{version_id}/search": {
+      "get": {
+        "operationId": "search_version_api_v1_bible_versions__version_id__search_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BibleVersionSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search Version",
+        "tags": [
+          "bible"
+        ]
+      }
+    },
     "/api/v1/dictionary": {
       "get": {
         "operationId": "search_dictionary_api_v1_dictionary_get",
@@ -2373,6 +3292,180 @@
         ]
       }
     },
+    "/api/v1/editorial/translation-jobs": {
+      "get": {
+        "operationId": "list_jobs_api_v1_editorial_translation_jobs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "pending",
+              "enum": [
+                "pending",
+                "claimed",
+                "approved",
+                "edited",
+                "rejected",
+                "uncertain"
+              ],
+              "title": "Status",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewJobsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Jobs",
+        "tags": [
+          "editorial"
+        ]
+      }
+    },
+    "/api/v1/editorial/translation-jobs/{job_id}/claim": {
+      "post": {
+        "operationId": "claim_job_api_v1_editorial_translation_jobs__job_id__claim_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewJobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Claim Job",
+        "tags": [
+          "editorial"
+        ]
+      }
+    },
+    "/api/v1/editorial/translation-jobs/{job_id}/decision": {
+      "post": {
+        "operationId": "decide_job_api_v1_editorial_translation_jobs__job_id__decision_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewDecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDecisionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decide Job",
+        "tags": [
+          "editorial"
+        ]
+      }
+    },
     "/api/v1/identity/me": {
       "get": {
         "operationId": "current_identity_api_v1_identity_me_get",
@@ -2473,6 +3566,283 @@
         "summary": "Learning Groups",
         "tags": [
           "learning"
+        ]
+      }
+    },
+    "/api/v1/me/progress": {
+      "get": {
+        "operationId": "list_progress_api_v1_me_progress_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Progress",
+        "tags": [
+          "my-data"
+        ]
+      }
+    },
+    "/api/v1/me/progress/{lesson_id}": {
+      "put": {
+        "operationId": "put_progress_api_v1_me_progress__lesson_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lesson_id",
+            "required": true,
+            "schema": {
+              "maxLength": 160,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "title": "Lesson Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgressUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Put Progress",
+        "tags": [
+          "my-data"
+        ]
+      }
+    },
+    "/api/v1/me/saved": {
+      "get": {
+        "operationId": "list_saved_items_api_v1_me_saved_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedItemsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Saved Items",
+        "tags": [
+          "my-data"
+        ]
+      }
+    },
+    "/api/v1/me/saved/{item_type}/{item_key}": {
+      "delete": {
+        "operationId": "remove_saved_item_api_v1_me_saved__item_type___item_key__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_type",
+            "required": true,
+            "schema": {
+              "enum": [
+                "bible_verse",
+                "dictionary_entry",
+                "translation"
+              ],
+              "title": "Item Type",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_key",
+            "required": true,
+            "schema": {
+              "maxLength": 160,
+              "minLength": 1,
+              "title": "Item Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remove Saved Item",
+        "tags": [
+          "my-data"
+        ]
+      },
+      "put": {
+        "operationId": "save_item_api_v1_me_saved__item_type___item_key__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_type",
+            "required": true,
+            "schema": {
+              "enum": [
+                "bible_verse",
+                "dictionary_entry",
+                "translation"
+              ],
+              "title": "Item Type",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_key",
+            "required": true,
+            "schema": {
+              "maxLength": 160,
+              "minLength": 1,
+              "title": "Item Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedItemResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Save Item",
+        "tags": [
+          "my-data"
         ]
       }
     },

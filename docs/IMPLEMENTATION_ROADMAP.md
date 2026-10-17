@@ -78,6 +78,7 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 - [x] Translation retrieval searches dictionary, reviewed phrases, Bible, and the corpus.
 - [x] Unified search endpoint exists.
 - [x] Bible reader and search exist.
+- [x] Version-aware Bible endpoints and a rights-attested immutable edition importer exist; no additional licensed edition has been supplied.
 - [x] Siamsil AI performs grounded retrieval and refuses to invent missing translations.
 - [x] Saved words and search history work in browser-local storage.
 - [x] Learning publishes the existing teacher-reviewed daily-use phrases.
@@ -85,6 +86,7 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 ### Partial
 
 - [-] Profile is device-local; accounts and cloud synchronization do not exist.
+- [-] Authenticated saved-item and lesson-progress APIs exist, but frontend sign-in and local-to-account synchronization are not wired up.
 - [-] Learning streak and XP are device-local and do not represent a complete learning engine.
 - [-] Siamsil AI is retrieval-only and has no conversational memory or model generation.
 - [-] Library has three links to existing sections and three “coming soon” placeholders; it is not a managed digital library.
@@ -148,6 +150,7 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 - [-] Internal role authorization protects identity administration; future editorial, library, learning, and moderation mutations still need role enforcement.
 - [x] Add request IDs and standard API error responses.
 - [ ] Add production structured-log shipping, downstream timeouts, and rate limits.
+- [x] Add request-ID-linked structured access logs without request bodies or query strings; shipping and ingress limits still need deployment configuration.
 - [-] User provisioning and role grants emit append-only audit events; future editorial and moderation services still need to emit events.
 - [ ] Add backup, restore, migration rollback, and disaster-recovery procedures.
 - [ ] Remove unversioned `/api` aliases after all clients use `/api/v1`.
@@ -156,15 +159,15 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 
 ### Needed
 
-- [ ] Create PostgreSQL tables for translation jobs, attempts, validations, reviews, and audit events.
-- [ ] Implement atomic job claiming with lease owner, lease expiry, retries, and dead-letter status.
+- [-] PostgreSQL jobs, attempts, reviews, and existing audit events are modeled; dedicated validation records remain.
+- [-] Atomic job claiming with lease owner and expiry exists for the pilot; retries and dead-letter handling remain.
 - [ ] Import the 5,441 currently flagged corpus rows into the first review queue.
-- [ ] Start with a representative 100-row pilot.
+- [-] A deterministic 100-row review packet, guarded importer, and role-protected decision API exist; qualified human review has not occurred.
 - [ ] Add provider-neutral translation adapters.
 - [ ] Require structured outputs containing stable sentence IDs.
 - [ ] Validate counts, IDs, language, entities, numbers, repetition, and length before review.
 - [ ] Build protected editor queue, comparison, correction, approval, rejection, and notes screens.
-- [ ] Preserve every translation attempt instead of overwriting existing text.
+- [-] The pilot preserves its imported machine candidate as attempt 1; provider retranslation adapters and subsequent attempts remain.
 - [ ] Generate a v2 release from approved changes.
 - [ ] Verify checksum, evaluation gates, deployment, and rollback for the release.
 

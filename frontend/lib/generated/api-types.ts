@@ -89,6 +89,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/bible/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Versions */
+        get: operations["list_versions_api_bible_versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bible/versions/{version_id}/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Version Books */
+        get: operations["list_version_books_api_bible_versions__version_id__books_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bible/versions/{version_id}/chapter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Version Chapter */
+        get: operations["get_version_chapter_api_bible_versions__version_id__chapter_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bible/versions/{version_id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Version */
+        get: operations["search_version_api_bible_versions__version_id__search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/dictionary": {
         parameters: {
             query?: never;
@@ -327,6 +395,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bible/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Versions */
+        get: operations["list_versions_api_v1_bible_versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bible/versions/{version_id}/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Version Books */
+        get: operations["list_version_books_api_v1_bible_versions__version_id__books_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bible/versions/{version_id}/chapter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Version Chapter */
+        get: operations["get_version_chapter_api_v1_bible_versions__version_id__chapter_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bible/versions/{version_id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Version */
+        get: operations["search_version_api_v1_bible_versions__version_id__search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dictionary": {
         parameters: {
             query?: never;
@@ -412,6 +548,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/editorial/translation-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Jobs */
+        get: operations["list_jobs_api_v1_editorial_translation_jobs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/editorial/translation-jobs/{job_id}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Claim Job */
+        post: operations["claim_job_api_v1_editorial_translation_jobs__job_id__claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/editorial/translation-jobs/{job_id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decide Job */
+        post: operations["decide_job_api_v1_editorial_translation_jobs__job_id__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/identity/me": {
         parameters: {
             query?: never;
@@ -458,6 +645,75 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Progress */
+        get: operations["list_progress_api_v1_me_progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/progress/{lesson_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Progress */
+        put: operations["put_progress_api_v1_me_progress__lesson_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/saved": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Saved Items */
+        get: operations["list_saved_items_api_v1_me_saved_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/saved/{item_type}/{item_key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save Item */
+        put: operations["save_item_api_v1_me_saved__item_type___item_key__put"];
+        post?: never;
+        /** Remove Saved Item */
+        delete: operations["remove_saved_item_api_v1_me_saved__item_type___item_key__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -625,6 +881,8 @@ export interface components {
             book_id: number;
             /** Book Zomi */
             book_zomi: string;
+            /** Chapter Count */
+            chapter_count: number;
             /** Testament */
             testament: string;
         } & {
@@ -667,6 +925,50 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** BibleTextVerse */
+        BibleTextVerse: {
+            /** Book English */
+            book_english: string;
+            /** Book Id */
+            book_id: number;
+            /** Book Zomi */
+            book_zomi: string;
+            /** Chapter */
+            chapter: number;
+            /** Reference */
+            reference: string;
+            /** Testament */
+            testament: string;
+            /** Text */
+            text: string;
+            /** Verse */
+            verse: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** BibleTextVersion */
+        BibleTextVersion: {
+            /** Abbreviation */
+            abbreviation: string;
+            /** Attribution */
+            attribution: string;
+            /** Edition Group */
+            edition_group: string;
+            /** Id */
+            id: string;
+            /** Language */
+            language: string;
+            /** Name */
+            name: string;
+            /** Rights Status */
+            rights_status: string;
+            /** Scope */
+            scope: string;
+            /** Separate Edition */
+            separate_edition: boolean;
+        } & {
+            [key: string]: unknown;
+        };
         /** BibleVerse */
         BibleVerse: {
             /** Book English */
@@ -691,6 +993,55 @@ export interface components {
             zomi_iso: string;
             /** Zomi Original */
             zomi_original: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** BibleVersionBooksResponse */
+        BibleVersionBooksResponse: {
+            /** Books */
+            books: components["schemas"]["BibleBook"][];
+            /** Count */
+            count: number;
+            version: components["schemas"]["BibleTextVersion"];
+        } & {
+            [key: string]: unknown;
+        };
+        /** BibleVersionChapterResponse */
+        BibleVersionChapterResponse: {
+            /** Book English */
+            book_english: string;
+            /** Book Id */
+            book_id: number;
+            /** Book Zomi */
+            book_zomi: string;
+            /** Chapter */
+            chapter: number;
+            /** Verse Count */
+            verse_count: number;
+            /** Verses */
+            verses: components["schemas"]["BibleTextVerse"][];
+            version: components["schemas"]["BibleTextVersion"];
+        } & {
+            [key: string]: unknown;
+        };
+        /** BibleVersionSearchResponse */
+        BibleVersionSearchResponse: {
+            /** Count */
+            count: number;
+            /** Query */
+            query: string;
+            /** Results */
+            results: components["schemas"]["BibleTextVerse"][];
+            version: components["schemas"]["BibleTextVersion"];
+        } & {
+            [key: string]: unknown;
+        };
+        /** BibleVersionsResponse */
+        BibleVersionsResponse: {
+            /** Count */
+            count: number;
+            /** Versions */
+            versions: components["schemas"]["BibleTextVersion"][];
         } & {
             [key: string]: unknown;
         };
@@ -888,6 +1239,107 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** ProgressListResponse */
+        ProgressListResponse: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["ProgressResponse"][];
+        };
+        /** ProgressResponse */
+        ProgressResponse: {
+            /**
+             * Completed
+             * @default false
+             */
+            completed: boolean;
+            /** Lesson Id */
+            lesson_id: string;
+            /** Percent */
+            percent: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ProgressUpdate */
+        ProgressUpdate: {
+            /**
+             * Completed
+             * @default false
+             */
+            completed: boolean;
+            /** Percent */
+            percent: number;
+        };
+        /** ReviewDecisionRequest */
+        ReviewDecisionRequest: {
+            /** Corrected Zomi */
+            corrected_zomi?: string | null;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "approve" | "edit" | "reject" | "uncertain";
+            /** Notes */
+            notes?: string | null;
+        };
+        /** ReviewDecisionResponse */
+        ReviewDecisionResponse: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /**
+             * Publication Status
+             * @default unpublished
+             */
+            publication_status: string;
+            /**
+             * Review Id
+             * Format: uuid
+             */
+            review_id: string;
+            /** Status */
+            status: string;
+        };
+        /** ReviewJobResponse */
+        ReviewJobResponse: {
+            /** Claimed By */
+            claimed_by: string | null;
+            /** Dataset Version */
+            dataset_version: string;
+            /** English Source */
+            english_source: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Lease Expires At */
+            lease_expires_at: string | null;
+            /** License Status */
+            license_status: string;
+            /** Quality Flags */
+            quality_flags: string[];
+            /** Sentence Id */
+            sentence_id: number;
+            /** Source Reference */
+            source_reference: string | null;
+            /** Status */
+            status: string;
+            /** Zomi Candidate */
+            zomi_candidate: string;
+        };
+        /** ReviewJobsResponse */
+        ReviewJobsResponse: {
+            /** Count */
+            count: number;
+            /** Jobs */
+            jobs: components["schemas"]["ReviewJobResponse"][];
+        };
         /** RoleAssignmentResponse */
         RoleAssignmentResponse: {
             /** Roles */
@@ -903,6 +1355,28 @@ export interface components {
          * @enum {string}
          */
         RoleName: "learner" | "contributor" | "reviewer" | "editor" | "moderator" | "administrator";
+        /** SavedItemResponse */
+        SavedItemResponse: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Item Key */
+            item_key: string;
+            /**
+             * Item Type
+             * @enum {string}
+             */
+            item_type: "bible_verse" | "dictionary_entry" | "translation";
+        };
+        /** SavedItemsResponse */
+        SavedItemsResponse: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["SavedItemResponse"][];
+        };
         /** TranslateMatch */
         TranslateMatch: {
             /** Category */
@@ -1137,6 +1611,125 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BibleSearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_versions_api_bible_versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BibleVersionsResponse"];
+                };
+            };
+        };
+    };
+    list_version_books_api_bible_versions__version_id__books_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BibleVersionBooksResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_version_chapter_api_bible_versions__version_id__chapter_get: {
+        parameters: {
+            query: {
+                book_id: number;
+                chapter: number;
+            };
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BibleVersionChapterResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_version_api_bible_versions__version_id__search_get: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BibleVersionSearchResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1542,6 +2135,125 @@ export interface operations {
             };
         };
     };
+    list_versions_api_v1_bible_versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BibleVersionsResponse"];
+                };
+            };
+        };
+    };
+    list_version_books_api_v1_bible_versions__version_id__books_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BibleVersionBooksResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_version_chapter_api_v1_bible_versions__version_id__chapter_get: {
+        parameters: {
+            query: {
+                book_id: number;
+                chapter: number;
+            };
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BibleVersionChapterResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_version_api_v1_bible_versions__version_id__search_get: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BibleVersionSearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     search_dictionary_api_v1_dictionary_get: {
         parameters: {
             query?: {
@@ -1680,6 +2392,104 @@ export interface operations {
             };
         };
     };
+    list_jobs_api_v1_editorial_translation_jobs_get: {
+        parameters: {
+            query?: {
+                status?: "pending" | "claimed" | "approved" | "edited" | "rejected" | "uncertain";
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewJobsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    claim_job_api_v1_editorial_translation_jobs__job_id__claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewJobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_job_api_v1_editorial_translation_jobs__job_id__decision_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewDecisionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     current_identity_api_v1_identity_me_get: {
         parameters: {
             query?: never;
@@ -1748,6 +2558,165 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LearningGroupsResponse"];
+                };
+            };
+        };
+    };
+    list_progress_api_v1_me_progress_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgressListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_progress_api_v1_me_progress__lesson_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProgressUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgressResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_saved_items_api_v1_me_saved_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedItemsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_item_api_v1_me_saved__item_type___item_key__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_type: "bible_verse" | "dictionary_entry" | "translation";
+                item_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedItemResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_saved_item_api_v1_me_saved__item_type___item_key__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_type: "bible_verse" | "dictionary_entry" | "translation";
+                item_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

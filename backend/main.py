@@ -11,7 +11,7 @@ from api_schemas import HealthResponse, LivenessResponse
 from database import check_application_database
 from http_contract import install_http_contract
 from identity import router as identity
-from routers import ai, bible, dictionary, learning, search, translate
+from routers import ai, bible, dictionary, editorial, languages, learning, product_state, search, translate
 from services.data_loader import get_store
 from services.language_engine import get_engine
 from settings import get_settings
@@ -46,12 +46,14 @@ app.add_middleware(
     expose_headers=["X-Request-ID"],
 )
 
-for module in (dictionary, bible, translate, learning, search, ai):
+for module in (dictionary, bible, translate, languages, learning, search, ai):
     app.include_router(module.router, prefix="/api/v1")
     app.include_router(module.router, prefix="/api")
 
 # New authenticated APIs are versioned-only; no legacy unversioned alias is created.
 app.include_router(identity.router, prefix="/api/v1")
+app.include_router(product_state.router, prefix="/api/v1")
+app.include_router(editorial.router, prefix="/api/v1")
 
 
 def readiness_payload() -> tuple[dict[str, Any], bool]:

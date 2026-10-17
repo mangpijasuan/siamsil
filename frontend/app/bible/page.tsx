@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BibleReader from "@/components/BibleReader";
 import { getBibleBooks } from "@/lib/api";
+import "./bible.css";
 
 type Props = { searchParams: Promise<{ book?: string; chapter?: string; testament?: string }> };
 
@@ -14,40 +15,40 @@ export default async function BiblePage({ searchParams }: Props) {
     const data = await getBibleBooks();
     books = data.books;
   } catch {
-    error = "Could not reach the API. Start the backend on port 8000.";
+    error = "Bible books could not be loaded. Check your connection and try again.";
   }
 
   const activeTestament = testament === "new" ? "new" : "old";
 
   return (
     <>
-      {/* ── Header ── */}
-      <header className="page-header-compact">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span className="font-playfair" style={{ color: "var(--white)", fontSize: 20, fontWeight: 700 }}>Bible Hub</span>
-          <span style={{ fontSize: 20 }}>⚙️</span>
+      <header className="bible-page-hero">
+        <div>
+          <span className="bible-page-kicker">Siamsil · Scripture</span>
+          <h1 className="font-playfair">Laisiangtho</h1>
+          <p>Read the supplied Zomi and English texts in a calm, flexible reader.</p>
         </div>
-
-        {/* OT / NT tabs */}
-        <div className="testament-tabs">
+        <nav className="bible-testament-tabs" aria-label="Bible testament">
           <Link
             href="/bible?testament=old"
-            className={`testament-tab${activeTestament === "old" ? " active" : ""}`}
+            aria-current={activeTestament === "old" ? "page" : undefined}
+            className={activeTestament === "old" ? "active" : ""}
           >Old Testament</Link>
           <Link
             href="/bible?testament=new"
-            className={`testament-tab${activeTestament === "new" ? " active" : ""}`}
+            aria-current={activeTestament === "new" ? "page" : undefined}
+            className={activeTestament === "new" ? "active" : ""}
           >New Testament</Link>
-        </div>
+        </nav>
       </header>
 
       {error && (
-        <div style={{ margin: "16px 16px 0", padding: "12px 16px", borderRadius: 12, background: "#FEE2E2", color: "#B91C1C", fontSize: 13 }}>
-          {error}
+        <div className="bible-page-error" role="alert">
+          {error} <a href="/bible" style={{ color: "inherit", fontWeight: 700, textDecoration: "underline" }}>Retry</a>
         </div>
       )}
 
-      <BibleReader books={books} activeTestament={activeTestament} bookId={book ? Number(book) : null} chapter={chapter ? Number(chapter) : 1} />
+      {!error && <BibleReader key={activeTestament} books={books} activeTestament={activeTestament} bookId={book ? Number(book) : null} chapter={chapter ? Number(chapter) : 1} />}
 
       <div className="screen-pad" />
     </>

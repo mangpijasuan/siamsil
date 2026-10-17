@@ -8,6 +8,7 @@ Target architecture and migration plan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTU
 Mobile and language-AI target architecture: [`docs/MOBILE_AI_ARCHITECTURE.md`](docs/MOBILE_AI_ARCHITECTURE.md)
 Implementation status and prioritized to-do list: [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md)
 Identity and authorization setup: [`docs/IDENTITY_AND_AUTHORIZATION.md`](docs/IDENTITY_AND_AUTHORIZATION.md)
+Backend rollout and new API workflows: [`docs/BACKEND_ROLLOUT.md`](docs/BACKEND_ROLLOUT.md)
 
 ## What is live (Release 1)
 

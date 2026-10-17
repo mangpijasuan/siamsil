@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     environment: Literal["development", "test", "staging", "production"] = "development"
     data_dir: Path = BACKEND_ROOT / "data"
     language_db: Path = PROJECT_ROOT / "data" / "processed" / "language" / "siamsil_language.sqlite"
+    scripture_releases_dir: Path = PROJECT_ROOT / "data" / "versions" / "scripture"
 
     database_url: str | None = None
     database_required: bool = False

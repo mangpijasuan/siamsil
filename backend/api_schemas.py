@@ -103,6 +103,7 @@ class BibleBook(ApiModel):
     book_english: str
     book_zomi: str
     testament: str
+    chapter_count: int
 
 
 class BibleBooksResponse(ApiModel):
@@ -125,8 +126,61 @@ class BibleChapterResponse(ApiModel):
     verses: list[BibleVerse]
 
 
+class BibleTextVersion(ApiModel):
+    id: str
+    name: str
+    language: str
+    abbreviation: str
+    edition_group: str
+    separate_edition: bool
+    rights_status: str
+    scope: str
+    attribution: str
+
+
+class BibleVersionsResponse(ApiModel):
+    count: int
+    versions: list[BibleTextVersion]
+
+
+class BibleVersionBooksResponse(ApiModel):
+    version: BibleTextVersion
+    count: int
+    books: list[BibleBook]
+
+
+class BibleTextVerse(ApiModel):
+    book_id: int
+    book_english: str
+    book_zomi: str
+    testament: str
+    chapter: int
+    verse: int
+    reference: str
+    text: str
+
+
+class BibleVersionChapterResponse(ApiModel):
+    version: BibleTextVersion
+    book_id: int
+    chapter: int
+    book_english: str
+    book_zomi: str
+    verse_count: int
+    verses: list[BibleTextVerse]
+
+
+class BibleVersionSearchResponse(ApiModel):
+    version: BibleTextVersion
+    query: str
+    count: int
+    results: list[BibleTextVerse]
+
+
 class TranslationSearchResponse(ApiModel):
     query: str
+    source_language: str = "en"
+    target_language: str = "zom"
     count: int
     results: list[TranslateMatch]
     note: str | None = None
@@ -135,10 +189,33 @@ class TranslationSearchResponse(ApiModel):
 class TranslationResponse(ApiModel):
     input: str
     direction: str
+    source_language: str = "en"
+    target_language: str = "zom"
     mode: str
     note: str
     primary: TranslateMatch | None = None
     matches: list[TranslateMatch]
+
+
+class LanguageInfo(ApiModel):
+    code: str
+    name: str
+    native_name: str
+    role: str
+
+
+class TranslationPairInfo(ApiModel):
+    source_language: str
+    target_language: str
+    status: str
+    mode: str
+    review_status: str
+
+
+class LanguageCatalogResponse(ApiModel):
+    languages: list[LanguageInfo]
+    translation_pairs: list[TranslationPairInfo]
+    note: str
 
 
 class LearningEntry(ApiModel):

@@ -83,8 +83,13 @@ class ApiContractTests(unittest.TestCase):
         for path, methods in versioned_paths.items():
             for method, operation in methods.items():
                 with self.subTest(path=path, method=method):
-                    response_schema = operation["responses"]["200"]["content"]["application/json"]["schema"]
-                    self.assertTrue(response_schema)
+                    success = {int(code): response for code, response in operation["responses"].items()
+                               if code.isdigit() and 200 <= int(code) < 300}
+                    self.assertTrue(success)
+                    for code, response in success.items():
+                        if code != 204:
+                            response_schema = response["content"]["application/json"]["schema"]
+                            self.assertTrue(response_schema)
 
 
 if __name__ == "__main__":

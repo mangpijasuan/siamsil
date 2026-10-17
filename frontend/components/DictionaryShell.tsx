@@ -107,8 +107,12 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
     <div className="dict-root">
       {/* ── Page header ── */}
       <div className="dict-header">
-        <p className="gold-label" style={{ marginBottom: 6 }}>Siamsil</p>
-        <h1 className="font-playfair dict-h1">Zomi Dictionary</h1>
+        <div className="dict-header-copy">
+          <div>
+            <h1 className="font-playfair dict-h1">Find a word</h1>
+          </div>
+          <p className="dict-intro">Search English and Zomi entries, then save words you want to revisit.</p>
+        </div>
 
         <div className="dict-search-row">
           <form action="/zomidictionary" method="GET" className="dict-search-form">
@@ -118,6 +122,7 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
               type="search"
               defaultValue={query}
               placeholder="Search English or Zomi…"
+              aria-label="Search dictionary"
               className="dict-search-input"
             />
             {direction === "zom-en" && <input type="hidden" name="dir" value="zom-en" />}
@@ -127,39 +132,39 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
                 <IconClose />
               </Link>
             )}
+            <button type="submit" className="dict-search-submit">Search</button>
           </form>
 
-          <div className="lang-toggle dict-lang-toggle">
+          <div className="lang-toggle dict-lang-toggle" role="group" aria-label="Dictionary direction">
             <Link
               href={hrefFor({ dir: "zom-en" })}
               className={`lang-pill${direction === "zom-en" ? " active" : ""}`}
-            >Zomi → EN</Link>
+            >Zomi → English</Link>
             <Link
               href={hrefFor({ dir: "en-zom" })}
               className={`lang-pill${direction === "en-zom" ? " active" : ""}`}
-            >EN → Zomi</Link>
+            >English → Zomi</Link>
           </div>
         </div>
       </div>
 
-      {/* ── Three-column body ── */}
+      {/* ── Results and definition ── */}
       <div className="dict-body">
 
         {/* ── Word list ── */}
         <div className="dict-list-col" ref={listRef}>
-          {/* Alphabet strip (horizontal on mobile, hidden on desktop — replaced by A-Z rail) */}
-          <div className="alpha-strip dict-alpha-strip-mobile">
-            {["All", ...LETTERS].map(l => (
-              <Link
-                key={l}
-                href={l === "All" ? hrefFor({ letter: "All" }) : hrefFor({ letter: l })}
-                className={`alpha-chip${activeLetter === l ? " active" : ""}`}
-              >{l}</Link>
-            ))}
-          </div>
+          <details className="dict-letter-browse">
+            <summary>Browse A–Z <span>{activeLetter !== "All" ? `Letter ${activeLetter}` : "All letters"}</span></summary>
+            <nav className="dict-letter-grid" aria-label="Browse dictionary by letter">
+              <Link href={hrefFor({ letter: "All" })} className={activeLetter === "All" ? "active" : ""} aria-current={activeLetter === "All" ? "page" : undefined}>All</Link>
+              {LETTERS.map((letter) => letterSet.has(letter) ? (
+                <Link key={letter} href={hrefFor({ letter })} className={activeLetter === letter ? "active" : ""} aria-current={activeLetter === letter ? "page" : undefined}>{letter}</Link>
+              ) : <span key={letter} className="unavailable" aria-label={`${letter}, no entries`}>{letter}</span>)}
+            </nav>
+          </details>
 
           {error && (
-            <div className="dict-error">{error}</div>
+            <div className="dict-error" role="alert">{error} <a href="/zomidictionary" style={{ color: "inherit", fontWeight: 700, textDecoration: "underline" }}>Retry</a></div>
           )}
 
           {showEmpty && (
@@ -209,28 +214,13 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
                     {entry.verified && (
                       <span style={{ color: "#16a34a", display: "flex" }}><IconVerified /></span>
                     )}
+                    {entry.flagged && <span className="badge badge-cream">Needs review</span>}
                   </div>
                 </button>
               ))}
             </>
           )}
         </div>
-
-        {/* ── A–Z index rail (desktop only) ── */}
-        <nav className="dict-az-rail" aria-label="Alphabetical index">
-          {LETTERS.map(l => {
-            const hasEntries = letterSet.has(l);
-            return (
-              <Link
-                key={l}
-                href={hrefFor({ letter: l })}
-                className={`dict-az-letter${activeLetter === l ? " active" : ""}${!hasEntries ? " dim" : ""}`}
-                title={l}
-                aria-disabled={!hasEntries}
-              >{l}</Link>
-            );
-          })}
-        </nav>
 
         {/* ── Detail panel (desktop sticky, mobile modal) ── */}
         <>
@@ -285,16 +275,17 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
                   )}
                   {selected.verified && (
                     <span className="badge dict-verified-badge">
-                      <IconVerified /> Verified
+                      <IconVerified /> Reviewed
                     </span>
                   )}
                   {selected.flagged && (
                     <span className="badge badge-cream">Needs review</span>
                   )}
                   {!selected.verified && !selected.flagged && (
-                    <span className="badge badge-cream">Unreviewed</span>
+                    <span className="badge badge-cream">Not reviewed</span>
                   )}
                 </div>
+                {!selected.verified && <p className="dict-review-note">This entry has not been checked by a Siamsil reviewer.</p>}
 
                 {/* Definition */}
                 {(selected.zomi || selected.definition) && (
@@ -308,9 +299,7 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
                     ) : (
                       <p className="dict-detail-def">{selected.definition || selected.zomi}</p>
                     )}
-                    <p className="dict-detail-source" style={{ marginTop: 8 }}>
-                      This dictionary defines English headwords in Zomi. No separate English definition is stored for this entry.
-                    </p>
+                    {direction === "en-zom" && <p className="dict-detail-source" style={{ marginTop: 8 }}>This entry has a Zomi definition; an English explanation is not stored.</p>}
                   </div>
                 )}
 

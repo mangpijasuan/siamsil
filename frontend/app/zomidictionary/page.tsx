@@ -27,7 +27,7 @@ export default async function DictionaryPage({ searchParams }: Props) {
     letters = letterData.letters;
     entries = searchData.results;
   } catch {
-    error = "Could not reach the API. Start the backend, then run python3 ml_pipeline/scripts/build_language_db.py";
+    error = "The dictionary could not be loaded. Check your connection and try again.";
   }
 
   return (

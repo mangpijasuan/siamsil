@@ -3,6 +3,8 @@ import { Inter, Playfair_Display } from "next/font/google";
 import BottomNav from "@/components/BottomNav";
 import SidebarNav from "@/components/SidebarNav";
 import "./globals.css";
+import "./layout-refresh.css";
+import "./feature-refresh.css";
 
 const inter = Inter({
   subsets: ["latin"],

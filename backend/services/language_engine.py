@@ -11,6 +11,15 @@ from typing import Any
 from settings import get_settings
 
 FTS_UNSAFE = re.compile(r'["\'*:^(){}[\]~-]')
+EMBEDDED_ENTRY = re.compile(
+    r"(?<![A-Za-z])(?:[A-Za-z][A-Za-z'’-]{2,})\s+(?:adj|adv|noun|verb|vt|vi|n|v)\.",
+    re.IGNORECASE,
+)
+
+
+def has_embedded_dictionary_entry(definition: str | None) -> bool:
+    """Detect a likely OCR/import boundary leak without rewriting source text."""
+    return bool(EMBEDDED_ENTRY.search(definition or ""))
 
 
 def fts_match(query: str) -> str | None:
@@ -108,21 +117,28 @@ class LanguageEngine:
     def word_of_day(self, seed: int) -> dict[str, Any] | None:
         con = self.connect()
         total = con.execute(
-            "SELECT COUNT(*) FROM dictionary_entries WHERE definition IS NOT NULL AND definition != ''"
+            "SELECT COUNT(*) FROM dictionary_entries WHERE definition IS NOT NULL AND definition != '' AND flagged = 0"
         ).fetchone()[0]
         if not total:
             return None
         offset = seed % total
-        row = con.execute(
-            """
-            SELECT * FROM dictionary_entries
-            WHERE definition IS NOT NULL AND definition != ''
-            ORDER BY id
-            LIMIT 1 OFFSET ?
-            """,
-            (offset,),
-        ).fetchone()
-        return self._present_entry(row)
+        # Walk a bounded, deterministic window. A source row may be unflagged
+        # while still containing the next headword due to OCR/import noise.
+        for start, size in ((offset, min(100, total - offset)), (0, min(100, offset))):
+            if not size:
+                continue
+            rows = con.execute(
+                """
+                SELECT * FROM dictionary_entries
+                WHERE definition IS NOT NULL AND definition != '' AND flagged = 0
+                ORDER BY id LIMIT ? OFFSET ?
+                """,
+                (size, start),
+            ).fetchall()
+            for row in rows:
+                if not has_embedded_dictionary_entry(row["definition"]):
+                    return self._present_entry(row)
+        return None
 
     def search_dictionary(
         self,
@@ -288,6 +304,7 @@ class LanguageEngine:
         if not data:
             return None
         zomi, definition = split_zomi_definition(data["definition"])
+        needs_review = bool(data["flagged"]) or has_embedded_dictionary_entry(data["definition"])
         return {
             "id": data["id"],
             "english": data["source_word"],
@@ -305,9 +322,9 @@ class LanguageEngine:
             "source": data["source"],
             "source_reference": data["source_reference"],
             "confidence": data["confidence"],
-            "verification_status": data["verification_status"],
-            "verified": data["verification_status"] == "verified",
-            "flagged": bool(data["flagged"]),
+            "verification_status": "needs_review" if needs_review else data["verification_status"],
+            "verified": data["verification_status"] == "verified" and not needs_review,
+            "flagged": needs_review,
             "suggested_correction": data["suggested_correction"] or None,
             "letter": data["letter"],
             "version": data["version"],

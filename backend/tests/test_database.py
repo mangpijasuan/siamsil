@@ -88,6 +88,11 @@ class DatabaseTests(unittest.TestCase):
                 "consents",
                 "audit_events",
                 "user_sessions",
+                "saved_items",
+                "learning_progress",
+                "translation_jobs",
+                "translation_attempts",
+                "translation_reviews",
             },
             set(Base.metadata.tables),
         )

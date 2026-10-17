@@ -19,6 +19,9 @@ class DataStore:
         # Indexes built at load time for O(1) / fast lookups
         self._bible_by_reference: dict[str, dict[str, Any]] = {}
         self._bible_by_book_chapter: dict[tuple[int, int], list[dict[str, Any]]] = {}
+        self._bible_by_name_chapter: dict[tuple[str, str, int], list[dict[str, Any]]] = {}
+        self._bible_name_by_id: dict[int, tuple[str, str]] = {}
+        self._bible_chapter_count: dict[tuple[str, str], int] = {}
         self._dict_by_id: dict[int, dict[str, Any]] = {}
         self._loaded = False
 
@@ -39,6 +42,10 @@ class DataStore:
         for verse in self.bible_verses:
             key = (verse["book_id"], verse["chapter"])
             self._bible_by_book_chapter.setdefault(key, []).append(verse)
+            name_key = (verse["testament"].strip().lower(), verse["book_english"].strip().lower())
+            self._bible_name_by_id[verse["book_id"]] = name_key
+            self._bible_by_name_chapter.setdefault((*name_key, verse["chapter"]), []).append(verse)
+            self._bible_chapter_count[name_key] = max(self._bible_chapter_count.get(name_key, 0), verse["chapter"])
 
         # Build dictionary ID index
         self._dict_by_id = {entry["id"]: entry for entry in self.dictionary}
@@ -57,32 +64,32 @@ class DataStore:
             return json.load(handle)
 
     def bible_books(self) -> list[dict[str, Any]]:
-        seen_ids: set[int] = set()
-        seen_names: set[str] = set()
+        seen_names: set[tuple[str, str]] = set()
         books: list[dict[str, Any]] = []
         for verse in self.bible_verses:
             book_id = verse["book_id"]
-            name_key = (verse.get("book_english") or "").strip().lower()
-            if book_id in seen_ids:
+            name_key = self._bible_name_by_id[book_id]
+            # The source splits some books across IDs. Expose the first ID as
+            # canonical while resolving all chapters by normalized book name.
+            if name_key in seen_names:
                 continue
-            # Source data assigns multiple book_ids to the same English title
-            if name_key and name_key in seen_names:
-                continue
-            seen_ids.add(book_id)
-            if name_key:
-                seen_names.add(name_key)
+            seen_names.add(name_key)
             books.append(
                 {
                     "book_id": book_id,
                     "book_english": verse["book_english"],
                     "book_zomi": verse["book_zomi"],
                     "testament": verse["testament"],
+                    "chapter_count": self._bible_chapter_count[name_key],
                 }
             )
         return books
 
     def bible_chapter(self, book_id: int, chapter: int) -> list[dict[str, Any]]:
-        return self._bible_by_book_chapter.get((book_id, chapter), [])
+        name_key = self._bible_name_by_id.get(book_id)
+        if name_key is None:
+            return []
+        return self._bible_by_name_chapter.get((*name_key, chapter), [])
 
     def search_bible(self, query: str, limit: int = 20) -> list[dict[str, Any]]:
         needle = query.lower()
@@ -161,6 +168,8 @@ class DataStore:
     def learning_groups(self) -> dict[str, list[dict[str, Any]]]:
         groups: dict[str, list[dict[str, Any]]] = {}
         for entry in self.daily_use_pairs:
+            if entry.get("verified") is not True:
+                continue
             category = entry.get("category") or "General"
             groups.setdefault(category, []).append(entry)
         return groups

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+import json
 import re
+from time import perf_counter
 from typing import Any
 from uuid import uuid4
 
@@ -42,8 +44,16 @@ def install_http_contract(app: FastAPI) -> None:
     @app.middleware("http")
     async def attach_request_id(request: Request, call_next):
         request.state.request_id = request_id_for(request)
+        started = perf_counter()
         response = await call_next(request)
         response.headers[REQUEST_ID_HEADER] = request.state.request_id
+        if request.url.path.startswith(("/api/v1/me/", "/api/v1/editorial/", "/api/v1/identity/")):
+            response.headers["Cache-Control"] = "no-store"
+        logger.info(json.dumps({
+            "event": "http_request", "request_id": request.state.request_id,
+            "method": request.method, "path": request.url.path,
+            "status": response.status_code, "duration_ms": round((perf_counter() - started) * 1000, 1),
+        }, separators=(",", ":")))
         return response
 
     @app.exception_handler(StarletteHTTPException)
