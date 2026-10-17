@@ -1,0 +1,5 @@
+# Model training (train_mt.py). Install on the training machine, not in CI.
+torch>=2.3
+transformers>=4.40
+sentencepiece>=0.2
+sacrebleu>=2.4.0,<3.0.0

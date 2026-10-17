@@ -1,0 +1,252 @@
+#!/usr/bin/env python3
+"""Move Siamsil's Excel work sheets in and out of the pipeline formats.
+
+Human evaluation set (docs/EVALUATION_SET.md), English -> Zomi:
+  testset-import SHEET.xlsx --translator T01 --origin TEXT --out DRAFT.jsonl
+      Read the translator's "Translate" sheet. Translated rows become draft
+      items (review_outcome "pending"); blank rows are counted and skipped.
+  review-sheet DRAFT.jsonl --out REVIEW.xlsx
+      Make the second reader's sheet: accept each translation or correct it.
+  review-merge DRAFT.jsonl REVIEW.xlsx --reviewer R01 --out SET.jsonl
+      Combine both into the evaluation set and validate it. Rows the reviewer
+      has not decided stay out of the set and are listed.
+
+Corpus spot-check (docs/GENERATOR_REVIEW.md):
+  ratings-import SHEET.xlsx --out review.csv
+      Read the "Rate" sheet into review.csv for `review_sample.py summarize`.
+
+Contributor IDs (T01, R01) map to names in a private roster, never in these files.
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import sys
+from pathlib import Path
+
+from eval_set import DOMAINS, validate_items
+from review_sample import REVIEW_COLUMNS
+
+DIRECTION = "en-zomi"
+DECISIONS = ("Accept", "Correct")
+
+
+def _cell(value) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    return " ".join(str(value).split())
+
+
+def read_sheet(path: Path, sheet: str) -> list[dict[str, str]]:
+    """Rows of a sheet as dicts keyed by its header row."""
+    import openpyxl
+
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    if sheet not in wb.sheetnames:
+        sys.exit(f"{path} has no sheet named '{sheet}' (found: {', '.join(wb.sheetnames)})")
+    rows = list(wb[sheet].iter_rows(values_only=True))
+    wb.close()
+    if not rows:
+        return []
+    header = [_cell(h) for h in rows[0]]
+    return [dict(zip(header, (_cell(v) for v in row))) for row in rows[1:] if any(v is not None for v in row)]
+
+
+def read_jsonl(path: Path) -> list[dict]:
+    with path.open(encoding="utf-8") as handle:
+        return [json.loads(line) for line in handle if line.strip()]
+
+
+def write_jsonl(path: Path, items: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as handle:
+        for item in items:
+            handle.write(json.dumps(item, ensure_ascii=False) + "\n")
+
+
+def cmd_testset_import(args: argparse.Namespace) -> int:
+    rows = read_sheet(args.sheet, "Translate")
+    items, blank, bad_topic = [], 0, []
+    for row in rows:
+        zomi = row.get("Zomi translation", "")
+        if not zomi:
+            blank += 1
+            continue
+        topic = row.get("Topic", "")
+        if topic not in DOMAINS:
+            bad_topic.append(row.get("ID", "?"))
+        items.append({
+            "id": row["ID"],
+            "direction": DIRECTION,
+            "domain": topic,
+            "source_text": row["English"],
+            "references": [zomi],
+            "source_origin": args.origin,
+            "translator": args.translator,
+            "reviewer": "",
+            "adjudicator": None,
+            "review_outcome": "pending",
+            "notes": row.get("Notes", ""),
+        })
+    if bad_topic:
+        sys.exit(f"unknown topic in rows: {', '.join(bad_topic[:10])}; topics must be one of {', '.join(DOMAINS)}")
+    write_jsonl(args.out, items)
+    print(f"{len(items)} translated, {blank} not yet translated; wrote draft {args.out}")
+    return 0
+
+
+def cmd_review_sheet(args: argparse.Namespace) -> int:
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.worksheet.datavalidation import DataValidation
+
+    items = read_jsonl(args.draft)
+    wb = Workbook()
+    intro = wb.active
+    intro.title = "Instructions"
+    intro.column_dimensions["A"].width = 110
+    for line in (
+        "Siamsil test set: check each Zomi translation",
+        "",
+        "For every row, read the English and the Zomi translation.",
+        "• Decision = Accept if the Zomi is correct, natural, and says the same as the English.",
+        "• Decision = Correct if anything should change; write your full corrected Zomi in 'Corrected Zomi'.",
+        "• Do not use Google Translate, ChatGPT, Gemini, or other machine translation.",
+        "• Leave Decision blank if you are unsure; that row stays out of the test set for now.",
+        "Keep this file private. Test sentences must never be used for training or shared publicly.",
+    ):
+        intro.append([line])
+    intro["A1"].font = Font(bold=True, size=14, color="1B2A4A")
+
+    sheet = wb.create_sheet("Review")
+    header = ["ID", "Topic", "English", "Zomi translation", "Decision", "Corrected Zomi", "Notes"]
+    widths = [14, 14, 55, 55, 12, 55, 35]
+    sheet.append(header)
+    for index, width in enumerate(widths, 1):
+        cell = sheet.cell(1, index)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="1B2A4A")
+        sheet.column_dimensions[cell.column_letter].width = width
+    sheet.freeze_panes = "A2"
+    for item in items:
+        sheet.append([item["id"], item["domain"], item["source_text"], item["references"][0], None, "", ""])
+        for col in (3, 4, 6, 7):
+            sheet.cell(sheet.max_row, col).alignment = Alignment(wrap_text=True, vertical="top")
+        for col in (5, 6):
+            sheet.cell(sheet.max_row, col).fill = PatternFill("solid", fgColor="F8F6F0")
+    choice = DataValidation(type="list", formula1='"' + ",".join(DECISIONS) + '"', allow_blank=True)
+    sheet.add_data_validation(choice)
+    if items:
+        choice.add(f"E2:E{sheet.max_row}")
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    wb.save(args.out)
+    print(f"wrote review sheet for {len(items)} items to {args.out}")
+    return 0
+
+
+def cmd_review_merge(args: argparse.Namespace) -> int:
+    drafts = {item["id"]: item for item in read_jsonl(args.draft)}
+    decisions = {row["ID"]: row for row in read_sheet(args.review, "Review") if row.get("ID")}
+    items, undecided, problems = [], [], []
+    for item_id, item in drafts.items():
+        row = decisions.get(item_id, {})
+        decision = row.get("Decision", "")
+        if not decision:
+            undecided.append(item_id)
+            continue
+        merged = {**item, "reviewer": args.reviewer}
+        if decision == "Accept":
+            merged["review_outcome"] = "accepted"
+        elif decision == "Correct":
+            corrected = row.get("Corrected Zomi", "")
+            if not corrected:
+                problems.append(f"{item_id}: 'Correct' needs the corrected Zomi")
+                continue
+            merged["review_outcome"] = "corrected"
+            merged["references"] = [corrected]
+        else:
+            problems.append(f"{item_id}: decision must be Accept or Correct, not '{decision}'")
+            continue
+        if row.get("Notes"):
+            merged["notes"] = "; ".join(filter(None, [item.get("notes", ""), f"reviewer: {row['Notes']}"]))
+        items.append(merged)
+    if problems:
+        for problem in problems[:20]:
+            print(f"error: {problem}")
+        sys.exit(f"{len(problems)} rows need fixing in {args.review}")
+    numbered = [{**item, "_line": i} for i, item in enumerate(items, 1)]
+    errors, warnings = validate_items(numbered)
+    if errors:
+        for error in errors[:20]:
+            print(f"error: {error}")
+        sys.exit("the merged set is not valid; nothing written")
+    write_jsonl(args.out, items)
+    accepted = sum(1 for item in items if item["review_outcome"] == "accepted")
+    print(f"{len(items)} items ({accepted} accepted, {len(items) - accepted} corrected); "
+          f"{len(undecided)} undecided left out; wrote {args.out}")
+    for warning in warnings:
+        print(f"warning: {warning}")
+    return 0
+
+
+def cmd_ratings_import(args: argparse.Namespace) -> int:
+    rows = read_sheet(args.sheet, "Rate")
+    out_rows, rated = [], 0
+    for row in rows:
+        meaning, fluency = row.get("Meaning (0-2)", ""), row.get("Fluency (0-2)", "")
+        rated += bool(meaning or fluency)
+        out_rows.append({
+            "sample_id": row.get("ID", ""),
+            "english": row.get("English", ""),
+            "zomi": row.get("Zomi (machine-made)", ""),
+            "meaning": meaning,
+            "fluency": fluency,
+            "notes": row.get("Notes", ""),
+        })
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    with args.out.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=REVIEW_COLUMNS)
+        writer.writeheader()
+        writer.writerows(out_rows)
+    print(f"{rated} of {len(out_rows)} rows rated; wrote {args.out}")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    commands = parser.add_subparsers(dest="command", required=True)
+
+    p = commands.add_parser("testset-import")
+    p.add_argument("sheet", type=Path)
+    p.add_argument("--translator", required=True, help="contributor ID, e.g. T01")
+    p.add_argument("--origin", required=True, help="where the English sentences came from")
+    p.add_argument("--out", type=Path, required=True)
+    p.set_defaults(func=cmd_testset_import)
+
+    p = commands.add_parser("review-sheet")
+    p.add_argument("draft", type=Path)
+    p.add_argument("--out", type=Path, required=True)
+    p.set_defaults(func=cmd_review_sheet)
+
+    p = commands.add_parser("review-merge")
+    p.add_argument("draft", type=Path)
+    p.add_argument("review", type=Path)
+    p.add_argument("--reviewer", required=True, help="contributor ID, e.g. R01")
+    p.add_argument("--out", type=Path, required=True)
+    p.set_defaults(func=cmd_review_merge)
+
+    p = commands.add_parser("ratings-import")
+    p.add_argument("sheet", type=Path)
+    p.add_argument("--out", type=Path, required=True)
+    p.set_defaults(func=cmd_ratings_import)
+
+    args = parser.parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

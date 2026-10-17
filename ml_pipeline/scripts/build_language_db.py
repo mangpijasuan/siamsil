@@ -620,11 +620,15 @@ def file_fingerprint(path: Path) -> dict:
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1 << 20), b""):
             digest.update(chunk)
+    return {"path": display_path(path), "bytes": path.stat().st_size, "sha256": digest.hexdigest()}
+
+
+def display_path(path: Path) -> str:
+    """Repository-relative path, or the file name when the file lives outside the repository."""
     try:
-        shown = str(path.resolve().relative_to(ROOT))
+        return str(path.resolve().relative_to(ROOT))
     except ValueError:
-        shown = path.name
-    return {"path": shown, "bytes": path.stat().st_size, "sha256": digest.hexdigest()}
+        return path.name
 
 
 def release_manifest(
@@ -780,8 +784,8 @@ def main() -> None:
     print(f"  evaluation holdout pairs: {checks['splits'].get(EVAL_HOLDOUT_SPLIT, 0):,}")
 
     source_files = {
-        "dictionary_master": str(dictionary_xlsx.relative_to(ROOT)),
-        "parallel_csv": str(parallel_csv.relative_to(ROOT)),
+        "dictionary_master": display_path(dictionary_xlsx),
+        "parallel_csv": display_path(parallel_csv),
     }
     con.execute(
         """

@@ -1,15 +1,28 @@
 {
   "name": "siamsil-language",
-  "version": "v1",
-  "created_at": "2026-08-18T15:27:53.784474+00:00",
-  "script_version": "1.0.0",
-  "database": "data/processed/language/siamsil_language.sqlite",
+  "version": "v2",
+  "created_at": "2026-10-17T21:16:08.700710+00:00",
+  "script_version": "1.1.0",
+  "database": {
+    "path": "siamsil_language.sqlite",
+    "bytes": 1601585152,
+    "sha256": "87f51c92925e1d966cb209e06e0a70b52367ac843326a8f34f2e785d8a1282eb"
+  },
   "counts": {
-    "dictionary_entries": 20826,
+    "dictionary_entries": 20827,
     "parallel_sentences": 1775043
   },
   "source_files": {
-    "dictionary_master": "data/raw/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx",
-    "parallel_csv": "data/raw/parallel/zomi_english_sentences.csv"
-  }
+    "dictionary_master": {
+      "path": "Zomi_Standard_Dictionary_AI_Cleaned.xlsx",
+      "bytes": 1542204,
+      "sha256": "cd490ac988d6b89e6c8bd5b380d8b711414128a648450a81f4d297963ad7f03f"
+    },
+    "parallel_csv": {
+      "path": "zomi_english_sentences.csv",
+      "bytes": 328203650,
+      "sha256": "73a94ae3dc33aeb098d4c274d12280914545df0b91cd5af39c9849c731bfdf8f"
+    }
+  },
+  "evaluation_sets": []
 }

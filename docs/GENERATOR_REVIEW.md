@@ -18,6 +18,11 @@ This measures the training corpus. It does not replace the human evaluation sets
 
 2. **Review.** Give reviewers `review.csv` only. `key.csv` maps samples to models and stays with the coordinator so reviews are blind. Reviewers fill in `meaning`, `fluency`, and optional `notes` for each row. A row left blank is skipped, not scored.
 
+   Reviewers who rate in Excel return the "Rate" sheet; convert it first:
+   ```bash
+   python3 ml_pipeline/scripts/worksheets.py ratings-import Siamsil_Corpus_Review_240.xlsx \
+     --out data/exports/generator-review-v1/review.csv
+   ```
 3. **Summarize.**
 
    ```bash
