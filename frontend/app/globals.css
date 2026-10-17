@@ -3351,7 +3351,6 @@ a.library-card:hover {
   .hm-title { font-size: 44px; }
   .hm-lede { font-size: 15px; }
   .hm-body { padding: 0 40px; max-width: 1080px; margin: 0 auto; }
-  .hm-today { grid-template-columns: 3fr 2fr; }
   .hm-explore { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hm-feature { flex-direction: row; align-items: center; justify-content: space-between; padding: 24px 28px; }
   .hm-feature-cta { align-self: center; }

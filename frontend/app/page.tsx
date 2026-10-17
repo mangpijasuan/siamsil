@@ -11,7 +11,7 @@ import {
   IconTranslate,
 } from "@/components/Icons";
 import { getDailyVerse, getHealth, getWordOfDay } from "@/lib/api";
-import type { BibleVerse, DictionaryEntry } from "@/lib/api";
+import type { DictionaryEntry } from "@/lib/api";
 
 type IconType = ComponentType<{ size?: number; className?: string }>;
 
@@ -52,29 +52,6 @@ async function loadHome() {
   };
 }
 
-function VerseCard({ verse }: { verse: BibleVerse | null }) {
-  return (
-    <section className="hm-card hm-verse" aria-labelledby="hm-verse-title">
-      <div className="hm-card-head">
-        <span className="hm-eyebrow" id="hm-verse-title">Nisim Thalakna · Verse of the day</span>
-        <IconCross size={16} className="hm-card-icon" />
-      </div>
-      {verse ? (
-        <>
-          <blockquote className="font-playfair hm-verse-zomi">{verse.zomi_original || verse.zomi_iso}</blockquote>
-          {verse.english && <p className="hm-verse-en">{verse.english}</p>}
-          <div className="hm-card-foot">
-            <span className="hm-ref">{verse.reference}</span>
-            <Link href="/bible" className="hm-link">Read the Bible <IconArrow size={12} /></Link>
-          </div>
-        </>
-      ) : (
-        <p className="hm-empty">Today&rsquo;s verse appears here once the Bible text is loaded.</p>
-      )}
-    </section>
-  );
-}
-
 function WordCard({ word }: { word: DictionaryEntry | null }) {
   return (
     <section className="hm-card hm-word" aria-labelledby="hm-word-title">
@@ -105,6 +82,47 @@ export default async function Home() {
 
   return (
     <div className="hm-root">
+      <div className="home-hero">
+        <div className="home-hero-label">Nisim Thalakna · Daily Verse</div>
+      </div>
+
+      <div style={{ padding: "0 16px", marginTop: -24, marginBottom: 4 }}>
+        <div style={{
+          background: "var(--white)",
+          borderRadius: "var(--radius-lg)",
+          padding: "20px 20px 20px 18px",
+          boxShadow: "var(--shadow-lg)",
+          borderLeft: "3px solid var(--gold)",
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 12,
+        }}>
+          <div className="font-playfair" style={{
+            fontSize: 52, lineHeight: 0.7, color: "var(--gold)",
+            opacity: 0.55, flexShrink: 0, marginTop: 6, userSelect: "none",
+          }}>&ldquo;</div>
+          <div style={{ flex: 1 }}>
+            {verse ? (
+              <>
+                <p className="font-playfair" style={{
+                  fontSize: 13.5, fontStyle: "italic", color: "var(--navy)",
+                  lineHeight: 1.7, margin: "0 0 10px",
+                }}>
+                  {verse.zomi_iso}
+                </p>
+                <p style={{ fontSize: 10, color: "var(--gray)", fontWeight: 600, letterSpacing: "0.05em" }}>
+                  — {verse.reference}
+                </p>
+              </>
+            ) : (
+              <p style={{ fontSize: 13, color: "var(--gray)", margin: 0 }}>
+                Daily verse will appear when the API is running.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
       <section className="hm-hero">
         <div className="hm-hero-inner">
           <p className="hm-kicker">The digital home for the Zomi language</p>
@@ -146,7 +164,6 @@ export default async function Home() {
           <h2 className="font-playfair">Today</h2>
         </div>
         <div className="hm-today">
-          <VerseCard verse={verse} />
           <WordCard word={word} />
         </div>
 
