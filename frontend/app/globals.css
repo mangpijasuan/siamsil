@@ -3358,3 +3358,36 @@ a.library-card:hover {
 @media (min-width: 1100px) {
   .hm-explore { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* ══════════════════════════════════════════════════
+   ROUNDED PANELS
+   Page headers and heroes sit as inset, rounded panels instead of
+   edge-to-edge bands. (The home Nisim Thalakna block is unchanged.)
+══════════════════════════════════════════════════ */
+.hm-hero,
+.tr-header,
+.dict-header,
+.page-header,
+.page-header-compact,
+.library-hero,
+.citizenship-hero {
+  margin: 10px 10px 0;
+  border-radius: 22px;
+}
+.dict-word-btn {
+  width: calc(100% - 20px);
+  margin: 0 10px 6px;
+  border-radius: var(--radius-md);
+}
+@media (min-width: 768px) {
+  .hm-hero,
+  .tr-header,
+  .dict-header,
+  .page-header,
+  .page-header-compact,
+  .library-hero,
+  .citizenship-hero {
+    margin: 16px 16px 0;
+    border-radius: 26px;
+  }
+}
