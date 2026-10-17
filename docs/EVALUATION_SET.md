@@ -100,6 +100,19 @@ python3 ml_pipeline/scripts/eval_set.py leakage data/evaluation/human/en-zomi-v1
 python3 ml_pipeline/scripts/eval_set.py manifest data/evaluation/human/en-zomi-v1.jsonl
 ```
 
+Translators and reviewers work in Excel. `ml_pipeline/scripts/worksheets.py` moves their sheets in and out:
+
+```bash
+# Translator's filled "Translate" sheet -> draft items (review pending)
+python3 ml_pipeline/scripts/worksheets.py testset-import Siamsil_TestSet_en-zomi_batch1.xlsx \
+  --translator T01 --origin "written for Siamsil, 2026-10-17" --out data/evaluation/human/en-zomi-v1.draft.jsonl
+# Sheet for the second reader: Accept, or Correct with the corrected Zomi
+python3 ml_pipeline/scripts/worksheets.py review-sheet data/evaluation/human/en-zomi-v1.draft.jsonl --out review.xlsx
+# Merge the decisions into the set; undecided rows stay out, and the result is validated
+python3 ml_pipeline/scripts/worksheets.py review-merge data/evaluation/human/en-zomi-v1.draft.jsonl review.xlsx \
+  --reviewer R01 --out data/evaluation/human/en-zomi-v1.jsonl
+```
+
 Leakage matching uses the same normalization as the corpus build (`normalize_word` in `build_language_db.py`), on both the English and the Zomi side.
 
 ## Exit gate (Phase 0)
