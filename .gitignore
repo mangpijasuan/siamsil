@@ -13,6 +13,7 @@ data/processed/dictionary/
 data/processed/parallel/
 data/datasets/
 data/evaluation/**/*.jsonl
+data/evaluation/gold_private/
 data/exports/
 data/versions/
 *.sqlite
@@ -45,6 +46,9 @@ serviceAccountKey.json
 
 # Large raw sources (keep a copy in ml_pipeline/raw_data locally)
 ml_pipeline/raw_data/*.xlsx
+
+# Private, rights-sensitive source archive. Never commit or deploy these files.
+siamsil-data/
 
 # ML artifacts
 ml_pipeline/artifacts/

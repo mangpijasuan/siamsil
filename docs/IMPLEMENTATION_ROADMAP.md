@@ -163,6 +163,8 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 - [-] Atomic job claiming with lease owner and expiry exists for the pilot; retries and dead-letter handling remain.
 - [ ] Import the 5,441 currently flagged corpus rows into the first review queue.
 - [-] A deterministic 100-row review packet, guarded importer, and role-protected decision API exist; qualified human review has not occurred.
+- [x] Create a separate, reproducible 600-row uniform training-corpus audit and 120-row flagged diagnostic packet; both remain local and unreviewed.
+- [ ] Complete human review, adjudication, and the random-sample quality summary without pooling flagged oversamples.
 - [ ] Add provider-neutral translation adapters.
 - [ ] Require structured outputs containing stable sentence IDs.
 - [ ] Validate counts, IDs, language, entities, numbers, repetition, and length before review.
@@ -175,10 +177,9 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 
 ### Data and evaluation — must precede production training
 
-- [ ] Publish Zomi translation and review guidelines covering spelling, dialect, borrowing, punctuation, names, and ambiguity.
+- [-] A draft Zomi reviewer guide covers decisions and error tags; qualified community editors still need to approve dialect and orthography policy.
 - [ ] Recruit qualified translators, reviewers, and an adjudicator.
-- [ ] Build a balanced, hidden, independently reviewed English→Zomi test set.
-- [ ] Build a balanced, hidden, independently reviewed Zomi→English test set.
+- [-] Private source-only and three-human adjudication workflows exist for both directions; no independently sourced or human-translated gold rows have been supplied.
 - [ ] Cover conversation, education, government, health, religion, news, and informal language.
 - [ ] Measure reviewer agreement and adjudicate disagreements.
 - [ ] Ensure test families and sources cannot enter training, prompt examples, or filtering development.

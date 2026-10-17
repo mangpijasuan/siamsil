@@ -2,6 +2,8 @@
 
 This is a **local preparation workflow**, not a dataset approval or model-training authorization. The 1.78M-pair corpus contains machine-generated Zomi text. A quality flag means “inspect this,” not “the translation is wrong,” and an unflagged row is not automatically correct.
 
+For the representative 600-row audit, review labels, and a separate hidden human gold set, see `docs/ZOMI_TRANSLATION_REVIEW_GUIDE.md` and `docs/GOLD_TEST_WORKFLOW.md`. The 100-row packet below intentionally oversamples flagged rows and cannot estimate overall corpus quality.
+
 ## Rights gate (open)
 
 Before redistribution, commercial training, or publication of reviewed derivatives, a responsible owner must record the actual license terms and permission evidence for each item below. Until then, keep the review packet local.
