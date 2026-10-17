@@ -87,7 +87,9 @@ export default function BibleVersionReader({
           <p className="bv-rights">
             {version.copyright || version.description}
             {compare && <><br />{compare.copyright || compare.description}</>}
-            <br />Shown for reading only. Permission to publish these texts is still being confirmed.
+            {[version, compare].some((item) => item && item.display_status !== "cleared") && (
+              <><br />Shown for reading only. Permission to publish {compare ? "one of these texts" : "this text"} is still being confirmed.</>
+            )}
           </p>
         </section>
       )}

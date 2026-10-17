@@ -27,11 +27,11 @@
     },
     "bible_tdb": {
       "description": "Tedim (Chin) Bible 2011 (TDB), USX. © Bible Society of Myanmar, 2011",
-      "display": "needs_review",
-      "train": "needs_review",
+      "display": "cleared",
+      "train": "cleared",
       "redistribute": "not_permitted",
       "commercial": "not_permitted",
-      "evidence": "Bible Society of Myanmar; imported from a ProPresenter bundle (Tedim-Chin-Bible-OneClick); no license from the publisher on file"
+      "evidence": "Written permission granted by Bible Society of Myanmar on 2026-10-01"
     },
     "bible_tb77": {
       "description": "Tedim Bible 1977 (TB77), USX. © Bible Society of Myanmar, 1977",
