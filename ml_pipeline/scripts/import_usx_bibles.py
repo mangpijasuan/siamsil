@@ -6,7 +6,7 @@ Each version is a folder holding either
     `.usx` file per book, as in ProPresenter Bible bundles, or
   - one `.usfm` / `.sfm` file per book, as in eBible.org downloads. Name and
     language come from data/bible_versions.json, keyed by the abbreviation in
-    the `\id` line, for example "(WEB)".
+    the `\\id` line, for example "(WEB)".
 
 Reads (never modifies):
   data/raw/bible/usx/**
