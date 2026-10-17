@@ -3391,3 +3391,59 @@ a.library-card:hover {
     border-radius: 26px;
   }
 }
+
+
+/* Dictionary + Translate theme alignment (original Siamsil identity).
+   Deliberately scoped: no homepage or Nisim Thalakna selectors are changed. */
+.dict-header,
+.tr-header {
+  background: var(--navy);
+  color: var(--white);
+}
+.dict-header .gold-label,
+.tr-header .gold-label,
+.dict-header .word-section-label,
+.tr-header .word-section-label {
+  color: var(--gold2);
+}
+.dict-header input,
+.tr-input {
+  color: var(--navy);
+}
+.dict-header input::placeholder,
+.tr-input::placeholder {
+  color: var(--gray);
+}
+.tr-input-card,
+.tr-result,
+.tr-alt,
+.dict-suggestion,
+.tr-suggestion {
+  background: var(--white);
+}
+.tr-submit {
+  background: var(--navy);
+  color: var(--white);
+}
+.tr-submit:hover:not(:disabled) {
+  background: var(--navy2);
+}
+.tr-submit:focus-visible,
+.tr-action:focus-visible,
+.tr-suggestion:focus-visible,
+.dict-suggestion:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.tr-result-zomi-side {
+  background: var(--cream);
+}
+.tr-result-zomi,
+.tr-result-en,
+.tr-alt-zomi,
+.tr-empty-title {
+  color: var(--navy);
+}
+.tr-link {
+  border-bottom-color: var(--gold);
+}
