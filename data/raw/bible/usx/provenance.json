@@ -8,7 +8,7 @@
       "source": "ProPresenter bundle 'Tedim-Chin-Bible-OneClick' (Peter Pau Sian Lian), supplied by the project owner",
       "source_author": "Bible Society of Myanmar (TDB 2011, TB77 1977, FCL 2002, HCL06 2006); King James Version; Judson Bible (Burmese)",
       "language": "ctd (TDB, TB77), cfm (FCL), cnh (HCL06), eng (KJV), mya (BJB)",
-      "license": "TDB: written permission from Bible Society of Myanmar received 2026-10-01 (display and training; not redistribution or commercial). Other versions: needs_review. See docs/DATA_RIGHTS.md",
+      "license": "Written permission from Bible Society of Myanmar received 2026-10-01 covering TDB, TB77, FCL, HCL06 and BJB as reported by the project owner (display and training; not redistribution or commercial). KJV: public domain outside the UK. See docs/DATA_RIGHTS.md",
       "review_status": "unreviewed",
       "notes": "Text is not committed to git. Imported unchanged by ml_pipeline/scripts/import_usx_bibles.py."
     },

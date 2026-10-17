@@ -35,43 +35,43 @@
     },
     "bible_tb77": {
       "description": "Tedim Bible 1977 (TB77), USX. © Bible Society of Myanmar, 1977",
-      "display": "needs_review",
-      "train": "needs_review",
+      "display": "cleared",
+      "train": "cleared",
       "redistribute": "not_permitted",
       "commercial": "not_permitted",
-      "evidence": "Bible Society of Myanmar; imported from a ProPresenter bundle (Tedim-Chin-Bible-OneClick); no license from the publisher on file"
+      "evidence": "Written permission, reported by the project owner on 2026-10-17 as covered by the written permission from the Bible Society of Myanmar (received 2026-10-01); confirm the letter names this version"
     },
     "bible_fcl": {
       "description": "Falam Common Language Bible (FCL), USX. © Bible Society of Myanmar, 2002",
-      "display": "needs_review",
-      "train": "needs_review",
+      "display": "cleared",
+      "train": "cleared",
       "redistribute": "not_permitted",
       "commercial": "not_permitted",
-      "evidence": "Bible Society of Myanmar; imported from a ProPresenter bundle (Tedim-Chin-Bible-OneClick); no license from the publisher on file"
+      "evidence": "Written permission, reported by the project owner on 2026-10-17 as covered by the written permission from the Bible Society of Myanmar (received 2026-10-01); confirm the letter names this version"
     },
     "bible_hcl06": {
       "description": "Lai (Hakha) Common Language Bible 2006 (HCL06), USX. © Bible Society of Myanmar 2006",
-      "display": "needs_review",
-      "train": "needs_review",
+      "display": "cleared",
+      "train": "cleared",
       "redistribute": "not_permitted",
       "commercial": "not_permitted",
-      "evidence": "Bible Society of Myanmar; imported from a ProPresenter bundle (Tedim-Chin-Bible-OneClick); no license from the publisher on file"
+      "evidence": "Written permission, reported by the project owner on 2026-10-17 as covered by the written permission from the Bible Society of Myanmar (received 2026-10-01); confirm the letter names this version"
     },
     "bible_kjv": {
       "description": "King James Version (KJV), USX",
-      "display": "needs_review",
-      "train": "needs_review",
-      "redistribute": "not_permitted",
-      "commercial": "not_permitted",
-      "evidence": "Public domain outside the United Kingdom (Crown letters patent in the UK); bundle license.xml has no publisher terms"
+      "display": "cleared",
+      "train": "cleared",
+      "redistribute": "needs_review",
+      "commercial": "needs_review",
+      "evidence": "Public domain outside the United Kingdom (Crown letters patent in the UK); display and training cleared by the project owner on 2026-10-17"
     },
     "bible_bjb": {
       "description": "Judson Bible, Burmese (BJB), USX",
-      "display": "needs_review",
-      "train": "needs_review",
+      "display": "cleared",
+      "train": "cleared",
       "redistribute": "not_permitted",
       "commercial": "not_permitted",
-      "evidence": "Judson translation (1835) is generally public domain, but this edition's DBL license.xml covers 2012-02-29 to 2015-02-28 and names no licensee; edition rights unconfirmed"
+      "evidence": "Written permission, reported by the project owner on 2026-10-17 as covered by the written permission from the Bible Society of Myanmar (received 2026-10-01); confirm the letter names this version"
     },
     "bible_web": {
       "description": "World English Bible, Updated edition (WEB, eBible.org engwebu), USFM",
