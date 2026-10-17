@@ -1,204 +1,186 @@
 import Link from "next/link";
-import { IconArrow, IconBook, IconCross, IconAcademic, IconTranslate, IconChat } from "@/components/Icons";
+import type { ComponentType } from "react";
+import {
+  IconAcademic,
+  IconArrow,
+  IconBook,
+  IconChat,
+  IconCross,
+  IconLibrary,
+  IconSearch,
+  IconTranslate,
+} from "@/components/Icons";
 import { getDailyVerse, getHealth, getWordOfDay } from "@/lib/api";
+import type { BibleVerse, DictionaryEntry } from "@/lib/api";
 
-function formatCount(value?: number) {
-  if (!value) return "—";
+type IconType = ComponentType<{ size?: number; className?: string }>;
+
+const EXPLORE: Array<{ href: string; title: string; text: string; Icon: IconType; tone: string }> = [
+  { href: "/zomidictionary", title: "Dictionary", text: "English headwords with Zomi definitions", Icon: IconBook, tone: "navy" },
+  { href: "/zomitranslate", title: "Translate", text: "Look up stored English and Zomi pairs", Icon: IconTranslate, tone: "gold" },
+  { href: "/bible", title: "Bible", text: "Laisiangtho, 66 books with English alongside", Icon: IconCross, tone: "navy" },
+  { href: "/learning", title: "Learning", text: "Teacher-reviewed phrases and the citizenship test", Icon: IconAcademic, tone: "gold" },
+  { href: "/library", title: "Library", text: "Books, archives, and collections in Zomi", Icon: IconLibrary, tone: "navy" },
+  { href: "/chat", title: "Siamsil AI", text: "Answers drawn only from Siamsil's own data", Icon: IconChat, tone: "gold" },
+];
+
+const QUICK_SEARCHES = ["water", "family", "thank you", "school"];
+
+function formatCount(value: number) {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (value >= 10_000) return `${Math.round(value / 1000)}K`;
   return value.toLocaleString();
 }
 
-export default async function Home() {
-  let verse = null;
-  let word = null;
-  let dictionaryCount = 0;
-  let parallelCount = 0;
-  let bibleCount = 0;
+async function loadHome() {
+  const [health, verse, word] = await Promise.allSettled([getHealth(), getDailyVerse(), getWordOfDay()]);
+  const language = health.status === "fulfilled"
+    ? (health.value.language as Record<string, number> | null | undefined)
+    : undefined;
+  const metadataCounts = health.status === "fulfilled"
+    ? (health.value.metadata?.counts as Record<string, number> | undefined)
+    : undefined;
+  const stats = [
+    { value: language?.dictionary_entries ?? 0, label: "Dictionary entries" },
+    { value: metadataCounts?.bible_verses ?? 0, label: "Bible verses" },
+    { value: language?.parallel_sentences ?? 0, label: "Example sentences" },
+  ].filter((stat) => stat.value > 0);
+  return {
+    stats,
+    verse: verse.status === "fulfilled" ? verse.value : null,
+    word: word.status === "fulfilled" ? word.value : null,
+  };
+}
 
-  try {
-    const health = await getHealth();
-    const language = health.language as Record<string, number> | null | undefined;
-    dictionaryCount = language?.dictionary_entries ?? 0;
-    parallelCount = language?.parallel_sentences ?? 0;
-    const counts = health.metadata?.counts as Record<string, number> | undefined;
-    bibleCount = counts?.bible_verses ?? 0;
-  } catch {
-    /* health is optional for first paint */
-  }
-  try { verse = await getDailyVerse(); } catch {}
-  try { word = await getWordOfDay(); } catch {}
-
+function VerseCard({ verse }: { verse: BibleVerse | null }) {
   return (
-    <>
-      <div className="home-hero">
-        <div className="home-hero-label">Nisim Thalakna · Daily Verse</div>
+    <section className="hm-card hm-verse" aria-labelledby="hm-verse-title">
+      <div className="hm-card-head">
+        <span className="hm-eyebrow" id="hm-verse-title">Nisim Thalakna · Verse of the day</span>
+        <IconCross size={16} className="hm-card-icon" />
       </div>
-
-      <div style={{ padding: "0 16px", marginTop: -24, marginBottom: 4 }}>
-        <div style={{
-          background: "var(--white)",
-          borderRadius: "var(--radius-lg)",
-          padding: "20px 20px 20px 18px",
-          boxShadow: "var(--shadow-lg)",
-          borderLeft: "3px solid var(--gold)",
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 12,
-        }}>
-          <div className="font-playfair" style={{
-            fontSize: 52, lineHeight: 0.7, color: "var(--gold)",
-            opacity: 0.55, flexShrink: 0, marginTop: 6, userSelect: "none",
-          }}>&ldquo;</div>
-          <div style={{ flex: 1 }}>
-            {verse ? (
-              <>
-                <p className="font-playfair" style={{
-                  fontSize: 13.5, fontStyle: "italic", color: "var(--navy)",
-                  lineHeight: 1.7, margin: "0 0 10px",
-                }}>
-                  {verse.zomi_iso}
-                </p>
-                <p style={{ fontSize: 10, color: "var(--gray)", fontWeight: 600, letterSpacing: "0.05em" }}>
-                  — {verse.reference}
-                </p>
-              </>
-            ) : (
-              <p style={{ fontSize: 13, color: "var(--gray)", margin: 0 }}>
-                Daily verse will appear when the API is running.
-              </p>
-            )}
+      {verse ? (
+        <>
+          <blockquote className="font-playfair hm-verse-zomi">{verse.zomi_original || verse.zomi_iso}</blockquote>
+          {verse.english && <p className="hm-verse-en">{verse.english}</p>}
+          <div className="hm-card-foot">
+            <span className="hm-ref">{verse.reference}</span>
+            <Link href="/bible" className="hm-link">Read the Bible <IconArrow size={12} /></Link>
           </div>
-        </div>
+        </>
+      ) : (
+        <p className="hm-empty">Today&rsquo;s verse appears here once the Bible text is loaded.</p>
+      )}
+    </section>
+  );
+}
+
+function WordCard({ word }: { word: DictionaryEntry | null }) {
+  return (
+    <section className="hm-card hm-word" aria-labelledby="hm-word-title">
+      <div className="hm-card-head">
+        <span className="hm-eyebrow" id="hm-word-title">Thu Tawlbang · Word of the day</span>
+        {word?.part_of_speech && <span className="hm-pos">{word.part_of_speech}</span>}
       </div>
-
-      <div className="home-stats-row">
-        <div className="home-stat">
-          <span className="home-stat-num font-playfair">{formatCount(dictionaryCount)}</span>
-          <span className="home-stat-label">Dictionary</span>
-        </div>
-        <div className="home-stat-div" />
-        <div className="home-stat">
-          <span className="home-stat-num font-playfair">{formatCount(parallelCount)}</span>
-          <span className="home-stat-label">Sentence pairs</span>
-        </div>
-        <div className="home-stat-div" />
-        <div className="home-stat">
-          <span className="home-stat-num font-playfair">{formatCount(bibleCount)}</span>
-          <span className="home-stat-label">Bible verses</span>
-        </div>
-      </div>
-
-      <div className="section-header" style={{ paddingTop: 28 }}>
-        <span className="section-title">Explore</span>
-      </div>
-
-      <div className="home-feat-grid">
-        <Link href="/zomidictionary" className="hfeat-card hfeat-card--a" style={{ textDecoration: "none" }}>
-          <div className="hfeat-icon"><IconBook size={22} /></div>
-          <div className="hfeat-body">
-            <div className="hfeat-title font-playfair">Dictionary</div>
-            <div className="hfeat-sub">English headwords with Zomi definitions</div>
-          </div>
-          <div className="hfeat-arrow"><IconArrow size={12} /></div>
-        </Link>
-
-        <Link href="/bible" className="hfeat-card hfeat-card--b" style={{ textDecoration: "none" }}>
-          <div className="hfeat-icon"><IconCross size={22} /></div>
-          <div className="hfeat-body">
-            <div className="hfeat-title font-playfair">Bible</div>
-            <div className="hfeat-sub">Laisiangtho · 66 Books</div>
-          </div>
-          <div className="hfeat-arrow"><IconArrow size={12} /></div>
-        </Link>
-
-        <Link href="/learning" className="hfeat-card hfeat-card--c" style={{ textDecoration: "none" }}>
-          <div className="hfeat-icon"><IconAcademic size={22} /></div>
-          <div className="hfeat-body">
-            <div className="hfeat-title font-playfair">Learning</div>
-            <div className="hfeat-sub">Reviewed phrases only</div>
-          </div>
-          <div className="hfeat-arrow"><IconArrow size={12} /></div>
-        </Link>
-
-        <Link href="/zomitranslate" className="hfeat-card hfeat-card--d" style={{ textDecoration: "none" }}>
-          <div className="hfeat-icon"><IconTranslate size={22} /></div>
-          <div className="hfeat-body">
-            <div className="hfeat-title font-playfair">Translate</div>
-            <div className="hfeat-sub">Retrieve known pairs</div>
-          </div>
-          <div className="hfeat-arrow"><IconArrow size={12} /></div>
-        </Link>
-      </div>
-
-      {word && (
-        <div style={{ margin: "28px 16px 0" }}>
-          <div className="section-header" style={{ padding: "0 0 14px" }}>
-            <span className="section-title">Word of the Day</span>
-            <Link href="/zomidictionary" style={{ textDecoration: "none" }}>
-              <span className="section-link">Browse →</span>
+      {word ? (
+        <>
+          <div className="font-playfair hm-word-en">{word.english}</div>
+          {(word.zomi || word.definition) && <p className="hm-word-zomi">{word.zomi || word.definition}</p>}
+          <div className="hm-card-foot">
+            <span className="hm-status">{word.verified ? "Verified entry" : "Unreviewed entry"}</span>
+            <Link href={`/zomidictionary?q=${encodeURIComponent(word.english)}`} className="hm-link">
+              Full entry <IconArrow size={12} />
             </Link>
           </div>
-
-          <div className="wotd-card">
-            <div className="wotd-card-accent" />
-            <div className="wotd-card-body">
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <div className="gold-label" style={{ marginBottom: 8 }}>Thu Tawlbang</div>
-                  <div className="font-playfair wotd-word">{word.english}</div>
-                  {word.zomi && <div className="wotd-zomi">{word.zomi}</div>}
-                </div>
-                {word.part_of_speech && (
-                  <span className="wotd-pos-badge">{word.part_of_speech}</span>
-                )}
-              </div>
-              {word.definition && <p className="wotd-definition">{word.definition}</p>}
-              <div className="wotd-actions">
-                <Link
-                  href={`/zomidictionary?q=${encodeURIComponent(word.english)}`}
-                  className="wotd-btn wotd-btn--primary"
-                >
-                  Full Entry
-                </Link>
-                <Link href="/zomidictionary" className="wotd-btn wotd-btn--secondary">
-                  Browse More
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+        </>
+      ) : (
+        <p className="hm-empty">A new dictionary word appears here each day once the dictionary is loaded.</p>
       )}
+    </section>
+  );
+}
 
-      <div style={{ margin: "20px 16px 0" }}>
-        <Link href="/bible" style={{ textDecoration: "none", display: "block" }}>
-          <div className="reading-card">
-            <div className="reading-card-icon">
-              <IconCross size={18} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="reading-card-label">Read</div>
-              <div className="reading-card-title">Zomi Holy Bible</div>
-            </div>
-            <span style={{ color: "var(--gold)", flexShrink: 0 }}><IconArrow size={16} /></span>
+export default async function Home() {
+  const { stats, verse, word } = await loadHome();
+
+  return (
+    <div className="hm-root">
+      <section className="hm-hero">
+        <div className="hm-hero-inner">
+          <p className="hm-kicker">The digital home for the Zomi language</p>
+          <h1 className="font-playfair hm-title">
+            Words, scripture and learning<span className="hm-title-accent"> in Zomi.</span>
+          </h1>
+          <p className="hm-lede">
+            Look up words, read the Bible, practice everyday phrases, and find translations Siamsil already holds,
+            always with the source shown.
+          </p>
+
+          <form action="/zomidictionary" method="GET" className="hm-search" role="search">
+            <IconSearch size={18} className="hm-search-icon" />
+            <input name="q" type="search" placeholder="Search a word in English or Zomi…" aria-label="Search the dictionary" />
+            <button type="submit">Search</button>
+          </form>
+          <div className="hm-quick">
+            <span>Try</span>
+            {QUICK_SEARCHES.map((term) => (
+              <Link key={term} href={`/zomidictionary?q=${encodeURIComponent(term)}`} className="hm-chip">{term}</Link>
+            ))}
           </div>
-        </Link>
-      </div>
 
-      <div style={{ margin: "14px 16px 0" }}>
-        <Link href="/chat" style={{ textDecoration: "none", display: "block" }}>
-          <div className="ai-promo-card">
-            <div className="ai-promo-card-shimmer" />
-            <div className="ai-promo-icon"><IconChat size={18} /></div>
-            <div style={{ flex: 1 }}>
-              <div className="ai-promo-label">Retrieval only · no generated Zomi</div>
-              <div className="ai-promo-title">Ask Siamsil AI</div>
-              <div className="ai-promo-sub">Answers from the dictionary, corpus, and Bible text</div>
-            </div>
-            <span style={{ color: "var(--gold)", flexShrink: 0 }}><IconArrow size={16} /></span>
+          {stats.length > 0 && (
+            <dl className="hm-stats" style={{ gridTemplateColumns: `repeat(${stats.length}, minmax(0, 1fr))` }}>
+              {stats.map((stat) => (
+                <div key={stat.label} className="hm-stat">
+                  <dt>{stat.label}</dt>
+                  <dd className="font-playfair">{formatCount(stat.value)}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </div>
+      </section>
+
+      <div className="hm-body">
+        <div className="hm-section-head">
+          <h2 className="font-playfair">Today</h2>
+        </div>
+        <div className="hm-today">
+          <VerseCard verse={verse} />
+          <WordCard word={word} />
+        </div>
+
+        <div className="hm-section-head">
+          <h2 className="font-playfair">Explore</h2>
+        </div>
+        <div className="hm-explore">
+          {EXPLORE.map(({ href, title, text, Icon, tone }) => (
+            <Link key={href} href={href} className={`hm-tile hm-tile-${tone}`}>
+              <span className="hm-tile-icon"><Icon size={20} /></span>
+              <span className="hm-tile-copy">
+                <span className="hm-tile-title">{title}</span>
+                <span className="hm-tile-text">{text}</span>
+              </span>
+              <IconArrow size={14} className="hm-tile-arrow" />
+            </Link>
+          ))}
+        </div>
+
+        <Link href="/learning/citizenship" className="hm-feature">
+          <div>
+            <span className="hm-eyebrow hm-eyebrow-light">Learning · Preview</span>
+            <div className="font-playfair hm-feature-title">U.S. Citizenship Test practice</div>
+            <p className="hm-feature-text">Study civics questions in English, Zomi, and Burmese.</p>
           </div>
+          <span className="hm-feature-cta">Start practice <IconArrow size={14} /></span>
         </Link>
-      </div>
 
+        <p className="hm-trust">
+          Siamsil never invents Zomi. Every result shows where it comes from, and machine-translated examples are
+          labeled until people have checked them.
+        </p>
+      </div>
       <div className="screen-pad" />
-    </>
+    </div>
   );
 }
