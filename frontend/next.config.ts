@@ -7,7 +7,11 @@ const backendUrl =
   process.env.NEXT_PUBLIC_API_URL ??
   "http://127.0.0.1:8001";
 
-initOpenNextCloudflareForDev();
+// Cloudflare's workerd is needed for local development, not Docker production builds.
+// Skip spawning workerd during `next build` in Linux containers.
+if (process.env.NODE_ENV === "development" && process.env.SIAMSIL_SKIP_CLOUDFLARE_DEV !== "1") {
+  initOpenNextCloudflareForDev();
+}
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1", "localhost"],
