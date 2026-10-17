@@ -16,6 +16,14 @@
     "daily_use_phrases": {
       "description": "Teacher-reviewed daily-use phrase pairs",
       "train": "needs_review"
+    },
+    "zomi_worship_songs": {
+      "description": "Zomi song lyrics from the songbook, via Zomi Worship Collective; written permission from publisher and collective for display, language data, and training",
+      "train": "cleared",
+      "display": "cleared",
+      "redistribute": "not_permitted",
+      "commercial": "not_permitted",
+      "evidence": "written permissions held privately by the project owner; record names and dates in docs/DATA_RIGHTS.md"
     }
   }
 }

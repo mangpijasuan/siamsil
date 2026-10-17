@@ -1,4 +1,4 @@
-import { getDictionaryLetters, searchDictionary, DictionaryEntry } from "@/lib/api";
+import { describeApiError, getDictionaryLetters, searchDictionary, DictionaryEntry } from "@/lib/api";
 import DictionaryShell from "@/components/DictionaryShell";
 
 type Props = { searchParams: Promise<{ q?: string; letter?: string; dir?: string }> };
@@ -26,8 +26,8 @@ export default async function DictionaryPage({ searchParams }: Props) {
     ]);
     letters = letterData.letters;
     entries = searchData.results;
-  } catch {
-    error = "Could not reach the API. Start the backend, then run python3 ml_pipeline/scripts/build_language_db.py";
+  } catch (failure) {
+    error = describeApiError(failure, "Dictionary");
   }
 
   return (

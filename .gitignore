@@ -49,3 +49,8 @@ ml_pipeline/raw_data/*.xlsx
 
 # ML artifacts
 ml_pipeline/artifacts/
+
+# Song lyrics: permission covers display and training, not redistribution
+data/raw/songs/**
+!data/raw/songs/*/
+!data/raw/songs/**/provenance.json

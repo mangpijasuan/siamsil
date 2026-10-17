@@ -259,4 +259,19 @@ export function grantUserRole(
   );
 }
 
+/** A short message for people, based on why a request failed. */
+export function describeApiError(error: unknown, subject: string): string {
+  const status = error instanceof ApiError ? error.status : 0;
+  if (status === 503) {
+    const hint = process.env.NODE_ENV === "development"
+      ? " Build it with python3 ml_pipeline/scripts/build_language_db.py."
+      : "";
+    return `${subject} data isn't loaded on this server yet.${hint}`;
+  }
+  if (status === 429) return "Too many searches in a short time. Please wait a minute and try again.";
+  if (status === 408) return "Siamsil took too long to respond. Please try again.";
+  if (status === 0) return "Siamsil can't be reached right now. Check your connection and try again.";
+  return "Something went wrong on our side. Please try again.";
+}
+
 export { SERVER_API_URL as API_URL };
