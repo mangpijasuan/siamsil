@@ -24,6 +24,54 @@
       "redistribute": "not_permitted",
       "commercial": "not_permitted",
       "evidence": "written permissions held privately by the project owner; record names and dates in docs/DATA_RIGHTS.md"
+    },
+    "bible_tdb": {
+      "description": "Tedim (Chin) Bible 2011 (TDB), USX. © Bible Society of Myanmar, 2011",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "not_permitted",
+      "commercial": "not_permitted",
+      "evidence": "Bible Society of Myanmar; imported from a ProPresenter bundle (Tedim-Chin-Bible-OneClick); no license from the publisher on file"
+    },
+    "bible_tb77": {
+      "description": "Tedim Bible 1977 (TB77), USX. © Bible Society of Myanmar, 1977",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "not_permitted",
+      "commercial": "not_permitted",
+      "evidence": "Bible Society of Myanmar; imported from a ProPresenter bundle (Tedim-Chin-Bible-OneClick); no license from the publisher on file"
+    },
+    "bible_fcl": {
+      "description": "Falam Common Language Bible (FCL), USX. © Bible Society of Myanmar, 2002",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "not_permitted",
+      "commercial": "not_permitted",
+      "evidence": "Bible Society of Myanmar; imported from a ProPresenter bundle (Tedim-Chin-Bible-OneClick); no license from the publisher on file"
+    },
+    "bible_hcl06": {
+      "description": "Lai (Hakha) Common Language Bible 2006 (HCL06), USX. © Bible Society of Myanmar 2006",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "not_permitted",
+      "commercial": "not_permitted",
+      "evidence": "Bible Society of Myanmar; imported from a ProPresenter bundle (Tedim-Chin-Bible-OneClick); no license from the publisher on file"
+    },
+    "bible_kjv": {
+      "description": "King James Version (KJV), USX",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "not_permitted",
+      "commercial": "not_permitted",
+      "evidence": "Public domain outside the United Kingdom (Crown letters patent in the UK); bundle license.xml has no publisher terms"
+    },
+    "bible_bjb": {
+      "description": "Judson Bible, Burmese (BJB), USX",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "not_permitted",
+      "commercial": "not_permitted",
+      "evidence": "Judson translation (1835) is generally public domain, but this edition's DBL license.xml covers 2012-02-29 to 2015-02-28 and names no licensee; edition rights unconfirmed"
     }
   }
 }

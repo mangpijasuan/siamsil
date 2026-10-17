@@ -29,6 +29,13 @@ python3 ml_pipeline/scripts/export_datasets.py --workbook ml_pipeline/raw_data/Z
   --generator-summary data/exports/generator-review-v1/summary.json
 ```
 
+Import Bible versions from USX folders (each with `metadata.xml` and `USX_1/` or `USX/`, as in ProPresenter bundles) into `data/processed/bible/bible_versions.sqlite`. Unzip the bundle under `data/raw/bible/usx/`; the text stays out of git. When the folder is elsewhere, pass `--source`; point the backend at a database elsewhere with `SIAMSIL_BIBLE_VERSIONS_DB`.
+
+```bash
+python3 ml_pipeline/scripts/import_usx_bibles.py --dry-run   # report versions, verse counts, issues
+python3 ml_pipeline/scripts/import_usx_bibles.py
+```
+
 Expected raw files:
 
 - `raw/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx`

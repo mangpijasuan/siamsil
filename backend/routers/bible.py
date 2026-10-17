@@ -2,9 +2,18 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Path, Query
 
-from api_schemas import BibleBooksResponse, BibleChapterResponse, BibleSearchResponse, BibleVerse
+from api_schemas import (
+    BibleBooksResponse,
+    BibleChapterResponse,
+    BibleSearchResponse,
+    BibleVerse,
+    BibleVersionBooksResponse,
+    BibleVersionChapterResponse,
+    BibleVersionsResponse,
+)
+from services.bible_versions import BibleVersions, get_bible_versions
 from services.data_loader import get_store
 
 router = APIRouter(prefix="/bible", tags=["bible"])
@@ -47,3 +56,43 @@ def get_chapter(book_id: int = Query(..., ge=1), chapter: int = Query(..., ge=1)
         "verse_count": len(verses),
         "verses": verses,
     }
+
+
+def _versions_or_503() -> BibleVersions:
+    versions = get_bible_versions()
+    if not versions.available:
+        raise HTTPException(status_code=503, detail="Bible versions are not loaded yet.")
+    return versions
+
+
+@router.get("/versions", response_model=BibleVersionsResponse)
+def list_versions():
+    items = _versions_or_503().versions()
+    return {"count": len(items), "versions": items}
+
+
+@router.get("/versions/{version_id}/books", response_model=BibleVersionBooksResponse)
+def list_version_books(version_id: str = Path(..., pattern="^[a-z0-9_-]{1,32}$")):
+    versions = _versions_or_503()
+    version = versions.version(version_id)
+    if not version:
+        raise HTTPException(status_code=404, detail="Bible version not found")
+    books = versions.books(version_id)
+    return {"version": version, "count": len(books), "books": books}
+
+
+@router.get("/versions/{version_id}/chapter", response_model=BibleVersionChapterResponse)
+def get_version_chapter(
+    version_id: str = Path(..., pattern="^[a-z0-9_-]{1,32}$"),
+    book_id: int = Query(..., ge=1, le=66),
+    chapter: int = Query(..., ge=1, le=150),
+):
+    versions = _versions_or_503()
+    version = versions.version(version_id)
+    if not version:
+        raise HTTPException(status_code=404, detail="Bible version not found")
+    book = next((b for b in versions.books(version_id) if b["book_id"] == book_id), None)
+    verses = versions.chapter(version_id, book_id, chapter) if book else []
+    if not verses:
+        raise HTTPException(status_code=404, detail="Chapter not found")
+    return {"version": version, "book": book, "chapter": chapter, "verse_count": len(verses), "verses": verses}

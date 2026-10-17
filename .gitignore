@@ -54,3 +54,9 @@ ml_pipeline/artifacts/
 data/raw/songs/**
 !data/raw/songs/*/
 !data/raw/songs/**/provenance.json
+
+# Bible versions: text is never committed; provenance records are
+data/raw/bible/**
+!data/raw/bible/*/
+!data/raw/bible/**/provenance.json
+data/processed/bible/

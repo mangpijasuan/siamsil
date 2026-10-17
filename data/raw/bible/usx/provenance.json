@@ -1,0 +1,16 @@
+{
+  "dataset": "bible_versions_usx",
+  "files": [
+    {
+      "original_filename": "Chin-Bible.zip",
+      "path": "data/raw/bible/usx/",
+      "acquisition_date": "2026-10-17",
+      "source": "ProPresenter bundle 'Tedim-Chin-Bible-OneClick' (Peter Pau Sian Lian), supplied by the project owner",
+      "source_author": "Bible Society of Myanmar (TDB 2011, TB77 1977, FCL 2002, HCL06 2006); King James Version; Judson Bible (Burmese)",
+      "language": "ctd (TDB, TB77), cfm (FCL), cnh (HCL06), eng (KJV), mya (BJB)",
+      "license": "needs_review: no publisher license in the bundle; see docs/DATA_RIGHTS.md",
+      "review_status": "unreviewed",
+      "notes": "Text is not committed to git. Imported unchanged by ml_pipeline/scripts/import_usx_bibles.py."
+    }
+  ]
+}

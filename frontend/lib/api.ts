@@ -134,6 +134,9 @@ async function expectData<T>(request: Promise<ApiResult<T>>, path: string): Prom
 export type DictionaryEntry = components["schemas"]["DictionaryEntry"];
 export type BibleVerse = components["schemas"]["BibleVerse"];
 export type BibleBook = components["schemas"]["BibleBook"];
+export type BibleVersionInfo = components["schemas"]["BibleVersionInfo"];
+export type BibleVersionBook = components["schemas"]["BibleVersionBook"];
+export type BibleVersionChapter = components["schemas"]["BibleVersionChapterResponse"];
 export type TranslateMatch = components["schemas"]["TranslateMatch"];
 export type LearningEntry = components["schemas"]["LearningEntry"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
@@ -147,6 +150,8 @@ type TranslationSearchResponse = components["schemas"]["TranslationSearchRespons
 type BibleBooksResponse = components["schemas"]["BibleBooksResponse"];
 type BibleChapterResponse = components["schemas"]["BibleChapterResponse"];
 type BibleSearchResponse = components["schemas"]["BibleSearchResponse"];
+type BibleVersionsResponse = components["schemas"]["BibleVersionsResponse"];
+type BibleVersionBooksResponse = components["schemas"]["BibleVersionBooksResponse"];
 type LearningGroupsResponse = components["schemas"]["LearningGroupsResponse"];
 type RoleAssignmentResponse = components["schemas"]["RoleAssignmentResponse"];
 
@@ -205,6 +210,28 @@ export function getBibleChapter(bookId: number, chapter: number): Promise<BibleC
       params: { query: { book_id: bookId, chapter } },
     }),
     "/api/v1/bible/chapter",
+  );
+}
+
+export function getBibleVersions(): Promise<BibleVersionsResponse> {
+  return expectData(apiClient().GET("/api/v1/bible/versions"), "/api/v1/bible/versions");
+}
+
+export function getBibleVersionBooks(versionId: string): Promise<BibleVersionBooksResponse> {
+  return expectData(
+    apiClient().GET("/api/v1/bible/versions/{version_id}/books", {
+      params: { path: { version_id: versionId } },
+    }),
+    "/api/v1/bible/versions/{version_id}/books",
+  );
+}
+
+export function getBibleVersionChapter(versionId: string, bookId: number, chapter: number): Promise<BibleVersionChapter> {
+  return expectData(
+    apiClient().GET("/api/v1/bible/versions/{version_id}/chapter", {
+      params: { path: { version_id: versionId }, query: { book_id: bookId, chapter } },
+    }),
+    "/api/v1/bible/versions/{version_id}/chapter",
   );
 }
 

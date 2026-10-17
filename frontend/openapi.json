@@ -356,6 +356,241 @@
         "title": "BibleVerse",
         "type": "object"
       },
+      "BibleVersionBook": {
+        "additionalProperties": true,
+        "properties": {
+          "book_id": {
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "chapter_count": {
+            "title": "Chapter Count",
+            "type": "integer"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "testament": {
+            "title": "Testament",
+            "type": "string"
+          }
+        },
+        "required": [
+          "book_id",
+          "code",
+          "name",
+          "testament",
+          "chapter_count"
+        ],
+        "title": "BibleVersionBook",
+        "type": "object"
+      },
+      "BibleVersionBooksResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "books": {
+            "items": {
+              "$ref": "#/components/schemas/BibleVersionBook"
+            },
+            "title": "Books",
+            "type": "array"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "version": {
+            "$ref": "#/components/schemas/BibleVersionInfo"
+          }
+        },
+        "required": [
+          "version",
+          "count",
+          "books"
+        ],
+        "title": "BibleVersionBooksResponse",
+        "type": "object"
+      },
+      "BibleVersionChapterResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "book": {
+            "$ref": "#/components/schemas/BibleVersionBook"
+          },
+          "chapter": {
+            "title": "Chapter",
+            "type": "integer"
+          },
+          "verse_count": {
+            "title": "Verse Count",
+            "type": "integer"
+          },
+          "verses": {
+            "items": {
+              "$ref": "#/components/schemas/BibleVersionVerse"
+            },
+            "title": "Verses",
+            "type": "array"
+          },
+          "version": {
+            "$ref": "#/components/schemas/BibleVersionInfo"
+          }
+        },
+        "required": [
+          "version",
+          "book",
+          "chapter",
+          "verse_count",
+          "verses"
+        ],
+        "title": "BibleVersionChapterResponse",
+        "type": "object"
+      },
+      "BibleVersionInfo": {
+        "additionalProperties": true,
+        "properties": {
+          "abbreviation": {
+            "title": "Abbreviation",
+            "type": "string"
+          },
+          "book_count": {
+            "title": "Book Count",
+            "type": "integer"
+          },
+          "copyright": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copyright"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "display_status": {
+            "title": "Display Status",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language Iso"
+          },
+          "language_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language Name"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "name_local": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Local"
+          },
+          "verse_count": {
+            "title": "Verse Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "abbreviation",
+          "name",
+          "display_status",
+          "book_count",
+          "verse_count"
+        ],
+        "title": "BibleVersionInfo",
+        "type": "object"
+      },
+      "BibleVersionVerse": {
+        "additionalProperties": true,
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "verse": {
+            "title": "Verse",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "verse",
+          "label",
+          "text"
+        ],
+        "title": "BibleVersionVerse",
+        "type": "object"
+      },
+      "BibleVersionsResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/BibleVersionInfo"
+            },
+            "title": "Versions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "count",
+          "versions"
+        ],
+        "title": "BibleVersionsResponse",
+        "type": "object"
+      },
       "DictionaryEntry": {
         "additionalProperties": true,
         "properties": {
@@ -1561,6 +1796,135 @@
           }
         },
         "summary": "Search Bible",
+        "tags": [
+          "bible"
+        ]
+      }
+    },
+    "/api/v1/bible/versions": {
+      "get": {
+        "operationId": "list_versions_api_v1_bible_versions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BibleVersionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Versions",
+        "tags": [
+          "bible"
+        ]
+      }
+    },
+    "/api/v1/bible/versions/{version_id}/books": {
+      "get": {
+        "operationId": "list_version_books_api_v1_bible_versions__version_id__books_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z0-9_-]{1,32}$",
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BibleVersionBooksResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Version Books",
+        "tags": [
+          "bible"
+        ]
+      }
+    },
+    "/api/v1/bible/versions/{version_id}/chapter": {
+      "get": {
+        "operationId": "get_version_chapter_api_v1_bible_versions__version_id__chapter_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z0-9_-]{1,32}$",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "maximum": 66,
+              "minimum": 1,
+              "title": "Book Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "chapter",
+            "required": true,
+            "schema": {
+              "maximum": 150,
+              "minimum": 1,
+              "title": "Chapter",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BibleVersionChapterResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Version Chapter",
         "tags": [
           "bible"
         ]
