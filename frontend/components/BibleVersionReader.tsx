@@ -29,8 +29,14 @@ export default function BibleVersionReader({
 }: Props) {
   const link = (next: { book?: number; chapter?: number; testament?: string }) =>
     bibleHref({ v: version.id, compare: compare?.id, ...next });
+  // Show every verse either version has, so a verse missing from the primary is not lost.
+  const primaryByVerse = new Map(primary?.verses.map((verse) => [verse.verse, verse]) ?? []);
   const secondaryByVerse = new Map(secondary?.verses.map((verse) => [verse.verse, verse]) ?? []);
+  const verseNumbers = [...new Set([...primaryByVerse.keys(), ...secondaryByVerse.keys()])].sort((a, b) => a - b);
   const shownBooks = books.filter((item) => item.testament === testament);
+  const position = book ? book.chapters.indexOf(chapter) : -1;
+  const previous = book && position > 0 ? book.chapters[position - 1] : null;
+  const next = book && position >= 0 && position < book.chapters.length - 1 ? book.chapters[position + 1] : null;
 
   return (
     <>
@@ -50,7 +56,7 @@ export default function BibleVersionReader({
           </div>
 
           <nav className="bv-chapters" aria-label="Chapters">
-            {Array.from({ length: book.chapter_count }, (_, index) => index + 1).map((number) => (
+            {book.chapters.map((number) => (
               <Link
                 key={number}
                 href={link({ book: book.book_id, chapter: number })}
@@ -61,13 +67,16 @@ export default function BibleVersionReader({
           </nav>
 
           <ol className="bv-verses">
-            {primary.verses.map((verse) => {
-              const other = secondaryByVerse.get(verse.verse);
+            {verseNumbers.map((number) => {
+              const verse = primaryByVerse.get(number);
+              const other = secondaryByVerse.get(number);
               return (
-                <li key={verse.verse} className="bv-verse">
-                  <span className="bv-num">{verse.label}</span>
+                <li key={number} className="bv-verse">
+                  <span className="bv-num">{verse?.label ?? other?.label}</span>
                   <div>
-                    <p className="bv-text" lang={version.language_iso ?? undefined}>{verse.text}</p>
+                    {verse
+                      ? <p className="bv-text" lang={version.language_iso ?? undefined}>{verse.text}</p>
+                      : <p className="bv-missing">Not in {version.abbreviation.toUpperCase()}</p>}
                     {other && <p className="bv-compare" lang={compare?.language_iso ?? undefined}>{other.text}</p>}
                   </div>
                 </li>
@@ -76,20 +85,17 @@ export default function BibleVersionReader({
           </ol>
 
           <div className="bv-nav">
-            {chapter > 1
-              ? <Link className="bv-nav-btn" href={link({ book: book.book_id, chapter: chapter - 1 })}>← Prev</Link>
+            {previous
+              ? <Link className="bv-nav-btn" href={link({ book: book.book_id, chapter: previous })}>← Prev</Link>
               : <span className="bv-nav-btn is-disabled">← Prev</span>}
-            {chapter < book.chapter_count
-              ? <Link className="bv-nav-btn bv-nav-next" href={link({ book: book.book_id, chapter: chapter + 1 })}>Next →</Link>
+            {next
+              ? <Link className="bv-nav-btn bv-nav-next" href={link({ book: book.book_id, chapter: next })}>Next →</Link>
               : <span className="bv-nav-btn bv-nav-next is-disabled">Next →</span>}
           </div>
 
           <p className="bv-rights">
             {version.copyright || version.description}
             {compare && <><br />{compare.copyright || compare.description}</>}
-            {[version, compare].some((item) => item && item.display_status !== "cleared") && (
-              <><br />Shown for reading only. Permission to publish {compare ? "one of these texts" : "this text"} is still being confirmed.</>
-            )}
           </p>
         </section>
       )}

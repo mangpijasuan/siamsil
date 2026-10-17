@@ -125,6 +125,17 @@ class BibleChapterResponse(ApiModel):
     verses: list[BibleVerse]
 
 
+class ApiErrorBody(ApiModel):
+    code: str
+    message: str
+    request_id: str | None = None
+    details: list[dict[str, Any]] | None = None
+
+
+class ApiErrorResponse(ApiModel):
+    error: ApiErrorBody
+
+
 class BibleVersionInfo(ApiModel):
     id: str
     abbreviation: str
@@ -152,6 +163,7 @@ class BibleVersionBook(ApiModel):
     name: str
     testament: str
     chapter_count: int
+    chapters: list[int]
 
 
 class BibleVersionBooksResponse(ApiModel):

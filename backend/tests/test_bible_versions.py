@@ -30,11 +30,13 @@ JOHN = """<?xml version="1.0" encoding="utf-8"?>
   <para style="mt">Title that is not a verse</para>
   <chapter number="1" style="c" />
   <para style="s1">Section heading</para>
-  <para style="p"><verse number="1" style="v" />alpha <char style="wj">beta</char><note caller="+" style="f"><char style="ft">footnote</char></note> gamma</para>
+  <para style="p"><verse number="1" style="v" />alpha <char style="wj">beta</char>,<note caller="+" style="f"><char style="ft">footnote</char></note> gamma</para>
   <para style="q1">delta continues verse one</para>
+  <para style="s1">Heading after a verse</para>
+  <para style="p">the <char style="nd">LORD</char>'s word</para>
   <para style="p"><verse number="2-3" style="v" />range text</para>
-  <chapter number="2" style="c" />
-  <para style="p"><verse number="1" style="v" />second chapter</para>
+  <chapter number="3" style="c" />
+  <para style="p"><verse number="1" style="v" />third chapter; chapter two is missing</para>
 </usx>"""
 
 
@@ -68,7 +70,10 @@ class ImportUsxTests(unittest.TestCase):
         self.source = self.root / "src"
         self.db = self.root / "out" / "bible_versions.sqlite"
         self.rights = self.root / "rights.json"
-        self.rights.write_text(json.dumps({"sources": {"bible_hid": {"display": "blocked", "train": "blocked"}}}))
+        self.rights.write_text(json.dumps({"sources": {
+            "bible_hid": {"display": "blocked", "train": "blocked"},
+            "bible_tst": {"display": "cleared"}, "bible_eng": {"display": "cleared"}, "bible_teb": {"display": "cleared"},
+        }}))
         write_version(self.source, "a", "TST", "ctd")
         write_version(self.source, "b", "ENG", "eng")
         write_version(self.source, "c", "HID", "ctd")
@@ -81,23 +86,49 @@ class ImportUsxTests(unittest.TestCase):
             "tst": {"name": "Zomi Test", "language_name": "Zomi", "language_iso": "zom"},
             "teb": {"language_name": "English", "language_iso": "eng", "copyright": "Public domain."},
         }}))
+        self.assertEqual(self.build(self.source, self.db), 0)
+        self.versions = BibleVersions(self.db)
+
+    def build(self, source: Path, db: Path) -> int:
         with patch("sys.stdout"), patch("sys.stderr"):
-            code = import_main([
-                "--source", str(self.source), "--out", str(self.db),
-                "--manifest", str(self.root / "out" / "manifest.json"), "--rights", str(self.rights),
+            return import_main([
+                "--source", str(source), "--out", str(db),
+                "--manifest", str(db.parent / "manifest.json"), "--rights", str(self.rights),
                 "--config", str(self.config),
             ])
-        self.assertEqual(code, 0)
-        self.versions = BibleVersions(self.db)
 
     def tearDown(self) -> None:
         self.tmp.cleanup()
 
     def test_verse_text_skips_headings_and_notes(self) -> None:
         verses = self.versions.chapter("tst", 43, 1)
-        self.assertEqual(verses[0]["text"], "alpha beta gamma delta continues verse one")
+        # No space is added at markup boundaries ("beta," and "LORD's"); headings mid-verse are dropped.
+        self.assertEqual(verses[0]["text"], "alpha beta, gamma delta continues verse one the LORD's word")
         self.assertEqual((verses[1]["verse"], verses[1]["label"], verses[1]["text"]), (2, "2-3", "range text"))
-        self.assertEqual(self.versions.chapter("tst", 43, 2)[0]["text"], "second chapter")
+        self.assertEqual(self.versions.chapter("tst", 43, 3)[0]["text"], "third chapter; chapter two is missing")
+
+    def test_only_cleared_versions_are_served(self) -> None:
+        source = self.root / "src2"
+        write_version(source, "n", "NR", "ctd")  # no rights entry: needs_review
+        write_version(source, "c", "TST", "ctd")
+        db = self.root / "out2" / "bible_versions.sqlite"
+        self.assertEqual(self.build(source, db), 0)
+        self.assertEqual([v["id"] for v in BibleVersions(db).versions()], ["tst"])
+
+    def test_unreadable_chapter_and_unsafe_abbreviation_do_not_abort(self) -> None:
+        source = self.root / "src3"
+        write_version(source, "x", "My Bible!", "ctd", JOHN.replace('chapter number="3"', 'chapter number="#"'))
+        db = self.root / "out3" / "bible_versions.sqlite"
+        self.assertEqual(self.build(source, db), 0)
+        manifest = json.loads((db.parent / "manifest.json").read_text())
+        self.assertEqual(manifest["versions"][0]["id"], "my-bible")
+        self.assertEqual(manifest["versions"][0]["issues"], {"unreadable_chapter_number": 1})
+
+    def test_rebuilt_database_is_reopened(self) -> None:
+        self.assertEqual(len(self.versions.versions()), 3)
+        self.rights.write_text(json.dumps({"sources": {"bible_tst": {"display": "cleared"}}}))
+        self.assertEqual(self.build(self.source, self.db), 0)
+        self.assertEqual([v["id"] for v in self.versions.versions()], ["tst"])
 
     def test_blocked_versions_are_hidden_and_order_puts_english_last(self) -> None:
         self.assertEqual([v["id"] for v in self.versions.versions()], ["tst", "eng", "teb"])
@@ -117,9 +148,9 @@ class ImportUsxTests(unittest.TestCase):
         self.assertEqual((version["source_name"], version["source_language_iso"]), ("Test Version TST", "ctd"))
         self.assertEqual(self.versions.version("eng")["name"], "Test Version ENG")
 
-    def test_books_report_chapter_counts(self) -> None:
+    def test_books_list_the_chapters_present(self) -> None:
         self.assertEqual(self.versions.books("tst"), [
-            {"book_id": 43, "code": "JHN", "name": "John", "testament": "new", "chapter_count": 2},
+            {"book_id": 43, "code": "JHN", "name": "John", "testament": "new", "chapter_count": 2, "chapters": [1, 3]},
         ])
 
     def test_manifest_records_skipped_duplicate(self) -> None:
@@ -134,11 +165,21 @@ class ImportUsxTests(unittest.TestCase):
             self.assertEqual([v["id"] for v in listing["versions"]], ["tst", "eng", "teb"])
             chapter = client.get("/api/v1/bible/versions/tst/chapter", params={"book_id": 43, "chapter": 1})
             self.assertEqual(chapter.status_code, 200)
-            self.assertEqual(chapter.json()["book"]["chapter_count"], 2)
+            self.assertEqual(chapter.json()["book"]["chapters"], [1, 3])
+            self.assertEqual(
+                client.get("/api/v1/bible/versions/tst/chapter", params={"book_id": 43, "chapter": 2}).status_code, 404
+            )
             self.assertEqual(client.get("/api/v1/bible/versions/hid/books").status_code, 404)
             self.assertEqual(
                 client.get("/api/v1/bible/versions/tst/chapter", params={"book_id": 1, "chapter": 1}).status_code, 404
             )
+
+    def test_unreadable_database_is_503(self) -> None:
+        broken = self.root / "broken.sqlite"
+        broken.write_bytes(b"not a database")
+        client = TestClient(app)
+        with patch("routers.bible.get_bible_versions", return_value=BibleVersions(broken)), self.assertLogs("siamsil.bible"):
+            self.assertEqual(client.get("/api/v1/bible/versions").status_code, 503)
 
     def test_missing_database_is_503(self) -> None:
         client = TestClient(app)

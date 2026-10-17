@@ -1,6 +1,64 @@
 {
   "components": {
     "schemas": {
+      "ApiErrorBody": {
+        "additionalProperties": true,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ApiErrorBody",
+        "type": "object"
+      },
+      "ApiErrorResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ApiErrorBody"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ApiErrorResponse",
+        "type": "object"
+      },
       "AskRequest": {
         "properties": {
           "message": {
@@ -367,6 +425,13 @@
             "title": "Chapter Count",
             "type": "integer"
           },
+          "chapters": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Chapters",
+            "type": "array"
+          },
           "code": {
             "title": "Code",
             "type": "string"
@@ -385,7 +450,8 @@
           "code",
           "name",
           "testament",
-          "chapter_count"
+          "chapter_count",
+          "chapters"
         ],
         "title": "BibleVersionBook",
         "type": "object"
@@ -1836,6 +1902,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Bible versions database not loaded or unreadable"
           }
         },
         "summary": "List Versions",
@@ -1870,6 +1946,16 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Bible version or chapter not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1879,6 +1965,16 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Bible versions database not loaded or unreadable"
           }
         },
         "summary": "List Version Books",
@@ -1935,6 +2031,16 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Bible version or chapter not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -1944,6 +2050,16 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Bible versions database not loaded or unreadable"
           }
         },
         "summary": "Get Version Chapter",

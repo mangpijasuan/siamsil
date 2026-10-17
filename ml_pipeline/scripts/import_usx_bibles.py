@@ -36,7 +36,10 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCRIPT_VERSION = "1.2.0"
+# Bundles come from third parties: parse with defusedxml (no entity expansion or external entities).
+import defusedxml.ElementTree as SafeET
+
+SCRIPT_VERSION = "1.3.0"
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SOURCE = ROOT / "data" / "raw" / "bible" / "usx"
@@ -76,6 +79,8 @@ BOOK_INDEX = {code: (index + 1, name, testament) for index, (code, name, testame
 SKIP_PARA_STYLES = re.compile(r"^(mt\d*|mte\d*|h\d*|toc\w*|imt\d*|is\d*|ip|s\d*|ms\d*|mr|sr|r|d|sp|qa|cl|restore|rem)$")
 VERSE_NUMBER_RE = re.compile(r"^(\d+)(?:\s*[-–]\s*(\d+))?")
 WS_RE = re.compile(r"\s+")
+# Version ids must match the API path pattern ^[a-z0-9_-]{1,32}$.
+VERSION_ID_UNSAFE_RE = re.compile(r"[^a-z0-9_-]+")
 
 
 def sha256(path: Path) -> str:
@@ -92,7 +97,7 @@ def text_of(root: ET.Element, path: str) -> str:
 
 
 def read_metadata(path: Path) -> dict[str, str]:
-    root = ET.parse(path).getroot()
+    root = SafeET.parse(path).getroot()
     return {
         "abbreviation": text_of(root, "identification/abbreviation"),
         "name": text_of(root, "identification/name"),
@@ -117,7 +122,20 @@ class BookParser:
 
     def _add(self, text: str | None) -> None:
         if text and self.verse and self.chapter:
-            self.parts.setdefault((self.chapter, self.verse[0]), []).append(text)
+            key = (self.chapter, self.verse[0])
+            if text.isspace() and key not in self.parts:
+                return  # a word break alone does not make an empty verse exist
+            self.parts.setdefault(key, []).append(text)
+
+    def _start_chapter(self, raw: str) -> None:
+        match = VERSE_NUMBER_RE.match(raw.strip())
+        if not match:
+            # Verses after an unreadable chapter number are dropped, not guessed.
+            self.issues["unreadable_chapter_number"] += 1
+            self.chapter = 0
+        else:
+            self.chapter = int(match.group(1))
+        self.verse = None
 
     def _start_verse(self, raw: str) -> None:
         match = VERSE_NUMBER_RE.match(raw.strip())
@@ -139,8 +157,7 @@ class BookParser:
         tag = element.tag
         if tag == "chapter":
             if element.get("number"):
-                self.chapter = int(VERSE_NUMBER_RE.match(element.get("number", "0")).group(1))
-                self.verse = None
+                self._start_chapter(element.get("number", ""))
             return
         if tag == "verse":
             if element.get("number"):
@@ -152,6 +169,8 @@ class BookParser:
             return
         if tag == "para" and SKIP_PARA_STYLES.match(element.get("style", "")):
             skip = True
+        if tag == "para" and not skip:
+            self._add(" ")  # a paragraph break inside a verse is a word break
         if not skip:
             self._add(element.text)
         for child in element:
@@ -162,7 +181,8 @@ class BookParser:
     def verses(self) -> list[tuple[int, int, str, str]]:
         rows = []
         for (chapter, verse), parts in sorted(self.parts.items()):
-            text = WS_RE.sub(" ", " ".join(parts)).strip()
+            # Fragments keep their own whitespace; markup boundaries add none.
+            text = WS_RE.sub(" ", "".join(parts)).strip()
             if text:
                 rows.append((chapter, verse, self.labels.get((chapter, verse), str(verse)), text))
             else:
@@ -171,7 +191,7 @@ class BookParser:
 
 
 def parse_book(path: Path) -> tuple[str, list[tuple[int, int, str, str]], Counter[str]]:
-    root = ET.parse(path).getroot()
+    root = SafeET.parse(path).getroot()
     book = root.find("book")
     code = (book.get("code") if book is not None else "") or path.stem.upper()
     parser = BookParser()
@@ -222,11 +242,11 @@ def parse_usfm_book(path: Path) -> tuple[str, str, list[tuple[int, int, str, str
             code, _, description = rest.partition(" ")
             continue
         if marker == "c":
-            parser.chapter = int(VERSE_NUMBER_RE.match(rest).group(1))
-            parser.verse = None
+            parser._start_chapter(rest)
             continue
         if USFM_SKIP_MARKERS.match(marker):
             continue
+        parser._add(" ")  # each USFM line starts a new word
         text = f"\\v {rest}" if marker == "v" else rest if match else line
         text = USFM_WORD_RE.sub(r"\1", text)
         pieces = USFM_VERSE_RE.split(text)
@@ -296,6 +316,11 @@ def import_version(folder: Path, config: dict[str, dict[str, str]] | None = None
         "books": len({row[0] for row in verses}),
         "chapters": len({(row[0], row[1]) for row in verses}),
     }
+
+
+def make_version_id(abbreviation: str) -> str:
+    """Lowercase id safe for the API path, for example "HCL06" -> "hcl06", "My Bible 2" -> "my-bible-2"."""
+    return VERSION_ID_UNSAFE_RE.sub("-", abbreviation.strip().lower()).strip("-")[:32] or "version"
 
 
 def choose(candidates: list[dict]) -> dict:
@@ -381,8 +406,7 @@ def main(argv: list[str] | None = None) -> int:
     config = load_config(args.config)
     for folder in folders:
         version = import_version(folder, config)
-        abbreviation = version["meta"]["abbreviation"] or folder.name
-        by_id.setdefault(abbreviation.lower(), []).append(version)
+        by_id.setdefault(make_version_id(version["meta"]["abbreviation"] or folder.name), []).append(version)
 
     rights = load_rights(args.rights)
     versions = []

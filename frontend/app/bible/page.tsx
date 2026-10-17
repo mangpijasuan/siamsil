@@ -2,6 +2,7 @@ import Link from "next/link";
 import BibleReader from "@/components/BibleReader";
 import BibleVersionReader, { bibleHref } from "@/components/BibleVersionReader";
 import {
+  ApiError,
   describeApiError,
   getBibleBooks,
   getBibleVersionBooks,
@@ -19,19 +20,21 @@ function positiveInt(value: string | undefined) {
   return Number.isInteger(number) && number > 0 ? number : null;
 }
 
-async function loadVersions(): Promise<BibleVersionInfo[]> {
+// 503 means no versions database is loaded: use the workbook reader. Other failures are errors.
+async function loadVersions(): Promise<{ versions: BibleVersionInfo[]; error: string | null }> {
   try {
-    return (await getBibleVersions()).versions;
-  } catch {
-    return [];
+    return { versions: (await getBibleVersions()).versions, error: null };
+  } catch (caught) {
+    if (caught instanceof ApiError && caught.status === 503) return { versions: [], error: null };
+    return { versions: [], error: describeApiError(caught, "Bible") };
   }
 }
 
 export default async function BiblePage({ searchParams }: Props) {
   const params = await searchParams;
-  const versions = await loadVersions();
+  const { versions, error: versionsError } = await loadVersions();
 
-  if (versions.length === 0) return <WorkbookBible {...params} />;
+  if (versions.length === 0) return <WorkbookBible {...params} notice={versionsError} />;
 
   const version = versions.find((item) => item.id === params.v) ?? versions[0];
   const compare = versions.find((item) => item.id === params.compare && item.id !== version.id) ?? null;
@@ -43,12 +46,18 @@ export default async function BiblePage({ searchParams }: Props) {
     error = describeApiError(caught, "Bible");
   }
 
+  // A requested book decides the testament; otherwise the requested testament picks its first book.
   const requested = books.find((item) => item.book_id === positiveInt(params.book));
-  const book = requested ?? books[0] ?? null;
-  const chapter = requested ? Math.min(positiveInt(params.chapter) ?? 1, requested.chapter_count) : 1;
-  const testament = params.testament === "new" || params.testament === "old"
-    ? params.testament
-    : book?.testament === "new" ? "new" : "old";
+  const requestedTestament = params.testament === "new" || params.testament === "old" ? params.testament : null;
+  const book = requested
+    ?? books.find((item) => item.testament === (requestedTestament ?? "old"))
+    ?? books[0]
+    ?? null;
+  const testament: "old" | "new" = book?.testament === "new" ? "new" : "old";
+  const wantedChapter = requested ? positiveInt(params.chapter) : null;
+  const chapter = book
+    ? (wantedChapter && book.chapters.includes(wantedChapter) ? wantedChapter : book.chapters[0] ?? 1)
+    : 1;
 
   let primary: BibleVersionChapter | null = null;
   let secondary: BibleVersionChapter | null = null;
@@ -62,7 +71,10 @@ export default async function BiblePage({ searchParams }: Props) {
     if (second.status === "fulfilled") secondary = second.value;
   }
 
-  const tab = (value: "old" | "new") => bibleHref({ v: version.id, compare: compare?.id, book: book?.book_id, chapter, testament: value });
+  const tab = (value: "old" | "new") =>
+    value === testament
+      ? bibleHref({ v: version.id, compare: compare?.id, book: book?.book_id, chapter })
+      : bibleHref({ v: version.id, compare: compare?.id, testament: value });
 
   return (
     <>
@@ -93,7 +105,9 @@ export default async function BiblePage({ searchParams }: Props) {
 }
 
 // Reader for the workbook Bible, used when no Bible versions database is loaded.
-async function WorkbookBible({ book, chapter, testament }: { book?: string; chapter?: string; testament?: string }) {
+async function WorkbookBible({
+  book, chapter, testament, notice,
+}: { book?: string; chapter?: string; testament?: string; notice?: string | null }) {
   let books: Awaited<ReturnType<typeof getBibleBooks>>["books"] = [];
   let error: string | null = null;
 
@@ -116,7 +130,7 @@ async function WorkbookBible({ book, chapter, testament }: { book?: string; chap
         </div>
       </header>
 
-      {error && <div className="bv-error" role="alert">{error}</div>}
+      {(notice || error) && <div className="bv-error" role="alert">{notice || error}</div>}
 
       <BibleReader books={books} activeTestament={activeTestament} bookId={book ? Number(book) : null} chapter={chapter ? Number(chapter) : 1} />
 

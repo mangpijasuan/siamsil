@@ -385,6 +385,27 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ApiErrorBody */
+        ApiErrorBody: {
+            /** Code */
+            code: string;
+            /** Details */
+            details?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Message */
+            message: string;
+            /** Request Id */
+            request_id?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ApiErrorResponse */
+        ApiErrorResponse: {
+            error: components["schemas"]["ApiErrorBody"];
+        } & {
+            [key: string]: unknown;
+        };
         /** AskRequest */
         AskRequest: {
             /** Message */
@@ -513,6 +534,8 @@ export interface components {
             book_id: number;
             /** Chapter Count */
             chapter_count: number;
+            /** Chapters */
+            chapters: number[];
             /** Code */
             code: string;
             /** Name */
@@ -1086,6 +1109,15 @@ export interface operations {
                     "application/json": components["schemas"]["BibleVersionsResponse"];
                 };
             };
+            /** @description Bible versions database not loaded or unreadable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     list_version_books_api_v1_bible_versions__version_id__books_get: {
@@ -1108,6 +1140,15 @@ export interface operations {
                     "application/json": components["schemas"]["BibleVersionBooksResponse"];
                 };
             };
+            /** @description Bible version or chapter not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1115,6 +1156,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Bible versions database not loaded or unreadable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -1142,6 +1192,15 @@ export interface operations {
                     "application/json": components["schemas"]["BibleVersionChapterResponse"];
                 };
             };
+            /** @description Bible version or chapter not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1149,6 +1208,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Bible versions database not loaded or unreadable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
