@@ -28,7 +28,7 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 | Bible, Zomi "ISO Improved Text" | Modified version of the above, with a "Changes Applied" column | live | — | — | — | `needs_review` |
 | Daily-use phrases ("Daily Use (Ms. Nem)" sheet) | 62 teacher-reviewed pairs | live | — | — | — | `needs_review` |
 | Human evaluation sets (planned) | See [EVALUATION_SET.md](EVALUATION_SET.md) | never | never | — | — | to be contracted |
-| Bible, Zomi / Tedim 2011 (TDB), USX | 30,712 verses, © Bible Society of Myanmar 2011 | yes, with credit | yes | **no** | **no** | `restricted` |
+| Bible, Zomi / Tedim 2011 (TDB), USX | 30,712 verses, © Bible Society of Myanmar 2011 | live, labeled | — | — | — | `needs_review` (permission requested) |
 | Bible, Zomi / Tedim 1977 (TB77), USX | 30,485 verses, © Bible Society of Myanmar 1977 | live, labeled | — | — | — | `needs_review` |
 | Bible, Falam (FCL), USX | 29,661 verses, © Bible Society of Myanmar 2002 | live, labeled | — | — | — | `needs_review` |
 | Bible, Hakha (HCL06), USX | 28,201 verses (incomplete copy), © Bible Society of Myanmar 2006 | live, labeled | — | — | — | `needs_review` |
@@ -60,8 +60,7 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 - Only the human-authored column should be treated as human-made data for training; the "improved" column needs its own review.
 
 **Bible versions (USX)**
-- **TDB (Zomi Bible 2011): written permission from the Bible Society of Myanmar, granted 2026-10-01**, reported by the project owner on 2026-10-17. Covers display and model training. Does **not** cover redistribution (publishing the text as a dataset or with model weights) or commercial use. Still to record here: the signer's name and where the written copy is kept (private storage, not this repository). A second person should confirm this entry.
-- TB77, FCL and HCL06 are not covered by that record; they remain `needs_review`.
+- TDB (Zomi Bible 2011): the project owner is requesting written permission from the Bible Society of Myanmar (in progress as of 2026-10-17). Until it arrives, TDB stays `needs_review`: shown in the app with a label, not exported for training. A `license.xml` found in the bundle belongs to the Judson Bible folder; it is an expired (2012-02-29 to 2015-02-28) Digital Bible Library distribution record that names no licensee, and it grants Siamsil nothing.
 - Received 2026-10-17 from the project owner as `Chin-Bible.zip`, a ProPresenter bundle ("Tedim-Chin-Bible-OneClick", by Peter Pau Sian Lian). It is a repackaging; it does not carry a license from the publishers.
 - TDB, TB77, FCL and HCL06 are © Bible Society of Myanmar. Displaying a whole Bible publicly normally needs the Society's written permission. Ask for display (and, separately, training) permission before the public site shows these versions.
 - KJV: public domain outside the United Kingdom. Judson (Burmese, 1835) is generally public domain, but this file is a Digital Bible Library edition whose `license.xml` covers 2012-02-29 to 2015-02-28; confirm the edition's terms.
