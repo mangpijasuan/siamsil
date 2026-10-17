@@ -529,6 +529,28 @@
             ],
             "title": "Name Local"
           },
+          "source_language_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Language Iso"
+          },
+          "source_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Name"
+          },
           "verse_count": {
             "title": "Verse Count",
             "type": "integer"

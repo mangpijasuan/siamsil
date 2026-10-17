@@ -567,6 +567,10 @@ export interface components {
             name: string;
             /** Name Local */
             name_local?: string | null;
+            /** Source Language Iso */
+            source_language_iso?: string | null;
+            /** Source Name */
+            source_name?: string | null;
             /** Verse Count */
             verse_count: number;
         } & {

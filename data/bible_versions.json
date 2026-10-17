@@ -1,0 +1,8 @@
+{
+  "_comment": "How Siamsil names imported Bible versions. The publisher's own title, language code, and copyright stay in the database as source_name, source_language_iso, and copyright. Zomi text is labeled zom; ctd (Tedim) is its source code. See docs/DATA_RIGHTS.md, Language code.",
+  "versions": {
+    "tdb": {"name": "Zomi Bible (TDB 2011)", "language_name": "Zomi", "language_iso": "zom"},
+    "tb77": {"name": "Zomi Bible 1977 (TB77)", "language_name": "Zomi", "language_iso": "zom"},
+    "kjv": {"name": "King James Version", "language_name": "English", "language_iso": "eng"}
+  }
+}

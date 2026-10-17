@@ -134,6 +134,8 @@ class BibleVersionInfo(ApiModel):
     language_iso: str | None = None
     language_name: str | None = None
     copyright: str | None = None
+    source_name: str | None = None
+    source_language_iso: str | None = None
     display_status: str
     book_count: int
     verse_count: int

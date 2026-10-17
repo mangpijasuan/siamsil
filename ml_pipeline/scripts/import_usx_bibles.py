@@ -7,6 +7,10 @@ Each version is a folder holding `metadata.xml` (Digital Bible Library format) a
 Reads (never modifies):
   data/raw/bible/usx/**/metadata.xml
 
+Names versions as configured in data/bible_versions.json (for example, the Tedim
+Bibles as "Zomi Bible", language zom), keeping the publisher's title, language code,
+and copyright as source_name, source_language_iso, and copyright.
+
 Writes:
   data/processed/bible/bible_versions.sqlite
   data/processed/bible/manifest.json
@@ -28,13 +32,14 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCRIPT_VERSION = "1.0.0"
+SCRIPT_VERSION = "1.1.0"
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SOURCE = ROOT / "data" / "raw" / "bible" / "usx"
 DEFAULT_OUT_DB = ROOT / "data" / "processed" / "bible" / "bible_versions.sqlite"
 DEFAULT_MANIFEST = ROOT / "data" / "processed" / "bible" / "manifest.json"
 DEFAULT_RIGHTS = ROOT / "data" / "rights.json"
+DEFAULT_CONFIG = ROOT / "data" / "bible_versions.json"
 
 # Protestant canon in order: (USFM code, English name, testament). book_id is the 1-based position.
 BOOKS = [
@@ -222,7 +227,15 @@ def choose(candidates: list[dict]) -> dict:
     return max(candidates, key=lambda c: (-sum(c["issues"].values()), len(c["verses"])))
 
 
-def write_db(path: Path, versions: list[dict], rights: dict[str, dict[str, str]]) -> None:
+def load_config(path: Path) -> dict[str, dict[str, str]]:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8")).get("versions", {})
+
+
+def write_db(
+    path: Path, versions: list[dict], rights: dict[str, dict[str, str]], config: dict[str, dict[str, str]]
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
     tmp.unlink(missing_ok=True)
@@ -232,6 +245,7 @@ def write_db(path: Path, versions: list[dict], rights: dict[str, dict[str, str]]
         CREATE TABLE versions (
           id TEXT PRIMARY KEY, abbreviation TEXT NOT NULL, name TEXT NOT NULL, name_local TEXT,
           description TEXT, language_iso TEXT, language_name TEXT, copyright TEXT,
+          source_name TEXT NOT NULL, source_language_iso TEXT,
           rights_source TEXT, display_status TEXT NOT NULL, train_status TEXT NOT NULL,
           book_count INTEGER NOT NULL, verse_count INTEGER NOT NULL, sort_order INTEGER NOT NULL
         );
@@ -250,11 +264,14 @@ def write_db(path: Path, versions: list[dict], rights: dict[str, dict[str, str]]
         meta = version["meta"]
         version_id = version["id"]
         right = rights.get(version["rights_source"], {})
+        named = config.get(version_id, {})
         con.execute(
-            "INSERT INTO versions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO versions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
-                version_id, meta["abbreviation"], meta["name"], meta["name_local"], meta["description"],
-                meta["language_iso"], meta["language_name"], meta["copyright"] or meta["description"],
+                version_id, meta["abbreviation"], named.get("name", meta["name"]), meta["name_local"],
+                meta["description"], named.get("language_iso", meta["language_iso"]),
+                named.get("language_name", meta["language_name"]), meta["copyright"] or meta["description"],
+                meta["name"], meta["language_iso"],
                 version["rights_source"], right.get("display", "needs_review"), right.get("train", "needs_review"),
                 version["books"], len(version["verses"]), order,
             ),
@@ -275,6 +292,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT_DB)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--rights", type=Path, default=DEFAULT_RIGHTS)
+    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="display names and language codes")
     parser.add_argument("--dry-run", action="store_true", help="report what would be imported; write nothing")
     args = parser.parse_args(argv)
 
@@ -327,13 +345,14 @@ def main(argv: list[str] | None = None) -> int:
     # Tedim first (newest edition first), English last; the reader's default is the first version.
     preferred = {"tdb": 0, "tb77": 1}
     versions.sort(key=lambda v: (preferred.get(v["id"], 2), v["meta"]["language_iso"] == "eng", v["id"]))
-    write_db(args.out, versions, rights)
+    write_db(args.out, versions, rights, load_config(args.config))
     manifest = {
         "script": "import_usx_bibles.py",
         "script_version": SCRIPT_VERSION,
         "built_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "database": str(args.out.relative_to(ROOT)) if args.out.is_relative_to(ROOT) else str(args.out),
         "database_sha256": sha256(args.out),
+        "config_sha256": sha256(args.config) if args.config.exists() else None,
         "versions": report,
         "sources": {
             v["id"]: {"folder": str(v["folder"].relative_to(args.source)), "files": v["files"]} for v in versions

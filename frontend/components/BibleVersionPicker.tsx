@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import type { BibleVersionInfo } from "@/lib/api";
 
 function optionLabel(version: BibleVersionInfo) {
-  return `${version.abbreviation.toUpperCase()} · ${version.name}${version.language_name ? ` (${version.language_name})` : ""}`;
+  const language = version.language_name && !version.name.includes(version.language_name) ? ` · ${version.language_name}` : "";
+  return `${version.name}${language}`;
 }
 
 export default function BibleVersionPicker({

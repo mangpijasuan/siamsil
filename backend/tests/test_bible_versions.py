@@ -58,10 +58,13 @@ class ImportUsxTests(unittest.TestCase):
         write_version(self.source, "c", "HID", "ctd")
         # A second, damaged copy of TST: the clean copy must win.
         write_version(self.source, "d", "TST", "ctd", JOHN.replace('number="2-3"', 'number="#"'))
+        self.config = self.root / "bible_versions.json"
+        self.config.write_text(json.dumps({"versions": {"tst": {"name": "Zomi Test", "language_name": "Zomi", "language_iso": "zom"}}}))
         with patch("sys.stdout"), patch("sys.stderr"):
             code = import_main([
                 "--source", str(self.source), "--out", str(self.db),
                 "--manifest", str(self.root / "out" / "manifest.json"), "--rights", str(self.rights),
+                "--config", str(self.config),
             ])
         self.assertEqual(code, 0)
         self.versions = BibleVersions(self.db)
@@ -77,6 +80,12 @@ class ImportUsxTests(unittest.TestCase):
 
     def test_blocked_versions_are_hidden_and_order_puts_english_last(self) -> None:
         self.assertEqual([v["id"] for v in self.versions.versions()], ["tst", "eng"])
+
+    def test_configured_name_keeps_publisher_source(self) -> None:
+        version = self.versions.version("tst")
+        self.assertEqual((version["name"], version["language_iso"], version["language_name"]), ("Zomi Test", "zom", "Zomi"))
+        self.assertEqual((version["source_name"], version["source_language_iso"]), ("Test Version TST", "ctd"))
+        self.assertEqual(self.versions.version("eng")["name"], "Test Version ENG")
 
     def test_books_report_chapter_counts(self) -> None:
         self.assertEqual(self.versions.books("tst"), [

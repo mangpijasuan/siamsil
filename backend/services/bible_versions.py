@@ -41,7 +41,7 @@ class BibleVersions:
         rows = self.connect().execute(
             """
             SELECT id, abbreviation, name, name_local, description, language_iso, language_name,
-                   copyright, display_status, book_count, verse_count
+                   copyright, source_name, source_language_iso, display_status, book_count, verse_count
             FROM versions ORDER BY sort_order
             """
         )
