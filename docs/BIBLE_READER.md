@@ -7,7 +7,7 @@ Updated: 2026-10-18 · Route: `/bible`, `/bible/search`
 - **Read** any version whose display right is cleared (`data/rights.json`). Scripture is fetched and rendered on the server; the toolbar, verse actions and panels are small client components.
 - **Bilingual by default.** A Zomi version is paired with English (WEB first, then KJV). `compare=none` turns the second version off.
 - **Display modes:** Zomi + English, Zomi only, English only. English-only without a second version shows a notice and keeps the Zomi text rather than an empty page.
-- **Reading settings:** light, sepia or dark (or follow the device), text size 14–24 px, line spacing 1.4–2.1, sans or serif. Saved in the browser and applied before the first paint by a static script in the root layout, so there is no theme flash.
+- **Reading settings:** light, sepia or dark (or follow the device), text size 14–24 px, line spacing 1.4–2.1, sans or serif. Saved in the browser and applied before the first paint by a static inline script in the root layout's <head>, so there is no theme flash.
 - **Navigation:** book sheet with search (Zomi name, English name or code), a chapter grid with arrow-key movement, previous/next that continue into the neighbouring book and never link to a chapter a version lacks.
 - **Verse actions:** select a verse by tap, click, or Enter on its number. Copy and share include the reference and version labels (native share sheet where the browser has one, copy otherwise). Bookmark, four highlight colours, and private notes.
 - **Search** (`/bible/search`): every word or an exact phrase, optional book filter, 20 results per page, matches marked in the text. Results link to the verse in its chapter.

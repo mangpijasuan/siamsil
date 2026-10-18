@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Inter, Playfair_Display, Raleway } from "next/font/google";
 import BottomNav from "@/components/BottomNav";
 import SidebarNav from "@/components/SidebarNav";
@@ -48,9 +47,12 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} ${raleway.variable} h-full`} suppressHydrationWarning>
+      <head>
+        {/* Bible reading settings (theme, text size) applied while the page is parsed, before first paint.
+            Static script with no user input; the root layout is not re-rendered on client navigation. */}
+        <script id="bible-preferences" dangerouslySetInnerHTML={{ __html: PREFERENCES_BOOT_SCRIPT }} />
+      </head>
       <body>
-        {/* Bible reading settings (theme, text size) applied before paint, so the reader never flashes. Static script. */}
-        <Script id="bible-preferences" strategy="beforeInteractive">{PREFERENCES_BOOT_SCRIPT}</Script>
         <SidebarNav>{children}</SidebarNav>
         <BottomNav />
       </body>
