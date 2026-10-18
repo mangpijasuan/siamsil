@@ -4152,3 +4152,15 @@ body { padding-bottom: 96px; }
 .desktop-sidebar .side-panel-nav { gap: 8px; }
 .side-panel-group { gap: 8px; }
 .desktop-sidebar.collapsed .side-panel-nav { gap: 8px; padding: 10px 8px 12px; }
+
+/* Mobile navigation polish: stronger contrast and safe-area clearance */
+@media(max-width:1023px){
+.bottom-nav{background:#0d294b!important;border-top:1px solid rgba(233,196,119,.35)!important;padding-bottom:max(8px,env(safe-area-inset-bottom,0px))!important;box-shadow:0 -8px 24px rgba(7,24,44,.20)}
+.bottom-nav .nav-item{color:#d9e3f1!important;min-height:50px}
+.bottom-nav .nav-label{color:#d9e3f1!important}
+.bottom-nav .nav-icon{color:#d9e3f1!important}
+.bottom-nav .nav-item.active{background:rgba(226,184,103,.14)!important;box-shadow:none!important}
+.bottom-nav .nav-item.active .nav-label,.bottom-nav .nav-item.active .nav-icon{color:#f3cc7f!important}
+.bottom-nav .nav-item:focus-visible{outline:2px solid #f3cc7f!important;outline-offset:-2px!important}
+}
+@media(max-width:767px){.shell-topbar-inner{gap:6px}.shell-brand-title{font-size:clamp(14px,4vw,20px)}.shell-brand-sub{font-size:8px}.shell-brand-logo-wrap{max-width:32px;max-height:32px}}
