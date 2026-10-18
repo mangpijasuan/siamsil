@@ -196,7 +196,9 @@ def translate_texts(model, codec: Codec, texts: list[str], src: str, tgt: str, d
                 forced_bos_token_id=codec.lang_id[tgt],
                 decoder_start_token_id=codec.eos,
                 num_beams=beams,
-                max_new_tokens=codec.max_len,
+                # max_length, not max_new_tokens: NLLB's config sets max_length=200 and the two conflict.
+                # +2 for the start token and the language token.
+                max_length=codec.max_len + 2,
                 use_cache=True,
             )
             outputs += codec.tok.batch_decode(generated, skip_special_tokens=True)
