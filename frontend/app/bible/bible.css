@@ -545,3 +545,9 @@ html[data-bible-face="serif"] .sb-sample { font-family: var(--font-playfair), Ge
 .sb-result-text mark { background: var(--sb-hl-gold); color: inherit; border-radius: 3px; padding: 0 1px; }
 .sb-link-back { color: var(--sb-gold-ink); font-weight: 600; }
 .sb-root .sb-muted { color: var(--sb-muted); }
+
+/* The navy-and-gold shell's top bar is 76px tall on wider screens. */
+@media (min-width: 768px) {
+  .sb-toolbar { top: 76px; }
+  .sb-root { min-height: calc(100vh - 76px); }
+}
