@@ -63,7 +63,7 @@ caffeinate -i python3 ml_pipeline/scripts/train_mt.py train \
 
 `caffeinate -i` keeps the Mac awake. Keep it plugged in. A run takes hours; overnight is normal.
 
-The defaults (`--batch-size 8 --grad-accum 4`, 32 sentences per update) fit a 24 GB M5. If it runs out of memory, close other apps, then halve the batch and double the accumulation (same effective batch):
+The defaults (Adafactor optimizer, gradient checkpointing, `--batch-size 8 --grad-accum 4`, 32 sentences per update) need about 8 GB for one training step (measured on CPU with NLLB-600M's architecture; the Mac GPU adds some overhead) and fit a 24 GB M5. AdamW (`--optimizer adamw`) needs about 5 GB more. If it runs out of memory, close other apps, then halve the batch and double the accumulation (same effective batch):
 
 ```bash
   --batch-size 4 --grad-accum 8

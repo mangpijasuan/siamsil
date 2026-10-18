@@ -64,6 +64,18 @@ def release_cached_memory(device) -> None:
         torch.cuda.empty_cache()
 
 
+def make_optimizer(model, args):
+    """Adafactor keeps factored statistics instead of AdamW's two full copies of every weight
+    (about 5 GB for NLLB-600M), which is what lets training fit on a 24 GB Mac."""
+    import torch
+
+    if args.optimizer == "adamw":
+        return torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
+    from transformers.optimization import Adafactor
+
+    return Adafactor(model.parameters(), lr=args.lr, scale_parameter=False, relative_step=False, warmup_init=False)
+
+
 def read_jsonl(path: Path, limit: int | None = None) -> list[dict]:
     rows = []
     with path.open(encoding="utf-8") as handle:
@@ -179,6 +191,7 @@ def translate_texts(model, codec: Codec, texts: list[str], src: str, tgt: str, d
                 decoder_start_token_id=codec.eos,
                 num_beams=beams,
                 max_new_tokens=codec.max_len,
+                use_cache=True,
             )
             outputs += codec.tok.batch_decode(generated, skip_special_tokens=True)
     return [text.strip() for text in outputs]
@@ -257,6 +270,10 @@ def cmd_train(args) -> int:
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     model = AutoModelForSeq2SeqLM.from_pretrained(args.model)
     language = add_zomi(tokenizer, model)
+    if args.gradient_checkpointing:
+        # Recompute activations in the backward pass instead of storing them: far less memory, ~25% slower.
+        model.gradient_checkpointing_enable()
+        model.config.use_cache = False
     model.to(device)
     codec = Codec(tokenizer, args.max_len)
 
@@ -265,7 +282,7 @@ def cmd_train(args) -> int:
     steps_per_epoch = math.ceil(len(length_batches(train_examples, args.batch_size, 0)) / args.grad_accum)
     total_steps = steps_per_epoch * args.epochs
     warmup = max(1, int(total_steps * args.warmup))
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
+    optimizer = make_optimizer(model, args)
     schedule = torch.optim.lr_scheduler.LambdaLR(
         optimizer, lambda step: min((step + 1) / warmup, max(0.0, (total_steps - step) / max(1, total_steps - warmup)))
     )
@@ -304,6 +321,8 @@ def cmd_train(args) -> int:
             tokenizer.save_pretrained(args.out)
             print(f"saved best checkpoint to {args.out}", flush=True)
 
+    del model, optimizer, schedule
+    release_cached_memory(device)
     best_model = AutoModelForSeq2SeqLM.from_pretrained(args.out).to(device)
     test = evaluate(best_model, codec, test_pairs, directions, device, args.eval_batch_size, args.beams) if test_pairs else {}
     meta = {
@@ -374,6 +393,10 @@ def main(argv: list[str] | None = None) -> int:
     train.add_argument("--batch-size", type=int, default=8)
     train.add_argument("--grad-accum", type=int, default=4)
     train.add_argument("--lr", type=float, default=1e-4)
+    train.add_argument("--optimizer", choices=("adafactor", "adamw"), default="adafactor",
+                       help="adafactor fits in far less memory; adamw needs about 5 GB more for NLLB-600M")
+    train.add_argument("--no-gradient-checkpointing", dest="gradient_checkpointing", action="store_false",
+                       help="faster, but stores all activations (needs much more memory)")
     train.add_argument("--warmup", type=float, default=0.05, help="share of steps")
     train.add_argument("--max-len", type=int, default=128, help="tokens per sentence")
     train.add_argument("--val-size", type=int, default=2000, help="validation pairs used for loss")
