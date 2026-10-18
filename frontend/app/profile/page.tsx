@@ -22,7 +22,7 @@ export default function ProfilePage() {
       </header>
 
       <div style={{ padding: "16px 16px 40px", display: "flex", flexDirection: "column", gap: 14 }}>
-        <div style={{ background: "var(--white)", borderRadius: "var(--radius-lg)", padding: 18, border: "1px solid var(--border)" }}>
+        <div style={{ background: "var(--surface)", borderRadius: "var(--radius-lg)", padding: 18, border: "1px solid var(--border)" }}>
           <div className="gold-label" style={{ marginBottom: 8 }}>Siamsil ID</div>
           <p className="font-playfair" style={{ fontSize: 18, color: "var(--navy)", margin: "0 0 8px" }}>Guest on this browser</p>
           <p style={{ fontSize: 13, color: "var(--gray)", margin: 0, lineHeight: 1.6 }}>
@@ -31,19 +31,19 @@ export default function ProfilePage() {
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <div style={{ flex: 1, background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: "14px 12px", textAlign: "center" }}>
+          <div style={{ flex: 1, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: "14px 12px", textAlign: "center" }}>
             <div style={{ display: "flex", justifyContent: "center", color: "var(--navy)", marginBottom: 6 }}><IconBook size={16} /></div>
             <div className="font-playfair" style={{ fontSize: 20, fontWeight: 700, color: "var(--navy)" }}>{saved.length}</div>
             <div style={{ fontSize: 9, color: "var(--gray)", marginTop: 4, fontWeight: 600, textTransform: "uppercase" }}>Saved words</div>
           </div>
-          <div style={{ flex: 1, background: "var(--white)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: "14px 12px", textAlign: "center" }}>
+          <div style={{ flex: 1, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: "14px 12px", textAlign: "center" }}>
             <div style={{ display: "flex", justifyContent: "center", color: "var(--navy)", marginBottom: 6 }}><IconSearch size={16} /></div>
             <div className="font-playfair" style={{ fontSize: 20, fontWeight: 700, color: "var(--navy)" }}>{history.length}</div>
             <div style={{ fontSize: 9, color: "var(--gray)", marginTop: 4, fontWeight: 600, textTransform: "uppercase" }}>Recent searches</div>
           </div>
         </div>
 
-        <div style={{ background: "var(--white)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", overflow: "hidden" }}>
+        <div style={{ background: "var(--surface)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", overflow: "hidden" }}>
           <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: "var(--navy)" }}>Saved words</span>
           </div>
@@ -60,7 +60,7 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        <div style={{ background: "var(--white)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", overflow: "hidden" }}>
+        <div style={{ background: "var(--surface)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", overflow: "hidden" }}>
           <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: "var(--navy)" }}>Recent searches</span>
           </div>

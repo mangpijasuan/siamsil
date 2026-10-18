@@ -58,14 +58,14 @@ export default function ChatPage() {
       </header>
 
       <div style={{ display: "flex", flexDirection: "column", minHeight: "calc(100vh - 160px)" }}>
-        <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)", background: "var(--white)", display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)", background: "var(--surface)", display: "flex", gap: 6, flexWrap: "wrap" }}>
           {["What does hope mean?", "Translate good morning", "Laisiangtho John 1"].map((prompt) => (
             <button
               key={prompt}
               type="button"
               onClick={() => setInput(prompt)}
               style={{
-                border: "1px solid var(--border)", background: "var(--white)", borderRadius: 20,
+                border: "1px solid var(--border)", background: "var(--surface)", borderRadius: 20,
                 padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "var(--navy)", cursor: "pointer",
               }}
             >
@@ -111,7 +111,7 @@ export default function ChatPage() {
           <div ref={bottomRef} />
         </div>
 
-        <form onSubmit={handleSend} style={{ borderTop: "1px solid var(--border)", background: "var(--white)", padding: "10px 14px", display: "flex", gap: 10 }}>
+        <form onSubmit={handleSend} style={{ borderTop: "1px solid var(--border)", background: "var(--surface)", padding: "10px 14px", display: "flex", gap: 10 }}>
           <input
             value={input}
             onChange={(event) => setInput(event.target.value)}

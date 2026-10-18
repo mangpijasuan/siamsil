@@ -10,6 +10,7 @@
   --gold-dim:  rgba(201,168,76,0.15);
   --cream:     #F8F6F0;
   --white:     #FFFFFF;
+  --surface:   #FFFFFF;
   --gray:      #6B7280;
   --gray2:     #E5E7EB;
   --gray3:     #F3F4F6;
@@ -3480,3 +3481,169 @@ a.library-card:hover {
   .books-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 }
 .bv-missing { font-size: 12px; color: var(--gray); font-style: italic; margin: 0; }
+
+
+/* ══════════════════════════════════════════════════
+   BLUE GLASS THEME
+   Soft steel-blue background, frosted glass cards, rounded sans headings.
+   The home Nisim Thalakna block keeps its original look: .home-hero and
+   .nisim-block pin the earlier tokens and serif font.
+══════════════════════════════════════════════════ */
+html { --font-brand-serif: var(--font-playfair); }
+:root {
+  --navy:       #2C4A72;
+  --navy2:      #375C8C;
+  --navy-light: #4A6FA0;
+  --bg:         #DCE5F0;
+  --cream:      #EAF0F7;
+  --gray:       #5F7189;
+  --gray2:      #D3DDEA;
+  --gray3:      #E4EBF4;
+  --text:       #22395C;
+  --text-soft:  #4A5D78;
+  --border:     rgba(255,255,255,0.6);
+  --glass:        rgba(238,243,250,0.74);
+  --glass-strong: rgba(243,247,252,0.9);
+  --glass-edge:   rgba(255,255,255,0.65);
+  --surface:      var(--glass);
+  --shadow-sm: 4px 4px 10px rgba(44,74,114,0.10), -3px -3px 8px rgba(255,255,255,0.55);
+  --shadow-md: 8px 8px 20px rgba(44,74,114,0.14), -6px -6px 16px rgba(255,255,255,0.6);
+  --shadow-lg: 14px 14px 32px rgba(44,74,114,0.18), -8px -8px 22px rgba(255,255,255,0.6);
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 26px;
+}
+body {
+  --font-playfair: var(--font-display);
+  background: #D6E1EE;
+  color: var(--text);
+}
+/* Fixed backdrop: gradient plus two soft shapes, like frosted glass over a scene. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 105% 45%, rgba(44,74,114,0.24) 0 22rem, transparent 22.2rem),
+    radial-gradient(circle at -10% 95%, rgba(55,92,140,0.22) 0 18rem, transparent 18.2rem),
+    radial-gradient(circle at 75% -5%, rgba(255,255,255,0.55) 0 14rem, transparent 14.2rem),
+    linear-gradient(160deg, #E6EDF6 0%, #CBD9EA 55%, #AFC3DC 100%);
+}
+
+/* Headings: bold rounded sans in navy */
+.font-playfair { letter-spacing: -0.01em; font-weight: 700; }
+
+/* Navy bars: flat steel navy */
+.shell-topbar { background: var(--navy); box-shadow: 0 6px 20px rgba(44,74,114,0.25); }
+.hm-hero,
+.dict-header,
+.tr-header,
+.page-header,
+.page-header-compact,
+.library-hero,
+.citizenship-hero {
+  background: var(--navy);
+  box-shadow: 0 14px 30px rgba(44,74,114,0.28);
+}
+
+/* Glass surfaces */
+.feat-card.light,
+.word-item,
+.alpha-chip,
+.book-chip,
+.bible-current,
+.cat-card,
+.library-filters button,
+.library-card,
+.citizenship-result,
+.dict-detail,
+.dict-word-btn,
+.verse-card,
+.home-stats-row,
+.wotd-card,
+.tr-input-card,
+.tr-result,
+.tr-action,
+.tr-alt,
+.tr-suggestion,
+.dict-suggestion,
+.hm-card,
+.hm-tile,
+.bv-picker {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--shadow-md);
+  /* Gold is too faint on light glass; accents inside cards use steel blue. */
+  --gold: #3F6A9E;
+}
+.dict-word-btn:hover,
+.hm-tile:hover,
+.library-card:hover,
+.cat-card:hover { background: var(--glass-strong); }
+.dict-word-btn.active { border-left-color: var(--navy); }
+.alpha-chip,
+.book-chip,
+.library-filters button { box-shadow: var(--shadow-sm); }
+.alpha-chip.active,
+.book-chip.active,
+.library-filters button.active,
+.testament-tab.active { background: var(--navy); color: #fff; border-color: transparent; }
+
+/* Side panel and bottom nav: glass */
+.side-panel {
+  background: rgba(232,239,248,0.7);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border-right: 1px solid var(--glass-edge);
+}
+.side-panel-item.active { background: rgba(44,74,114,0.1); color: var(--navy); }
+.bottom-nav {
+  background: rgba(236,242,250,0.78);
+  border-top: 1px solid var(--glass-edge);
+  box-shadow: 0 -6px 24px rgba(44,74,114,0.12);
+}
+.nav-item.active { background: rgba(44,74,114,0.1); border-color: transparent; box-shadow: none; }
+
+/* Nisim Thalakna: original colors and serif, unchanged */
+.home-hero,
+.nisim-block {
+  --navy: #1B2A4A;
+  --navy2: #243560;
+  --white: #FFFFFF;
+  --gray: #6B7280;
+  --radius-lg: 16px;
+  --shadow-lg: 0 12px 40px rgba(27,42,74,0.12), 0 4px 12px rgba(27,42,74,0.06);
+  --font-playfair: var(--font-brand-serif);
+}
+.nisim-block .font-playfair { letter-spacing: normal; font-weight: inherit; }
+
+/* Let the backdrop show through the page shell */
+.app-shell,
+.side-panel-nav,
+.desktop-sidebar .side-panel-nav { background: transparent; }
+.desktop-sidebar {
+  background: rgba(232,239,248,0.62);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border-right: 1px solid var(--glass-edge);
+}
+.desktop-sidebar .side-panel-item.active { background: rgba(44,74,114,0.1); }
+.desktop-sidebar .side-panel-item.active::before { background: var(--navy); }
+.dict-word-btn.featured { background: var(--glass-strong); border-color: var(--glass-edge); border-left: 3px solid var(--navy); }
+/* Typed text on the navy dictionary header stays white */
+.dict-header .dict-search-input { color: #fff; }
+/* Inside navy headers, cards need more body to stay readable */
+.tr-input-card { background: var(--glass-strong); }
+.tr-notice {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-edge);
+  color: var(--text-soft);
+  box-shadow: var(--shadow-sm);
+}
+.tr-notice svg { color: var(--navy2); }

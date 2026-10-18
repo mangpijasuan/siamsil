@@ -86,7 +86,7 @@ export default async function Home() {
         <div className="home-hero-label">Nisim Thalakna · Daily Verse</div>
       </div>
 
-      <div style={{ padding: "0 16px", marginTop: -24, marginBottom: 4 }}>
+      <div className="nisim-block" style={{ padding: "0 16px", marginTop: -24, marginBottom: 4 }}>
         <div style={{
           background: "var(--white)",
           borderRadius: "var(--radius-lg)",

@@ -83,7 +83,7 @@ export default function LearningClient({ groups, error }: Props) {
           </div>
           <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: 8 }}>
             {activeGroup.map(entry => (
-              <div key={entry.id} style={{ background: "var(--white)", borderRadius: 12, overflow: "hidden", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+              <div key={entry.id} style={{ background: "var(--surface)", borderRadius: 12, overflow: "hidden", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
                 <div style={{ padding: "12px 14px", borderRight: "1px solid var(--gray2)" }}>
                   {entry.sub_category && <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gray)", marginBottom: 4 }}>{entry.sub_category}</div>}
                   <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--navy)", margin: 0 }}>{entry.english}</p>
@@ -115,7 +115,7 @@ export default function LearningClient({ groups, error }: Props) {
             {CATEGORIES.map(cat => {
               const count = (groups[cat.key] ?? []).length;
               return (
-                <button key={cat.key} className="cat-card" style={{ textAlign: "left", background: "var(--white)", border: "1px solid var(--gray2)", cursor: "pointer" }} onClick={() => setActiveCategory(cat.key)}>
+                <button key={cat.key} className="cat-card" style={{ textAlign: "left", background: "var(--surface)", border: "1px solid var(--gray2)", cursor: "pointer" }} onClick={() => setActiveCategory(cat.key)}>
                   <div style={{ fontSize: 24, marginBottom: 8 }}>{cat.icon}</div>
                   <div className="font-playfair" style={{ fontSize: 13, fontWeight: 700, color: "var(--navy)", marginBottom: 3 }}>{cat.label}</div>
                   <div style={{ fontSize: 10, color: "var(--gray)" }}>{count > 0 ? `${count} phrases` : cat.desc}</div>
@@ -125,7 +125,7 @@ export default function LearningClient({ groups, error }: Props) {
 
             {/* API categories */}
             {allCategories.filter(k => !CATEGORIES.find(c => c.key === k)).map(cat => (
-              <button key={cat} className="cat-card" style={{ textAlign: "left", background: "var(--white)", border: "1px solid var(--gray2)", cursor: "pointer" }} onClick={() => setActiveCategory(cat)}>
+              <button key={cat} className="cat-card" style={{ textAlign: "left", background: "var(--surface)", border: "1px solid var(--gray2)", cursor: "pointer" }} onClick={() => setActiveCategory(cat)}>
                 <div style={{ fontSize: 24, marginBottom: 8 }}>📚</div>
                 <div className="font-playfair" style={{ fontSize: 13, fontWeight: 700, color: "var(--navy)", marginBottom: 3 }}>{cat}</div>
                 <div style={{ fontSize: 10, color: "var(--gray)" }}>{groups[cat].length} phrases</div>
