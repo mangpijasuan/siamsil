@@ -52,7 +52,7 @@ export default function ChatPage() {
     <>
       <header className="page-header page-header-compact" style={{ paddingBottom: 16 }}>
         <div className="font-playfair" style={{ color: "#fff", fontSize: 18, fontWeight: 700 }}>Siamsil AI</div>
-        <div style={{ color: "var(--gold2)", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 4 }}>
+        <div style={{ color: "var(--gold2)", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 4 }}>
           Retrieval assistant · no generated Zomi
         </div>
       </header>
@@ -66,7 +66,7 @@ export default function ChatPage() {
               onClick={() => setInput(prompt)}
               style={{
                 border: "1px solid var(--border)", background: "var(--surface)", borderRadius: 20,
-                padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "var(--navy)", cursor: "pointer",
+                padding: "5px 12px", fontSize: 12, fontWeight: 600, color: "var(--navy)", cursor: "pointer",
               }}
             >
               {prompt}
@@ -76,7 +76,7 @@ export default function ChatPage() {
 
         <div style={{ flex: 1, overflowY: "auto", padding: "16px 0 12px", display: "flex", flexDirection: "column", gap: 10 }}>
           {messages.length === 0 && (
-            <div style={{ padding: "32px 20px", textAlign: "center", color: "var(--gray)", fontSize: 13, lineHeight: 1.6 }}>
+            <div style={{ padding: "32px 20px", textAlign: "center", color: "var(--gray)", fontSize: 14, lineHeight: 1.6 }}>
               Ask for a word, phrase, or verse. Answers come only from Siamsil dictionary, reviewed phrases, the Bible, or unverified corpus examples.
             </div>
           )}
@@ -89,25 +89,25 @@ export default function ChatPage() {
                 border: msg.role === "user" ? "none" : "1px solid var(--border)",
                 borderRadius: 16,
                 padding: "11px 15px",
-                fontSize: 14,
+                fontSize: 15,
                 lineHeight: 1.65,
               }}>
                 {msg.role === "assistant" && (
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, color: "var(--gold)" }}>
                     <IconChat size={14} />
-                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
                       {msg.confidence ?? "retrieval"}
                     </span>
                   </div>
                 )}
                 {msg.text}
                 {msg.note && (
-                  <div style={{ marginTop: 8, fontSize: 11, color: "var(--gray)" }}>{msg.note}</div>
+                  <div style={{ marginTop: 8, fontSize: 12, color: "var(--gray)" }}>{msg.note}</div>
                 )}
               </div>
             </div>
           ))}
-          {error && <div style={{ margin: "0 16px", color: "#B91C1C", fontSize: 13 }}>{error}</div>}
+          {error && <div style={{ margin: "0 16px", color: "#B91C1C", fontSize: 14 }}>{error}</div>}
           <div ref={bottomRef} />
         </div>
 
@@ -118,7 +118,7 @@ export default function ChatPage() {
             placeholder="Ask about a Zomi word, phrase, or verse…"
             style={{
               flex: 1, border: "1px solid var(--border)", borderRadius: 24,
-              padding: "10px 16px", fontSize: 14, fontFamily: "inherit",
+              padding: "10px 16px", fontSize: 15, fontFamily: "inherit",
               background: "var(--cream)", outline: "none", color: "var(--text)",
             }}
           />

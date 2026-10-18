@@ -113,7 +113,7 @@ export default function BibleVersionReader({
               className={`book-chip${active ? " active" : ""}`}
               aria-current={active ? "page" : undefined}
             >
-              <div style={{ fontSize: 11, fontWeight: 700, color: active ? "var(--white)" : "var(--navy)", marginBottom: 2 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: active ? "var(--white)" : "var(--navy)", marginBottom: 2 }}>
                 {item.name}
               </div>
               <div className="book-chip-zomi">{item.chapter_count} chapters</div>

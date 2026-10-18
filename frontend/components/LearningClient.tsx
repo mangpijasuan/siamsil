@@ -43,13 +43,13 @@ export default function LearningClient({ groups, error }: Props) {
         <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ textAlign: "center" }}>
             <div className="font-playfair" style={{ color: "var(--gold)", fontSize: 22, fontWeight: 700 }}>{streak}</div>
-            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 9, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>Day Streak</div>
+            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>Day Streak</div>
           </div>
           <div style={{ width: 1, height: 36, background: "rgba(255,255,255,0.15)" }} />
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-              <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }}>Daily XP</span>
-              <span style={{ color: "var(--gold)", fontSize: 10, fontWeight: 700 }}>{xp} / {xpMax}</span>
+              <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 12 }}>Daily XP</span>
+              <span style={{ color: "var(--gold)", fontSize: 12, fontWeight: 700 }}>{xp} / {xpMax}</span>
             </div>
             <div className="progress-bar-bg">
               <div className="progress-bar-fill" style={{ width: `${xpPct}%` }} />
@@ -64,14 +64,14 @@ export default function LearningClient({ groups, error }: Props) {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ fontSize: 32 }}>📝</span>
           <div style={{ flex: 1 }}>
-            <div className="font-playfair" style={{ color: "var(--white)", fontSize: 15, fontWeight: 700, marginBottom: 3 }}>Reviewed phrases</div>
-            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 11 }}>Only teacher-checked daily-use items are published</div>
+            <div className="font-playfair" style={{ color: "var(--white)", fontSize: 16, fontWeight: 700, marginBottom: 3 }}>Reviewed phrases</div>
+            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Only teacher-checked daily-use items are published</div>
           </div>
         </div>
       </div>
 
       {error && (
-        <div style={{ margin: "0 16px 12px", padding: "12px 16px", borderRadius: 12, background: "#FEE2E2", color: "#B91C1C", fontSize: 13 }}>{error}</div>
+        <div style={{ margin: "0 16px 12px", padding: "12px 16px", borderRadius: 12, background: "#FEE2E2", color: "#B91C1C", fontSize: 14 }}>{error}</div>
       )}
 
       {/* ── Category view ── */}
@@ -85,12 +85,12 @@ export default function LearningClient({ groups, error }: Props) {
             {activeGroup.map(entry => (
               <div key={entry.id} style={{ background: "var(--surface)", borderRadius: 12, overflow: "hidden", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
                 <div style={{ padding: "12px 14px", borderRight: "1px solid var(--gray2)" }}>
-                  {entry.sub_category && <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gray)", marginBottom: 4 }}>{entry.sub_category}</div>}
-                  <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--navy)", margin: 0 }}>{entry.english}</p>
+                  {entry.sub_category && <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gray)", marginBottom: 4 }}>{entry.sub_category}</div>}
+                  <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--navy)", margin: 0 }}>{entry.english}</p>
                 </div>
                 <div style={{ padding: "12px 14px", background: "rgba(201,168,76,0.06)" }}>
-                  <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--navy)", margin: 0 }}>{entry.zomi}</p>
-                  {entry.notes && <p style={{ fontSize: 11, color: "var(--gray)", marginTop: 4 }}>{entry.notes}</p>}
+                  <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--navy)", margin: 0 }}>{entry.zomi}</p>
+                  {entry.notes && <p style={{ fontSize: 12, color: "var(--gray)", marginTop: 4 }}>{entry.notes}</p>}
                 </div>
               </div>
             ))}
@@ -117,8 +117,8 @@ export default function LearningClient({ groups, error }: Props) {
               return (
                 <button key={cat.key} className="cat-card" style={{ textAlign: "left", background: "var(--surface)", border: "1px solid var(--gray2)", cursor: "pointer" }} onClick={() => setActiveCategory(cat.key)}>
                   <div style={{ fontSize: 24, marginBottom: 8 }}>{cat.icon}</div>
-                  <div className="font-playfair" style={{ fontSize: 13, fontWeight: 700, color: "var(--navy)", marginBottom: 3 }}>{cat.label}</div>
-                  <div style={{ fontSize: 10, color: "var(--gray)" }}>{count > 0 ? `${count} phrases` : cat.desc}</div>
+                  <div className="font-playfair" style={{ fontSize: 14, fontWeight: 700, color: "var(--navy)", marginBottom: 3 }}>{cat.label}</div>
+                  <div style={{ fontSize: 12, color: "var(--gray)" }}>{count > 0 ? `${count} phrases` : cat.desc}</div>
                 </button>
               );
             })}
@@ -127,8 +127,8 @@ export default function LearningClient({ groups, error }: Props) {
             {allCategories.filter(k => !CATEGORIES.find(c => c.key === k)).map(cat => (
               <button key={cat} className="cat-card" style={{ textAlign: "left", background: "var(--surface)", border: "1px solid var(--gray2)", cursor: "pointer" }} onClick={() => setActiveCategory(cat)}>
                 <div style={{ fontSize: 24, marginBottom: 8 }}>📚</div>
-                <div className="font-playfair" style={{ fontSize: 13, fontWeight: 700, color: "var(--navy)", marginBottom: 3 }}>{cat}</div>
-                <div style={{ fontSize: 10, color: "var(--gray)" }}>{groups[cat].length} phrases</div>
+                <div className="font-playfair" style={{ fontSize: 14, fontWeight: 700, color: "var(--navy)", marginBottom: 3 }}>{cat}</div>
+                <div style={{ fontSize: 12, color: "var(--gray)" }}>{groups[cat].length} phrases</div>
               </button>
             ))}
 
@@ -136,10 +136,10 @@ export default function LearningClient({ groups, error }: Props) {
             <div style={{ gridColumn: "span 2", background: "var(--navy)", borderRadius: 14, padding: 14, display: "flex", alignItems: "center", gap: 14 }}>
               <span style={{ fontSize: 28 }}>📜</span>
               <div>
-                <div className="font-playfair" style={{ fontSize: 14, fontWeight: 700, color: "white", marginBottom: 3 }}>Zomi History & Culture</div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }}>Stories, proverbs, and heritage</div>
+                <div className="font-playfair" style={{ fontSize: 15, fontWeight: 700, color: "white", marginBottom: 3 }}>Zomi History & Culture</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Stories, proverbs, and heritage</div>
               </div>
-              <div style={{ marginLeft: "auto", background: "rgba(255,255,255,0.1)", padding: "6px 12px", borderRadius: 20, fontSize: 10, color: "var(--gold)", fontWeight: 600 }}>Planned</div>
+              <div style={{ marginLeft: "auto", background: "rgba(255,255,255,0.1)", padding: "6px 12px", borderRadius: 20, fontSize: 12, color: "var(--gold)", fontWeight: 600 }}>Planned</div>
             </div>
           </div>
         </>
