@@ -1,6 +1,6 @@
 import Link from "next/link";
 import BibleReader from "@/components/BibleReader";
-import BibleVersionReader, { bibleHref } from "@/components/BibleVersionReader";
+import BibleVersionReader from "@/components/BibleVersionReader";
 import {
   ApiError,
   describeApiError,
@@ -53,7 +53,6 @@ export default async function BiblePage({ searchParams }: Props) {
     ?? books.find((item) => item.testament === (requestedTestament ?? "old"))
     ?? books[0]
     ?? null;
-  const testament: "old" | "new" = book?.testament === "new" ? "new" : "old";
   const wantedChapter = requested ? positiveInt(params.chapter) : null;
   const chapter = book
     ? (wantedChapter && book.chapters.includes(wantedChapter) ? wantedChapter : book.chapters[0] ?? 1)
@@ -71,27 +70,13 @@ export default async function BiblePage({ searchParams }: Props) {
     if (second.status === "fulfilled") secondary = second.value;
   }
 
-  const tab = (value: "old" | "new") =>
-    value === testament
-      ? bibleHref({ v: version.id, compare: compare?.id, book: book?.book_id, chapter })
-      : bibleHref({ v: version.id, compare: compare?.id, testament: value });
-
   return (
     <>
-      <header className="page-header-compact">
-        <span className="font-playfair" style={{ color: "var(--white)", fontSize: 20, fontWeight: 700 }}>Bible Hub</span>
-        <div className="testament-tabs">
-          <Link href={tab("old")} className={`testament-tab${testament === "old" ? " active" : ""}`}>Old Testament</Link>
-          <Link href={tab("new")} className={`testament-tab${testament === "new" ? " active" : ""}`}>New Testament</Link>
-        </div>
-      </header>
-
       <BibleVersionReader
         versions={versions}
         version={version}
         compare={compare}
         books={books}
-        testament={testament}
         book={book}
         chapter={chapter}
         primary={primary}

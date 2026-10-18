@@ -1,13 +1,13 @@
 import Link from "next/link";
 import type { BibleVersionBook, BibleVersionChapter, BibleVersionInfo } from "@/lib/api";
-import BibleVersionPicker from "./BibleVersionPicker";
+import BibleReaderBar from "./BibleReaderBar";
+import { bibleHref } from "./bibleHref";
 
 type Props = {
   versions: BibleVersionInfo[];
   version: BibleVersionInfo;
   compare: BibleVersionInfo | null;
   books: BibleVersionBook[];
-  testament: "old" | "new";
   book: BibleVersionBook | null;
   chapter: number;
   primary: BibleVersionChapter | null;
@@ -15,112 +15,93 @@ type Props = {
   error: string | null;
 };
 
-export function bibleHref(params: { v: string; compare?: string | null; book?: number; chapter?: number; testament?: string }) {
-  const query = new URLSearchParams({ v: params.v });
-  if (params.compare) query.set("compare", params.compare);
-  if (params.book) query.set("book", String(params.book));
-  if (params.chapter) query.set("chapter", String(params.chapter));
-  if (params.testament) query.set("testament", params.testament);
-  return `/bible?${query.toString()}`;
+function ChevronIcon({ flip = false }: { flip?: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={flip ? { transform: "scaleX(-1)" } : undefined}>
+      <path d="m9 6 6 6-6 6" />
+    </svg>
+  );
 }
 
 export default function BibleVersionReader({
-  versions, version, compare, books, testament, book, chapter, primary, secondary, error,
+  versions, version, compare, books, book, chapter, primary, secondary, error,
 }: Props) {
-  const link = (next: { book?: number; chapter?: number; testament?: string }) =>
+  const link = (next: { book: number; chapter: number }) =>
     bibleHref({ v: version.id, compare: compare?.id, ...next });
-  // Show every verse either version has, so a verse missing from the primary is not lost.
+
+  // Previous/next chapter, crossing into the neighbouring book at either end.
+  const bookIndex = book ? books.findIndex((item) => item.book_id === book.book_id) : -1;
+  const position = book ? book.chapters.indexOf(chapter) : -1;
+  const previousBook = bookIndex > 0 ? books[bookIndex - 1] : null;
+  const nextBook = bookIndex >= 0 && bookIndex < books.length - 1 ? books[bookIndex + 1] : null;
+  const previous = book && position > 0
+    ? { book: book.book_id, chapter: book.chapters[position - 1] }
+    : previousBook && previousBook.chapters.length
+      ? { book: previousBook.book_id, chapter: previousBook.chapters[previousBook.chapters.length - 1] }
+      : null;
+  const next = book && position >= 0 && position < book.chapters.length - 1
+    ? { book: book.book_id, chapter: book.chapters[position + 1] }
+    : nextBook && nextBook.chapters.length
+      ? { book: nextBook.book_id, chapter: nextBook.chapters[0] }
+      : null;
+
+  // Compare mode keeps verse-by-verse rows; show every verse either version has.
   const primaryByVerse = new Map(primary?.verses.map((verse) => [verse.verse, verse]) ?? []);
   const secondaryByVerse = new Map(secondary?.verses.map((verse) => [verse.verse, verse]) ?? []);
   const verseNumbers = [...new Set([...primaryByVerse.keys(), ...secondaryByVerse.keys()])].sort((a, b) => a - b);
-  const shownBooks = books.filter((item) => item.testament === testament);
-  const position = book ? book.chapters.indexOf(chapter) : -1;
-  const previous = book && position > 0 ? book.chapters[position - 1] : null;
-  const next = book && position >= 0 && position < book.chapters.length - 1 ? book.chapters[position + 1] : null;
 
   return (
-    <>
-      <div className="bv-bar">
-        <BibleVersionPicker versions={versions} version={version.id} compare={compare?.id ?? ""} book={book?.book_id} chapter={chapter} />
-      </div>
+    <div className="br-root">
+      <BibleReaderBar versions={versions} version={version} compare={compare} books={books} book={book} chapter={chapter} />
 
       {error && <div className="bv-error" role="alert">{error}</div>}
 
       {book && primary && (
-        <section className="bible-current bv-reading" aria-label={`${book.name} ${chapter}`}>
-          <div className="gold-label" style={{ marginBottom: 6 }}>{version.name}</div>
-          <h2 className="font-playfair bv-title">{book.name} {chapter}</h2>
-          <div className="bv-sub">
-            {primary.verse_count} verses
-            {compare && <> · compared with {compare.abbreviation.toUpperCase()}</>}
-          </div>
+        <article className="br-page" aria-label={`${book.name} ${chapter}`}>
+          <p className="br-version">{version.name}</p>
+          <h1 className="font-playfair br-title">{book.name} {chapter}</h1>
 
-          <nav className="bv-chapters" aria-label="Chapters">
-            {book.chapters.map((number) => (
-              <Link
-                key={number}
-                href={link({ book: book.book_id, chapter: number })}
-                className={`bv-chapter${number === chapter ? " active" : ""}`}
-                aria-current={number === chapter ? "page" : undefined}
-              >{number}</Link>
-            ))}
-          </nav>
-
-          <ol className="bv-verses">
-            {verseNumbers.map((number) => {
-              const verse = primaryByVerse.get(number);
-              const other = secondaryByVerse.get(number);
-              return (
-                <li key={number} className="bv-verse">
-                  <span className="bv-num">{verse?.label ?? other?.label}</span>
-                  <div>
-                    {verse
-                      ? <p className="bv-text" lang={version.language_iso ?? undefined}>{verse.text}</p>
-                      : <p className="bv-missing">Not in {version.abbreviation.toUpperCase()}</p>}
-                    {other && <p className="bv-compare" lang={compare?.language_iso ?? undefined}>{other.text}</p>}
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-
-          <div className="bv-nav">
-            {previous
-              ? <Link className="bv-nav-btn" href={link({ book: book.book_id, chapter: previous })}>← Prev</Link>
-              : <span className="bv-nav-btn is-disabled">← Prev</span>}
-            {next
-              ? <Link className="bv-nav-btn bv-nav-next" href={link({ book: book.book_id, chapter: next })}>Next →</Link>
-              : <span className="bv-nav-btn bv-nav-next is-disabled">Next →</span>}
-          </div>
+          {compare ? (
+            <ol className="bv-verses">
+              {verseNumbers.map((number) => {
+                const verse = primaryByVerse.get(number);
+                const other = secondaryByVerse.get(number);
+                return (
+                  <li key={number} className="bv-verse">
+                    <span className="bv-num">{verse?.label ?? other?.label}</span>
+                    <div>
+                      {verse
+                        ? <p className="bv-text" lang={version.language_iso ?? undefined}>{verse.text}</p>
+                        : <p className="bv-missing">Not in {version.abbreviation.toUpperCase()}</p>}
+                      {other && <p className="bv-compare" lang={compare.language_iso ?? undefined}>{other.text}</p>}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : (
+            <p className="br-text" lang={version.language_iso ?? undefined}>
+              {primary.verses.map((verse) => (
+                <span key={verse.verse} id={`v${verse.verse}`} className="br-verse">
+                  <sup className="br-num">{verse.label}</sup>{verse.text}{" "}
+                </span>
+              ))}
+            </p>
+          )}
 
           <p className="bv-rights">
             {version.copyright || version.description}
             {compare && <><br />{compare.copyright || compare.description}</>}
           </p>
-        </section>
+        </article>
       )}
 
-      <div className="section-header" style={{ paddingTop: 16 }}>
-        <span className="section-title">Books</span>
-      </div>
-      <div className="books-grid">
-        {shownBooks.map((item) => {
-          const active = item.book_id === book?.book_id;
-          return (
-            <Link
-              key={item.book_id}
-              href={link({ book: item.book_id, chapter: 1 })}
-              className={`book-chip${active ? " active" : ""}`}
-              aria-current={active ? "page" : undefined}
-            >
-              <div style={{ fontSize: 12, fontWeight: 700, color: active ? "var(--white)" : "var(--navy)", marginBottom: 2 }}>
-                {item.name}
-              </div>
-              <div className="book-chip-zomi">{item.chapter_count} chapters</div>
-            </Link>
-          );
-        })}
-      </div>
-    </>
+      {previous && (
+        <Link href={link(previous)} className="br-float br-float-prev" aria-label="Previous chapter"><ChevronIcon flip /></Link>
+      )}
+      {next && (
+        <Link href={link(next)} className="br-float br-float-next" aria-label="Next chapter"><ChevronIcon /></Link>
+      )}
+    </div>
   );
 }
