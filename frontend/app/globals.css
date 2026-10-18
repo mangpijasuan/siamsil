@@ -3713,3 +3713,8 @@ body::before {
   .desktop-sidebar:not(.collapsed) .side-panel-hint { display: block; }
   .desktop-sidebar:not(.collapsed) .side-panel-group-title { padding: 12px 12px 4px; }
 }
+/* Icon rail (the default desktop menu): room for "Dictionary" */
+@media (min-width: 1024px) {
+  .desktop-sidebar.collapsed { width: 84px; min-width: 84px; }
+  .desktop-sidebar.collapsed .side-panel-short { font-size: 11px; letter-spacing: 0; white-space: nowrap; overflow: visible; }
+}

@@ -134,14 +134,15 @@ function Navigation({ pathname, onNavigate }: { pathname: string; onNavigate?: (
 export default function SidebarNav({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  // Desktop starts as the compact icon rail; ☰ expands it and the choice is remembered.
+  const [collapsed, setCollapsed] = useState(true);
   const [isDesktop, setIsDesktop] = useState(false);
   const page = PAGE_META.find(({ match }) => match.test(pathname)) ?? PAGE_META[0];
 
   useEffect(() => {
     const media = window.matchMedia(DESKTOP_QUERY);
     const frame = window.requestAnimationFrame(() => {
-      setCollapsed(localStorage.getItem(SIDEBAR_KEY) === "true");
+      setCollapsed(localStorage.getItem(SIDEBAR_KEY) !== "false");
       setIsDesktop(media.matches);
     });
     const onChange = (event: MediaQueryListEvent) => {
