@@ -335,7 +335,11 @@ def cmd_train(args) -> int:
     del model, optimizer, schedule
     release_cached_memory(device)
     best_model = AutoModelForSeq2SeqLM.from_pretrained(args.out).to(device)
-    test = evaluate(best_model, codec, test_pairs, directions, device, args.eval_batch_size, args.beams) if test_pairs else {}
+    # A quick trial (--limit) scores a sample of the test split; translating all of it takes about an hour on a Mac.
+    test_translate = args.test_translate if args.test_translate is not None else (200 if args.limit else None)
+    test_count = min(len(test_pairs), test_translate or len(test_pairs))
+    print(f"translating {test_count:,} test pairs in {len(directions)} directions", flush=True)
+    test = evaluate(best_model, codec, test_pairs, directions, device, args.eval_batch_size, args.beams, test_translate) if test_pairs else {}
     meta = {
         "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "base_model": args.model,
@@ -351,6 +355,7 @@ def cmd_train(args) -> int:
             "train_pairs": len(train_pairs),
             "validation_pairs": len(val_pairs),
             "test_pairs": len(test_pairs),
+            "test_translated": test_count,
         },
         "hyperparameters": {k: v for k, v in vars(args).items() if k not in {"func", "data", "out", "model"}},
         "validation_history": history,
@@ -415,6 +420,7 @@ def main(argv: list[str] | None = None) -> int:
     train.add_argument("--empty-cache-every", type=int, default=50, help="release cached GPU memory every N updates")
     train.add_argument("--val-size", type=int, default=2000, help="validation pairs used for loss")
     train.add_argument("--val-translate", type=int, default=300, help="validation pairs translated for chrF++ each epoch")
+    train.add_argument("--test-translate", type=int, help="test pairs translated at the end (default: all; 200 with --limit)")
     train.add_argument("--eval-batch-size", type=int, default=16)
     train.add_argument("--beams", type=int, default=4)
     train.add_argument("--limit", type=int, help="use only N training pairs (quick trial)")

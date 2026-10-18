@@ -52,7 +52,7 @@ python3 ml_pipeline/scripts/train_mt.py train \
   --limit 2000 --epochs 1 --val-translate 50
 ```
 
-Check that it prints steps with a falling `loss` and an `eta`. The ETA tells you how long the full run will take. Stop it any time with Ctrl-C.
+Check that it prints steps with a falling `loss` and an `eta`. The ETA tells you how long the full run will take. At the end it translates 200 test pairs in each direction, which takes a few minutes. The full run translates all 3,462. Stop it any time with Ctrl-C.
 
 ## 4. Full training run
 
