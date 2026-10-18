@@ -131,15 +131,15 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
             )}
           </form>
 
-          <div className="lang-toggle dict-lang-toggle">
+          <div className="dict-lang-swap">
+            <span className="dict-lang-name">{direction === "en-zom" ? "English" : "Zomi"}</span>
             <Link
-              href={hrefFor({ dir: "zom-en" })}
-              className={`lang-pill${direction === "zom-en" ? " active" : ""}`}
-            >Zomi → EN</Link>
-            <Link
-              href={hrefFor({ dir: "en-zom" })}
-              className={`lang-pill${direction === "en-zom" ? " active" : ""}`}
-            >EN → Zomi</Link>
+              href={hrefFor({ dir: direction === "en-zom" ? "zom-en" : "en-zom" })}
+              className="dict-lang-swap-btn"
+              aria-label={direction === "en-zom" ? "Switch to Zomi to English" : "Switch to English to Zomi"}
+              title="Switch languages"
+            >↔</Link>
+            <span className="dict-lang-name">{direction === "en-zom" ? "Zomi" : "English"}</span>
           </div>
         </div>
       </div>
@@ -202,7 +202,7 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
               </p>
               <div className="dict-suggestions">
                 <Link href={hrefFor({ dir: direction === "en-zom" ? "zom-en" : "en-zom" })} className="dict-suggestion">
-                  {direction === "en-zom" ? "Search Zomi → EN" : "Search EN → Zomi"}
+                  {direction === "en-zom" ? "Search Zomi → English" : "Search English → Zomi"}
                 </Link>
                 {query && (
                   <Link href={`/zomitranslate?q=${encodeURIComponent(query)}`} className="dict-suggestion">Try Translate</Link>
