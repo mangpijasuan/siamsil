@@ -3515,7 +3515,7 @@ html { --font-brand-serif: var(--font-playfair); }
 }
 body {
   --font-playfair: var(--font-display);
-  font-family: var(--font-display), 'Nunito Sans', system-ui, sans-serif;
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.55;
   background: #D6E1EE;
@@ -3535,7 +3535,7 @@ body::before {
     linear-gradient(160deg, #E6EDF6 0%, #CBD9EA 55%, #AFC3DC 100%);
 }
 
-/* Headings: bold rounded sans in navy */
+/* Headings: Raleway in navy; body text: Inter */
 .font-playfair { letter-spacing: -0.01em; font-weight: 700; }
 
 /* Navy bars: flat steel navy */
