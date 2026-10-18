@@ -8,6 +8,7 @@
     "start": "next start -p 3002",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --no-warnings=ExperimentalWarning --test lib/bible/*.test.ts",
     "api:export": "python3 ../backend/scripts/export_openapi.py openapi.json",
     "api:generate": "npm run api:export && openapi-typescript openapi.json -o lib/generated/api-types.ts",
     "api:check": "npm run api:generate && git diff --exit-code -- openapi.json lib/generated/api-types.ts",
