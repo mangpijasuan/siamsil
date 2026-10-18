@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { TranslateMatch } from "@/lib/api";
 import { pushHistory, useRecentSearches } from "@/lib/localData";
+import { IconSwap } from "@/components/Icons";
 
 const MAX_LENGTH = 500;
 const VISIBLE_ALTERNATES = 5;
@@ -22,13 +23,6 @@ function sourceLabel(match: TranslateMatch) {
   return SOURCE_LABEL[match.source] ?? match.label ?? match.source;
 }
 
-function IconSwap() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M7 4 3 8l4 4" /><path d="M3 8h13" /><path d="m17 20 4-4-4-4" /><path d="M21 16H8" />
-    </svg>
-  );
-}
 function IconCopy() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

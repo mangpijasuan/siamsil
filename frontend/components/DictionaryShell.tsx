@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { DictionaryEntry, TranslateMatch } from "@/lib/api";
 import { getDictionaryEntry } from "@/lib/api";
 import { pushHistory, useRecentSearches, useSavedWords } from "@/lib/localData";
+import { IconSwap } from "@/components/Icons";
 
 const EXAMPLE_WORDS = ["water", "house", "mother", "eat", "love"];
 const LETTERS = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
@@ -112,6 +113,16 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
         <p className="gold-label" style={{ marginBottom: 6 }}>Siamsil</p>
         <h1 className="font-playfair dict-h1">Zomi Dictionary</h1>
 
+        <Link
+          href={hrefFor({ dir: direction === "en-zom" ? "zom-en" : "en-zom" })}
+          className="tr-langs dict-langs"
+          aria-label={direction === "en-zom" ? "English to Zomi. Switch to Zomi to English" : "Zomi to English. Switch to English to Zomi"}
+        >
+          <span>{direction === "en-zom" ? "English" : "Zomi"}</span>
+          <IconSwap />
+          <span>{direction === "en-zom" ? "Zomi" : "English"}</span>
+        </Link>
+
         <div className="dict-search-row">
           <form action="/zomidictionary" method="GET" className="dict-search-form">
             <span className="dict-search-icon"><IconSearch /></span>
@@ -131,16 +142,6 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
             )}
           </form>
 
-          <div className="dict-lang-swap">
-            <span className="dict-lang-name">{direction === "en-zom" ? "English" : "Zomi"}</span>
-            <Link
-              href={hrefFor({ dir: direction === "en-zom" ? "zom-en" : "en-zom" })}
-              className="dict-lang-swap-btn"
-              aria-label={direction === "en-zom" ? "Switch to Zomi to English" : "Switch to English to Zomi"}
-              title="Switch languages"
-            >↔</Link>
-            <span className="dict-lang-name">{direction === "en-zom" ? "Zomi" : "English"}</span>
-          </div>
         </div>
       </div>
 

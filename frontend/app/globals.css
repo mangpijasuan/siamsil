@@ -3658,39 +3658,16 @@ body::before {
 .shell-brand-mobile .shell-brand-sub,
 .sidebar-brand-sub { font-size: 8.5px; letter-spacing: 0.1em; }
 
-/* Dictionary language switch: English ↔ Zomi */
-.dict-lang-swap {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 6px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.14);
-}
-.dict-lang-name {
-  min-width: 58px;
-  padding: 0 4px;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 700;
-  color: #fff;
-}
-.dict-lang-swap-btn {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #fff;
-  color: var(--navy);
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1;
+/* Dictionary language switch: same look as Translate's "English ⇆ Zomi", tap to swap */
+.dict-langs {
+  width: fit-content;
+  margin-top: 4px;
+  padding: 4px 8px 4px 0;
+  border-radius: 8px;
   text-decoration: none;
-  box-shadow: 0 4px 12px rgba(10,25,50,0.25);
-  transition: transform 0.25s ease;
+  transition: color 0.15s;
 }
-.dict-lang-swap-btn:hover { transform: rotate(180deg); }
-.dict-lang-swap-btn:focus-visible { outline: 2px solid var(--gold2); outline-offset: 2px; }
+.dict-langs:hover { color: #fff; }
+.dict-langs svg { transition: transform 0.25s ease; }
+.dict-langs:hover svg { transform: rotate(180deg); }
+.dict-langs:focus-visible { outline: 2px solid var(--gold2); outline-offset: 2px; }
