@@ -257,7 +257,7 @@ def parse_usfm_book(path: Path) -> tuple[str, str, list[tuple[int, int, str, str
     return code.upper() or path.stem.upper(), description, parser.verses(), parser.issues
 
 
-def usfm_metadata(description: str, config: dict[str, dict[str, str]]) -> dict[str, str]:
+def usfm_metadata(description: str, config: dict[str, dict]) -> dict[str, str]:
     """Metadata for a USFM folder, from the \\id line and data/bible_versions.json."""
     abbr_match = USFM_ID_ABBR_RE.search(description)
     abbreviation = abbr_match.group(1).strip() if abbr_match else ""
@@ -285,7 +285,7 @@ def load_rights(path: Path) -> dict[str, dict[str, str]]:
     return json.loads(path.read_text(encoding="utf-8")).get("sources", {})
 
 
-def import_version(folder: Path, config: dict[str, dict[str, str]] | None = None) -> dict:
+def import_version(folder: Path, config: dict[str, dict] | None = None) -> dict:
     is_usx = (folder / "metadata.xml").exists()
     meta = read_metadata(folder / "metadata.xml") if is_usx else {}
     verses: list[tuple[int, int, int, str, str]] = []
@@ -328,14 +328,23 @@ def choose(candidates: list[dict]) -> dict:
     return max(candidates, key=lambda c: (-sum(c["issues"].values()), len(c["verses"])))
 
 
-def load_config(path: Path) -> dict[str, dict[str, str]]:
+def load_config(path: Path) -> dict[str, dict]:
     if not path.exists():
         return {}
     return json.loads(path.read_text(encoding="utf-8")).get("versions", {})
 
 
+def book_names(named: dict) -> dict[str, str]:
+    """Configured book names for one version, keyed by USFM code; unknown codes are an error."""
+    names = named.get("book_names", {})
+    unknown = sorted(set(names) - set(BOOK_INDEX))
+    if unknown:
+        raise ValueError(f"book_names has unknown book codes: {', '.join(unknown)}")
+    return {code: name.strip() for code, name in names.items() if name.strip()}
+
+
 def write_db(
-    path: Path, versions: list[dict], rights: dict[str, dict[str, str]], config: dict[str, dict[str, str]]
+    path: Path, versions: list[dict], rights: dict[str, dict[str, str]], config: dict[str, dict]
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
@@ -357,6 +366,11 @@ def write_db(
           version_id TEXT NOT NULL REFERENCES versions(id), book_id INTEGER NOT NULL REFERENCES books(book_id),
           chapter INTEGER NOT NULL, verse INTEGER NOT NULL, label TEXT NOT NULL, text TEXT NOT NULL,
           PRIMARY KEY (version_id, book_id, chapter, verse)
+        ) WITHOUT ROWID;
+        CREATE TABLE book_names (
+          version_id TEXT NOT NULL REFERENCES versions(id), book_id INTEGER NOT NULL REFERENCES books(book_id),
+          name TEXT NOT NULL,
+          PRIMARY KEY (version_id, book_id)
         ) WITHOUT ROWID;
         """
     )
@@ -380,6 +394,11 @@ def write_db(
         con.executemany(
             "INSERT INTO verses VALUES (?, ?, ?, ?, ?, ?)",
             ((version_id, *row) for row in version["verses"]),
+        )
+        # The version's own book names (e.g. TDB's PIANCILNA for Genesis), when configured.
+        con.executemany(
+            "INSERT INTO book_names VALUES (?, ?, ?)",
+            ((version_id, BOOK_INDEX[code][0], name) for code, name in book_names(named).items()),
         )
     con.commit()
     con.execute("VACUUM")

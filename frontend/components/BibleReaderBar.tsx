@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { BibleVersionBook, BibleVersionInfo } from "@/lib/api";
 import { pushRecentChapter, readRecentChapters } from "@/lib/localData";
 import type { RecentChapter } from "@/lib/localData";
-import { bibleHref } from "./bibleHref";
+import { bibleHref, bookLabel } from "./bibleHref";
 
 type Props = {
   versions: BibleVersionInfo[];
@@ -74,11 +74,11 @@ export default function BibleReaderBar({ versions, version, compare, books, book
 
   useEffect(() => {
     if (!book) return;
-    pushRecentChapter({ v: version.id, version: version.name, book: book.book_id, bookName: book.name, chapter });
+    pushRecentChapter({ v: version.id, version: version.name, book: book.book_id, bookName: bookLabel(book), chapter });
   }, [version.id, version.name, book, chapter]);
 
   useEffect(() => {
-    if (sheet === "books") currentRef.current?.scrollIntoView({ block: "center" });
+    if (sheet === "books") currentRef.current?.scrollIntoView({ block: "start" });
   }, [sheet]);
 
   const close = () => setSheet(null);
@@ -100,7 +100,7 @@ export default function BibleReaderBar({ versions, version, compare, books, book
               setSheet("books");
             }}
           >
-            {book ? `${book.name} ${chapter}` : "Books"}
+            {book ? `${bookLabel(book)} ${chapter}` : "Books"}
           </button>
           <button type="button" className="br-pill-version" onClick={() => setSheet("versions")}>
             {version.abbreviation.toUpperCase()}
@@ -130,7 +130,8 @@ export default function BibleReaderBar({ versions, version, compare, books, book
                             aria-expanded={expanded}
                             onClick={() => setOpenBook(expanded ? null : item.book_id)}
                           >
-                            {item.name}
+                            {bookLabel(item)}
+                            {item.name_local && <span className="bs-book-en">{item.name}</span>}
                           </button>
                           {expanded && (
                             <div className="bs-chapters">

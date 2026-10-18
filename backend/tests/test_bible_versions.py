@@ -83,7 +83,7 @@ class ImportUsxTests(unittest.TestCase):
         write_version(self.source, "d", "TST", "ctd", JOHN.replace('number="2-3"', 'number="#"'))
         self.config = self.root / "bible_versions.json"
         self.config.write_text(json.dumps({"versions": {
-            "tst": {"name": "Zomi Test", "language_name": "Zomi", "language_iso": "zom"},
+            "tst": {"name": "Zomi Test", "language_name": "Zomi", "language_iso": "zom", "book_names": {"JHN": "FIXTURE JOHN"}},
             "teb": {"language_name": "English", "language_iso": "eng", "copyright": "Public domain."},
         }}))
         self.assertEqual(self.build(self.source, self.db), 0)
@@ -106,6 +106,15 @@ class ImportUsxTests(unittest.TestCase):
         self.assertEqual(verses[0]["text"], "alpha beta, gamma delta continues verse one the LORD's word")
         self.assertEqual((verses[1]["verse"], verses[1]["label"], verses[1]["text"]), (2, "2-3", "range text"))
         self.assertEqual(self.versions.chapter("tst", 43, 3)[0]["text"], "third chapter; chapter two is missing")
+
+    def test_configured_book_names_are_served_per_version(self) -> None:
+        self.assertEqual([(b["name"], b["name_local"]) for b in self.versions.books("tst")], [("John", "FIXTURE JOHN")])
+        self.assertEqual([b["name_local"] for b in self.versions.books("eng")], [None])
+
+    def test_unknown_book_code_in_config_is_an_error(self) -> None:
+        self.config.write_text(json.dumps({"versions": {"tst": {"book_names": {"XYZ": "Nope"}}}}))
+        with self.assertRaisesRegex(ValueError, "XYZ"):
+            self.build(self.source, self.root / "out4" / "bible_versions.sqlite")
 
     def test_only_cleared_versions_are_served(self) -> None:
         source = self.root / "src2"
@@ -150,7 +159,7 @@ class ImportUsxTests(unittest.TestCase):
 
     def test_books_list_the_chapters_present(self) -> None:
         self.assertEqual(self.versions.books("tst"), [
-            {"book_id": 43, "code": "JHN", "name": "John", "testament": "new", "chapter_count": 2, "chapters": [1, 3]},
+            {"book_id": 43, "code": "JHN", "name": "John", "name_local": "FIXTURE JOHN", "testament": "new", "chapter_count": 2, "chapters": [1, 3]},
         ])
 
     def test_manifest_records_skipped_duplicate(self) -> None:

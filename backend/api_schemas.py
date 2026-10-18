@@ -161,6 +161,7 @@ class BibleVersionBook(ApiModel):
     book_id: int
     code: str
     name: str
+    name_local: str | None = None
     testament: str
     chapter_count: int
     chapters: list[int]

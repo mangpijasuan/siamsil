@@ -6,3 +6,8 @@ export function bibleHref(params: { v: string; compare?: string | null; book?: n
   if (params.testament) query.set("testament", params.testament);
   return `/bible?${query.toString()}`;
 }
+
+/** The version's own book name when it has one (TDB: PIANCILNA), else the English name. */
+export function bookLabel(book: { name: string; name_local?: string | null }) {
+  return book.name_local || book.name;
+}

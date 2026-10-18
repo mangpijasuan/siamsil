@@ -60,6 +60,14 @@ class BibleVersions:
     def version(self, version_id: str) -> dict[str, Any] | None:
         return next((v for v in self.versions() if v["id"] == version_id), None)
 
+    def _local_book_names(self, version_id: str) -> dict[int, str]:
+        """The version's own book names; databases built before book_names existed have none."""
+        con = self.connect()
+        if not con.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'book_names'").fetchone():
+            return {}
+        rows = con.execute("SELECT book_id, name FROM book_names WHERE version_id = ?", (version_id,))
+        return {row["book_id"]: row["name"] for row in rows}
+
     def books(self, version_id: str) -> list[dict[str, Any]]:
         rows = self.connect().execute(
             """
@@ -70,11 +78,13 @@ class BibleVersions:
             """,
             (version_id,),
         )
+        local_names = self._local_book_names(version_id)
         books = []
         for row in rows:
             chapters = sorted(int(number) for number in row["chapters"].split(","))
             books.append({
-                "book_id": row["book_id"], "code": row["code"], "name": row["name"], "testament": row["testament"],
+                "book_id": row["book_id"], "code": row["code"], "name": row["name"],
+                "name_local": local_names.get(row["book_id"]), "testament": row["testament"],
                 "chapter_count": len(chapters), "chapters": chapters,
             })
         return books

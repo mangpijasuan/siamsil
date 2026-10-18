@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { BibleVersionBook, BibleVersionChapter, BibleVersionInfo } from "@/lib/api";
 import BibleReaderBar from "./BibleReaderBar";
-import { bibleHref } from "./bibleHref";
+import { bibleHref, bookLabel } from "./bibleHref";
 
 type Props = {
   versions: BibleVersionInfo[];
@@ -57,9 +57,9 @@ export default function BibleVersionReader({
       {error && <div className="bv-error" role="alert">{error}</div>}
 
       {book && primary && (
-        <article className="br-page" aria-label={`${book.name} ${chapter}`}>
+        <article className="br-page" aria-label={`${bookLabel(book)} ${chapter}`}>
           <p className="br-version">{version.name}</p>
-          <h1 className="font-playfair br-title">{book.name} {chapter}</h1>
+          <h1 className="font-playfair br-title">{bookLabel(book)} {chapter}</h1>
 
           {compare ? (
             <ol className="bv-verses">

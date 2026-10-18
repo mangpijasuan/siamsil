@@ -540,6 +540,8 @@ export interface components {
             code: string;
             /** Name */
             name: string;
+            /** Name Local */
+            name_local?: string | null;
             /** Testament */
             testament: string;
         } & {
