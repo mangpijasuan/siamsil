@@ -16,7 +16,7 @@ const FEATURES: Array<{ href: string; title: string; subtitle: string; Icon: Ico
 ];
 const SUGGESTIONS = ["water", "family", "thank you", "school", "love", "God"];
 function compact(value: number) {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace(/\\.0$/, "")}M`;
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
   if (value >= 10_000) return `${Math.round(value / 1000)}K`;
   return value.toLocaleString();
 }
