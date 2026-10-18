@@ -551,3 +551,10 @@ html[data-bible-face="serif"] .sb-sample { font-family: var(--font-playfair), Ge
   .sb-toolbar { top: 76px; }
   .sb-root { min-height: calc(100vh - 76px); }
 }
+
+/* Tablets and desktop: chapter and version controls sit in the centre, tools on the right. */
+@media (min-width: 768px) {
+  .sb-toolbar { display: grid; grid-template-columns: 1fr auto 1fr; }
+  .sb-toolbar-group:first-child { grid-column: 2; justify-content: center; }
+  .sb-toolbar-group:last-child { grid-column: 3; justify-self: end; }
+}
