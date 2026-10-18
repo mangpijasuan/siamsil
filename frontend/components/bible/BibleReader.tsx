@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { BibleVersionBook, BibleVersionChapter, BibleVersionInfo } from "@/lib/api";
-import { PREFERENCES_BOOT_SCRIPT } from "@/lib/bible/preferences";
 import { adjacentChapters, alignVerses, bibleHref, bookLabel, NO_COMPARE } from "@/lib/bible/references";
 import BibleToolbar from "./BibleToolbar";
 import BibleVerses from "./BibleVerses";
@@ -36,8 +35,6 @@ export default function BibleReader({ versions, version, compare, books, book, c
 
   return (
     <div className="sb-root">
-      {/* Applies saved reading settings before the text paints (no theme flash). Static script, no user input. */}
-      <script dangerouslySetInnerHTML={{ __html: PREFERENCES_BOOT_SCRIPT }} />
 
       <BibleToolbar versions={versions} version={version} compare={compare} books={books} book={book} chapter={chapter} previous={previous} next={next} />
 

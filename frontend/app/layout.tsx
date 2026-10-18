@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Inter, Playfair_Display, Raleway } from "next/font/google";
 import BottomNav from "@/components/BottomNav";
 import SidebarNav from "@/components/SidebarNav";
+import { PREFERENCES_BOOT_SCRIPT } from "@/lib/bible/preferences";
 import "./globals.css";
 
 const inter = Inter({
@@ -47,6 +49,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} ${raleway.variable} h-full`} suppressHydrationWarning>
       <body>
+        {/* Bible reading settings (theme, text size) applied before paint, so the reader never flashes. Static script. */}
+        <Script id="bible-preferences" strategy="beforeInteractive">{PREFERENCES_BOOT_SCRIPT}</Script>
         <SidebarNav>{children}</SidebarNav>
         <BottomNav />
       </body>

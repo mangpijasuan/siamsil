@@ -166,6 +166,28 @@ for (const width of [375, 390, 768, 1024, 1440]) {
   await p.context().close();
 }
 
+// 10. Scripture search: words, exact phrase, book filter, links back to the verse.
+page = await newPage(1440);
+await page.goto(`${BASE}/bible?v=tdb&book=1&chapter=1`, { waitUntil: "networkidle" });
+await page.click('a[aria-label="Search the Bible"]');
+await page.waitForURL(/\/bible\/search/);
+await page.fill('input[name="q"]', "khuavak om hen");
+await page.check('input[name="phrase"]');
+await page.click('form[role="search"] button[type="submit"]');
+await page.waitForURL(/q=khuavak/);
+const expected = await api("/bible/versions/tdb/search?q=khuavak%20om%20hen&phrase=true&limit=20");
+const shown = await page.$$eval(".sb-result", (items) => items.length);
+check("phrase search shows the API's matches", expected.total > 0 && shown === Math.min(20, expected.total), `${shown} of ${expected.total}`);
+check("matches are marked in the verse text", (await page.$$(".sb-result-text mark")).length > 0);
+await shot(page, "search-1440");
+await page.click(".sb-result-ref >> nth=0");
+await page.waitForURL(/#v\d+/);
+check("a result opens its chapter at the verse, bilingual kept", /compare=web/.test(page.url()) && /#v3$/.test(page.url()), page.url());
+await page.goto(`${BASE}/bible/search?q=Pasian&v=tdb&book=40`, { waitUntil: "networkidle" });
+const refs = await page.$$eval(".sb-result-ref", (items) => items.map((item) => item.textContent ?? ""));
+check("book filter keeps results to that book", refs.length > 0 && refs.every((ref) => ref.startsWith("Matthai")), refs[0]);
+check("results show how many pages there are", (await page.textContent(".sb-chapter-nav") ?? "").includes("Page 1 of"));
+
 check("no page or console errors", errors.length === 0, errors.slice(0, 3).join(" | "));
 await browser.close();
 console.log(failures ? `\n${failures} check(s) failed` : "\nall checks passed");

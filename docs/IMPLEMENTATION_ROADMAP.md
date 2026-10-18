@@ -77,7 +77,7 @@ Source of truth: [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md)
 - [x] Dictionary search uses the 20k-entry SQLite index.
 - [x] Translation retrieval searches dictionary, reviewed phrases, Bible, and the corpus.
 - [x] Unified search endpoint exists.
-- [x] Bible reader and search exist.
+- [x] Bible reader and search exist (reading settings, verse actions, device-local bookmarks and notes, scripture search: `docs/BIBLE_READER.md`).
 - [x] Siamsil AI performs grounded retrieval and refuses to invent missing translations.
 - [x] Saved words and search history work in browser-local storage.
 - [x] Learning publishes the existing teacher-reviewed daily-use phrases.

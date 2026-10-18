@@ -140,6 +140,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bible/versions/{version_id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Version */
+        get: operations["search_version_api_v1_bible_versions__version_id__search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/dictionary": {
         parameters: {
             query?: never;
@@ -598,6 +615,47 @@ export interface components {
             source_name?: string | null;
             /** Verse Count */
             verse_count: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** BibleVersionSearchHit */
+        BibleVersionSearchHit: {
+            /** Book Id */
+            book_id: number;
+            /** Chapter */
+            chapter: number;
+            /** Code */
+            code: string;
+            /** Label */
+            label: string;
+            /** Name */
+            name: string;
+            /** Name Local */
+            name_local?: string | null;
+            /** Text */
+            text: string;
+            /** Verse */
+            verse: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** BibleVersionSearchResponse */
+        BibleVersionSearchResponse: {
+            /** Book Id */
+            book_id?: number | null;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Phrase */
+            phrase: boolean;
+            /** Query */
+            query: string;
+            /** Results */
+            results: components["schemas"]["BibleVersionSearchHit"][];
+            /** Total */
+            total: number;
+            version: components["schemas"]["BibleVersionInfo"];
         } & {
             [key: string]: unknown;
         };
@@ -1192,6 +1250,63 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BibleVersionChapterResponse"];
+                };
+            };
+            /** @description Bible version or chapter not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Bible versions database not loaded or unreadable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    search_version_api_v1_bible_versions__version_id__search_get: {
+        parameters: {
+            query: {
+                /** @description Words to find (all must appear), or a phrase */
+                q: string;
+                /** @description Match q as one exact phrase */
+                phrase?: boolean;
+                book_id?: number | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BibleVersionSearchResponse"];
                 };
             };
             /** @description Bible version or chapter not found */
