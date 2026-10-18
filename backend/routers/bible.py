@@ -15,6 +15,7 @@ from api_schemas import (
     BibleVerse,
     BibleVersionBooksResponse,
     BibleVersionChapterResponse,
+    BibleVersionSearchResponse,
     BibleVersionsResponse,
 )
 from services.bible_versions import BibleVersions, get_bible_versions
@@ -119,3 +120,24 @@ def get_version_chapter(
     if not verses:
         raise HTTPException(status_code=404, detail="Chapter not found")
     return {"version": version, "book": book, "chapter": chapter, "verse_count": len(verses), "verses": verses}
+
+
+@router.get("/versions/{version_id}/search", response_model=BibleVersionSearchResponse, responses=VERSION_ERRORS)
+def search_version(
+    version_id: str = Path(..., pattern="^[a-z0-9_-]{1,32}$"),
+    q: str = Query(..., min_length=2, max_length=100, description="Words to find (all must appear), or a phrase"),
+    phrase: bool = Query(False, description="Match q as one exact phrase"),
+    book_id: int | None = Query(None, ge=1, le=66),
+    limit: int = Query(20, ge=1, le=50),
+    offset: int = Query(0, ge=0, le=5000),
+):
+    with _database_errors_as_503():
+        versions = _versions_or_503()
+        version = versions.version(version_id)
+        if not version:
+            raise HTTPException(status_code=404, detail="Bible version not found")
+        total, results = versions.search(version_id, q, book_id=book_id, phrase=phrase, limit=limit, offset=offset)
+    return {
+        "version": version, "query": q, "phrase": phrase, "book_id": book_id,
+        "total": total, "limit": limit, "offset": offset, "results": results,
+    }

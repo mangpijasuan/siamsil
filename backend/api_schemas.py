@@ -187,6 +187,28 @@ class BibleVersionChapterResponse(ApiModel):
     verses: list[BibleVersionVerse]
 
 
+class BibleVersionSearchHit(ApiModel):
+    book_id: int
+    code: str
+    name: str
+    name_local: str | None = None
+    chapter: int
+    verse: int
+    label: str
+    text: str
+
+
+class BibleVersionSearchResponse(ApiModel):
+    version: BibleVersionInfo
+    query: str
+    phrase: bool
+    book_id: int | None = None
+    total: int
+    limit: int
+    offset: int
+    results: list[BibleVersionSearchHit]
+
+
 class TranslationSearchResponse(ApiModel):
     query: str
     count: int

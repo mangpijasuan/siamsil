@@ -96,6 +96,48 @@ class BibleVersions:
         )
         return [dict(row) for row in rows]
 
+    def search(
+        self, version_id: str, query: str, *, book_id: int | None = None, phrase: bool = False,
+        limit: int = 20, offset: int = 0,
+    ) -> tuple[int, list[dict[str, Any]]]:
+        """Verses containing every word of `query` (or the exact phrase), in canonical order.
+
+        Matching is a case-insensitive substring match on the stored text; nothing is rewritten.
+        Returns (total matches, one page of results).
+        """
+        terms = [query.strip()] if phrase else query.split()
+        terms = [term for term in terms if term][:MAX_SEARCH_TERMS]
+        if not terms:
+            return 0, []
+        where = ["v.version_id = ?"] + ["v.text LIKE ? ESCAPE '\\'"] * len(terms)
+        params: list[Any] = [version_id] + [f"%{_escape_like(term)}%" for term in terms]
+        if book_id is not None:
+            where.append("v.book_id = ?")
+            params.append(book_id)
+        clause = " AND ".join(where)
+        con = self.connect()
+        total = con.execute(f"SELECT COUNT(*) FROM verses v WHERE {clause}", params).fetchone()[0]
+        rows = con.execute(
+            f"""
+            SELECT v.book_id, b.code, b.name, v.chapter, v.verse, v.label, v.text
+            FROM verses v JOIN books b ON b.book_id = v.book_id
+            WHERE {clause}
+            ORDER BY v.book_id, v.chapter, v.verse
+            LIMIT ? OFFSET ?
+            """,
+            [*params, limit, offset],
+        )
+        local_names = self._local_book_names(version_id)
+        results = [{**dict(row), "name_local": local_names.get(row["book_id"])} for row in rows]
+        return total, results
+
+
+MAX_SEARCH_TERMS = 8
+
+
+def _escape_like(term: str) -> str:
+    return term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
 
 @lru_cache(maxsize=1)
 def get_bible_versions() -> BibleVersions:
