@@ -109,30 +109,35 @@ class BibleVersions:
         terms = [term for term in terms if term][:MAX_SEARCH_TERMS]
         if not terms:
             return 0, []
-        where = ["v.version_id = ?"] + ["v.text LIKE ? ESCAPE '\\'"] * len(terms)
-        params: list[Any] = [version_id] + [f"%{_escape_like(term)}%" for term in terms]
-        if book_id is not None:
-            where.append("v.book_id = ?")
-            params.append(book_id)
-        clause = " AND ".join(where)
+        # Fixed SQL text: every term slot is a bound LIKE pattern; unused slots match anything ("%").
+        patterns = [f"%{_escape_like(term)}%" for term in terms] + ["%"] * (MAX_SEARCH_TERMS - len(terms))
+        params: list[Any] = [version_id, book_id, book_id, *patterns]
         con = self.connect()
-        total = con.execute(f"SELECT COUNT(*) FROM verses v WHERE {clause}", params).fetchone()[0]
-        rows = con.execute(
-            f"""
-            SELECT v.book_id, b.code, b.name, v.chapter, v.verse, v.label, v.text
-            FROM verses v JOIN books b ON b.book_id = v.book_id
-            WHERE {clause}
-            ORDER BY v.book_id, v.chapter, v.verse
-            LIMIT ? OFFSET ?
-            """,
-            [*params, limit, offset],
-        )
+        total = con.execute(SEARCH_COUNT_SQL, params).fetchone()[0]
+        rows = con.execute(SEARCH_PAGE_SQL, [*params, limit, offset])
         local_names = self._local_book_names(version_id)
         results = [{**dict(row), "name_local": local_names.get(row["book_id"])} for row in rows]
         return total, results
 
 
 MAX_SEARCH_TERMS = 8
+
+# One LIKE per term slot (MAX_SEARCH_TERMS of them); the query text never contains user input.
+_SEARCH_WHERE = """
+    v.version_id = ?
+    AND (? IS NULL OR v.book_id = ?)
+    AND v.text LIKE ? ESCAPE '\\' AND v.text LIKE ? ESCAPE '\\'
+    AND v.text LIKE ? ESCAPE '\\' AND v.text LIKE ? ESCAPE '\\'
+    AND v.text LIKE ? ESCAPE '\\' AND v.text LIKE ? ESCAPE '\\'
+    AND v.text LIKE ? ESCAPE '\\' AND v.text LIKE ? ESCAPE '\\'
+"""
+SEARCH_COUNT_SQL = "SELECT COUNT(*) FROM verses v WHERE" + _SEARCH_WHERE
+SEARCH_PAGE_SQL = (
+    "SELECT v.book_id, b.code, b.name, v.chapter, v.verse, v.label, v.text"
+    " FROM verses v JOIN books b ON b.book_id = v.book_id WHERE"
+    + _SEARCH_WHERE
+    + " ORDER BY v.book_id, v.chapter, v.verse LIMIT ? OFFSET ?"
+)
 
 
 def _escape_like(term: str) -> str:
