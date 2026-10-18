@@ -63,10 +63,10 @@ caffeinate -i python3 ml_pipeline/scripts/train_mt.py train \
 
 `caffeinate -i` keeps the Mac awake. Keep it plugged in. A run takes hours; overnight is normal.
 
-If it runs out of memory, halve the batch and double the accumulation (same effective batch):
+The defaults (`--batch-size 8 --grad-accum 4`, 32 sentences per update) fit a 24 GB M5. If it runs out of memory, close other apps, then halve the batch and double the accumulation (same effective batch):
 
 ```bash
-  --batch-size 8 --grad-accum 4
+  --batch-size 4 --grad-accum 8
 ```
 
 ## 5. Read the results

@@ -55,6 +55,15 @@ def pick_device(name: str):
     return torch.device("cpu")
 
 
+def release_cached_memory(device) -> None:
+    import torch
+
+    if device.type == "mps":
+        torch.mps.empty_cache()
+    elif device.type == "cuda":
+        torch.cuda.empty_cache()
+
+
 def read_jsonl(path: Path, limit: int | None = None) -> list[dict]:
     rows = []
     with path.open(encoding="utf-8") as handle:
@@ -271,7 +280,7 @@ def cmd_train(args) -> int:
         for index, batch in enumerate(batches, 1):
             loss = model(**codec.batch(batch, device)).loss / args.grad_accum
             loss.backward()
-            running += float(loss) * args.grad_accum
+            running += loss.detach().item() * args.grad_accum
             if index % args.grad_accum == 0 or index == len(batches):
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 optimizer.step()
@@ -283,6 +292,7 @@ def cmd_train(args) -> int:
                     eta = elapsed / step * (total_steps - step)
                     print(f"epoch {epoch} step {step}/{total_steps} loss {running / index:.4f} "
                           f"lr {schedule.get_last_lr()[0]:.2e} elapsed {elapsed / 60:.1f}m eta {eta / 60:.1f}m", flush=True)
+        release_cached_memory(device)
         val = evaluate(model, codec, val_pairs, directions, device, args.eval_batch_size, args.beams, args.val_translate)
         val["loss"] = validation_loss(model, codec, val_examples, device, args.eval_batch_size)
         val["epoch"] = epoch
@@ -359,14 +369,16 @@ def main(argv: list[str] | None = None) -> int:
     train.add_argument("--directions", default="en-zomi,zomi-en")
     train.add_argument("--tiers", default="gold,silver", help="comma list; empty for all")
     train.add_argument("--epochs", type=int, default=2)
-    train.add_argument("--batch-size", type=int, default=16)
-    train.add_argument("--grad-accum", type=int, default=2)
+    # 8 x 4 = 32 sentences per update. NLLB's 256k-word output layer makes larger batches
+    # exceed a 24 GB Mac; lower --batch-size and raise --grad-accum if memory runs out.
+    train.add_argument("--batch-size", type=int, default=8)
+    train.add_argument("--grad-accum", type=int, default=4)
     train.add_argument("--lr", type=float, default=1e-4)
     train.add_argument("--warmup", type=float, default=0.05, help="share of steps")
     train.add_argument("--max-len", type=int, default=128, help="tokens per sentence")
     train.add_argument("--val-size", type=int, default=2000, help="validation pairs used for loss")
     train.add_argument("--val-translate", type=int, default=300, help="validation pairs translated for chrF++ each epoch")
-    train.add_argument("--eval-batch-size", type=int, default=32)
+    train.add_argument("--eval-batch-size", type=int, default=16)
     train.add_argument("--beams", type=int, default=4)
     train.add_argument("--limit", type=int, help="use only N training pairs (quick trial)")
     train.add_argument("--log-every", type=int, default=50)
