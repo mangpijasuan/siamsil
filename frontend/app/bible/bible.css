@@ -545,3 +545,10 @@ html[data-bible-face="serif"] .sb-sample { font-family: var(--font-playfair), Ge
 .sb-result-text mark { background: var(--sb-hl-gold); color: inherit; border-radius: 3px; padding: 0 1px; }
 .sb-link-back { color: var(--sb-gold-ink); font-weight: 600; }
 .sb-root .sb-muted { color: var(--sb-muted); }
+
+/* Tablets and desktop: chapter and version controls sit in the centre, tools on the right. */
+@media (min-width: 768px) {
+  .sb-toolbar { display: grid; grid-template-columns: 1fr auto 1fr; }
+  .sb-toolbar-group:first-child { grid-column: 2; justify-content: center; }
+  .sb-toolbar-group:last-child { grid-column: 3; justify-self: end; }
+}
