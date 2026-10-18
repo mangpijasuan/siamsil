@@ -332,6 +332,7 @@ def cmd_train(args) -> int:
             tokenizer.save_pretrained(args.out)
             print(f"saved best checkpoint to {args.out}", flush=True)
 
+    train_minutes = round((time.time() - started) / 60, 1)
     del model, optimizer, schedule
     release_cached_memory(device)
     best_model = AutoModelForSeq2SeqLM.from_pretrained(args.out).to(device)
@@ -347,6 +348,7 @@ def cmd_train(args) -> int:
         "directions": directions,
         "device": str(device),
         "minutes": round((time.time() - started) / 60, 1),
+        "train_minutes": train_minutes,
         "git_commit": git_commit(),
         "data": {
             "dir": str(args.data),
