@@ -3966,3 +3966,39 @@ body::before {
   font-weight: 500;
   color: var(--gray);
 }
+
+/* Brand wordmark: SIAMSIL in Times New Roman, tagline spread to the same width */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.brand-wordmark,
+.brand-tagline {
+  font-family: "Times New Roman", Times, serif;
+}
+.brand-wordmark {
+  font-weight: 700;
+  letter-spacing: 0.34em !important;
+  margin-right: -0.34em; /* drop the tracking after the last letter so both lines end together */
+}
+.brand-tagline {
+  display: block;
+  width: 0;
+  min-width: 100%; /* as wide as SIAMSIL, never wider */
+  font-size: 8.5px !important;
+  letter-spacing: 0 !important;
+  font-weight: 700;
+}
+.brand-tagline-letters {
+  display: flex;
+  justify-content: space-between;
+}
+.brand-tagline-gap { width: 0.25em; }
+.sidebar-brand-title.brand-wordmark { font-size: 20px; }

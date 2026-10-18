@@ -77,6 +77,22 @@ function BrandLogo({ size = 38 }: { size?: number }) {
   );
 }
 
+const TAGLINE = "The Art of Literature";
+
+// The tagline's letters are spread across the exact width of the SIAMSIL wordmark above it.
+function JustifiedTagline({ className }: { className: string }) {
+  return (
+    <span className={`${className} brand-tagline`}>
+      <span className="sr-only">{TAGLINE}</span>
+      <span className="brand-tagline-letters" aria-hidden="true">
+        {[...TAGLINE].map((letter, index) => (
+          <span key={index} className={letter === " " ? "brand-tagline-gap" : undefined}>{letter === " " ? "\u00a0" : letter}</span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
 function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
@@ -182,8 +198,8 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
           <Link href="/" className="shell-brand shell-brand-mobile" aria-label="Siamsil home">
             <BrandLogo size={36} />
             <span className="shell-brand-text">
-              <span className="font-playfair shell-brand-title">SIAMSIL</span>
-              <span className="shell-brand-sub">The Art of Literature</span>
+              <span className="shell-brand-title brand-wordmark">SIAMSIL</span>
+              <JustifiedTagline className="shell-brand-sub" />
             </span>
           </Link>
 
@@ -209,8 +225,8 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
             <Link href="/" className="sidebar-brand-link" onClick={() => setMobileOpen(false)}>
               <BrandLogo size={40} />
               <span className="sidebar-brand-copy">
-                <span className="font-playfair sidebar-brand-title">SIAMSIL</span>
-                <span className="sidebar-brand-sub">The Art of Literature</span>
+                <span className="sidebar-brand-title brand-wordmark">SIAMSIL</span>
+                <JustifiedTagline className="sidebar-brand-sub" />
               </span>
             </Link>
             <button type="button" className="side-panel-close" onClick={() => setMobileOpen(false)} aria-label="Close navigation">
