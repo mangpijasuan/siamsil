@@ -26,19 +26,24 @@ type NavTab = {
 
 const NAV_GROUPS: Array<{ title: string; tabs: NavTab[] }> = [
   {
-    title: "Read",
+    title: "Language",
     tabs: [
       { href: "/", Icon: IconHome, label: "Home", short: "Home", hint: "Your Zomi library" },
-      { href: "/library", Icon: IconLibrary, label: "Library", short: "Library", hint: "Books & archives" },
       { href: "/zomidictionary", Icon: IconBook, label: "Dictionary", short: "Dictionary", hint: "Zomi–English" },
+      { href: "/zomitranslate", Icon: IconTranslate, label: "Translate", short: "Translate", hint: "Retrieve known pairs" },
+    ],
+  },
+  {
+    title: "Read",
+    tabs: [
       { href: "/bible", Icon: IconCross, label: "Bible", short: "Bible", hint: "Laisiangtho" },
+      { href: "/library", Icon: IconLibrary, label: "Library", short: "Library", hint: "Books & archives" },
     ],
   },
   {
     title: "Learn",
     tabs: [
       { href: "/learning", Icon: IconAcademic, label: "Learning", short: "Learn", hint: "Grammar & phrases" },
-      { href: "/zomitranslate", Icon: IconTranslate, label: "Translate", short: "Translate", hint: "Retrieve known pairs" },
       { href: "/chat", Icon: IconChat, label: "Siamsil AI", short: "AI", hint: "Retrieval assistant" },
     ],
   },
