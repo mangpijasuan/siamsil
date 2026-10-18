@@ -12,7 +12,13 @@ data/
 └── versions/      named dataset releases
 ```
 
-Large raw files are gitignored. Place them locally, then build the language database:
+Large raw files are gitignored. On a new computer, copy them from a clone of the private `siamsil-data` repository (Windows, macOS and Linux; existing files are never overwritten):
+
+```bash
+python3 ml_pipeline/scripts/restore_private_data.py --data-repo ../siamsil-data
+```
+
+Then build the language database:
 
 ```bash
 python3 -m pip install -r ml_pipeline/requirements.txt
