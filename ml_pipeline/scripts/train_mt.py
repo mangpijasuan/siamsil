@@ -14,6 +14,8 @@ Commands:
   translate --model DIR --eval FILE --out HYP.jsonl [--system NAME]
       Translate a human evaluation set (docs/EVALUATION_SET.md format); score
       the output with `mt_eval.py score`.
+  try --model DIR [--direction en-zomi|zomi-en]
+      Type sentences and see the translation; an empty line or Ctrl-D quits.
 
 The export's test split for Bible pairs holds out whole books (Ruth, Mark,
 1 John). Its scores measure Bible-style text only; claims about everyday
@@ -395,6 +397,26 @@ def cmd_translate(args) -> int:
     return 0
 
 
+def cmd_try(args) -> int:
+    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+    device = pick_device(args.device)
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    model = AutoModelForSeq2SeqLM.from_pretrained(args.model).to(device)
+    codec = Codec(tokenizer, args.max_len)
+    src, tgt = DIRECTIONS[args.direction]
+    print(f"{args.direction}: type a sentence and press Enter (empty line to quit)", flush=True)
+    while True:
+        try:
+            line = input("> ").strip()
+        except EOFError:
+            break
+        if not line:
+            break
+        print(translate_texts(model, codec, [line], src, tgt, device, 1, args.beams)[0], flush=True)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -441,6 +463,14 @@ def main(argv: list[str] | None = None) -> int:
     translate.add_argument("--max-len", type=int, default=128)
     translate.add_argument("--device", default="auto")
     translate.set_defaults(func=cmd_translate)
+
+    try_ = commands.add_parser("try", help="type sentences and see the translation")
+    try_.add_argument("--model", type=Path, required=True)
+    try_.add_argument("--direction", choices=sorted(DIRECTIONS), default="en-zomi")
+    try_.add_argument("--beams", type=int, default=4)
+    try_.add_argument("--max-len", type=int, default=128)
+    try_.add_argument("--device", default="auto")
+    try_.set_defaults(func=cmd_try)
 
     args = parser.parse_args(argv)
     return args.func(args)

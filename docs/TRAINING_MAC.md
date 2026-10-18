@@ -71,7 +71,18 @@ The defaults (Adafactor optimizer, gradient checkpointing, `--batch-size 8 --gra
 
 The Mac GPU keeps a compiled graph for every batch shape it sees, so sentence lengths are rounded up to steps of 32 tokens (`--pad-multiple`) and the GPU cache is emptied every 50 updates (`--empty-cache-every`). Without these, "other allocations" in an out-of-memory error keeps growing until the run stops.
 
-## 5. Read the results
+## 5. Try it
+
+Type sentences and read the translation (empty line to quit):
+
+```bash
+python3 ml_pipeline/scripts/train_mt.py try --model models/nllb-zomi-bible-v1
+python3 ml_pipeline/scripts/train_mt.py try --model models/nllb-zomi-bible-v1 --direction zomi-en
+```
+
+Try Bible-like and everyday sentences. A model trained only on Bible pairs is expected to sound formal and to struggle with modern topics.
+
+## 6. Read the results
 
 `models/nllb-zomi-bible-v1/train_meta.json` records the base model, data manifest checksum, settings, validation scores per epoch, and the test scores (chrF++ and BLEU, both directions).
 
