@@ -1,13 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconHome, IconBook, IconCross, IconLibrary } from "./Icons";
+import { IconHome, IconBook, IconCross, IconTranslate } from "./Icons";
 
 const TABS = [
   { href: "/", Icon: IconHome, label: "Home" },
   { href: "/zomidictionary", Icon: IconBook, label: "Dictionary" },
+  { href: "/zomitranslate", Icon: IconTranslate, label: "Translate" },
   { href: "/bible", Icon: IconCross, label: "Bible" },
-  { href: "/library", Icon: IconLibrary, label: "Library" },
 ];
 
 function MoreIcon() {
