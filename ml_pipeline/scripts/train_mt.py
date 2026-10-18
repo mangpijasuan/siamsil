@@ -14,6 +14,8 @@ Commands:
   translate --model DIR --eval FILE --out HYP.jsonl [--system NAME]
       Translate a human evaluation set (docs/EVALUATION_SET.md format); score
       the output with `mt_eval.py score`.
+  try --model DIR [--direction en-zomi|zomi-en]
+      Type sentences and see the translation; an empty line or Ctrl-D quits.
 
 The export's test split for Bible pairs holds out whole books (Ruth, Mark,
 1 John). Its scores measure Bible-style text only; claims about everyday
@@ -53,6 +55,27 @@ def pick_device(name: str):
     if torch.cuda.is_available():
         return torch.device("cuda")
     return torch.device("cpu")
+
+
+def release_cached_memory(device) -> None:
+    import torch
+
+    if device.type == "mps":
+        torch.mps.empty_cache()
+    elif device.type == "cuda":
+        torch.cuda.empty_cache()
+
+
+def make_optimizer(model, args):
+    """Adafactor keeps factored statistics instead of AdamW's two full copies of every weight
+    (about 5 GB for NLLB-600M), which is what lets training fit on a 24 GB Mac."""
+    import torch
+
+    if args.optimizer == "adamw":
+        return torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
+    from transformers.optimization import Adafactor
+
+    return Adafactor(model.parameters(), lr=args.lr, scale_parameter=False, relative_step=False, warmup_init=False)
 
 
 def read_jsonl(path: Path, limit: int | None = None) -> list[dict]:
@@ -112,9 +135,12 @@ def add_zomi(tokenizer, model) -> dict:
 class Codec:
     """NLLB-style sequences built by hand: [lang] tokens </s>. Works for any tokenizer version."""
 
-    def __init__(self, tokenizer, max_len: int):
+    def __init__(self, tokenizer, max_len: int, pad_multiple: int = 32):
         self.tok = tokenizer
         self.max_len = max_len
+        # Few distinct tensor shapes: Apple's GPU backend compiles and keeps a graph per shape,
+        # and with free-length batches that cache grows until memory runs out.
+        self.pad_multiple = max(1, pad_multiple)
         self.eos = tokenizer.eos_token_id
         self.pad = tokenizer.pad_token_id
         self.lang_id = {key: tokenizer.convert_tokens_to_ids(code) for key, code in LANG.items()}
@@ -123,13 +149,16 @@ class Codec:
         ids = self.tok(text, add_special_tokens=False)["input_ids"][: self.max_len - 2]
         return [self.lang_id[lang], *ids, self.eos]
 
+    def padded(self, width: int) -> int:
+        return min(self.max_len, -(-width // self.pad_multiple) * self.pad_multiple)
+
     def batch(self, examples, device):
         import torch
 
         sources = [self.encode(s, sl) for s, sl, _, _ in examples]
         targets = [self.encode(t, tl) for _, _, t, tl in examples]
-        width_s = max(map(len, sources))
-        width_t = max(map(len, targets))
+        width_s = self.padded(max(map(len, sources)))
+        width_t = self.padded(max(map(len, targets)))
         input_ids = torch.full((len(sources), width_s), self.pad, dtype=torch.long)
         attention = torch.zeros_like(input_ids)
         labels = torch.full((len(targets), width_t), -100, dtype=torch.long)
@@ -169,9 +198,13 @@ def translate_texts(model, codec: Codec, texts: list[str], src: str, tgt: str, d
                 forced_bos_token_id=codec.lang_id[tgt],
                 decoder_start_token_id=codec.eos,
                 num_beams=beams,
-                max_new_tokens=codec.max_len,
+                # max_length, not max_new_tokens: NLLB's config sets max_length=200 and the two conflict.
+                # +2 for the start token and the language token.
+                max_length=codec.max_len + 2,
+                use_cache=True,
             )
             outputs += codec.tok.batch_decode(generated, skip_special_tokens=True)
+            release_cached_memory(device)
     return [text.strip() for text in outputs]
 
 
@@ -248,15 +281,19 @@ def cmd_train(args) -> int:
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     model = AutoModelForSeq2SeqLM.from_pretrained(args.model)
     language = add_zomi(tokenizer, model)
+    if args.gradient_checkpointing:
+        # Recompute activations in the backward pass instead of storing them: far less memory, ~25% slower.
+        model.gradient_checkpointing_enable()
+        model.config.use_cache = False
     model.to(device)
-    codec = Codec(tokenizer, args.max_len)
+    codec = Codec(tokenizer, args.max_len, args.pad_multiple)
 
     train_examples = to_examples(train_pairs, directions)
     val_examples = to_examples(val_pairs, directions)
     steps_per_epoch = math.ceil(len(length_batches(train_examples, args.batch_size, 0)) / args.grad_accum)
     total_steps = steps_per_epoch * args.epochs
     warmup = max(1, int(total_steps * args.warmup))
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
+    optimizer = make_optimizer(model, args)
     schedule = torch.optim.lr_scheduler.LambdaLR(
         optimizer, lambda step: min((step + 1) / warmup, max(0.0, (total_steps - step) / max(1, total_steps - warmup)))
     )
@@ -271,18 +308,21 @@ def cmd_train(args) -> int:
         for index, batch in enumerate(batches, 1):
             loss = model(**codec.batch(batch, device)).loss / args.grad_accum
             loss.backward()
-            running += float(loss) * args.grad_accum
+            running += loss.detach().item() * args.grad_accum
             if index % args.grad_accum == 0 or index == len(batches):
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 optimizer.step()
                 schedule.step()
                 optimizer.zero_grad()
                 step += 1
+                if step % args.empty_cache_every == 0:
+                    release_cached_memory(device)
                 if step % args.log_every == 0:
                     elapsed = time.time() - started
                     eta = elapsed / step * (total_steps - step)
                     print(f"epoch {epoch} step {step}/{total_steps} loss {running / index:.4f} "
                           f"lr {schedule.get_last_lr()[0]:.2e} elapsed {elapsed / 60:.1f}m eta {eta / 60:.1f}m", flush=True)
+        release_cached_memory(device)
         val = evaluate(model, codec, val_pairs, directions, device, args.eval_batch_size, args.beams, args.val_translate)
         val["loss"] = validation_loss(model, codec, val_examples, device, args.eval_batch_size)
         val["epoch"] = epoch
@@ -294,8 +334,15 @@ def cmd_train(args) -> int:
             tokenizer.save_pretrained(args.out)
             print(f"saved best checkpoint to {args.out}", flush=True)
 
+    train_minutes = round((time.time() - started) / 60, 1)
+    del model, optimizer, schedule
+    release_cached_memory(device)
     best_model = AutoModelForSeq2SeqLM.from_pretrained(args.out).to(device)
-    test = evaluate(best_model, codec, test_pairs, directions, device, args.eval_batch_size, args.beams) if test_pairs else {}
+    # A quick trial (--limit) scores a sample of the test split; translating all of it takes about an hour on a Mac.
+    test_translate = args.test_translate if args.test_translate is not None else (200 if args.limit else None)
+    test_count = min(len(test_pairs), test_translate or len(test_pairs))
+    print(f"translating {test_count:,} test pairs in {len(directions)} directions", flush=True)
+    test = evaluate(best_model, codec, test_pairs, directions, device, args.eval_batch_size, args.beams, test_translate) if test_pairs else {}
     meta = {
         "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "base_model": args.model,
@@ -303,6 +350,7 @@ def cmd_train(args) -> int:
         "directions": directions,
         "device": str(device),
         "minutes": round((time.time() - started) / 60, 1),
+        "train_minutes": train_minutes,
         "git_commit": git_commit(),
         "data": {
             "dir": str(args.data),
@@ -311,6 +359,7 @@ def cmd_train(args) -> int:
             "train_pairs": len(train_pairs),
             "validation_pairs": len(val_pairs),
             "test_pairs": len(test_pairs),
+            "test_translated": test_count,
         },
         "hyperparameters": {k: v for k, v in vars(args).items() if k not in {"func", "data", "out", "model"}},
         "validation_history": history,
@@ -348,6 +397,26 @@ def cmd_translate(args) -> int:
     return 0
 
 
+def cmd_try(args) -> int:
+    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+    device = pick_device(args.device)
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    model = AutoModelForSeq2SeqLM.from_pretrained(args.model).to(device)
+    codec = Codec(tokenizer, args.max_len)
+    src, tgt = DIRECTIONS[args.direction]
+    print(f"{args.direction}: type a sentence and press Enter (empty line to quit)", flush=True)
+    while True:
+        try:
+            line = input("> ").strip()
+        except EOFError:
+            break
+        if not line:
+            break
+        print(translate_texts(model, codec, [line], src, tgt, device, 1, args.beams)[0], flush=True)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -359,14 +428,24 @@ def main(argv: list[str] | None = None) -> int:
     train.add_argument("--directions", default="en-zomi,zomi-en")
     train.add_argument("--tiers", default="gold,silver", help="comma list; empty for all")
     train.add_argument("--epochs", type=int, default=2)
-    train.add_argument("--batch-size", type=int, default=16)
-    train.add_argument("--grad-accum", type=int, default=2)
+    # 8 x 4 = 32 sentences per update. NLLB's 256k-word output layer makes larger batches
+    # exceed a 24 GB Mac; lower --batch-size and raise --grad-accum if memory runs out.
+    train.add_argument("--batch-size", type=int, default=8)
+    train.add_argument("--grad-accum", type=int, default=4)
     train.add_argument("--lr", type=float, default=1e-4)
+    train.add_argument("--optimizer", choices=("adafactor", "adamw"), default="adafactor",
+                       help="adafactor fits in far less memory; adamw needs about 5 GB more for NLLB-600M")
+    train.add_argument("--no-gradient-checkpointing", dest="gradient_checkpointing", action="store_false",
+                       help="faster, but stores all activations (needs much more memory)")
     train.add_argument("--warmup", type=float, default=0.05, help="share of steps")
     train.add_argument("--max-len", type=int, default=128, help="tokens per sentence")
+    train.add_argument("--pad-multiple", type=int, default=32,
+                       help="round sentence lengths up to this many tokens (keeps Apple GPU memory stable)")
+    train.add_argument("--empty-cache-every", type=int, default=50, help="release cached GPU memory every N updates")
     train.add_argument("--val-size", type=int, default=2000, help="validation pairs used for loss")
     train.add_argument("--val-translate", type=int, default=300, help="validation pairs translated for chrF++ each epoch")
-    train.add_argument("--eval-batch-size", type=int, default=32)
+    train.add_argument("--test-translate", type=int, help="test pairs translated at the end (default: all; 200 with --limit)")
+    train.add_argument("--eval-batch-size", type=int, default=16)
     train.add_argument("--beams", type=int, default=4)
     train.add_argument("--limit", type=int, help="use only N training pairs (quick trial)")
     train.add_argument("--log-every", type=int, default=50)
@@ -384,6 +463,14 @@ def main(argv: list[str] | None = None) -> int:
     translate.add_argument("--max-len", type=int, default=128)
     translate.add_argument("--device", default="auto")
     translate.set_defaults(func=cmd_translate)
+
+    try_ = commands.add_parser("try", help="type sentences and see the translation")
+    try_.add_argument("--model", type=Path, required=True)
+    try_.add_argument("--direction", choices=sorted(DIRECTIONS), default="en-zomi")
+    try_.add_argument("--beams", type=int, default=4)
+    try_.add_argument("--max-len", type=int, default=128)
+    try_.add_argument("--device", default="auto")
+    try_.set_defaults(func=cmd_try)
 
     args = parser.parse_args(argv)
     return args.func(args)

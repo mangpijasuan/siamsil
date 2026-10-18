@@ -84,3 +84,32 @@ export function readHistory() {
     return [];
   }
 }
+
+const RECENT_CHAPTERS_KEY = "siamsil.bible-recent";
+
+export type RecentChapter = {
+  v: string;
+  version: string;
+  book: number;
+  bookName: string;
+  chapter: number;
+};
+
+export function readRecentChapters(): RecentChapter[] {
+  try {
+    const raw = localStorage.getItem(RECENT_CHAPTERS_KEY);
+    return raw ? (JSON.parse(raw) as RecentChapter[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Remember a chapter the reader opened on this device (newest first, one entry per book). */
+export function pushRecentChapter(entry: RecentChapter) {
+  try {
+    const next = [entry, ...readRecentChapters().filter((item) => !(item.v === entry.v && item.book === entry.book))].slice(0, 10);
+    localStorage.setItem(RECENT_CHAPTERS_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore quota or blocked storage */
+  }
+}

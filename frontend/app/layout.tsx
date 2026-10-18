@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter, Playfair_Display, Raleway } from "next/font/google";
 import BottomNav from "@/components/BottomNav";
 import SidebarNav from "@/components/SidebarNav";
 import "./globals.css";
@@ -13,6 +13,12 @@ const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-playfair",
   weight: ["400", "600", "700"],
+});
+
+const raleway = Raleway({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -39,7 +45,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} h-full`}>
+    <html lang="en" className={`${inter.variable} ${playfair.variable} ${raleway.variable} h-full`}>
       <body>
         <SidebarNav>{children}</SidebarNav>
         <BottomNav />

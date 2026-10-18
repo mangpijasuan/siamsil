@@ -26,35 +26,29 @@ type NavTab = {
 
 const NAV_GROUPS: Array<{ title: string; tabs: NavTab[] }> = [
   {
-    title: "Read",
+    title: "Language",
     tabs: [
       { href: "/", Icon: IconHome, label: "Home", short: "Home", hint: "Your Zomi library" },
-      { href: "/library", Icon: IconLibrary, label: "Library", short: "Library", hint: "Books & archives" },
       { href: "/zomidictionary", Icon: IconBook, label: "Dictionary", short: "Dictionary", hint: "Zomi–English" },
+      { href: "/zomitranslate", Icon: IconTranslate, label: "Translate", short: "Translate", hint: "Retrieve known pairs" },
+    ],
+  },
+  {
+    title: "Read",
+    tabs: [
       { href: "/bible", Icon: IconCross, label: "Bible", short: "Bible", hint: "Laisiangtho" },
+      { href: "/library", Icon: IconLibrary, label: "Library", short: "Library", hint: "Books & archives" },
     ],
   },
   {
     title: "Learn",
     tabs: [
       { href: "/learning", Icon: IconAcademic, label: "Learning", short: "Learn", hint: "Grammar & phrases" },
-      { href: "/zomitranslate", Icon: IconTranslate, label: "Translate", short: "Translate", hint: "Retrieve known pairs" },
       { href: "/chat", Icon: IconChat, label: "Siamsil AI", short: "AI", hint: "Retrieval assistant" },
     ],
   },
 ];
 const PROFILE_TAB: NavTab = { href: "/profile", Icon: IconUser, label: "Profile", short: "Profile", hint: "Progress & settings" };
-
-const PAGE_META = [
-  { match: /^\/$/, eyebrow: "Zomi literature hub", title: "Home" },
-  { match: /^\/library/, eyebrow: "Books & archives", title: "Library" },
-  { match: /^\/zomidictionary/, eyebrow: "Words & meaning", title: "Dictionary" },
-  { match: /^\/bible/, eyebrow: "Laisiangtho", title: "Bible" },
-  { match: /^\/learning/, eyebrow: "Build your fluency", title: "Learning" },
-  { match: /^\/zomitranslate/, eyebrow: "English ↔ Zomi", title: "Translate" },
-  { match: /^\/chat/, eyebrow: "Zomi language assistant", title: "Siamsil AI" },
-  { match: /^\/profile/, eyebrow: "Your account", title: "Profile" },
-];
 
 const SIDEBAR_KEY = "siamsil-sidebar-collapsed";
 const DESKTOP_QUERY = "(min-width: 1024px)";
@@ -79,6 +73,22 @@ function BrandLogo({ size = 38 }: { size?: number }) {
   return (
     <span className="shell-brand-logo-wrap" style={{ width: size, height: size }}>
       <Image src="/logo.png" alt="" width={size} height={size} className="shell-brand-logo" priority unoptimized />
+    </span>
+  );
+}
+
+const TAGLINE = "The Art of Literature";
+
+// The tagline's letters are spread across the exact width of the SIAMSIL wordmark above it.
+function JustifiedTagline({ className }: { className: string }) {
+  return (
+    <span className={`${className} brand-tagline`}>
+      <span className="sr-only">{TAGLINE}</span>
+      <span className="brand-tagline-letters" aria-hidden="true">
+        {[...TAGLINE].map((letter, index) => (
+          <span key={index} className={letter === " " ? "brand-tagline-gap" : undefined}>{letter === " " ? "\u00a0" : letter}</span>
+        ))}
+      </span>
     </span>
   );
 }
@@ -129,14 +139,14 @@ function Navigation({ pathname, onNavigate }: { pathname: string; onNavigate?: (
 export default function SidebarNav({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  // Desktop starts as the compact icon rail; ☰ expands it and the choice is remembered.
+  const [collapsed, setCollapsed] = useState(true);
   const [isDesktop, setIsDesktop] = useState(false);
-  const page = PAGE_META.find(({ match }) => match.test(pathname)) ?? PAGE_META[0];
 
   useEffect(() => {
     const media = window.matchMedia(DESKTOP_QUERY);
     const frame = window.requestAnimationFrame(() => {
-      setCollapsed(localStorage.getItem(SIDEBAR_KEY) === "true");
+      setCollapsed(localStorage.getItem(SIDEBAR_KEY) !== "false");
       setIsDesktop(media.matches);
     });
     const onChange = (event: MediaQueryListEvent) => {
@@ -188,15 +198,10 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
           <Link href="/" className="shell-brand shell-brand-mobile" aria-label="Siamsil home">
             <BrandLogo size={36} />
             <span className="shell-brand-text">
-              <span className="font-playfair shell-brand-title">SIAMSIL</span>
-              <span className="shell-brand-sub">The Art of Literature</span>
+              <span className="shell-brand-title brand-wordmark">SIAMSIL</span>
+              <JustifiedTagline className="shell-brand-sub" />
             </span>
           </Link>
-
-          <div className="shell-page-context">
-            <span className="shell-page-eyebrow">{page.eyebrow}</span>
-            <span className="font-playfair shell-page-title">{page.title}</span>
-          </div>
 
           <Link href="/zomidictionary" className="shell-topbar-search" aria-label="Search dictionary">
             <IconSearch size={16} />
@@ -220,8 +225,8 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
             <Link href="/" className="sidebar-brand-link" onClick={() => setMobileOpen(false)}>
               <BrandLogo size={40} />
               <span className="sidebar-brand-copy">
-                <span className="font-playfair sidebar-brand-title">SIAMSIL</span>
-                <span className="sidebar-brand-sub">The Art of Literature</span>
+                <span className="sidebar-brand-title brand-wordmark">SIAMSIL</span>
+                <JustifiedTagline className="sidebar-brand-sub" />
               </span>
             </Link>
             <button type="button" className="side-panel-close" onClick={() => setMobileOpen(false)} aria-label="Close navigation">

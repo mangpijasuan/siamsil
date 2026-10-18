@@ -52,7 +52,7 @@ python3 ml_pipeline/scripts/train_mt.py train \
   --limit 2000 --epochs 1 --val-translate 50
 ```
 
-Check that it prints steps with a falling `loss` and an `eta`. The ETA tells you how long the full run will take. Stop it any time with Ctrl-C.
+Check that it prints steps with a falling `loss` and an `eta`. The ETA tells you how long the full run will take. At the end it translates 200 test pairs in each direction, which takes a few minutes. The full run translates all 3,462. Stop it any time with Ctrl-C.
 
 ## 4. Full training run
 
@@ -63,13 +63,26 @@ caffeinate -i python3 ml_pipeline/scripts/train_mt.py train \
 
 `caffeinate -i` keeps the Mac awake. Keep it plugged in. A run takes hours; overnight is normal.
 
-If it runs out of memory, halve the batch and double the accumulation (same effective batch):
+The defaults (Adafactor optimizer, gradient checkpointing, `--batch-size 8 --grad-accum 4`, 32 sentences per update) need about 8 GB for one training step (measured on CPU with NLLB-600M's architecture; the Mac GPU adds some overhead) and fit a 24 GB M5. AdamW (`--optimizer adamw`) needs about 5 GB more. If it runs out of memory, close other apps, then halve the batch and double the accumulation (same effective batch):
 
 ```bash
-  --batch-size 8 --grad-accum 4
+  --batch-size 4 --grad-accum 8
 ```
 
-## 5. Read the results
+The Mac GPU keeps a compiled graph for every batch shape it sees, so sentence lengths are rounded up to steps of 32 tokens (`--pad-multiple`) and the GPU cache is emptied every 50 updates (`--empty-cache-every`). Without these, "other allocations" in an out-of-memory error keeps growing until the run stops.
+
+## 5. Try it
+
+Type sentences and read the translation (empty line to quit):
+
+```bash
+python3 ml_pipeline/scripts/train_mt.py try --model models/nllb-zomi-bible-v1
+python3 ml_pipeline/scripts/train_mt.py try --model models/nllb-zomi-bible-v1 --direction zomi-en
+```
+
+Try Bible-like and everyday sentences. A model trained only on Bible pairs is expected to sound formal and to struggle with modern topics.
+
+## 6. Read the results
 
 `models/nllb-zomi-bible-v1/train_meta.json` records the base model, data manifest checksum, settings, validation scores per epoch, and the test scores (chrF++ and BLEU, both directions).
 

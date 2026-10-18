@@ -440,6 +440,17 @@
             "title": "Name",
             "type": "string"
           },
+          "name_local": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Local"
+          },
           "testament": {
             "title": "Testament",
             "type": "string"
