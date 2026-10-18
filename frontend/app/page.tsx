@@ -82,46 +82,46 @@ export default async function Home() {
 
   return (
     <div className="hm-root">
-      <div className="home-hero">
+      <section className="home-hero nisim-panel" aria-label="Nisim Thalakna, daily verse">
         <div className="home-hero-label">Nisim Thalakna · Daily Verse</div>
-      </div>
 
-      <div className="nisim-block" style={{ padding: "0 16px", marginTop: -24, marginBottom: 4 }}>
-        <div style={{
-          background: "var(--white)",
-          borderRadius: "var(--radius-lg)",
-          padding: "20px 20px 20px 18px",
-          boxShadow: "var(--shadow-lg)",
-          borderLeft: "3px solid var(--gold)",
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 12,
-        }}>
-          <div className="font-playfair" style={{
-            fontSize: 52, lineHeight: 0.7, color: "var(--gold)",
-            opacity: 0.55, flexShrink: 0, marginTop: 6, userSelect: "none",
-          }}>&ldquo;</div>
-          <div style={{ flex: 1 }}>
-            {verse ? (
-              <>
-                <p className="font-playfair" style={{
-                  fontSize: 13.5, fontStyle: "italic", color: "var(--navy)",
-                  lineHeight: 1.7, margin: "0 0 10px",
-                }}>
-                  {verse.zomi_iso}
+        <div className="nisim-block" style={{ marginTop: 12 }}>
+          <div style={{
+            background: "var(--white)",
+            borderRadius: "var(--radius-lg)",
+            padding: "20px 20px 20px 18px",
+            boxShadow: "var(--shadow-lg)",
+            borderLeft: "3px solid var(--gold)",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 12,
+          }}>
+            <div className="font-playfair" style={{
+              fontSize: 52, lineHeight: 0.7, color: "var(--gold)",
+              opacity: 0.55, flexShrink: 0, marginTop: 6, userSelect: "none",
+            }}>&ldquo;</div>
+            <div style={{ flex: 1 }}>
+              {verse ? (
+                <>
+                  <p className="font-playfair" style={{
+                    fontSize: 13.5, fontStyle: "italic", color: "var(--navy)",
+                    lineHeight: 1.7, margin: "0 0 10px",
+                  }}>
+                    {verse.zomi_iso}
+                  </p>
+                  <p style={{ fontSize: 10, color: "var(--gray)", fontWeight: 600, letterSpacing: "0.05em" }}>
+                    — {verse.reference}
+                  </p>
+                </>
+              ) : (
+                <p style={{ fontSize: 13, color: "var(--gray)", margin: 0 }}>
+                  Daily verse will appear when the API is running.
                 </p>
-                <p style={{ fontSize: 10, color: "var(--gray)", fontWeight: 600, letterSpacing: "0.05em" }}>
-                  — {verse.reference}
-                </p>
-              </>
-            ) : (
-              <p style={{ fontSize: 13, color: "var(--gray)", margin: 0 }}>
-                Daily verse will appear when the API is running.
-              </p>
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       <section className="hm-hero">
         <div className="hm-hero-inner">

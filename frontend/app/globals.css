@@ -4029,3 +4029,23 @@ body::before {
   color: var(--navy);
 }
 .shell-topbar-search-text { color: var(--gray); }
+
+/* Nisim Thalakna: a rounded navy panel aligned with the boxes below, verse card inside */
+.home-hero.nisim-panel {
+  margin: 10px 10px 0;
+  padding: 18px 16px 16px;
+  border-radius: 22px;
+  box-shadow: 0 14px 30px rgba(27,42,74,0.22);
+}
+@media (min-width: 768px) {
+  .home-hero.nisim-panel {
+    margin: 16px 16px 0;
+    padding: 20px 20px 20px;
+    border-radius: 26px;
+  }
+}
+
+/* Desktop: the wordmark starts at the same left edge as the page boxes (icon rail + 16px) */
+@media (min-width: 1024px) {
+  .shell-brand-mobile { margin-left: 32px; }
+}
