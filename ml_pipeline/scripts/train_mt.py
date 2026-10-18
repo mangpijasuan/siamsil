@@ -133,9 +133,12 @@ def add_zomi(tokenizer, model) -> dict:
 class Codec:
     """NLLB-style sequences built by hand: [lang] tokens </s>. Works for any tokenizer version."""
 
-    def __init__(self, tokenizer, max_len: int):
+    def __init__(self, tokenizer, max_len: int, pad_multiple: int = 32):
         self.tok = tokenizer
         self.max_len = max_len
+        # Few distinct tensor shapes: Apple's GPU backend compiles and keeps a graph per shape,
+        # and with free-length batches that cache grows until memory runs out.
+        self.pad_multiple = max(1, pad_multiple)
         self.eos = tokenizer.eos_token_id
         self.pad = tokenizer.pad_token_id
         self.lang_id = {key: tokenizer.convert_tokens_to_ids(code) for key, code in LANG.items()}
@@ -144,13 +147,16 @@ class Codec:
         ids = self.tok(text, add_special_tokens=False)["input_ids"][: self.max_len - 2]
         return [self.lang_id[lang], *ids, self.eos]
 
+    def padded(self, width: int) -> int:
+        return min(self.max_len, -(-width // self.pad_multiple) * self.pad_multiple)
+
     def batch(self, examples, device):
         import torch
 
         sources = [self.encode(s, sl) for s, sl, _, _ in examples]
         targets = [self.encode(t, tl) for _, _, t, tl in examples]
-        width_s = max(map(len, sources))
-        width_t = max(map(len, targets))
+        width_s = self.padded(max(map(len, sources)))
+        width_t = self.padded(max(map(len, targets)))
         input_ids = torch.full((len(sources), width_s), self.pad, dtype=torch.long)
         attention = torch.zeros_like(input_ids)
         labels = torch.full((len(targets), width_t), -100, dtype=torch.long)
@@ -194,6 +200,7 @@ def translate_texts(model, codec: Codec, texts: list[str], src: str, tgt: str, d
                 use_cache=True,
             )
             outputs += codec.tok.batch_decode(generated, skip_special_tokens=True)
+            release_cached_memory(device)
     return [text.strip() for text in outputs]
 
 
@@ -275,7 +282,7 @@ def cmd_train(args) -> int:
         model.gradient_checkpointing_enable()
         model.config.use_cache = False
     model.to(device)
-    codec = Codec(tokenizer, args.max_len)
+    codec = Codec(tokenizer, args.max_len, args.pad_multiple)
 
     train_examples = to_examples(train_pairs, directions)
     val_examples = to_examples(val_pairs, directions)
@@ -304,6 +311,8 @@ def cmd_train(args) -> int:
                 schedule.step()
                 optimizer.zero_grad()
                 step += 1
+                if step % args.empty_cache_every == 0:
+                    release_cached_memory(device)
                 if step % args.log_every == 0:
                     elapsed = time.time() - started
                     eta = elapsed / step * (total_steps - step)
@@ -399,6 +408,9 @@ def main(argv: list[str] | None = None) -> int:
                        help="faster, but stores all activations (needs much more memory)")
     train.add_argument("--warmup", type=float, default=0.05, help="share of steps")
     train.add_argument("--max-len", type=int, default=128, help="tokens per sentence")
+    train.add_argument("--pad-multiple", type=int, default=32,
+                       help="round sentence lengths up to this many tokens (keeps Apple GPU memory stable)")
+    train.add_argument("--empty-cache-every", type=int, default=50, help="release cached GPU memory every N updates")
     train.add_argument("--val-size", type=int, default=2000, help="validation pairs used for loss")
     train.add_argument("--val-translate", type=int, default=300, help="validation pairs translated for chrF++ each epoch")
     train.add_argument("--eval-batch-size", type=int, default=16)

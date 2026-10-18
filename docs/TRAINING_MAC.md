@@ -69,6 +69,8 @@ The defaults (Adafactor optimizer, gradient checkpointing, `--batch-size 8 --gra
   --batch-size 4 --grad-accum 8
 ```
 
+The Mac GPU keeps a compiled graph for every batch shape it sees, so sentence lengths are rounded up to steps of 32 tokens (`--pad-multiple`) and the GPU cache is emptied every 50 updates (`--empty-cache-every`). Without these, "other allocations" in an out-of-memory error keeps growing until the run stops.
+
 ## 5. Read the results
 
 `models/nllb-zomi-bible-v1/train_meta.json` records the base model, data manifest checksum, settings, validation scores per epoch, and the test scores (chrF++ and BLEU, both directions).

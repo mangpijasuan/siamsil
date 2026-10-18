@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import sys
 import tempfile
@@ -9,8 +10,8 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "ml_pipeline" / "scripts"))
 
-# The training helpers tested here need no torch; the training loop itself runs on the training machine.
-from train_mt import length_batches, load_pairs, to_examples  # type: ignore  # noqa: E402
+# Torch is installed on the training machine, not in CI; the Codec test is skipped without it.
+from train_mt import Codec, length_batches, load_pairs, to_examples  # type: ignore  # noqa: E402
 
 # Zomi-side strings are placeholders, never real language data.
 PAIRS = [
@@ -36,6 +37,23 @@ class TrainHelpersTests(unittest.TestCase):
             ("One.", "en", "ZOMI_PLACEHOLDER_1", "zom"),
             ("ZOMI_PLACEHOLDER_1", "zom", "One.", "en"),
         ])
+
+    @unittest.skipUnless(importlib.util.find_spec("torch"), "torch is not installed")
+    def test_lengths_round_up_to_few_shapes(self) -> None:
+        class Tokenizer:
+            eos_token_id, pad_token_id = 2, 1
+
+            def convert_tokens_to_ids(self, code):
+                return 5
+
+            def __call__(self, text, add_special_tokens=False):
+                return {"input_ids": list(range(10, 10 + len(text.split())))}
+
+        codec = Codec(Tokenizer(), max_len=128, pad_multiple=32)
+        self.assertEqual([codec.padded(w) for w in (1, 32, 33, 100, 200)], [32, 32, 64, 128, 128])
+        batch = codec.batch([("a b c", "en", "x y", "zom")], "cpu")
+        self.assertEqual(tuple(batch["input_ids"].shape), (1, 32))
+        self.assertEqual(batch["labels"][0][:5].tolist(), [5, 10, 11, 2, -100])
 
     def test_length_batches_keep_every_example_once(self) -> None:
         examples = to_examples(PAIRS[:3] * 7, ["en-zomi"])
