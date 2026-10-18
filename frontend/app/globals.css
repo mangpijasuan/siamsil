@@ -3514,28 +3514,23 @@ html { --font-brand-serif: var(--font-playfair); }
   --radius-xl: 26px;
 }
 body {
-  --font-playfair: var(--font-display);
   font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.55;
-  background: #D6E1EE;
+  background: #F7F6F0;
   color: var(--text);
 }
-/* Fixed backdrop: gradient plus two soft shapes, like frosted glass over a scene. */
+/* Fixed backdrop: plain warm off-white page. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(circle at 105% 45%, rgba(44,74,114,0.24) 0 22rem, transparent 22.2rem),
-    radial-gradient(circle at -10% 95%, rgba(55,92,140,0.22) 0 18rem, transparent 18.2rem),
-    radial-gradient(circle at 75% -5%, rgba(255,255,255,0.55) 0 14rem, transparent 14.2rem),
-    linear-gradient(160deg, #E6EDF6 0%, #CBD9EA 55%, #AFC3DC 100%);
+  background: #F7F6F0;
 }
 
-/* Headings: Raleway in navy; body text: Inter */
+/* Headings: Playfair Display in navy; body text: Inter */
 .font-playfair { letter-spacing: -0.01em; font-weight: 700; }
 
 /* Navy bars: flat steel navy */
@@ -4179,3 +4174,18 @@ body { padding-bottom: 96px; }
   .shell-menu-btn { width: 67px; }
   .shell-brand-mobile { margin-left: 13px; }
 }
+
+/* Warm off-white page with white cards (the original Siamsil look) */
+:root {
+  --glass:        rgba(255,255,255,0.96);
+  --glass-strong: #FFFFFF;
+  --glass-edge:   rgba(27,42,74,0.08);
+  --shadow-sm: 0 1px 3px rgba(27,42,74,0.06), 0 1px 2px rgba(27,42,74,0.04);
+  --shadow-md: 0 4px 16px rgba(27,42,74,0.07), 0 2px 6px rgba(27,42,74,0.04);
+  --shadow-lg: 0 12px 40px rgba(27,42,74,0.10), 0 4px 12px rgba(27,42,74,0.05);
+  --mirror: linear-gradient(180deg, #FFFFFF 0%, #FCFAF8 100%);
+  --raised: linear-gradient(145deg, #FFFFFF 0%, #EEF1F5 100%);
+}
+.br-page { background: #FFFFFF; }
+.shell-topbar { background: rgba(252,250,248,0.95); border-bottom: 1px solid rgba(27,42,74,0.08); box-shadow: 0 2px 12px rgba(27,42,74,0.06); }
+.desktop-sidebar, .mobile-drawer { background: #FCFAF8; }
