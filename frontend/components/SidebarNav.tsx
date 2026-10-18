@@ -43,7 +43,7 @@ const NAV_GROUPS: Array<{ title: string; tabs: NavTab[] }> = [
   {
     title: "Learn",
     tabs: [
-      { href: "/learning", Icon: IconAcademic, label: "Learning", short: "Learn", hint: "Grammar & phrases" },
+      { href: "/learning", Icon: IconAcademic, label: "Learn", short: "Learn", hint: "Grammar & phrases" },
       { href: "/chat", Icon: IconChat, label: "Siamsil AI", short: "AI", hint: "Retrieval assistant" },
     ],
   },
@@ -69,27 +69,18 @@ function CloseIcon() {
   );
 }
 
-function BrandLogo({ size = 38 }: { size?: number }) {
+// The Siamsil lockup (mark, wordmark and tagline in one image), white and gold for navy backgrounds.
+function BrandLockup({ height }: { height: number }) {
   return (
-    <span className="shell-brand-logo-wrap" style={{ width: size, height: size }}>
-      <Image src="/logo.png" alt="" width={size} height={size} className="shell-brand-logo" priority unoptimized />
-    </span>
-  );
-}
-
-const TAGLINE = "The Art of Literature";
-
-// The tagline's letters are spread across the exact width of the SIAMSIL wordmark above it.
-function JustifiedTagline({ className }: { className: string }) {
-  return (
-    <span className={`${className} brand-tagline`}>
-      <span className="sr-only">{TAGLINE}</span>
-      <span className="brand-tagline-letters" aria-hidden="true">
-        {[...TAGLINE].map((letter, index) => (
-          <span key={index} className={letter === " " ? "brand-tagline-gap" : undefined}>{letter === " " ? "\u00a0" : letter}</span>
-        ))}
-      </span>
-    </span>
+    <Image
+      src="/logo-lockup.png"
+      alt="Siamsil, The Art of Literature"
+      width={Math.round(height * (1200 / 410))}
+      height={height}
+      className="brand-lockup"
+      priority
+      unoptimized
+    />
   );
 }
 
@@ -139,24 +130,28 @@ function Navigation({ pathname, onNavigate }: { pathname: string; onNavigate?: (
 export default function SidebarNav({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  // Desktop starts as the compact icon rail; ☰ expands it and the choice is remembered.
-  const [collapsed, setCollapsed] = useState(true);
+  // Desktop starts with the full menu; ☰ shrinks it to an icon rail and the choice is remembered.
+  const [collapsed, setCollapsed] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     const media = window.matchMedia(DESKTOP_QUERY);
     const frame = window.requestAnimationFrame(() => {
-      setCollapsed(localStorage.getItem(SIDEBAR_KEY) !== "false");
+      setCollapsed(localStorage.getItem(SIDEBAR_KEY) === "true");
       setIsDesktop(media.matches);
     });
     const onChange = (event: MediaQueryListEvent) => {
       setIsDesktop(event.matches);
       if (event.matches) setMobileOpen(false);
     };
+    // The phone's bottom bar "More" button opens the menu drawer.
+    const openMenu = () => setMobileOpen(true);
     media.addEventListener("change", onChange);
+    window.addEventListener("siamsil:open-menu", openMenu);
     return () => {
       window.cancelAnimationFrame(frame);
       media.removeEventListener("change", onChange);
+      window.removeEventListener("siamsil:open-menu", openMenu);
     };
   }, []);
 
@@ -196,16 +191,15 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
           </button>
 
           <Link href="/" className="shell-brand shell-brand-mobile" aria-label="Siamsil home">
-            <BrandLogo size={36} />
-            <span className="shell-brand-text">
-              <span className="shell-brand-title brand-wordmark">SIAMSIL</span>
-              <JustifiedTagline className="shell-brand-sub" />
-            </span>
+            <BrandLockup height={46} />
           </Link>
 
-          <Link href="/zomidictionary" className="shell-topbar-search" aria-label="Search dictionary">
-            <IconSearch size={16} />
-            <span className="shell-topbar-search-text">Search the dictionary</span>
+          <form action="/zomidictionary" method="GET" className="shell-topbar-search" role="search">
+            <IconSearch size={17} />
+            <input name="q" type="search" placeholder="Search the dictionary…" aria-label="Search the dictionary" className="shell-topbar-search-input" />
+          </form>
+          <Link href="/zomidictionary" className="shell-topbar-search-btn" aria-label="Search the dictionary">
+            <IconSearch size={18} />
           </Link>
         </div>
       </header>
@@ -213,21 +207,13 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
       <div className="app-shell">
         <aside id="desktop-sidebar" className={`desktop-sidebar${collapsed ? " collapsed" : ""}`} aria-label="Primary">
           <Navigation pathname={pathname} />
-          <div className="side-panel-foot">
-            <span className="sidebar-foot-mark">S</span>
-            <span className="sidebar-foot-copy">Preserving language through literature.</span>
-          </div>
         </aside>
 
         <div className={`mobile-drawer-backdrop${mobileOpen ? " visible" : ""}`} onClick={() => setMobileOpen(false)} aria-hidden="true" />
         <aside id="mobile-drawer" className={`mobile-drawer${mobileOpen ? " open" : ""}`} aria-label="Mobile navigation" aria-hidden={!mobileOpen}>
           <div className="mobile-drawer-head">
             <Link href="/" className="sidebar-brand-link" onClick={() => setMobileOpen(false)}>
-              <BrandLogo size={40} />
-              <span className="sidebar-brand-copy">
-                <span className="sidebar-brand-title brand-wordmark">SIAMSIL</span>
-                <JustifiedTagline className="sidebar-brand-sub" />
-              </span>
+              <BrandLockup height={44} />
             </Link>
             <button type="button" className="side-panel-close" onClick={() => setMobileOpen(false)} aria-label="Close navigation">
               <CloseIcon />
