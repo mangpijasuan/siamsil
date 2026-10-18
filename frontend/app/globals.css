@@ -4049,3 +4049,59 @@ body::before {
 @media (min-width: 1024px) {
   .shell-brand-mobile { margin-left: 32px; }
 }
+
+/* ══════════════════════════════════════════════════
+   GLOSSY 3D MENUS
+   Mirror-like glass panels (bright top edge, soft depth) and a raised
+   button for the current item, on the bottom menu and the side menus.
+══════════════════════════════════════════════════ */
+:root {
+  --mirror: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(238,243,250,0.82) 48%, rgba(222,231,242,0.86) 100%);
+  --mirror-edge: inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(44,74,114,0.08);
+  --raised: linear-gradient(145deg, #F7FAFE 0%, #DCE5F1 100%);
+  --raised-shadow: 4px 4px 10px rgba(44,74,114,0.20), -3px -3px 8px rgba(255,255,255,0.9), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+/* Bottom menu: floating glass bar */
+.bottom-nav {
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  width: calc(100% - 20px);
+  max-width: 460px;
+  height: 68px;
+  padding: 6px;
+  border-radius: 24px;
+  background: var(--mirror);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.75);
+  box-shadow: 0 12px 32px rgba(44,74,114,0.24), var(--mirror-edge);
+}
+body { padding-bottom: 96px; }
+.nav-item { border-radius: 18px; padding: 4px 1px; }
+.bottom-nav .nav-label { font-size: 10.5px; letter-spacing: 0; padding: 0; }
+.desktop-sidebar.collapsed .side-panel-item.active::before { display: none; }
+.nav-item:hover { background: rgba(255,255,255,0.45); }
+.nav-item.active {
+  background: var(--raised) !important;
+  box-shadow: var(--raised-shadow) !important;
+}
+.nav-item.active:focus-visible { box-shadow: var(--raised-shadow), 0 0 0 2px var(--navy) !important; }
+
+/* Side menus: glossy panel, raised current item */
+.desktop-sidebar,
+.mobile-drawer {
+  background: var(--mirror);
+  box-shadow: 6px 0 24px rgba(44,74,114,0.12), var(--mirror-edge);
+}
+.mobile-drawer .side-panel-item.active,
+.desktop-sidebar .side-panel-item.active {
+  background: var(--raised);
+  box-shadow: var(--raised-shadow);
+}
+.mobile-drawer .side-panel-item:hover,
+.desktop-sidebar .side-panel-item:hover { background: rgba(255,255,255,0.5); }
+.mobile-drawer .side-panel-item.active .side-panel-icon,
+.desktop-sidebar .side-panel-item.active .side-panel-icon {
+  background: linear-gradient(145deg, #FFFFFF, #E6EDF6);
+  box-shadow: 2px 2px 5px rgba(44,74,114,0.18), -2px -2px 5px rgba(255,255,255,0.9);
+}
