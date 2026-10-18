@@ -4569,3 +4569,30 @@ body { padding-bottom: 84px; }
   .hx-title { font-size: 34px; }
   .hx-search button { padding: 11px 16px; font-size: 16px; }
 }
+
+/* Hero picture: hills at dusk with the glowing book (artwork from the project owner) */
+.hx-hero {
+  background:
+    linear-gradient(90deg, rgba(10,22,52,0.94) 0%, rgba(10,22,52,0.82) 38%, rgba(10,22,52,0.25) 68%, rgba(10,22,52,0.05) 100%),
+    url("/hero-zomi-hills.webp") right center / cover no-repeat,
+    #10234B;
+  min-height: 440px;
+}
+.hx-hero-art { align-items: flex-end !important; justify-content: flex-end !important; align-self: end; }
+.hx-quote { text-shadow: 0 2px 12px rgba(0,0,0,0.6); }
+@media (max-width: 899px) {
+  .hx-hero {
+    background:
+      linear-gradient(180deg, rgba(10,22,52,0.55) 0%, rgba(10,22,52,0.80) 45%, rgba(10,22,52,0.94) 100%),
+      url("/hero-zomi-hills-sm.webp") 62% center / cover no-repeat,
+      #10234B;
+    min-height: 0;
+  }
+}
+@media (min-width: 900px) {
+  .hx-hero { position: relative; }
+  .hx-hero-art { position: absolute; right: 36px; bottom: 26px; }
+  .hx-quote { max-width: 250px; font-size: 18px; text-shadow: 0 2px 14px rgba(0,0,0,0.85), 0 0 2px rgba(0,0,0,0.6); }
+  .hx-hero { grid-template-columns: minmax(0, 1fr) !important; }
+  .hx-hero-copy { max-width: 660px; }
+}

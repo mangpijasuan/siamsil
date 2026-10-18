@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { ComponentType } from "react";
 import RecentSearches from "@/components/RecentSearches";
@@ -140,7 +139,6 @@ export default async function Home() {
           </div>
         </div>
         <div className="hx-hero-art" aria-hidden="true">
-          <Image src="/logo-mark-light.png" alt="" width={462} height={580} className="hx-hero-mark" priority unoptimized />
           <p className="font-playfair hx-quote">&ldquo;Language connects people, knowledge builds communities.&rdquo;</p>
         </div>
       </section>
