@@ -4596,3 +4596,17 @@ body { padding-bottom: 84px; }
   .hx-hero { grid-template-columns: minmax(0, 1fr) !important; }
   .hx-hero-copy { max-width: 660px; }
 }
+
+/* Logo centred in the top bar; ☰ stays left and search stays right. */
+.shell-topbar-inner { position: relative; }
+.shell-topbar .shell-brand-mobile {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0 !important;
+}
+/* Leave room either side of the centred logo for the search field. */
+@media (min-width: 768px) {
+  .shell-topbar-search { flex: 0 1 min(420px, calc(50vw - 150px)) !important; width: auto; }
+}
