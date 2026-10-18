@@ -3671,3 +3671,45 @@ body::before {
 .dict-langs svg { transition: transform 0.25s ease; }
 .dict-langs:hover svg { transform: rotate(180deg); }
 .dict-langs:focus-visible { outline: 2px solid var(--gold2); outline-offset: 2px; }
+
+/* Side menu: desktop uses the same layout as the phone menu
+   (bigger icons, a short description under each item, blue highlight). */
+.mobile-drawer {
+  background: rgba(232,239,248,0.9);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+.mobile-drawer .side-panel-item.active,
+.desktop-sidebar .side-panel-item.active {
+  background: rgba(44,74,114,0.1);
+  box-shadow: inset 0 0 0 1px rgba(44,74,114,0.12);
+  color: var(--navy);
+}
+.mobile-drawer .side-panel-item.active .side-panel-icon,
+.desktop-sidebar .side-panel-item.active .side-panel-icon {
+  background: rgba(255,255,255,0.85);
+  color: var(--navy);
+  box-shadow: 0 2px 6px rgba(44,74,114,0.12);
+}
+.mobile-drawer .side-panel-label,
+.desktop-sidebar .side-panel-label { font-family: inherit; font-size: 15px; font-weight: 700; }
+.mobile-drawer .side-panel-hint,
+.desktop-sidebar .side-panel-hint { font-size: 12.5px; }
+@media (min-width: 1024px) {
+  .desktop-sidebar:not(.collapsed) { width: 264px; min-width: 264px; }
+  .desktop-sidebar:not(.collapsed) .side-panel-nav { gap: 4px; padding: 12px 12px; }
+  .desktop-sidebar:not(.collapsed) .side-panel-item {
+    min-height: 56px;
+    padding: 8px 10px;
+    gap: 12px;
+    border-radius: 14px;
+  }
+  .desktop-sidebar:not(.collapsed) .side-panel-item.active::before { display: none; }
+  .desktop-sidebar:not(.collapsed) .side-panel-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+  .desktop-sidebar:not(.collapsed) .side-panel-hint { display: block; }
+  .desktop-sidebar:not(.collapsed) .side-panel-group-title { padding: 12px 12px 4px; }
+}
