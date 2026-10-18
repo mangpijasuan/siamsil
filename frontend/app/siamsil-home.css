@@ -70,3 +70,21 @@
 .sr-search button{min-height:44px;padding:9px 15px;background:#e7c078;color:#102746}
 .sr-content{padding-bottom:calc(108px + env(safe-area-inset-bottom,0px))}
 }
+
+/* Branded artwork: place optimized image at frontend/public/siamsil-hero-background.webp */
+.sr-home .sr-hero{
+  background-color:#0a2445;
+  background-image:linear-gradient(90deg,rgba(6,26,53,.88) 0%,rgba(8,31,62,.75) 34%,rgba(8,31,62,.24) 64%,rgba(8,31,62,.05) 100%),url("/siamsil-hero-background.webp");
+  background-repeat:no-repeat;
+  background-position:center center;
+  background-size:cover;
+}
+.sr-home .sr-hero::before,.sr-home .sr-hero::after{display:none}
+.sr-home .sr-hero-art{display:none}
+.sr-home .sr-hero-inner{flex:1 1 auto;max-width:690px}
+@media (max-width:767px){
+  .sr-home .sr-hero{
+    background-position:63% center;
+    background-image:linear-gradient(90deg,rgba(6,26,53,.94),rgba(8,31,62,.79) 72%,rgba(8,31,62,.65)),url("/siamsil-hero-background.webp");
+  }
+}
