@@ -4105,3 +4105,50 @@ body { padding-bottom: 96px; }
   background: linear-gradient(145deg, #FFFFFF, #E6EDF6);
   box-shadow: 2px 2px 5px rgba(44,74,114,0.18), -2px -2px 5px rgba(255,255,255,0.9);
 }
+
+/* Every menu item is its own raised glossy box; the current one is navy. */
+.bottom-nav { gap: 6px; height: 72px; padding: 7px; }
+.bottom-nav .nav-item,
+.mobile-drawer .side-panel-item,
+.desktop-sidebar .side-panel-item {
+  background: var(--raised);
+  box-shadow: var(--raised-shadow);
+  border: 1px solid rgba(255,255,255,0.7);
+}
+.bottom-nav .nav-item:hover,
+.mobile-drawer .side-panel-item:hover,
+.desktop-sidebar .side-panel-item:hover {
+  background: linear-gradient(145deg, #FFFFFF 0%, #E4EBF5 100%);
+}
+.bottom-nav .nav-item:active,
+.mobile-drawer .side-panel-item:active,
+.desktop-sidebar .side-panel-item:active {
+  box-shadow: inset 2px 2px 6px rgba(44,74,114,0.2), inset -2px -2px 6px rgba(255,255,255,0.8);
+}
+.bottom-nav .nav-item.active,
+.mobile-drawer .side-panel-item.active,
+.desktop-sidebar .side-panel-item.active {
+  background: linear-gradient(145deg, #3A5E8E 0%, #24406A 100%) !important;
+  border-color: rgba(255,255,255,0.25);
+  box-shadow: 4px 4px 12px rgba(44,74,114,0.35), -2px -2px 8px rgba(255,255,255,0.8), inset 0 1px 0 rgba(255,255,255,0.25) !important;
+  color: #fff;
+}
+.bottom-nav .nav-item.active .nav-icon,
+.bottom-nav .nav-item.active .nav-label,
+.mobile-drawer .side-panel-item.active .side-panel-label,
+.mobile-drawer .side-panel-item.active .side-panel-hint,
+.desktop-sidebar .side-panel-item.active .side-panel-label,
+.desktop-sidebar .side-panel-item.active .side-panel-hint,
+.desktop-sidebar .side-panel-item.active .side-panel-short { color: #fff; }
+.mobile-drawer .side-panel-item.active .side-panel-hint,
+.desktop-sidebar .side-panel-item.active .side-panel-hint { color: rgba(255,255,255,0.75); }
+.mobile-drawer .side-panel-item.active .side-panel-icon,
+.desktop-sidebar .side-panel-item.active .side-panel-icon {
+  background: rgba(255,255,255,0.16);
+  box-shadow: none;
+  color: #fff;
+}
+.mobile-drawer .side-panel-nav,
+.desktop-sidebar .side-panel-nav { gap: 8px; }
+.side-panel-group { gap: 8px; }
+.desktop-sidebar.collapsed .side-panel-nav { gap: 8px; padding: 10px 8px 12px; }
