@@ -50,17 +50,6 @@ const NAV_GROUPS: Array<{ title: string; tabs: NavTab[] }> = [
 ];
 const PROFILE_TAB: NavTab = { href: "/profile", Icon: IconUser, label: "Profile", short: "Profile", hint: "Progress & settings" };
 
-const PAGE_META = [
-  { match: /^\/$/, eyebrow: "Zomi literature hub", title: "Home" },
-  { match: /^\/library/, eyebrow: "Books & archives", title: "Library" },
-  { match: /^\/zomidictionary/, eyebrow: "Words & meaning", title: "Dictionary" },
-  { match: /^\/bible/, eyebrow: "Laisiangtho", title: "Bible" },
-  { match: /^\/learning/, eyebrow: "Build your fluency", title: "Learning" },
-  { match: /^\/zomitranslate/, eyebrow: "English ↔ Zomi", title: "Translate" },
-  { match: /^\/chat/, eyebrow: "Zomi language assistant", title: "Siamsil AI" },
-  { match: /^\/profile/, eyebrow: "Your account", title: "Profile" },
-];
-
 const SIDEBAR_KEY = "siamsil-sidebar-collapsed";
 const DESKTOP_QUERY = "(min-width: 1024px)";
 
@@ -137,7 +126,6 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
   // Desktop starts as the compact icon rail; ☰ expands it and the choice is remembered.
   const [collapsed, setCollapsed] = useState(true);
   const [isDesktop, setIsDesktop] = useState(false);
-  const page = PAGE_META.find(({ match }) => match.test(pathname)) ?? PAGE_META[0];
 
   useEffect(() => {
     const media = window.matchMedia(DESKTOP_QUERY);
@@ -198,11 +186,6 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
               <span className="shell-brand-sub">The Art of Literature</span>
             </span>
           </Link>
-
-          <div className="shell-page-context">
-            <span className="shell-page-eyebrow">{page.eyebrow}</span>
-            <span className="font-playfair shell-page-title">{page.title}</span>
-          </div>
 
           <Link href="/zomidictionary" className="shell-topbar-search" aria-label="Search dictionary">
             <IconSearch size={16} />
