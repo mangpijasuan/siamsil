@@ -15,7 +15,6 @@ function applyPreferences(prefs: ReadingPreferences) {
   const root = document.documentElement;
   const theme = resolveTheme(prefs.theme, window.matchMedia?.(DARK_QUERY).matches ?? false);
   root.setAttribute("data-bible-theme", theme);
-  root.setAttribute("data-bible-mode", prefs.mode);
   root.setAttribute("data-bible-face", prefs.typeface);
   root.style.setProperty("--sb-font-size", `${prefs.fontSize}px`);
   root.style.setProperty("--sb-line-height", String(prefs.lineHeight));

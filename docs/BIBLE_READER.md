@@ -6,10 +6,13 @@ Updated: 2026-10-18 · Route: `/bible`, `/bible/search`
 
 - **Read** any version whose display right is cleared (`data/rights.json`). Scripture is fetched and rendered on the server; the toolbar, verse actions and panels are small client components.
 - **Bilingual by default.** A Zomi version is paired with English (WEB first, then KJV). `compare=none` turns the second version off.
-- **Display modes:** Zomi + English, Zomi only, English only. English-only without a second version shows a notice and keeps the Zomi text rather than an empty page.
-- **Reading settings:** light, sepia or dark (or follow the device), text size 14–24 px, line spacing 1.4–2.1, sans or serif. Saved in the browser and applied before the first paint by a static inline script in the root layout's <head>, so there is no theme flash.
+- **Display modes:** TDB + WEB, TDB only, or WEB only (and equivalent pairings for other available versions). The URL-selected versions determine the actual text; a stale device preference cannot silently hide WEB while the toolbar says TDB + WEB. The settings panel changes the URL and preserves the chapter.
+- **Reading settings:** light, sepia or dark (or follow the device), text size 14–24 px, line spacing 1.4–2.1, sans or a Georgia serif. Visual settings are saved in the browser and applied before the first paint by a static inline script in the root layout's <head>, so there is no theme flash. The version selection persists in the URL.
 - **Navigation:** book sheet with search (Zomi name, English name or code), a chapter grid with arrow-key movement, previous/next that continue into the neighbouring book and never link to a chapter a version lacks.
-- **Verse actions:** select a verse by tap, click, or Enter on its number. Copy and share include the reference and version labels (native share sheet where the browser has one, copy otherwise). Bookmark, four highlight colours, and private notes.
+- **Verse actions:** select a verse by tap, click, or Enter on its number. Copy includes only the visible scripture and its reference; Share includes a canonical verse URL (native share sheet where available, clipboard fallback otherwise). Bookmark, four highlight colours, and private notes remain device-local.
+- **Focus Mode:** hides the global sidebar and mobile bottom navigation while keeping the chapter toolbar and Exit Focus control. It retains the reading position when toggled and stays active while changing chapters in the session.
+- **Chapter scroll position:** the thin line below the toolbar follows actual scrolling. It is not a completion or reading-history record.
+- **Mobile:** the toolbar keeps book, version, settings, and Focus controls within narrow screens; search and saved references remain in Reading settings. The verse-action sheet sits above the main bottom navigation and respects safe areas.
 - **Search** (`/bible/search`): every word or an exact phrase, optional book filter, 20 results per page, matches marked in the text. Results link to the verse in its chapter.
 
 ## URLs
@@ -29,7 +32,7 @@ API: `GET /api/v1/bible/versions/{id}/search?q=…&phrase=true&book_id=…&limit
 
 ## Saved data: this device only
 
-Bookmarks, highlights and notes are stored in the browser (`localStorage` key `siamsil.bible.saved`), keyed by version, book, chapter and verse. Reading settings use `siamsil.bible.preferences`.
+Bookmarks, highlights and notes are stored in the browser (`localStorage` key `siamsil.bible.saved`), keyed by version, book, chapter and verse. The saved-reference panel can filter bookmarks, highlights, and notes. Reading settings use `siamsil.bible.preferences`; Focus Mode uses session storage.
 
 - Nothing is sent to the API, so private notes never reach the server or its logs.
 - Not synced between devices. Siamsil has OIDC identity but no saved-items table yet (`docs/ARCHITECTURE.md`, phase "saved items"). When that exists, add owner-scoped endpoints and migrate these keys; until then the UI says "saved in this browser only".
@@ -55,9 +58,11 @@ Scripture text is displayed exactly as stored. These were noticed while testing 
 
 ```bash
 cd frontend
-npm test                    # 26 unit tests: references, alignment, preferences, saved data
+npm test                    # references, alignment, preferences, saved data
 npm run lint && npm run typecheck && npm run build
-# browser checks against a running app (API on 8001, web on 3002), 42 checks + screenshots
+# browser checks against a running app (API on 8001, web on 3002), including 320–1440px and screenshots
 SHOTS=./shots node scripts/bible-reader.e2e.mjs     # needs Playwright with Chromium
 cd .. && python -m unittest backend.tests.test_bible_versions
 ```
+
+The V2 browser regression was run on an isolated web preview at port 3102 against the local API on 8001. Screenshots in `docs/screenshots/bible-reader-v2/` are from that actual running UI. No scripture source text or Bible database was modified in V2.

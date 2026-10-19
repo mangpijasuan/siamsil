@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { adjacentChapters, alignVerses, bibleHref, chooseCompanion, filterBooks, formatReference, NO_COMPARE } from "./references.ts";
+import { adjacentChapters, alignVerses, bibleHref, chooseCompanion, filterBooks, formatReference, NO_COMPARE, readingMode, readingModeTargets } from "./references.ts";
 
 const books = [
   { book_id: 1, code: "GEN", name: "Genesis", name_local: "Piancilna", chapters: [1, 2, 3] },
@@ -87,6 +87,14 @@ test("an explicit compare wins, 'none' turns it off, unknown or same version giv
 
 test("an English main version gets no default companion", () => {
   assert.equal(chooseCompanion(versions, versions[2], undefined), null);
+});
+
+test("URL-selected versions, not stale device preferences, determine reading mode", () => {
+  assert.equal(readingMode(versions[0], versions[2]), "both");
+  assert.equal(readingMode(versions[0], null), "zomi");
+  assert.equal(readingMode(versions[2], null), "english");
+  assert.deepEqual(readingModeTargets(versions, versions[0], versions[2]), { zomi: versions[0], english: versions[2] });
+  assert.deepEqual(readingModeTargets(versions, versions[2], null), { zomi: versions[0], english: versions[2] });
 });
 
 test("book search matches Zomi names, English names and codes", () => {

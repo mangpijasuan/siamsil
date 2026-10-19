@@ -6,11 +6,12 @@ import type { BibleVersionBook, BibleVersionInfo } from "@/lib/api";
 import { pushRecentChapter, readRecentChapters } from "@/lib/localData";
 import type { RecentChapter } from "@/lib/localData";
 import { useReadingPreferences } from "@/lib/bible/hooks";
-import { bibleHref, bookLabel, filterBooks, NO_COMPARE } from "@/lib/bible/references";
+import { bibleHref, bookLabel, filterBooks, NO_COMPARE, readingModeTargets } from "@/lib/bible/references";
 import type { ChapterRef } from "@/lib/bible/references";
 import { stepFontSize } from "@/lib/bible/preferences";
 import type { ReadingPreferences } from "@/lib/bible/preferences";
 import ReadingSettings from "./ReadingSettings";
+import ReadingProgress from "./ReadingProgress";
 import SavedPanel from "./SavedPanel";
 import Sheet from "./Sheet";
 import { BookmarkIcon, ChevronDown, ChevronLeft, ChevronRight, MoonIcon, SearchIcon, SepiaIcon, SettingsIcon, SunIcon } from "./icons";
@@ -32,6 +33,7 @@ const THEME_ORDER: ReadingPreferences["theme"][] = ["light", "sepia", "dark"];
 
 export default function BibleToolbar({ versions, version, compare, books, book, chapter, previous, next }: Props) {
   const [panel, setPanel] = useState<Panel>(null);
+  const [focusMode, setFocusMode] = useState(false);
   const { prefs, update } = useReadingPreferences();
   const close = useCallback(() => setPanel(null), []);
   // Links keep the compared version, or "none" when bilingual reading was turned off.
@@ -42,10 +44,44 @@ export default function BibleToolbar({ versions, version, compare, books, book, 
     if (book) pushRecentChapter({ v: version.id, version: version.name, book: book.book_id, bookName: bookLabel(book), chapter });
   }, [version.id, version.name, book, chapter]);
 
+  useEffect(() => {
+    const enabled = (() => { try { return sessionStorage.getItem("siamsil.bible.focus") === "true"; } catch { return false; } })();
+    document.documentElement.setAttribute("data-bible-focus", String(enabled));
+    const frame = window.requestAnimationFrame(() => setFocusMode(enabled));
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.documentElement.removeAttribute("data-bible-focus");
+    };
+  }, []);
+
+  const toggleFocus = () => {
+    const anchor = [...document.querySelectorAll<HTMLElement>(".sb-verse")]
+      .find((item) => item.getBoundingClientRect().bottom > 130);
+    const before = anchor?.getBoundingClientRect().top ?? 0;
+    const next = !focusMode;
+    document.documentElement.setAttribute("data-bible-focus", String(next));
+    try { sessionStorage.setItem("siamsil.bible.focus", String(next)); } catch { /* optional session preference */ }
+    if (anchor) window.scrollBy(0, anchor.getBoundingClientRect().top - before);
+    setFocusMode(next);
+  };
+
   const currentTheme = prefs.theme === "system" ? null : prefs.theme;
   const nextTheme = THEME_ORDER[(THEME_ORDER.indexOf(currentTheme ?? "light") + 1) % THEME_ORDER.length];
   const ThemeIcon = currentTheme === "dark" ? MoonIcon : currentTheme === "sepia" ? SepiaIcon : SunIcon;
   const reference = book ? `${bookLabel(book)} ${chapter}` : "Books";
+  const { zomi, english } = readingModeTargets(versions, version, compare);
+  const at = { book: book?.book_id, chapter };
+  const displayModes = [
+    { value: "primary" as const, label: `${zomi?.abbreviation.toUpperCase() ?? "Zomi"} only`,
+      href: zomi ? bibleHref({ v: zomi.id, compare: NO_COMPARE, ...at }) : null,
+      active: !compare && version.id === zomi?.id },
+    { value: "secondary" as const, label: `${english?.abbreviation.toUpperCase() ?? "English"} only`,
+      href: english ? bibleHref({ v: english.id, compare: NO_COMPARE, ...at }) : null,
+      active: !compare && version.id === english?.id },
+    { value: "both" as const, label: `${zomi?.abbreviation.toUpperCase() ?? "Zomi"} + ${english?.abbreviation.toUpperCase() ?? "English"}`,
+      href: zomi && english ? bibleHref({ v: zomi.id, compare: english.id, ...at }) : null,
+      active: Boolean(compare && zomi && english && ((version.id === zomi.id && compare.id === english.id) || (version.id === english.id && compare.id === zomi.id))) },
+  ];
 
   return (
     <>
@@ -76,17 +112,22 @@ export default function BibleToolbar({ versions, version, compare, books, book, 
           <button type="button" className="sb-icon-btn sb-desktop" onClick={() => update({ theme: nextTheme })}
             aria-label={`Reading theme: ${currentTheme ?? "system"}. Switch to ${nextTheme}`}><ThemeIcon /></button>
           <button type="button" className="sb-icon-btn" onClick={() => setPanel("settings")} aria-haspopup="dialog" aria-label="Reading settings"><SettingsIcon /></button>
-          <Link href={`/bible/search?v=${encodeURIComponent(version.id)}&compare=${encodeURIComponent(compareParam)}`} className="sb-icon-btn" aria-label="Search the Bible"><SearchIcon /></Link>
-          <button type="button" className="sb-icon-btn" onClick={() => setPanel("saved")} aria-haspopup="dialog" aria-label="Bookmarks and notes"><BookmarkIcon /></button>
+          <Link href={`/bible/search?v=${encodeURIComponent(version.id)}&compare=${encodeURIComponent(compareParam)}`} className="sb-icon-btn sb-mobile-extra" aria-label="Search the Bible"><SearchIcon /></Link>
+          <button type="button" className="sb-icon-btn sb-mobile-extra" onClick={() => setPanel("saved")} aria-haspopup="dialog" aria-label="Bookmarks and notes"><BookmarkIcon /></button>
+          <button type="button" className="sb-icon-btn sb-focus-btn" onClick={toggleFocus} aria-pressed={focusMode}
+            aria-label={focusMode ? "Exit Focus Mode" : "Enter Focus Mode"}>
+            <span className="sb-focus-word">{focusMode ? "Exit focus" : "Focus"}</span><span className="sb-focus-symbol" aria-hidden="true">{focusMode ? "×" : "✧"}</span>
+          </button>
         </div>
+        <ReadingProgress chapterKey={`${version.id}:${book?.book_id ?? 0}:${chapter}`} />
       </div>
 
       {panel === "books" && <BooksSheet books={books} book={book} chapter={chapter} link={link} onClose={close} versionId={version.id} compareParam={compareParam} />}
       {panel === "versions" && <VersionsSheet versions={versions} version={version} compare={compare} book={book} chapter={chapter} onClose={close} />}
       {panel === "settings" && (
         <ReadingSettings prefs={prefs} update={update} onClose={close}
-          primaryLanguage={version.language_name || version.abbreviation.toUpperCase()}
-          secondaryLanguage={compare ? (compare.language_name || compare.abbreviation.toUpperCase()) : null} />
+          displayModes={displayModes} searchHref={`/bible/search?v=${encodeURIComponent(version.id)}&compare=${encodeURIComponent(compareParam)}`}
+          onOpenSaved={() => setPanel("saved")} />
       )}
       {panel === "saved" && <SavedPanel onClose={close} compareParam={compareParam} />}
     </>

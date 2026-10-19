@@ -21,7 +21,7 @@ export const DEFAULT_PREFERENCES: ReadingPreferences = {
   theme: "system",
   fontSize: 18,
   lineHeight: 1.8,
-  typeface: "sans",
+  typeface: "serif",
 };
 
 const MODES: DisplayMode[] = ["both", "primary", "secondary"];
@@ -75,7 +75,7 @@ export function resolveTheme(theme: ReadingPreferences["theme"], prefersDark: bo
  */
 export const PREFERENCES_BOOT_SCRIPT = `(function(){try{var d=${JSON.stringify(DEFAULT_PREFERENCES)};var s={};try{s=JSON.parse(localStorage.getItem(${JSON.stringify(PREFERENCES_KEY)})||"{}")||{}}catch(e){}
 var t=["light","sepia","dark"].indexOf(s.theme)>=0?s.theme:(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
-var m=["both","primary","secondary"].indexOf(s.mode)>=0?s.mode:d.mode;var f=typeof s.fontSize==="number"?Math.min(24,Math.max(14,Math.round(s.fontSize))):d.fontSize;
-var l=typeof s.lineHeight==="number"?Math.min(2.1,Math.max(1.4,s.lineHeight)):d.lineHeight;var y=s.typeface==="serif"?"serif":"sans";
-var h=document.documentElement;h.setAttribute("data-bible-theme",t);h.setAttribute("data-bible-mode",m);h.setAttribute("data-bible-face",y);
+var f=typeof s.fontSize==="number"?Math.min(24,Math.max(14,Math.round(s.fontSize))):d.fontSize;
+var l=typeof s.lineHeight==="number"?Math.min(2.1,Math.max(1.4,s.lineHeight)):d.lineHeight;var y=s.typeface==="sans"?"sans":d.typeface;
+var h=document.documentElement;h.setAttribute("data-bible-theme",t);h.setAttribute("data-bible-face",y);
 h.style.setProperty("--sb-font-size",f+"px");h.style.setProperty("--sb-line-height",String(l));}catch(e){}})();`;

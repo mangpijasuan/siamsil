@@ -20,7 +20,7 @@ const check = (name, ok, detail = "") => {
 const api = async (path) => (await fetch(`${API}/api/v1${path}`)).json();
 const shot = async (page, name, fullPage = false) => SHOTS && page.screenshot({ path: `${SHOTS}/${name}.png`, fullPage });
 
-const browser = await chromium.launch({ args: ["--no-sandbox"] });
+const browser = await chromium.launch({ ...(process.env.CHROME_BIN ? { executablePath: process.env.CHROME_BIN } : {}), args: ["--no-sandbox"] });
 const errors = [];
 const newPage = async (width, height = 900) => {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: width < 800 ? 2 : 1 });
@@ -64,17 +64,28 @@ check("existing compare=kjv link shows KJV", (await page.textContent(".sb-versio
 await page.goto(`${BASE}/bible?v=tdb&book=1&chapter=1`, { waitUntil: "networkidle" });
 check("no previous link at Genesis 1", (await page.$$('.sb-chapter-nav a[rel="prev"]')).length === 0);
 
-// 3. Display modes.
+// 3. URL-selected display modes. A stale device preference must never hide an advertised version.
 const visible = (selector) => page.$eval(selector, (el) => getComputedStyle(el).display !== "none");
+await page.evaluate(() => localStorage.setItem("siamsil.bible.preferences", JSON.stringify({ mode: "primary", theme: "light", fontSize: 18, lineHeight: 1.8, typeface: "serif" })));
+await page.reload({ waitUntil: "networkidle" });
+check("stale primary-only preference cannot hide URL-selected WEB", (await visible(".sb-verse .sb-primary")) && (await visible(".sb-verse .sb-secondary")));
 await page.click('button[aria-label="Reading settings"]');
-await page.click("text=Zomi only");
-check("Zomi only hides English", !(await visible(".sb-verse .sb-secondary")) && (await visible(".sb-verse .sb-primary")));
-await page.click("text=English only");
-check("English only hides Zomi", !(await visible(".sb-verse .sb-primary")) && (await visible(".sb-verse .sb-secondary")));
-await page.click("text=Zomi + English");
-check("both shows both", (await visible(".sb-verse .sb-primary")) && (await visible(".sb-verse .sb-secondary")));
+await page.click("text=TDB only");
+await page.waitForURL(/compare=none/);
+check("TDB only shows Zomi", (await page.$$(".sb-verse .sb-secondary")).length === 0 && (await page.textContent("#v1 .sb-primary")) === tdb.verses[0].text);
+await page.click('button[aria-label="Reading settings"]');
+await page.click("text=WEB only");
+await page.waitForURL(/v=web&compare=none/);
+check("WEB only shows English", (await page.$$(".sb-verse .sb-secondary")).length === 0 && (await page.textContent("#v1 .sb-primary")) === web.verses[0].text);
+await page.click('button[aria-label="Reading settings"]');
+await page.click("text=TDB + WEB");
+await page.waitForURL(/v=tdb&compare=web/);
+check("TDB + WEB shows both", (await visible(".sb-verse .sb-primary")) && (await visible(".sb-verse .sb-secondary")));
+await page.reload({ waitUntil: "networkidle" });
+check("refresh preserves selected versions", /v=tdb&compare=web/.test(page.url()) && (await visible(".sb-verse .sb-secondary")));
 
 // 4. Theme, font size and line height persist across reloads, applied before hydration.
+await page.click('button[aria-label="Reading settings"]');
 await page.click("text=Dark");
 await page.click('.sb-stepper button[aria-label="Larger text"]');
 await page.click('.sb-stepper button[aria-label="More line spacing"]');
@@ -94,12 +105,11 @@ await page.click('button[aria-label="Reading settings"]');
 await page.click("text=Light");
 await page.keyboard.press("Escape");
 
-// 5. Missing companion: compare=none + English only explains instead of showing nothing.
-await page.goto(`${BASE}/bible?v=tdb&compare=none&book=1&chapter=1`, { waitUntil: "networkidle" });
-await page.evaluate(() => document.documentElement.setAttribute("data-bible-mode", "secondary"));
-check("English only without an English version shows a notice and keeps the Zomi text",
-  (await visible(".sb-when-secondary")) && (await visible(".sb-verse .sb-primary")));
-await page.evaluate(() => document.documentElement.setAttribute("data-bible-mode", "both"));
+// 5. A genuinely unavailable compared chapter is explained, never fabricated.
+await page.goto(`${BASE}/bible?v=web&compare=tb77&book=2&chapter=1`, { waitUntil: "networkidle" });
+check("missing compared chapter has an unavailable notice", (await page.textContent(".sb-alert-soft"))?.includes("couldn't be loaded") && (await page.$$(".sb-verse .sb-secondary")).length === 0);
+await page.goto(`${BASE}/bible?v=tdb&compare=web&book=19&chapter=119`, { waitUntil: "networkidle" });
+check("missing TDB verse is marked missing beside original WEB", (await page.textContent("#v2 .sb-primary"))?.includes("Not in TDB") && (await page.textContent("#v2 .sb-secondary"))?.length > 0);
 
 // 6. Verse actions with the mouse: copy, bookmark, highlight, note; persistence; saved panel.
 await page.goto(`${BASE}/bible?v=tdb&book=1&chapter=1`, { waitUntil: "networkidle" });
@@ -111,8 +121,12 @@ await shot(page, "desktop-1440-selected");
 await page.click('.sb-actions >> text=Copy');
 const clip = await page.evaluate(() => navigator.clipboard.readText());
 check("copy includes text, reference and versions", clip.includes(tdb.verses[2].text) && clip.includes("Piancilna 1:3") && clip.includes("TDB · WEB"), JSON.stringify(clip.slice(-40)));
+await page.evaluate(() => Object.defineProperty(navigator, "share", { value: undefined, configurable: true }));
 await page.click('.sb-actions >> text=Share');
-check("share falls back to copy when the browser can't share", (await page.textContent(".sb-toast"))?.includes("Copied"));
+await page.waitForFunction(() => document.querySelector(".sb-toast")?.textContent?.startsWith("Copied link"));
+const shareToast = await page.textContent(".sb-toast");
+const sharedClip = await page.evaluate(() => navigator.clipboard.readText());
+check("share falls back to a canonical verse link", shareToast?.includes("Copied link") && sharedClip.includes("/bible?v=tdb&compare=web&book=1&chapter=1#v3"), `${shareToast} ${sharedClip.slice(-100)}`);
 await page.click('.sb-actions >> text=Bookmark');
 await page.click('.sb-actions button[aria-label="Highlight Green"]');
 await page.click('.sb-actions >> text=Note');
@@ -124,6 +138,9 @@ check("highlight persists", (await page.$("#v3.sb-hl-green")) !== null);
 check("note persists as plain text", (await page.textContent("#v3 .sb-note"))?.includes("<b>not html</b>"));
 await page.click('button[aria-label="Bookmarks and notes"]');
 check("saved panel lists the bookmark", (await page.textContent(".sb-saved"))?.includes("Piancilna 1:3"));
+await page.fill('input[placeholder="Find a saved reference"]', "not-a-reference");
+check("saved references can be filtered", (await page.textContent("#sb-saved-list"))?.includes("No saved references match"));
+await page.fill('input[placeholder="Find a saved reference"]', "Piancilna");
 await shot(page, "desktop-1440-saved");
 await page.click(".sb-saved-link");
 await page.waitForURL(/#v3/);
@@ -150,23 +167,52 @@ await page.keyboard.press("Enter");
 await page.waitForURL(/book=2&chapter=7/);
 check("choosing a chapter opens it", (await page.textContent("#sb-chapter-title"))?.includes("Paikhiatna 7"));
 
-// 9. Responsive widths: no sideways scrolling, controls reachable.
-for (const width of [375, 390, 768, 1024, 1440]) {
+// 9. Focus Mode and scroll position.
+await page.goto(`${BASE}/bible?v=tdb&compare=web&book=19&chapter=119`, { waitUntil: "networkidle" });
+await page.locator("#v12").scrollIntoViewIfNeeded();
+const beforeFocus = await page.$eval("#v12", (el) => el.getBoundingClientRect().top);
+await page.click('button[aria-label="Enter Focus Mode"]');
+check("Focus Mode hides global navigation and preserves scroll anchor", (await page.$eval(".desktop-sidebar", (el) => getComputedStyle(el).display)) === "none" && Math.abs((await page.$eval("#v12", (el) => el.getBoundingClientRect().top)) - beforeFocus) < 8);
+check("progress reflects scrolling without marking completion", Number(await page.$eval(".sb-progress", (el) => el.getAttribute("aria-valuenow"))) > 0);
+await shot(page, "desktop-1440-focus");
+await page.click('button[aria-label="Exit Focus Mode"]');
+check("Exit Focus Mode restores navigation", (await page.$eval(".desktop-sidebar", (el) => getComputedStyle(el).display)) !== "none");
+
+// 10. Responsive widths: no sideways scrolling, controls reachable, bottom nav clear.
+for (const width of [320, 375, 390, 430, 768, 1024, 1440]) {
   const p = await newPage(width, width < 800 ? 812 : 900);
   await p.goto(`${BASE}/bible?v=tdb&book=19&chapter=119`, { waitUntil: "networkidle" }); // long chapter
   const overflow = await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-  check(`no horizontal overflow at ${width}px`, overflow <= 0, `${overflow}px`);
-  if (width <= 390) {
+  const offenders = overflow > 0 ? await p.evaluate(() => [...document.querySelectorAll("body *")]
+    .map((el) => ({ selector: `${el.tagName.toLowerCase()}.${String(el.className).replace(/\s+/g, ".").slice(0, 60)}`, right: Math.round(el.getBoundingClientRect().right) }))
+    .filter((item) => item.right > innerWidth + 1).sort((a, b) => b.right - a.right).slice(0, 4)) : [];
+  check(`no horizontal overflow at ${width}px`, overflow <= 0, `${overflow}px ${JSON.stringify(offenders)}`);
+  if (width <= 430) {
     await p.click("#v1 .sb-vbody");
     const box = await p.$eval(".sb-actions", (el) => el.getBoundingClientRect().bottom);
     const nav = await p.$eval(".bottom-nav", (el) => el.getBoundingClientRect().top).catch(() => 9999);
     check(`actions sit above the bottom navigation at ${width}px`, box <= nav + 1, `${box} vs ${nav}`);
   }
   await shot(p, `w${width}`);
+  if (width === 390) {
+    await p.click('button[aria-label="Enter Focus Mode"]');
+    check("mobile Focus Mode hides bottom navigation and keeps exit", (await p.$eval(".bottom-nav", (el) => getComputedStyle(el).display)) === "none" && (await p.$('button[aria-label="Exit Focus Mode"]')) !== null);
+    await p.click('button[aria-label="Exit Focus Mode"]');
+    await p.goto(`${BASE}/bible?v=tdb&compare=web&book=1&chapter=1`, { waitUntil: "networkidle" });
+    await shot(p, "mobile-390-reader");
+    await p.click(".sb-pill-book");
+    await shot(p, "mobile-390-chapter-selector");
+    await p.keyboard.press("Escape");
+    await p.click("#v1 .sb-vbody");
+    await shot(p, "mobile-390-verse-actions");
+    await p.click('button[aria-label="Close verse actions"]');
+    await p.click('button[aria-label="Reading settings"]');
+    await shot(p, "mobile-390-preferences");
+  }
   await p.context().close();
 }
 
-// 10. Scripture search: words, exact phrase, book filter, links back to the verse.
+// 11. Scripture search: words, exact phrase, book filter, links back to the verse.
 page = await newPage(1440);
 await page.goto(`${BASE}/bible?v=tdb&book=1&chapter=1`, { waitUntil: "networkidle" });
 await page.click('a[aria-label="Search the Bible"]');

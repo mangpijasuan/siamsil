@@ -37,8 +37,11 @@ export function refKey(ref: Pick<VerseRef, "version" | "book" | "chapter" | "ver
 
 function isRef(value: unknown): value is VerseRef {
   const item = value as VerseRef;
-  return !!item && typeof item.version === "string" && Number.isInteger(item.book) && Number.isInteger(item.chapter)
-    && Number.isInteger(item.verse) && typeof item.label === "string";
+  return !!item && typeof item.version === "string" && /^[a-z0-9_-]{1,32}$/.test(item.version)
+    && Number.isInteger(item.book) && item.book >= 1 && item.book <= 66
+    && Number.isInteger(item.chapter) && item.chapter >= 1 && item.chapter <= 150
+    && Number.isInteger(item.verse) && item.verse >= 1 && item.verse <= 200
+    && typeof item.label === "string" && item.label.length > 0 && item.label.length <= 100;
 }
 
 /** Parse stored JSON defensively: drop malformed entries instead of failing the whole store. */
@@ -51,6 +54,7 @@ export function parseSavedData(raw: string | null): SavedData {
   } catch {
     return data;
   }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return data;
   for (const item of Object.values(parsed.bookmarks ?? {})) {
     if (isRef(item) && typeof item.createdAt === "string") data.bookmarks[refKey(item)] = item;
   }

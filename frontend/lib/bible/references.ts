@@ -131,6 +131,28 @@ export function chooseCompanion<V extends VersionLike>(versions: V[], main: V, r
   return english.find((item) => item.id === "web") ?? english[0] ?? null;
 }
 
+/** URL-selected versions, never a device preference, determine the visible reading mode. */
+export function readingMode(main: VersionLike, compare: VersionLike | null): "both" | "zomi" | "english" | "single" {
+  if (compare) return "both";
+  if (main.language_iso === "zom") return "zomi";
+  if (main.language_iso === "eng") return "english";
+  return "single";
+}
+
+/** Prefer the versions already on screen, then TDB/WEB, when building the three reader choices. */
+export function readingModeTargets<V extends VersionLike>(versions: V[], main: V, compare: V | null) {
+  const visible = compare ? [main, compare] : [main];
+  const zomi = visible.find((item) => item.language_iso === "zom")
+    ?? versions.find((item) => item.id === "tdb")
+    ?? versions.find((item) => item.language_iso === "zom")
+    ?? null;
+  const english = visible.find((item) => item.language_iso === "eng")
+    ?? versions.find((item) => item.id === "web")
+    ?? versions.find((item) => item.language_iso === "eng")
+    ?? null;
+  return { zomi, english };
+}
+
 /** Books whose local or English name, or code, starts with or contains the query (case- and accent-insensitive). */
 export function filterBooks<B extends BookLike & { code?: string }>(books: B[], query: string): B[] {
   const fold = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();

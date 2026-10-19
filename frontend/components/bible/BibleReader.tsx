@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { BibleVersionBook, BibleVersionChapter, BibleVersionInfo } from "@/lib/api";
-import { adjacentChapters, alignVerses, bibleHref, bookLabel, NO_COMPARE } from "@/lib/bible/references";
+import { adjacentChapters, alignVerses, bibleHref, bookLabel, NO_COMPARE, readingMode } from "@/lib/bible/references";
 import BibleToolbar from "./BibleToolbar";
 import BibleVerses from "./BibleVerses";
 import { ChevronLeft, ChevronRight } from "./icons";
@@ -34,7 +34,7 @@ export default function BibleReader({ versions, version, compare, books, book, c
   const secondaryLanguage = compare ? compare.language_name || compare.abbreviation.toUpperCase() : null;
 
   return (
-    <div className="sb-root">
+    <div className="sb-root" data-reading-mode={readingMode(version, compare)}>
 
       <BibleToolbar versions={versions} version={version} compare={compare} books={books} book={book} chapter={chapter} previous={previous} next={next} />
 
@@ -42,7 +42,7 @@ export default function BibleReader({ versions, version, compare, books, book, c
         {error && <div className="sb-alert" role="alert">{error}</div>}
 
         {book && primary && (
-          <article className="sb-page" aria-labelledby="sb-chapter-title">
+          <article className="sb-page" id="sb-reading-article" aria-labelledby="sb-chapter-title">
             <header className="sb-page-head">
               <p className="sb-version-line">
                 {version.name}
@@ -55,12 +55,6 @@ export default function BibleReader({ versions, version, compare, books, book, c
             {compare && secondaryError && (
               <p className="sb-alert sb-alert-soft" role="status">{compare.abbreviation.toUpperCase()} couldn&apos;t be loaded for this chapter: {secondaryError}</p>
             )}
-            {!compare && (
-              <p className="sb-alert sb-alert-soft sb-when-secondary" role="status">
-                No version is chosen to show alongside {version.abbreviation.toUpperCase()}. Open Versions to pick one, or show {version.language_name || "the main text"}.
-              </p>
-            )}
-
             <BibleVerses
               key={`${version.id}-${book.book_id}-${chapter}`}
               rows={rows}
