@@ -49,6 +49,12 @@ ml_pipeline/raw_data/*.xlsx
 
 # ML artifacts
 ml_pipeline/artifacts/
+/models/
+
+# Private data kept beside the code: never commit
+backend/data/*.xlsx
+backend/data/*.csv
+/siamsil-data/
 
 # Song lyrics: permission covers display and training, not redistribution
 data/raw/songs/**
