@@ -49,7 +49,6 @@ ml_pipeline/raw_data/*.xlsx
 
 # ML artifacts
 ml_pipeline/artifacts/
-/models/
 
 # Private data kept beside the code: never commit
 backend/data/*.xlsx
