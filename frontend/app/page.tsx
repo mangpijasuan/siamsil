@@ -51,7 +51,7 @@ export default async function Home() {
         <p className="sr-summary">Look up words, read the Bible, practice everyday phrases, and explore translations Siamsil already holds — always with the source shown.</p>
         <form className="sr-search" action="/zomidictionary" method="GET" role="search">
           <IconSearch size={20} />
-          <input type="search" name="q" placeholder="Search a word in English or Zomi…" aria-label="Search dictionary" required />
+          <input type="search" name="q" placeholder="Search words…" aria-label="Search English or Zomi dictionary" required />
           <button type="submit">Search</button>
         </form>
         <div className="sr-quick"><span>Try:</span>{SUGGESTIONS.map(term => <Link className="sr-chip" key={term} href={`/zomidictionary?q=${encodeURIComponent(term)}`}>{term}</Link>)}</div>

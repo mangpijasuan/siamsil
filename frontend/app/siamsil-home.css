@@ -75,7 +75,11 @@
     #10234b;
   min-height:440px;
   border-bottom:1px solid rgba(226,188,106,.28);
+  margin:16px 16px 0;
+  border-radius:26px;
+  box-shadow:0 16px 34px rgba(8,25,53,.16);
 }
+.sr-feature,.sr-metrics,.sr-panel{border-radius:22px}
 .sr-hero::before,.sr-hero::after{display:none}
 @media(max-width:767px){
   .sr-hero{
@@ -84,5 +88,7 @@
       url("/hero-zomi-hills-sm.webp") right center / cover no-repeat,
       #10234b;
     min-height:0;
+    margin:10px 10px 0;
+    border-radius:22px;
   }
 }

@@ -4633,6 +4633,18 @@ body { padding-bottom: 84px; }
 .dict-header .dict-search-clear { color: #526b91; }
 .tr-submit { background: #e7c078; color: #102746; }
 .tr-submit:hover:not(:disabled) { background: #f1cf87; }
+.dict-word-btn,
+.tr-notice,
+.tr-alt { border-radius:18px; }
+.tr-input-card,
+.tr-result { border-radius:22px; }
+@media (min-width: 960px) {
+  .dict-detail {
+    height: auto;
+    margin: 10px 12px 12px 10px;
+    border-radius: 22px;
+  }
+}
 @media (max-width: 767px) {
   .dict-header,
   .tr-header {

@@ -166,7 +166,7 @@ html[data-bible-face="serif"] .sb-root { --sb-body-font: Georgia, "Times New Rom
   background: var(--sb-surface);
   border: 1px solid var(--sb-border);
   border-top: 3px solid var(--sb-gold);
-  border-radius: 22px;
+  border-radius: 26px;
   box-shadow: var(--sb-shadow);
 }
 @media (max-width: 767px) {
