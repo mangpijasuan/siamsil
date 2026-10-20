@@ -74,6 +74,7 @@
     url("/hero-zomi-hills.webp") right center / cover no-repeat,
     #10234b;
   min-height:440px;
+  border-bottom:1px solid rgba(226,188,106,.28);
 }
 .sr-hero::before,.sr-hero::after{display:none}
 @media(max-width:767px){

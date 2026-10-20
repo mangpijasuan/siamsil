@@ -4212,11 +4212,19 @@ body, body::before { background: var(--page); }
 
 /* Top bar */
 .shell-topbar {
-  background: linear-gradient(90deg, #0E1F45 0%, #162E63 55%, #1B3670 100%) !important;
-  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
-  box-shadow: 0 4px 18px rgba(8,20,48,0.35) !important;
+  background: linear-gradient(90deg, #081935 0%, #0b2144 65%, #10234b 100%) !important;
+  border-bottom: 0 !important;
+  box-shadow: 0 6px 20px rgba(5, 16, 36, .22) !important;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+}
+.shell-topbar::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(226, 188, 106, .18), rgba(226, 188, 106, .42) 50%, rgba(226, 188, 106, .18));
+  pointer-events: none;
 }
 .shell-topbar,
 .shell-topbar-inner { height: 76px; }
@@ -4292,7 +4300,7 @@ body, body::before { background: var(--page); }
     linear-gradient(180deg, rgba(8, 25, 53, .94) 0%, rgba(8, 25, 53, .96) 48%, #081935 100%),
     url("/hero-zomi-hills.webp") left top / auto 440px no-repeat,
     #081935 !important;
-  border-right: 1px solid rgba(255,255,255,0.06) !important;
+  border-right: 1px solid rgba(226, 188, 106, .2) !important;
   box-shadow: none !important;
 }
 @media (min-width: 1024px) {
@@ -4608,6 +4616,7 @@ body { padding-bottom: 84px; }
     linear-gradient(90deg, rgba(8, 25, 53, .98) 0%, rgba(8, 25, 53, .94) 48%, rgba(8, 25, 53, .42) 100%),
     url("/hero-zomi-hills.webp") right center / auto 100% no-repeat,
     #10234b;
+  border-bottom: 1px solid rgba(226, 188, 106, .28);
 }
 .dict-header .dict-search-form {
   background: #fff;

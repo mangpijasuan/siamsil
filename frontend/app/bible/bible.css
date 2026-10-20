@@ -82,7 +82,7 @@ html[data-bible-face="serif"] .sb-root { --sb-body-font: Georgia, "Times New Rom
   background: color-mix(in srgb, var(--sb-page-bg) 92%, transparent);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--sb-border);
+  border-bottom: 1px solid rgba(185, 141, 47, .28);
 }
 .sb-progress {
   --sb-progress: 0%;
