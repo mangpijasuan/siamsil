@@ -26,6 +26,16 @@
   min-height: calc(100vh - 64px);
   padding-bottom: 96px;
 }
+/* A quiet scenic surround ties the reader to the home artwork; verses stay on a solid surface. */
+.sb-root {
+  background-image:
+    linear-gradient(to bottom, rgba(248, 246, 240, .42), var(--sb-page-bg) 310px),
+    linear-gradient(to right, var(--sb-page-bg) 55%, transparent 100%),
+    url("/hero-zomi-hills.webp");
+  background-size: 100% 310px, 100% 310px, auto 310px;
+  background-position: center top, center top, right top;
+  background-repeat: no-repeat;
+}
 html[data-bible-theme="sepia"] .sb-root {
   --sb-page-bg: #efe6d2;
   --sb-surface: #f8f0de;
@@ -155,9 +165,16 @@ html[data-bible-face="serif"] .sb-root { --sb-body-font: Georgia, "Times New Rom
   padding: clamp(22px, 4vw, 48px) clamp(18px, 5vw, 64px) 32px;
   background: var(--sb-surface);
   border: 1px solid var(--sb-border);
+  border-top: 3px solid var(--sb-gold);
   border-radius: 22px;
   box-shadow: var(--sb-shadow);
 }
+@media (max-width: 767px) {
+  .sb-root { background-image: none; }
+}
+html[data-bible-theme="sepia"] .sb-root,
+html[data-bible-theme="dark"] .sb-root { background-image: none; }
+html[data-bible-focus="true"] .sb-root { background-image: none; }
 .sb-page-head { margin-bottom: 18px; }
 .sb-version-line {
   font-size: 12px;

@@ -4597,6 +4597,39 @@ body { padding-bottom: 84px; }
   .hx-hero-copy { max-width: 660px; }
 }
 
+/* Carry the home landscape into the language tools without placing art behind results. */
+.dict-header,
+.tr-header {
+  background:
+    linear-gradient(90deg, rgba(8, 25, 53, .98) 0%, rgba(8, 25, 53, .94) 48%, rgba(8, 25, 53, .42) 100%),
+    url("/hero-zomi-hills.webp") right center / auto 100% no-repeat,
+    #10234b;
+}
+.dict-header .dict-search-form {
+  background: #fff;
+  border-color: rgba(255, 255, 255, .9);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .17);
+}
+.dict-header .dict-search-form:focus-within {
+  outline: 3px solid #f0ca7b;
+  outline-offset: 3px;
+}
+.dict-header .dict-search-form .dict-search-input { color: #102746; }
+.dict-header .dict-search-form .dict-search-input::placeholder { color: #657995; }
+.dict-header .dict-search-icon,
+.dict-header .dict-search-clear { color: #526b91; }
+.tr-submit { background: #e7c078; color: #102746; }
+.tr-submit:hover:not(:disabled) { background: #f1cf87; }
+@media (max-width: 767px) {
+  .dict-header,
+  .tr-header {
+    background:
+      linear-gradient(90deg, rgba(8, 25, 53, .95) 0%, rgba(8, 25, 53, .88) 45%, rgba(8, 25, 53, .50) 100%),
+      url("/hero-zomi-hills-sm.webp") right center / auto 100% no-repeat,
+      #10234b;
+  }
+}
+
 /* Logo centred in the top bar; ☰ stays left and search stays right. */
 .shell-topbar-inner { position: relative; }
 .shell-topbar .shell-brand-mobile {
