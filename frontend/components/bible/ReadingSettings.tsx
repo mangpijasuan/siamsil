@@ -12,6 +12,8 @@ type Props = {
   displayModes: Array<{ value: DisplayMode; label: string; href: string | null; active: boolean }>;
   searchHref: string;
   onOpenSaved: () => void;
+  focusMode: boolean;
+  onToggleFocus: () => void;
 };
 
 function Choice<T extends string>({ name, legend, value, options, onChange }: {
@@ -37,7 +39,7 @@ function Choice<T extends string>({ name, legend, value, options, onChange }: {
   );
 }
 
-export default function ReadingSettings({ prefs, update, onClose, displayModes, searchHref, onOpenSaved }: Props) {
+export default function ReadingSettings({ prefs, update, onClose, displayModes, searchHref, onOpenSaved, focusMode, onToggleFocus }: Props) {
   return (
     <Sheet title="Reading settings" onClose={onClose}>
       <fieldset className="sb-fieldset">
@@ -90,6 +92,9 @@ export default function ReadingSettings({ prefs, update, onClose, displayModes, 
       <div className="sb-settings-tools">
         <Link href={searchHref} className="sb-btn sb-btn-quiet" onClick={onClose}>Search scripture</Link>
         <button type="button" className="sb-btn sb-btn-quiet" onClick={onOpenSaved}>Bookmarks and notes</button>
+        <button type="button" className="sb-btn sb-btn-quiet sb-focus-setting" onClick={() => { onClose(); onToggleFocus(); }}>
+          {focusMode ? "Exit Focus Mode" : "Enter Focus Mode"}
+        </button>
       </div>
       <p className="sb-muted">Settings are saved in this browser only.</p>
     </Sheet>

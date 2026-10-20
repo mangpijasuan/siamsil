@@ -21,7 +21,7 @@ export const DEFAULT_PREFERENCES: ReadingPreferences = {
   theme: "system",
   fontSize: 18,
   lineHeight: 1.8,
-  typeface: "serif",
+  typeface: "sans",
 };
 
 const MODES: DisplayMode[] = ["both", "primary", "secondary"];

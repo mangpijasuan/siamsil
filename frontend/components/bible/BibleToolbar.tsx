@@ -127,7 +127,7 @@ export default function BibleToolbar({ versions, version, compare, books, book, 
       {panel === "settings" && (
         <ReadingSettings prefs={prefs} update={update} onClose={close}
           displayModes={displayModes} searchHref={`/bible/search?v=${encodeURIComponent(version.id)}&compare=${encodeURIComponent(compareParam)}`}
-          onOpenSaved={() => setPanel("saved")} />
+          onOpenSaved={() => setPanel("saved")} focusMode={focusMode} onToggleFocus={toggleFocus} />
       )}
       {panel === "saved" && <SavedPanel onClose={close} compareParam={compareParam} />}
     </>

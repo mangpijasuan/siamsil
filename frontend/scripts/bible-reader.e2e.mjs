@@ -195,9 +195,11 @@ for (const width of [320, 375, 390, 430, 768, 1024, 1440]) {
   }
   await shot(p, `w${width}`);
   if (width === 390) {
-    await p.click('button[aria-label="Enter Focus Mode"]');
-    check("mobile Focus Mode hides bottom navigation and keeps exit", (await p.$eval(".bottom-nav", (el) => getComputedStyle(el).display)) === "none" && (await p.$('button[aria-label="Exit Focus Mode"]')) !== null);
-    await p.click('button[aria-label="Exit Focus Mode"]');
+    await p.click('button[aria-label="Reading settings"]');
+    await p.click('.sb-focus-setting:has-text("Enter Focus Mode")');
+    check("mobile Focus Mode hides global navigation and keeps settings available", (await p.$eval(".bottom-nav", (el) => getComputedStyle(el).display)) === "none" && (await p.$eval(".shell-topbar-search-btn", (el) => getComputedStyle(el).display)) === "none" && (await p.$('button[aria-label="Reading settings"]')) !== null);
+    await p.click('button[aria-label="Reading settings"]');
+    await p.click('.sb-focus-setting:has-text("Exit Focus Mode")');
     await p.goto(`${BASE}/bible?v=tdb&compare=web&book=1&chapter=1`, { waitUntil: "networkidle" });
     await shot(p, "mobile-390-reader");
     await p.click(".sb-pill-book");
@@ -208,6 +210,11 @@ for (const width of [320, 375, 390, 430, 768, 1024, 1440]) {
     await p.click('button[aria-label="Close verse actions"]');
     await p.click('button[aria-label="Reading settings"]');
     await shot(p, "mobile-390-preferences");
+    await p.keyboard.press("Escape");
+    await p.goto(`${BASE}/bible?v=tdb&compare=web&book=19&chapter=119`, { waitUntil: "networkidle" });
+    await p.click("#v1 .sb-vbody");
+    await p.evaluate(() => window.scrollTo(0, 0));
+    await shot(p, "mobile-390-preferred-reader");
   }
   await p.context().close();
 }
