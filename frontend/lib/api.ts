@@ -137,6 +137,7 @@ export type BibleBook = components["schemas"]["BibleBook"];
 export type BibleVersionInfo = components["schemas"]["BibleVersionInfo"];
 export type BibleVersionBook = components["schemas"]["BibleVersionBook"];
 export type BibleVersionChapter = components["schemas"]["BibleVersionChapterResponse"];
+export type BibleVersionSearch = components["schemas"]["BibleVersionSearchResponse"];
 export type TranslateMatch = components["schemas"]["TranslateMatch"];
 export type LearningEntry = components["schemas"]["LearningEntry"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
@@ -232,6 +233,21 @@ export function getBibleVersionChapter(versionId: string, bookId: number, chapte
       params: { path: { version_id: versionId }, query: { book_id: bookId, chapter } },
     }),
     "/api/v1/bible/versions/{version_id}/chapter",
+  );
+}
+
+export function searchBibleVersion(
+  versionId: string,
+  params: { q: string; phrase?: boolean; bookId?: number; limit?: number; offset?: number },
+): Promise<BibleVersionSearch> {
+  return expectData(
+    apiClient().GET("/api/v1/bible/versions/{version_id}/search", {
+      params: {
+        path: { version_id: versionId },
+        query: { q: params.q, phrase: params.phrase, book_id: params.bookId, limit: params.limit, offset: params.offset },
+      },
+    }),
+    "/api/v1/bible/versions/{version_id}/search",
   );
 }
 

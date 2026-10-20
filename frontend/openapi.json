@@ -644,6 +644,118 @@
         "title": "BibleVersionInfo",
         "type": "object"
       },
+      "BibleVersionSearchHit": {
+        "additionalProperties": true,
+        "properties": {
+          "book_id": {
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "chapter": {
+            "title": "Chapter",
+            "type": "integer"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "name_local": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Local"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "verse": {
+            "title": "Verse",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "book_id",
+          "code",
+          "name",
+          "chapter",
+          "verse",
+          "label",
+          "text"
+        ],
+        "title": "BibleVersionSearchHit",
+        "type": "object"
+      },
+      "BibleVersionSearchResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "book_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Id"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "phrase": {
+            "title": "Phrase",
+            "type": "boolean"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/BibleVersionSearchHit"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "version": {
+            "$ref": "#/components/schemas/BibleVersionInfo"
+          }
+        },
+        "required": [
+          "version",
+          "query",
+          "phrase",
+          "total",
+          "limit",
+          "offset",
+          "results"
+        ],
+        "title": "BibleVersionSearchResponse",
+        "type": "object"
+      },
       "BibleVersionVerse": {
         "additionalProperties": true,
         "properties": {
@@ -2074,6 +2186,136 @@
           }
         },
         "summary": "Get Version Chapter",
+        "tags": [
+          "bible"
+        ]
+      }
+    },
+    "/api/v1/bible/versions/{version_id}/search": {
+      "get": {
+        "operationId": "search_version_api_v1_bible_versions__version_id__search_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-z0-9_-]{1,32}$",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Words to find (all must appear), or a phrase",
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "description": "Words to find (all must appear), or a phrase",
+              "maxLength": 100,
+              "minLength": 2,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Match q as one exact phrase",
+            "in": "query",
+            "name": "phrase",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Match q as one exact phrase",
+              "title": "Phrase",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "book_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 66,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Book Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 5000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BibleVersionSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Bible version or chapter not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Bible versions database not loaded or unreadable"
+          }
+        },
+        "summary": "Search Version",
         "tags": [
           "bible"
         ]

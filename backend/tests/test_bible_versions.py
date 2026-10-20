@@ -167,6 +167,35 @@ class ImportUsxTests(unittest.TestCase):
         tst = [row for row in manifest["versions"] if row["id"] == "tst"]
         self.assertEqual(sorted((row["folder"], row["imported"]) for row in tst), [("a", True), ("d", False)])
 
+    def test_search_matches_all_words_in_order_without_rewriting_text(self) -> None:
+        total, hits = self.versions.search("tst", "gamma ALPHA")
+        self.assertEqual(total, 1)
+        self.assertEqual((hits[0]["book_id"], hits[0]["chapter"], hits[0]["verse"]), (43, 1, 1))
+        self.assertEqual(hits[0]["text"], "alpha beta, gamma delta continues verse one the LORD's word")
+        self.assertEqual(hits[0]["name_local"], "FIXTURE JOHN")
+
+    def test_search_phrase_book_filter_and_paging(self) -> None:
+        self.assertEqual(self.versions.search("tst", "beta, gamma", phrase=True)[0], 1)
+        self.assertEqual(self.versions.search("tst", "gamma beta", phrase=True)[0], 0)
+        self.assertEqual(self.versions.search("tst", "alpha", book_id=1)[0], 0)
+        total, page = self.versions.search("tst", "e", limit=1, offset=1)
+        self.assertEqual((total, len(page)), (3, 1))
+        self.assertEqual(page[0]["verse"], 2)
+
+    def test_search_treats_like_wildcards_literally(self) -> None:
+        self.assertEqual(self.versions.search("tst", "%%")[0], 0)
+        self.assertEqual(self.versions.search("tst", "a_p")[0], 0)
+        self.assertEqual(self.versions.search("tst", "   ")[0], 0)
+
+    def test_search_api(self) -> None:
+        client = TestClient(app)
+        with patch("routers.bible.get_bible_versions", return_value=self.versions):
+            body = client.get("/api/v1/bible/versions/tst/search", params={"q": "range text"}).json()
+            self.assertEqual((body["total"], body["results"][0]["label"]), (1, "2-3"))
+            self.assertEqual(client.get("/api/v1/bible/versions/hid/search", params={"q": "alpha"}).status_code, 404)
+            self.assertEqual(client.get("/api/v1/bible/versions/tst/search", params={"q": "a"}).status_code, 422)
+            self.assertEqual(client.get("/api/v1/bible/versions/tst/search", params={"q": "alpha", "limit": 500}).status_code, 422)
+
     def test_api_routes(self) -> None:
         client = TestClient(app)
         with patch("routers.bible.get_bible_versions", return_value=self.versions):

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import BibleReader from "@/components/BibleReader";
-import BibleVersionReader from "@/components/BibleVersionReader";
+import VersionReader from "@/components/bible/BibleReader";
+import { chooseCompanion } from "@/lib/bible/references";
+import "./bible.css";
 import {
   ApiError,
   describeApiError,
@@ -37,7 +39,8 @@ export default async function BiblePage({ searchParams }: Props) {
   if (versions.length === 0) return <WorkbookBible {...params} notice={versionsError} />;
 
   const version = versions.find((item) => item.id === params.v) ?? versions[0];
-  const compare = versions.find((item) => item.id === params.compare && item.id !== version.id) ?? null;
+  // Bilingual by default: a Zomi version is paired with English unless the link says otherwise (compare=none).
+  const compare = chooseCompanion(versions, version, params.compare);
   let error: string | null = null;
   let books: Awaited<ReturnType<typeof getBibleVersionBooks>>["books"] = [];
   try {
@@ -60,6 +63,7 @@ export default async function BiblePage({ searchParams }: Props) {
 
   let primary: BibleVersionChapter | null = null;
   let secondary: BibleVersionChapter | null = null;
+  let secondaryError: string | null = null;
   if (book) {
     const [first, second] = await Promise.allSettled([
       getBibleVersionChapter(version.id, book.book_id, chapter),
@@ -68,24 +72,22 @@ export default async function BiblePage({ searchParams }: Props) {
     if (first.status === "fulfilled") primary = first.value;
     else error = describeApiError(first.reason, "Bible");
     if (second.status === "fulfilled") secondary = second.value;
+    else secondaryError = describeApiError(second.reason, "Bible");
   }
 
   return (
-    <>
-      <BibleVersionReader
-        versions={versions}
-        version={version}
-        compare={compare}
-        books={books}
-        book={book}
-        chapter={chapter}
-        primary={primary}
-        secondary={secondary}
-        error={error}
-      />
-
-      <div className="screen-pad" />
-    </>
+    <VersionReader
+      versions={versions}
+      version={version}
+      compare={compare}
+      books={books}
+      book={book}
+      chapter={chapter}
+      primary={primary}
+      secondary={secondary}
+      secondaryError={secondaryError}
+      error={error}
+    />
   );
 }
 
