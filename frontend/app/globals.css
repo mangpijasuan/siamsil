@@ -4287,7 +4287,11 @@ body, body::before { background: var(--page); }
 /* Side menus: deep navy, flat items, gold pill for the current page */
 .desktop-sidebar,
 .mobile-drawer {
-  background: linear-gradient(180deg, #102350 0%, #0D1D42 100%) !important;
+  /* Share the hero's dark left edge so the desktop rail is not a separate blue slab. */
+  background:
+    linear-gradient(180deg, rgba(8, 25, 53, .94) 0%, rgba(8, 25, 53, .96) 48%, #081935 100%),
+    url("/hero-zomi-hills.webp") left top / auto 440px no-repeat,
+    #081935 !important;
   border-right: 1px solid rgba(255,255,255,0.06) !important;
   box-shadow: none !important;
 }
