@@ -149,7 +149,7 @@ html[data-bible-face="serif"] .sb-root { --sb-body-font: Georgia, "Times New Rom
 }
 @media (max-width: 767px) {
   .sb-desktop { display: none !important; }
-  .sb-toolbar { padding: 8px 10px; gap: 4px; }
+  .sb-toolbar { top: 70px; padding: 8px 10px; gap: 4px; }
   .sb-pill { font-size: 14px; padding: 0 9px; gap: 4px; }
   .sb-toolbar .sb-icon-btn { min-width: 36px; width: 36px; height: 42px; padding: 0 2px; }
   .sb-focus-btn { display: none; }
