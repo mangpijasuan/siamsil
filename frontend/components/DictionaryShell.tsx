@@ -110,7 +110,6 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
     <div className="dict-root">
       {/* ── Page header ── */}
       <div className="dict-header">
-        <p className="gold-label" style={{ marginBottom: 6 }}>Siamsil</p>
         <h1 className="font-playfair dict-h1">Zomi Dictionary</h1>
 
         <Link

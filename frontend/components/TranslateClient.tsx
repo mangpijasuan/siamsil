@@ -95,7 +95,6 @@ export default function TranslateClient({
   return (
     <div className="tr-root">
       <header className="tr-header">
-        <p className="gold-label" style={{ marginBottom: 6 }}>Siamsil</p>
         <h1 className="font-playfair tr-h1">Zomi Translate</h1>
         <div className="tr-langs" aria-hidden="true">
           <span>English</span>
