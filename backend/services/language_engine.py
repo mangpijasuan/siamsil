@@ -23,6 +23,17 @@ def fts_match(query: str) -> str | None:
     return " AND ".join(parts)
 
 
+# Translation direction -> the corpus side that holds the text being translated.
+# English is stored in normalized_source_text and Zomi in normalized_target_text.
+PARALLEL_FTS_COLUMN = {"en-zom": "normalized_source_text", "zom-en": "normalized_target_text"}
+_EXACT_ORDER = " ORDER BY quality_score DESC, id LIMIT ?"
+PARALLEL_EXACT_SQL = {
+    None: "SELECT * FROM parallel_sentences WHERE lower(normalized_source_text) = lower(?)"
+    " OR lower(normalized_target_text) = lower(?)" + _EXACT_ORDER,
+    "en-zom": "SELECT * FROM parallel_sentences WHERE lower(normalized_source_text) = lower(?)" + _EXACT_ORDER,
+    "zom-en": "SELECT * FROM parallel_sentences WHERE lower(normalized_target_text) = lower(?)" + _EXACT_ORDER,
+}
+
 def split_zomi_definition(text: str | None) -> tuple[str | None, str | None]:
     """Split 'gloss; longer Zomi definition' without inventing English text."""
     value = (text or "").strip()
@@ -253,22 +264,16 @@ class LanguageEngine:
         ).fetchall()
         return [dict(row) for row in rows]
 
-    def search_parallel(self, query: str, limit: int = 20) -> list[dict[str, Any]]:
+    def search_parallel(self, query: str, limit: int = 20, direction: str | None = None) -> list[dict[str, Any]]:
+        """Corpus pairs matching the query. With a direction, only the side being translated from is searched."""
         match = fts_match(query)
         if not match:
             return []
         con = self.connect()
         limit = min(max(limit, 1), 50)
-        exact = con.execute(
-            """
-            SELECT * FROM parallel_sentences
-            WHERE lower(normalized_source_text) = lower(?)
-               OR lower(normalized_target_text) = lower(?)
-            ORDER BY quality_score DESC, id
-            LIMIT ?
-            """,
-            (query.strip(), query.strip(), limit),
-        ).fetchall()
+        text = query.strip()
+        exact_params = (text, text, limit) if direction is None else (text, limit)
+        exact = con.execute(PARALLEL_EXACT_SQL[direction], exact_params).fetchall()
         remaining = limit - len(exact)
         fts_rows: list[sqlite3.Row] = []
         if remaining > 0:
@@ -281,7 +286,7 @@ class LanguageEngine:
                 WHERE parallel_fts MATCH ?
                   AND p.quality_score >= 0.5
             """
-            params: list[Any] = [match]
+            params: list[Any] = [f"{PARALLEL_FTS_COLUMN[direction]} : ({match})" if direction else match]
             if exact_ids:
                 sql += f" AND p.id NOT IN ({placeholders})"
                 params.extend(exact_ids)

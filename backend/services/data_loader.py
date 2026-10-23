@@ -113,7 +113,8 @@ class DataStore:
     def get_dictionary_entry(self, entry_id: int) -> dict[str, Any] | None:
         return self._dict_by_id.get(entry_id)
 
-    def search_translate(self, query: str, limit: int = 20) -> list[dict[str, Any]]:
+    def search_translate(self, query: str, limit: int = 20, direction: str | None = None) -> list[dict[str, Any]]:
+        """Workbook pairs containing the query; with a direction, only on the side translated from."""
         needle = query.lower()
         results: list[dict[str, Any]] = []
 
@@ -122,7 +123,8 @@ class DataStore:
                 return
             if not english or not zomi:
                 return
-            if needle in english.lower() or needle in zomi.lower():
+            searched = {"en-zom": english, "zom-en": zomi}.get(direction or "", f"{english}\n{zomi}")
+            if needle in searched.lower():
                 results.append(
                     {
                         "source": source,
