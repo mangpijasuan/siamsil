@@ -205,7 +205,9 @@ class LanguageEngine:
             match = fts_match(query)
             if remaining > 0 and match:
                 exclude = ""
-                fts_params: list[Any] = [match]
+                # Headwords are English, definitions Zomi: search only the side translated from.
+                column = "definition" if direction == "zom-en" else "source_word"
+                fts_params: list[Any] = [f"{column} : ({match})"]
                 if seen:
                     exclude = f" AND e.id NOT IN ({','.join('?' for _ in seen)})"
                     fts_params.extend(seen)
@@ -236,8 +238,8 @@ class LanguageEngine:
                 where.append("lower(definition) LIKE ?")
                 params.append(f"%{needle}%")
             else:
-                where.append("(normalized_word LIKE ? OR lower(source_word) LIKE ? OR lower(definition) LIKE ?)")
-                params.extend([f"{needle}%", f"{needle}%", f"%{needle}%"])
+                where.append("(normalized_word LIKE ? OR lower(source_word) LIKE ?)")
+                params.extend([f"{needle}%", f"{needle}%"])
 
         clause = f"WHERE {' AND '.join(where)}" if where else ""
         order = "ORDER BY flagged ASC, source_word COLLATE NOCASE, id"

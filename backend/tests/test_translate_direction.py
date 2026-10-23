@@ -36,8 +36,26 @@ def build_corpus(db: Path) -> None:
             quality_score REAL, verified INTEGER, dataset_split TEXT
         );
         CREATE VIRTUAL TABLE parallel_fts USING fts5(normalized_source_text, normalized_target_text);
+        CREATE TABLE dictionary_entries (
+            id INTEGER PRIMARY KEY, source_word TEXT, normalized_word TEXT, language TEXT, dialect TEXT,
+            part_of_speech TEXT, part_of_speech_full TEXT, definition TEXT, pronunciation TEXT,
+            usage_notes TEXT, source TEXT, source_reference TEXT, confidence REAL,
+            verification_status TEXT, flagged INTEGER, suggested_correction TEXT, letter TEXT,
+            version TEXT, created_at TEXT
+        );
+        CREATE VIRTUAL TABLE dictionary_fts USING fts5(source_word, definition, part_of_speech);
         """
     )
+    # Headwords are English, definitions hold the Zomi side.
+    for entry_id, word, definition in [(1, "roadside", "ZOMI_PLACEHOLDER_GAMMA"), (2, "path", "ZOMI_PLACEHOLDER_DELTA roadside")]:
+        con.execute(
+            "INSERT INTO dictionary_entries (id, source_word, normalized_word, language, part_of_speech, definition,"
+            " source, confidence, verification_status, flagged, letter, version)"
+            " VALUES (?,?,?,'en','n.',?,'test',0.9,'unreviewed',0,?,'v1')",
+            (entry_id, word, word, definition, word[0].upper()),
+        )
+        con.execute("INSERT INTO dictionary_fts (rowid, source_word, definition, part_of_speech) VALUES (?,?,?,'n.')",
+                    (entry_id, word, definition))
     for pair_id, english, zomi in PAIRS:
         con.execute(
             "INSERT INTO parallel_sentences VALUES (?,?,?,?,?,'test','test','[]',1.0,0,'train')",
@@ -73,6 +91,26 @@ class CorpusDirectionTests(unittest.TestCase):
         hits = self.engine.search_parallel("ZOMI_PLACEHOLDER_ALPHA", direction="zom-en")
         self.assertEqual([(hit["id"], hit["exact"]) for hit in hits], [(1, True)])
         self.assertEqual(self.ids("ZOMI_PLACEHOLDER_ALPHA", "en-zom"), [])
+
+
+class DictionaryDirectionTests(unittest.TestCase):
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        db = Path(tmp.name) / "language.sqlite"
+        build_corpus(db)
+        self.engine = LanguageEngine(db)
+
+    def words(self, query: str, direction: str) -> list[str]:
+        return [entry["english"] for entry in self.engine.search_dictionary(query, direction=direction)]
+
+    def test_english_to_zomi_matches_headwords_not_definitions(self) -> None:
+        # "road" is a prefix of the headword "roadside" and also appears in the other entry's definition.
+        self.assertEqual(self.words("road", "en-zom"), ["roadside"])
+
+    def test_zomi_to_english_matches_definitions(self) -> None:
+        self.assertEqual(self.words("ZOMI_PLACEHOLDER_DELTA", "zom-en"), ["path"])
+        self.assertEqual(self.words("ZOMI_PLACEHOLDER_DELTA", "en-zom"), [])
 
 
 class WorkbookDirectionTests(unittest.TestCase):
