@@ -794,8 +794,8 @@ def main() -> None:
     parser.add_argument(
         "--reviews",
         type=Path,
-        default=DEFAULT_REVIEWS,
-        help="Saved corpus review decisions (review_sample.py record); applied when the file exists",
+        help=f"Saved corpus review decisions (review_sample.py record). Must exist when given; "
+        f"without it, {display_path(DEFAULT_REVIEWS)} is applied if present",
     )
     parser.add_argument(
         "--min-reviewers",
@@ -804,6 +804,11 @@ def main() -> None:
         help="Accepting reviewers a corpus pair needs before it counts as verified",
     )
     args = parser.parse_args()
+    if args.reviews is None:
+        args.reviews = DEFAULT_REVIEWS
+    elif not args.reviews.exists():
+        # A mistyped path must not quietly build a database with every reviewer decision dropped.
+        sys.exit(f"Reviews file not found: {args.reviews}")
     try:
         review_records = corpus_reviews.load(args.reviews) if args.reviews.exists() else []
     except ValueError as error:

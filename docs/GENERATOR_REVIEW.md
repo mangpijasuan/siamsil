@@ -41,9 +41,9 @@ This measures the training corpus. It does not replace the human evaluation sets
      --reviewer R01 --reviews ../siamsil-data/reviews/corpus-reviews.jsonl
    ```
 
-   Ratings are appended to that file, one JSON line each: the pair's stable hash, meaning, fluency, reviewer code, date, batch and notes. It holds no sentence text and is never edited; a reviewer who rates a pair again adds a newer line, which replaces their earlier one. Running `record` twice on the same sheet saves nothing new. If any row is wrong (a score other than 0–2, or English or Zomi text changed in the sheet), nothing is saved and the rows are listed. Keep the file in the private `siamsil-data` repository so it is backed up; `data/reviews/` in this repository is the default location and is not committed.
+   Ratings are appended to that file, one JSON line each: the pair's stable hash, meaning, fluency, reviewer code, date, batch and notes. It holds no sentence text and is never edited; a reviewer who rates a pair again adds a newer line, which replaces their earlier one. Running `record` twice on the same sheet saves nothing new; the same pair rated again in a later batch is saved as a new review, even with the same scores. If any row is wrong (a score other than 0–2, or English or Zomi text changed in the sheet, even only punctuation or capital letters), nothing is saved and the rows are listed. Keep the file in the private `siamsil-data` repository so it is backed up; `data/reviews/` in this repository is the default location and is not committed.
 
-5. **Rebuild** with the same file. Every rebuild applies it:
+5. **Rebuild** with the same file. Every rebuild applies it. A `--reviews` path that does not exist stops the build, so a typo cannot quietly drop every decision:
 
    ```bash
    python3 ml_pipeline/scripts/build_language_db.py --reviews ../siamsil-data/reviews/corpus-reviews.jsonl

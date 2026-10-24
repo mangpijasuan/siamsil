@@ -9,6 +9,7 @@ import unittest
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "ml_pipeline" / "scripts"))
@@ -186,6 +187,13 @@ class RecordTests(CorpusFixture):
             row["meaning"], row["fluency"] = meaning, fluency
         return rows
 
+    def test_build_refuses_a_reviews_path_that_does_not_exist(self) -> None:
+        import build_language_db  # type: ignore
+
+        argv = ["build_language_db.py", "--raw", str(self.dir), "--reviews", str(self.dir / "typo.jsonl")]
+        with patch.object(sys, "argv", argv), self.assertRaisesRegex(SystemExit, "Reviews file not found"):
+            build_language_db.main()
+
     def test_key_file_carries_the_stable_pair_hash(self) -> None:
         for review_row, key_row in zip(self.review, self.key):
             self.assertEqual(key_row["pair_hash"], pair_key(review_row["english"], review_row["zomi"]))
@@ -208,11 +216,29 @@ class RecordTests(CorpusFixture):
         self.assertEqual((again, errors, unchanged), ([], [], 1))
 
     def test_edited_sentence_text_is_refused(self) -> None:
+        # Punctuation- and case-only edits leave pair_hash unchanged, so they are checked exactly too.
+        for edit in (lambda text: text + " edited", lambda text: text.rstrip("."), str.upper):
+            rows = self.rate([("2", "2")])
+            rows[0]["english"] = edit(rows[0]["english"])
+            records, errors, _ = record(rows, self.key, reviewer="R01", reviewed_on="d", batch="b", existing=[])
+            self.assertEqual(records, [])
+            self.assertIn("differs from the exported pair", errors[0])
+        old_key = [{k: v for k, v in row.items() if k not in ("pair_hash", "text_sha256")} for row in self.key]
         rows = self.rate([("2", "2")])
-        rows[0]["zomi"] = rows[0]["zomi"] + " edited"
-        records, errors, _ = record(rows, self.key, reviewer="R01", reviewed_on="d", batch="b", existing=[])
-        self.assertEqual(records, [])
+        rows[0]["english"] = rows[0]["english"].rstrip(".")
+        con = sqlite3.connect(self.database)
+        _, errors, _ = record(rows, old_key, reviewer="R01", reviewed_on="d", batch="b", existing=[], con=con)
+        con.close()
         self.assertIn("differs from the exported pair", errors[0])
+
+    def test_same_scores_in_a_later_batch_are_a_new_review(self) -> None:
+        rows = self.rate([("2", "2")])
+        first, _, _ = record(rows, self.key, reviewer="R01", reviewed_on="2026-10-24", batch="b1", existing=[])
+        later, errors, unchanged = record(
+            rows, self.key, reviewer="R01", reviewed_on="2026-11-02", batch="b2", existing=first
+        )
+        self.assertEqual((len(later), errors, unchanged), (1, [], 0))
+        self.assertEqual(later[0]["reviewed_on"], "2026-11-02")
 
     def test_bad_scores_and_names_instead_of_codes_are_refused(self) -> None:
         _, errors, _ = record(self.rate([("3", "1")]), self.key, reviewer="R01", reviewed_on="d", batch="b", existing=[])
@@ -221,7 +247,7 @@ class RecordTests(CorpusFixture):
         self.assertIn("roster code", errors[0])
 
     def test_old_key_without_pair_hash_uses_the_database(self) -> None:
-        old_key = [{k: v for k, v in row.items() if k != "pair_hash"} for row in self.key]
+        old_key = [{k: v for k, v in row.items() if k not in ("pair_hash", "text_sha256")} for row in self.key]
         rows = self.rate([("2", "1")])
         _, errors, _ = record(rows, old_key, reviewer="R01", reviewed_on="d", batch="b", existing=[])
         self.assertIn("--database", errors[0])

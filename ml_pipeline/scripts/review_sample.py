@@ -35,9 +35,14 @@ from build_language_db import ROOT, pair_key
 
 DEFAULT_SEED = "siamsil-generator-review-v1"
 REVIEW_COLUMNS = ["sample_id", "english", "zomi", "meaning", "fluency", "notes"]
-KEY_COLUMNS = ["sample_id", "parallel_id", "model", "pair_hash"]
+KEY_COLUMNS = ["sample_id", "parallel_id", "model", "pair_hash", "text_sha256"]
 DEFAULT_REVIEWS = ROOT / "data" / "reviews" / "corpus-reviews.jsonl"
 SCORES = {"0", "1", "2"}
+
+
+def exported_text_digest(english: str, zomi: str) -> str:
+    """Exact-text fingerprint: unlike pair_hash it changes with any edit, even punctuation or case."""
+    return hashlib.sha256(f"{english}\n{zomi}".encode("utf-8")).hexdigest()
 
 
 def sample_order(seed: str, pair_hash: str) -> str:
@@ -95,7 +100,7 @@ def export(database: Path, out_dir: Path, per_model: int, seed: str) -> tuple[Pa
         for n, (_, parallel_id, model, english, zomi, pair_hash) in enumerate(sample, start=1):
             sample_id = f"R{n:05d}"
             review_writer.writerow([sample_id, english, zomi, "", "", ""])
-            key_writer.writerow([sample_id, parallel_id, model, pair_hash])
+            key_writer.writerow([sample_id, parallel_id, model, pair_hash, exported_text_digest(english, zomi)])
     return review_path, key_path, len(sample)
 
 
@@ -162,11 +167,18 @@ def record(
 
     The pair is identified by its stable pair_hash, never by the database row id,
     which changes when the database is rebuilt. If the sentence text in review.csv
-    no longer matches that hash (a reviewer edited a cell), the row is an error:
-    the rating would otherwise attach to the wrong pair.
+    differs at all from what was exported (a reviewer edited a cell, even only
+    punctuation or case), the row is an error: the rating would otherwise attach
+    to a pair that does not say what the reviewer read.
+
+    The same ratings for the same pair saved again from the same batch add nothing;
+    a later batch is a new review and is recorded even with identical scores.
     """
     key_of = {row["sample_id"]: row for row in key_rows}
-    latest = {(r["pair_hash"], r["reviewer"]): (r["meaning"], r["fluency"], r.get("notes", "")) for r in existing}
+    saved = {
+        (r["pair_hash"], r["reviewer"], r.get("batch", "")): (r["meaning"], r["fluency"], r.get("notes", ""))
+        for r in existing
+    }
     records: list[dict] = []
     errors: list[str] = []
     unchanged = 0
@@ -187,27 +199,29 @@ def record(
             errors.append(f"{sample_id}: meaning and fluency must each be 0, 1, or 2")
             continue
 
-        text_hash = pair_key(row.get("english") or "", row.get("zomi") or "")
+        english, zomi = row.get("english") or "", row.get("zomi") or ""
         pair_hash = (key.get("pair_hash") or "").strip()
-        if not pair_hash:
-            # Keys exported before pair_hash was added: look the row up in the same database.
+        exported_digest = (key.get("text_sha256") or "").strip()
+        if not pair_hash or not exported_digest:
+            # Keys exported before these columns existed: look the pair up in the same database.
             found = con.execute(
-                "SELECT pair_hash FROM parallel_sentences WHERE id = ?", (key.get("parallel_id"),)
+                "SELECT pair_hash, normalized_source_text, normalized_target_text FROM parallel_sentences WHERE id = ?",
+                (key.get("parallel_id"),),
             ).fetchone() if con else None
             if found is None:
                 errors.append(f"{sample_id}: key has no pair_hash; pass --database with the exported database")
                 continue
-            pair_hash = found[0]
-        if text_hash != pair_hash:
+            pair_hash, exported_digest = found[0], exported_text_digest(found[1], found[2])
+        if exported_text_digest(english, zomi) != exported_digest or pair_key(english, zomi) != pair_hash:
             errors.append(f"{sample_id}: English or Zomi text differs from the exported pair; rate the original text")
             continue
 
         notes = (row.get("notes") or "").strip()
         scores = (int(meaning), int(fluency))
-        if latest.get((pair_hash, reviewer)) == (*scores, notes):
+        if saved.get((pair_hash, reviewer, batch)) == (*scores, notes):
             unchanged += 1
             continue
-        latest[(pair_hash, reviewer)] = (*scores, notes)
+        saved[(pair_hash, reviewer, batch)] = (*scores, notes)
         records.append(
             {
                 "pair_hash": pair_hash,
