@@ -26,10 +26,11 @@ def fts_match(query: str) -> str | None:
 # Translation direction -> the corpus side that holds the text being translated.
 # English is stored in normalized_source_text and Zomi in normalized_target_text.
 PARALLEL_FTS_COLUMN = {"en-zom": "normalized_source_text", "zom-en": "normalized_target_text"}
-_EXACT_ORDER = " ORDER BY quality_score DESC, id LIMIT ?"
+# Pairs Zomi reviewers rejected (build_language_db.py --reviews) are never shown, even on an exact match.
+_EXACT_ORDER = " AND quality_flags NOT LIKE '%reviewer_rejected%' ORDER BY quality_score DESC, id LIMIT ?"
 PARALLEL_EXACT_SQL = {
-    None: "SELECT * FROM parallel_sentences WHERE lower(normalized_source_text) = lower(?)"
-    " OR lower(normalized_target_text) = lower(?)" + _EXACT_ORDER,
+    None: "SELECT * FROM parallel_sentences WHERE (lower(normalized_source_text) = lower(?)"
+    " OR lower(normalized_target_text) = lower(?))" + _EXACT_ORDER,
     "en-zom": "SELECT * FROM parallel_sentences WHERE lower(normalized_source_text) = lower(?)" + _EXACT_ORDER,
     "zom-en": "SELECT * FROM parallel_sentences WHERE lower(normalized_target_text) = lower(?)" + _EXACT_ORDER,
 }
@@ -343,7 +344,11 @@ class LanguageEngine:
             "verified": bool(row["verified"]),
             "dataset_split": row["dataset_split"],
             "exact": exact,
-            "label": "Machine-translated example (unverified)",
+            "label": (
+                "Machine-translated example, accepted by Zomi reviewers"
+                if row["verified"]
+                else "Machine-translated example (unverified)"
+            ),
         }
 
 

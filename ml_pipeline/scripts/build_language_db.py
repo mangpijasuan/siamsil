@@ -30,7 +30,9 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCRIPT_VERSION = "1.1.0"
+import corpus_reviews
+
+SCRIPT_VERSION = "1.2.0"
 DATASET_VERSION = "v2"
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -39,6 +41,7 @@ DEFAULT_OUT_DB = ROOT / "data" / "processed" / "language" / "siamsil_language.sq
 DEFAULT_REPORT = ROOT / "data" / "processed" / "language" / "quality_report.json"
 DEFAULT_MANIFEST = ROOT / "data" / "processed" / "language" / "manifest.json"
 DEFAULT_VERSIONS = ROOT / "data" / "versions"
+DEFAULT_REVIEWS = ROOT / "data" / "reviews" / "corpus-reviews.jsonl"
 EVAL_TRANSLATION = ROOT / "data" / "evaluation" / "translation" / "sample.jsonl"
 EVAL_DICTIONARY = ROOT / "data" / "evaluation" / "dictionary" / "sample.jsonl"
 
@@ -631,6 +634,39 @@ def display_path(path: Path) -> str:
         return path.name
 
 
+def apply_reviews(con: sqlite3.Connection, decisions: dict) -> dict:
+    """Apply saved human review decisions (corpus_reviews.decide) to the corpus.
+
+    accepted: verified = 1 and quality score 1, because reviewers' judgement outranks
+    the automatic checks (their flags stay, for the record). rejected: flagged
+    reviewer_rejected with quality score 0, so the app and the dataset export leave
+    it out. partial: unchanged. Decisions
+    whose pair is no longer in the corpus are counted, never applied elsewhere.
+    """
+    counts: Counter[str] = Counter()
+    for pair_hash, decision in decisions.items():
+        row = con.execute(
+            "SELECT id, quality_flags FROM parallel_sentences WHERE pair_hash = ?", (pair_hash,)
+        ).fetchone()
+        if row is None:
+            counts["not_in_corpus"] += 1
+            continue
+        row_id, flags_json = row
+        if decision.status == "accepted":
+            con.execute("UPDATE parallel_sentences SET verified = 1, quality_score = 1 WHERE id = ?", (row_id,))
+        elif decision.status == "rejected":
+            flags = json.loads(flags_json or "[]")
+            if "reviewer_rejected" not in flags:
+                flags.append("reviewer_rejected")
+            con.execute(
+                "UPDATE parallel_sentences SET verified = 0, quality_flags = ?, quality_score = 0 WHERE id = ?",
+                (json.dumps(flags, ensure_ascii=False), row_id),
+            )
+        counts[decision.status] += 1
+    con.commit()
+    return {status: counts.get(status, 0) for status in ("accepted", "rejected", "partial", "not_in_corpus")}
+
+
 def release_manifest(
     database: Path,
     source_files: dict[str, Path],
@@ -755,7 +791,23 @@ def main() -> None:
         default=[],
         help="Human evaluation set (JSONL); matching corpus pairs go to the eval_holdout split. Repeatable.",
     )
+    parser.add_argument(
+        "--reviews",
+        type=Path,
+        default=DEFAULT_REVIEWS,
+        help="Saved corpus review decisions (review_sample.py record); applied when the file exists",
+    )
+    parser.add_argument(
+        "--min-reviewers",
+        type=int,
+        default=1,
+        help="Accepting reviewers a corpus pair needs before it counts as verified",
+    )
     args = parser.parse_args()
+    try:
+        review_records = corpus_reviews.load(args.reviews) if args.reviews.exists() else []
+    except ValueError as error:
+        sys.exit(f"Saved reviews are not usable, nothing was built: {error}")
 
     eval_items = load_eval_items(args.eval)
 
@@ -782,6 +834,16 @@ def main() -> None:
     checks = apply_corpus_checks(con, eval_items)
     print(f"  template families: {checks['template_families']:,}")
     print(f"  evaluation holdout pairs: {checks['splits'].get(EVAL_HOLDOUT_SPLIT, 0):,}")
+
+    review_counts = {"accepted": 0, "rejected": 0, "partial": 0, "not_in_corpus": 0}
+    if review_records:
+        print(f"Applying {len(review_records):,} saved review ratings from {display_path(args.reviews)}…")
+        review_counts = apply_reviews(con, corpus_reviews.decide(review_records, args.min_reviewers))
+        print(
+            f"  verified: {review_counts['accepted']:,}  rejected: {review_counts['rejected']:,}"
+            f"  undecided: {review_counts['partial']:,}  no longer in corpus: {review_counts['not_in_corpus']:,}"
+        )
+    verified_pairs = con.execute("SELECT COUNT(*) FROM parallel_sentences WHERE verified = 1").fetchone()[0]
 
     source_files = {
         "dictionary_master": display_path(dictionary_xlsx),
@@ -822,7 +884,8 @@ def main() -> None:
             "empty_dropped": parallel_stats["counts"].get("empty", 0),
             "clean": checks["clean"],
             "needs_review": checks["flagged"],
-            "verified": 0,
+            "verified": verified_pairs,
+            "human_review": {**review_counts, "min_reviewers": args.min_reviewers, "ratings": len(review_records)},
             "splits": checks["splits"],
             "split_key": "template family (English with learned names and numbers masked)",
             "template_families": checks["template_families"],
@@ -832,7 +895,7 @@ def main() -> None:
             "evaluation_items_checked": checks["eval_items_checked"],
             "quality_flags": checks["flags"],
             "models": parallel_stats["models"],
-            "note": "Zomi side is machine-translated and unverified. Do not treat as gold data.",
+            "note": "Zomi side is machine-translated. Only pairs counted as verified were accepted by human reviewers.",
         },
     }
 
@@ -850,7 +913,11 @@ def main() -> None:
     print("Hashing inputs and database for the release manifest…")
     manifest = release_manifest(
         database=args.out,
-        source_files={"dictionary_master": dictionary_xlsx, "parallel_csv": parallel_csv},
+        source_files={
+            "dictionary_master": dictionary_xlsx,
+            "parallel_csv": parallel_csv,
+            **({"corpus_reviews": args.reviews} if review_records else {}),
+        },
         eval_files=args.eval,
         counts={"dictionary_entries": dict_total, "parallel_sentences": parallel_total},
         created_at=created_at,
@@ -867,7 +934,7 @@ def main() -> None:
         f"  Parallel source rows: {report['parallel']['source_rows']:,}\n"
         f"  Unique pairs kept: {parallel_total:,}\n"
         f"  Duplicates dropped: {report['parallel']['duplicates_dropped']:,}\n"
-        f"  Verified parallel pairs: 0\n"
+        f"  Verified parallel pairs: {verified_pairs:,}\n"
     )
 
 

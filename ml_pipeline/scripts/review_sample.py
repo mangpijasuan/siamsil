@@ -8,6 +8,8 @@ model produced which pair; the summary estimates each model's quality.
 Commands:
   export DB --out DIR [--per-model N]   write review.csv (for reviewers) and key.csv (kept private)
   summarize REVIEW KEY [--json OUT]     per-model scores from a completed review.csv
+  record REVIEW KEY --reviewer R01      save each rated pair to data/reviews/corpus-reviews.jsonl,
+                                        which build_language_db.py applies on every rebuild
 
 Rating scale (see docs/GENERATOR_REVIEW.md):
   meaning  0 wrong or missing · 1 partly right · 2 fully right
@@ -25,11 +27,16 @@ import math
 import sqlite3
 import sys
 from collections import defaultdict
+from datetime import date
 from pathlib import Path
+
+import corpus_reviews
+from build_language_db import ROOT, pair_key
 
 DEFAULT_SEED = "siamsil-generator-review-v1"
 REVIEW_COLUMNS = ["sample_id", "english", "zomi", "meaning", "fluency", "notes"]
-KEY_COLUMNS = ["sample_id", "parallel_id", "model"]
+KEY_COLUMNS = ["sample_id", "parallel_id", "model", "pair_hash"]
+DEFAULT_REVIEWS = ROOT / "data" / "reviews" / "corpus-reviews.jsonl"
 SCORES = {"0", "1", "2"}
 
 
@@ -37,8 +44,8 @@ def sample_order(seed: str, pair_hash: str) -> str:
     return hashlib.sha256(f"{seed}\t{pair_hash}".encode("utf-8")).hexdigest()
 
 
-def select_sample(con: sqlite3.Connection, per_model: int, seed: str) -> list[tuple[str, int, str, str, str]]:
-    """Return (order_key, parallel_id, model, english, zomi) rows, interleaved across models.
+def select_sample(con: sqlite3.Connection, per_model: int, seed: str) -> list[tuple[str, int, str, str, str, str]]:
+    """Return (order_key, parallel_id, model, english, zomi, pair_hash) rows, interleaved across models.
 
     Deterministic for a given database and seed. Pairs held out for human
     evaluation are never sampled.
@@ -59,11 +66,12 @@ def select_sample(con: sqlite3.Connection, per_model: int, seed: str) -> list[tu
 
     sample = []
     for order_key, parallel_id in sorted(picked):
-        model, english, zomi = con.execute(
-            "SELECT model, normalized_source_text, normalized_target_text FROM parallel_sentences WHERE id = ?",
+        model, english, zomi, pair_hash = con.execute(
+            "SELECT model, normalized_source_text, normalized_target_text, pair_hash"
+            " FROM parallel_sentences WHERE id = ?",
             (parallel_id,),
         ).fetchone()
-        sample.append((order_key, parallel_id, model, english, zomi))
+        sample.append((order_key, parallel_id, model, english, zomi, pair_hash))
     return sample
 
 
@@ -84,10 +92,10 @@ def export(database: Path, out_dir: Path, per_model: int, seed: str) -> tuple[Pa
         key_writer = csv.writer(key)
         review_writer.writerow(REVIEW_COLUMNS)
         key_writer.writerow(KEY_COLUMNS)
-        for n, (_, parallel_id, model, english, zomi) in enumerate(sample, start=1):
+        for n, (_, parallel_id, model, english, zomi, pair_hash) in enumerate(sample, start=1):
             sample_id = f"R{n:05d}"
             review_writer.writerow([sample_id, english, zomi, "", "", ""])
-            key_writer.writerow([sample_id, parallel_id, model])
+            key_writer.writerow([sample_id, parallel_id, model, pair_hash])
     return review_path, key_path, len(sample)
 
 
@@ -140,6 +148,80 @@ def summarize(review_rows: list[dict], key_rows: list[dict]) -> tuple[dict, list
     return summary, errors
 
 
+def record(
+    review_rows: list[dict],
+    key_rows: list[dict],
+    *,
+    reviewer: str,
+    reviewed_on: str,
+    batch: str,
+    existing: list[dict],
+    con: sqlite3.Connection | None = None,
+) -> tuple[list[dict], list[str], int]:
+    """Turn a completed review.csv into review records. Returns (new records, errors, unchanged).
+
+    The pair is identified by its stable pair_hash, never by the database row id,
+    which changes when the database is rebuilt. If the sentence text in review.csv
+    no longer matches that hash (a reviewer edited a cell), the row is an error:
+    the rating would otherwise attach to the wrong pair.
+    """
+    key_of = {row["sample_id"]: row for row in key_rows}
+    latest = {(r["pair_hash"], r["reviewer"]): (r["meaning"], r["fluency"], r.get("notes", "")) for r in existing}
+    records: list[dict] = []
+    errors: list[str] = []
+    unchanged = 0
+    if not corpus_reviews.REVIEWER_CODE.match(reviewer):
+        return [], [f"reviewer must be a roster code such as R01, not {reviewer!r}"], 0
+
+    for row in review_rows:
+        sample_id = (row.get("sample_id") or "").strip()
+        key = key_of.get(sample_id)
+        if key is None:
+            errors.append(f"{sample_id or '<blank>'}: not in key file")
+            continue
+        meaning = (row.get("meaning") or "").strip()
+        fluency = (row.get("fluency") or "").strip()
+        if not meaning and not fluency:
+            continue
+        if meaning not in SCORES or fluency not in SCORES:
+            errors.append(f"{sample_id}: meaning and fluency must each be 0, 1, or 2")
+            continue
+
+        text_hash = pair_key(row.get("english") or "", row.get("zomi") or "")
+        pair_hash = (key.get("pair_hash") or "").strip()
+        if not pair_hash:
+            # Keys exported before pair_hash was added: look the row up in the same database.
+            found = con.execute(
+                "SELECT pair_hash FROM parallel_sentences WHERE id = ?", (key.get("parallel_id"),)
+            ).fetchone() if con else None
+            if found is None:
+                errors.append(f"{sample_id}: key has no pair_hash; pass --database with the exported database")
+                continue
+            pair_hash = found[0]
+        if text_hash != pair_hash:
+            errors.append(f"{sample_id}: English or Zomi text differs from the exported pair; rate the original text")
+            continue
+
+        notes = (row.get("notes") or "").strip()
+        scores = (int(meaning), int(fluency))
+        if latest.get((pair_hash, reviewer)) == (*scores, notes):
+            unchanged += 1
+            continue
+        latest[(pair_hash, reviewer)] = (*scores, notes)
+        records.append(
+            {
+                "pair_hash": pair_hash,
+                "meaning": scores[0],
+                "fluency": scores[1],
+                "reviewer": reviewer,
+                "reviewed_on": reviewed_on,
+                "batch": batch,
+                "notes": notes,
+            }
+        )
+    return records, errors, unchanged
+
+
 def read_csv(path: Path) -> list[dict]:
     if not path.exists():
         sys.exit(f"File not found: {path}")
@@ -173,6 +255,36 @@ def cmd_summarize(args: argparse.Namespace) -> int:
     return 1 if errors else 0
 
 
+def cmd_record(args: argparse.Namespace) -> int:
+    try:
+        existing = corpus_reviews.load(args.reviews) if args.reviews.exists() else []
+    except ValueError as error:
+        sys.exit(f"The saved reviews file is damaged, nothing was saved: {error}")
+    con = sqlite3.connect(f"file:{args.database}?mode=ro", uri=True) if args.database else None
+    try:
+        records, errors, unchanged = record(
+            read_csv(args.review),
+            read_csv(args.key),
+            reviewer=args.reviewer,
+            reviewed_on=args.date,
+            batch=args.batch or args.key.parent.name,
+            existing=existing,
+            con=con,
+        )
+    finally:
+        if con:
+            con.close()
+    for error in errors:
+        print(f"error: {error}")
+    if errors:
+        print("nothing saved; fix the rows above and run again")
+        return 1
+    corpus_reviews.append(args.reviews, records)
+    print(f"saved {len(records)} new ratings by {args.reviewer} to {args.reviews} ({unchanged} already saved)")
+    print("they take effect on the next build_language_db.py run")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -189,6 +301,16 @@ def main(argv: list[str] | None = None) -> int:
     summarize_parser.add_argument("key", type=Path)
     summarize_parser.add_argument("--json", type=Path)
     summarize_parser.set_defaults(run=cmd_summarize)
+
+    record_parser = commands.add_parser("record", help="save completed ratings for every future rebuild")
+    record_parser.add_argument("review", type=Path)
+    record_parser.add_argument("key", type=Path)
+    record_parser.add_argument("--reviewer", required=True, help="roster code of the person who rated, e.g. R01")
+    record_parser.add_argument("--reviews", type=Path, default=DEFAULT_REVIEWS)
+    record_parser.add_argument("--date", default=date.today().isoformat(), help="day the ratings were made")
+    record_parser.add_argument("--batch", help="name of this review batch (default: the key file's folder)")
+    record_parser.add_argument("--database", type=Path, help="only for key files without a pair_hash column")
+    record_parser.set_defaults(run=cmd_record)
 
     args = parser.parse_args(argv)
     return args.run(args)
