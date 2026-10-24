@@ -44,6 +44,29 @@ class SopQualityGateTests(unittest.TestCase):
                                     split="test")]
         self.assertIn("duplicate_pair_across_splits", self.codes(rows))
 
+    def test_same_english_with_different_zomi_cannot_cross_splits(self):
+        rows = [approved(), approved(id="sentence-002", split_family_id="family-002",
+                                    zomi="Other test Zomi.", split="test")]
+        self.assertIn("english_across_splits", self.codes(rows))
+
+    def test_same_zomi_with_different_english_cannot_cross_splits(self):
+        rows = [approved(), approved(id="sentence-002", split_family_id="family-002",
+                                    english="Welcome back.", split="test")]
+        self.assertIn("zomi_across_splits", self.codes(rows))
+
+    def test_duplicate_pair_within_split_rejected(self):
+        rows = [approved(), approved(id="sentence-002", split_family_id="family-002")]
+        self.assertIn("duplicate_pair", self.codes(rows))
+
+    def test_self_approval_ignores_case_and_spaces(self):
+        self.assertIn("self_approval", self.codes([approved(reviewer_id=" AUTHOR-1 ")]))
+        self.assertIn("self_approval", self.codes([approved(approver_id="Author-1")]))
+
+    def test_distinct_rows_in_different_splits_pass(self):
+        rows = [approved(), approved(id="sentence-002", split_family_id="family-002",
+                                    english="Welcome back.", zomi="Other test Zomi.", split="test")]
+        self.assertTrue(check_records(rows)["passed"])
+
     def test_missing_provenance_rejected(self):
         self.assertIn("missing_provenance", self.codes([approved(source_id="")]))
 

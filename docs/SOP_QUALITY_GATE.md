@@ -28,8 +28,10 @@ identity; it checks declared metadata and rejects missing authorizations.
 
 - **SOP-07:** Require human approval, distinguish contributor from reviewer
   and approver, preserve provenance and version IDs.
-- **SOP-08:** Validate schema, IDs, UTF-8 input, duplicate bilingual pairs
-  across splits, split-family isolation, and explicit training permission.
+- **SOP-08:** Validate schema, IDs, UTF-8 input, duplicate bilingual pairs,
+  the same English or Zomi sentence in more than one split, split-family
+  isolation, and explicit training permission. Reviewer IDs are compared
+  without case or surrounding spaces.
 - **SOP-09/11:** This is a pre-training gate, **not** a trained-model
   performance evaluation or evidence of language accuracy.
 

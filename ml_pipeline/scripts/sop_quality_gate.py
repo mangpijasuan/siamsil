@@ -27,14 +27,22 @@ def normalized(value: str) -> str:
 def candidate_key(record: dict[str, Any]) -> str:
     """Canonical pair key prevents duplicates across any splits."""
     return hashlib.sha256(
-        (normalized(record["english"]) + "\\0" + normalized(record["zomi"])).encode("utf-8")
+        (normalized(record["english"]) + "\0" + normalized(record["zomi"])).encode("utf-8")
     ).hexdigest()
+
+
+def person(value: Any) -> str:
+    """Reviewer IDs compare without case or surrounding spaces, so " C " is the same person as "c"."""
+    return value.strip().casefold() if isinstance(value, str) else ""
 
 
 def check_records(records: list[dict[str, Any]]) -> dict[str, Any]:
     errors: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
     pair_split: dict[str, str] = {}
+    # Each side on its own: the same English (or Zomi) sentence in train and test
+    # leaks the answer even when the other side was translated differently.
+    side_split: dict[tuple[str, str], str] = {}
     family_split: dict[str, str] = {}
     counts = {name: 0 for name in sorted(ALLOWED_SPLITS)}
 
@@ -75,7 +83,7 @@ def check_records(records: list[dict[str, Any]]) -> dict[str, Any]:
         approver = row.get("approver_id")
         if not all(isinstance(v, str) and v.strip() for v in (contributor, reviewer, approver)):
             reject(index, record_id, "missing_review_identity")
-        elif reviewer == contributor or approver == contributor:
+        elif person(contributor) in (person(reviewer), person(approver)):
             reject(index, record_id, "self_approval")
 
         if not isinstance(row.get("approval_version"), str) or not row["approval_version"].strip():
@@ -100,9 +108,15 @@ def check_records(records: list[dict[str, Any]]) -> dict[str, Any]:
                     reject(index, record_id, "split_family_leakage")
             if all(isinstance(row.get(lang), str) and row[lang].strip() for lang in ("english", "zomi")):
                 key = candidate_key(row)
-                previous = pair_split.setdefault(key, split)
-                if previous != split:
-                    reject(index, record_id, "duplicate_pair_across_splits")
+                if key in pair_split:
+                    same_split = pair_split[key] == split
+                    reject(index, record_id, "duplicate_pair" if same_split else "duplicate_pair_across_splits")
+                else:
+                    pair_split[key] = split
+                    for language in ("english", "zomi"):
+                        side = (language, normalized(row[language]))
+                        if side_split.setdefault(side, split) != split:
+                            reject(index, record_id, f"{language}_across_splits")
 
     return {
         "passed": not errors,
