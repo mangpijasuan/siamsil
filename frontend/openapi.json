@@ -2783,6 +2783,25 @@
               "title": "Limit",
               "type": "integer"
             }
+          },
+          {
+            "description": "Search only the side translated from: English for en-zom, Zomi for zom-en. Omit to search both.",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^(en-zom|zom-en)$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search only the side translated from: English for en-zom, Zomi for zom-en. Omit to search both.",
+              "title": "Direction"
+            }
           }
         ],
         "responses": {

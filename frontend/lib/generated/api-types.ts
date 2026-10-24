@@ -1618,6 +1618,8 @@ export interface operations {
             query: {
                 q: string;
                 limit?: number;
+                /** @description Search only the side translated from: English for en-zom, Zomi for zom-en. Omit to search both. */
+                direction?: string | null;
             };
             header?: never;
             path?: never;
