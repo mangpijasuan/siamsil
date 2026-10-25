@@ -78,6 +78,15 @@ This measures the training corpus. It does not replace the human evaluation sets
 
    The build prints and records (`quality_report.json`, `human_review`) the count of each status and of saved decisions whose pair is no longer in the corpus. The release manifest records the reviews file's checksum. Approved pairs are still exported only when the corpus is cleared for training in `data/rights.json`.
 
+7. **Copy into the application database** (optional; the start of the Review Center). With `SIAMSIL_DATABASE_URL` set and `alembic upgrade head` run from `backend/`:
+
+   ```bash
+   python backend/scripts/import_reviews.py ../siamsil-data/reviews/corpus-reviews.jsonl --dry-run
+   python backend/scripts/import_reviews.py ../siamsil-data/reviews/corpus-reviews.jsonl
+   ```
+
+   The file is checked the same way the build checks it, then each record is stored exactly as written, in file order, which `decide()` depends on. Run it again after more reviews are appended: it adds only the new records, and each import is written to the audit log. If an earlier line of the file was changed, the import is refused and nothing is saved, because the file must only ever be appended to. The database itself refuses to edit or delete stored records. The file stays the source of truth for rebuilds until the Review Center can export back to it.
+
 ## Rating scale
 
 Native-speaker editors may revise this scale before the first review; change the export seed when they do, so old and new reviews are not mixed.

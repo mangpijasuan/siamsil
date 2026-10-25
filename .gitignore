@@ -70,4 +70,4 @@ data/raw/bible/**
 data/processed/bible/
 
 # Trained model checkpoints (large; keep out of git)
-models/
+/models/
