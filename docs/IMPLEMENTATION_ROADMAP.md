@@ -41,8 +41,8 @@ An architecture document alone does not count as done. See [Definition of comple
 
 | PR | Disposition |
 | --- | --- |
-| #20 Unify Home, Dictionary, Translate, Bible landscape design | Redesign; overlaps #17. **Owner decision needed** (step 7) |
-| #17 Mountain and quill hero artwork (draft) | Overlaps #20; close or fold into the chosen redesign |
+| #20 Unify Home, Dictionary, Translate, Bible landscape design | **Chosen redesign** (owner decision, 2026-10-25); step 7 |
+| #17 Mountain and quill hero artwork (draft) | Superseded by #20; close it, or fold any artwork the owner wants to keep into #20 |
 | #25 Dictionary Builder 10k candidate miner (draft) | Kept as a separate experimental module until the Review Center exists |
 | #26 GitHub project homepage (draft) | Docs; independent of Release 1 |
 
@@ -61,7 +61,7 @@ Agreed order, 2026-10-25. Each step lists what must be true before it counts as 
 4. [ ] **Minimum PostgreSQL Review Center**, built while reviewers work offline. Its scope is [below](#review-center-minimum).
 5. [!] **Training rights, then v2.** Blocked on rights. The corpus is `train: needs_review` (`data/rights.json`), and the Hugging Face dataset card is not yet verified because huggingface.co is blocked in the build environment. A pair may enter v2 training only when its source is `train: cleared` in `data/rights.json`. Reaching `HUMAN_APPROVED` is a quality decision, not a rights decision, and never makes an uncleared source trainable. For the parallel corpus, both are required: the source cleared and the pair `HUMAN_APPROVED`.
 6. [!] **Evaluate v2 against v1 and retrieval** on the frozen human benchmark (`mt_eval.py`). Blocked on step 3 (benchmark) and step 5. Retrieval stays the production translator until a model passes the gate, and qualified Zomi speakers must approve before any deployment.
-7. [ ] **Navy-and-gold redesign** as its own visual PR. The owner chooses between #20 and the alternative home page; #17 is closed or folded in.
+7. [ ] **Navy-and-gold redesign** as its own visual PR: **#20** (owner decision, 2026-10-25). It merges on green CI after review; #17 is closed or folded into it.
 
 ## Release 1 checklist by area
 
@@ -92,7 +92,7 @@ Agreed order, 2026-10-25. Each step lists what must be true before it counts as 
 ### Home
 
 - [x] Home page with the navy-and-gold shell (#15/#16).
-- [ ] Final home design: step 7.
+- [ ] Final home design: #20 (step 7).
 
 ### Dictionary
 
