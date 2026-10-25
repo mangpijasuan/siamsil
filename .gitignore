@@ -13,6 +13,7 @@ data/processed/dictionary/
 data/processed/parallel/
 data/datasets/
 data/evaluation/**/*.jsonl
+data/evaluation/**/*.csv
 data/exports/
 data/versions/*
 !data/versions/*.json
