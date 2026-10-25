@@ -128,8 +128,9 @@ Agreed order, 2026-10-25. Each step lists what must be true before it counts as 
 
 - [x] Saved words, search history, and recent Bible chapters, stored in the browser (`frontend/lib/localData.ts`).
 - [x] Bible bookmarks and notes stored on the device.
-- [-] Profile is device-local; there is no account or sync.
-- [ ] **Owner decision:** whether Release 1 ships with device-local favorites and history, or needs account sync (which depends on web sign-in).
+- [x] **Decision (2026-10-25, project owner):** Release 1 keeps favorites and history on the device. Account sync is not part of Release 1.
+- [-] Profile is device-local; there is no account. That is expected for Release 1.
+- [~] Account sync for saved words, history, and Bible notes comes after web sign-in, in a later release.
 
 ### Language data and rights
 
