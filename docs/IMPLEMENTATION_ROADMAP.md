@@ -106,7 +106,8 @@ Agreed order, 2026-10-25. Each step lists what must be true before it counts as 
 
 - [x] Unified `/api/v1/search` endpoint.
 - [-] There is no cross-product search page in the web app. Dictionary, Translate, and Bible each have their own search.
-- [ ] Decide whether Release 1 needs a unified search page or whether the per-section search is enough.
+- [x] **Decision (2026-10-25, project owner):** Release 1 keeps separate searches in Dictionary, Translate, and Bible. There is no unified search page in Release 1.
+- [~] A cross-product search page on `/api/v1/search` comes in a later release.
 
 ### Translation
 
