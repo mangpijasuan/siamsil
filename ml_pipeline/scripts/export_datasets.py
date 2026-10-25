@@ -9,7 +9,8 @@ Tiers:
   gold    human-made or human-reviewed: Bible ("Original ZSF Text" only, and each
           Zomi Bible version paired verse by verse with each English version) and
           teacher-reviewed daily-use phrases
-  silver  corpus pairs with no quality flags, from generators whose spot-check
+  silver  corpus pairs accepted by human reviewers (build_language_db.py --reviews),
+          and corpus pairs with no quality flags from generators whose spot-check
           acceptable share (lower 95% bound) meets --silver-min-acceptable
   bronze  remaining corpus pairs with quality score >= --min-score
 
@@ -83,21 +84,24 @@ def corpus_records(con: sqlite3.Connection, silver: set[str], min_score: float):
     rows = con.execute(
         """
         SELECT id, normalized_source_text, normalized_target_text, model,
-               quality_flags, quality_score, dataset_split
+               quality_flags, quality_score, dataset_split, verified
         FROM parallel_sentences
         WHERE dataset_split != ? AND quality_score >= ?
         ORDER BY id
         """,
         (EVAL_HOLDOUT_SPLIT, min_score),
     )
-    for row_id, english, zomi, model, flags_json, score, split in rows:
+    for row_id, english, zomi, model, flags_json, score, split, verified in rows:
         flags = json.loads(flags_json or "[]")
+        # A pair human reviewers accepted is silver whatever its generator scored; rejected
+        # pairs never reach this loop (their quality score is 0).
         yield {
             "id": f"corpus-{row_id}",
             "english": english,
             "zomi": zomi,
             "source": "parallel_corpus",
-            "tier": "silver" if not flags and model in silver else "bronze",
+            "tier": "silver" if verified or (not flags and model in silver) else "bronze",
+            "human_reviewed": bool(verified),
             "split": split,
             "model": model,
             "quality_score": score,
