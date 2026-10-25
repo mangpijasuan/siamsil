@@ -704,14 +704,26 @@ def write_release_manifest(manifest: dict, current: Path, versions_dir: Path) ->
     return versioned
 
 
+DEFAULT_EVAL_DIR = ROOT / "data" / "evaluation" / "human"
+
+
+def default_eval_paths(folder: Path = DEFAULT_EVAL_DIR) -> list[Path]:
+    """Every evaluation file kept in the private evaluation folder: finished and draft sets
+    (*.jsonl) and English source lists not yet translated (*.sources.csv). Used whenever
+    --eval is not given, so forgetting the flag cannot let test sentences into training."""
+    if not folder.is_dir():
+        return []
+    return sorted([*folder.glob("*.jsonl"), *folder.glob("*.sources.csv")])
+
+
 def load_eval_items(paths: list[Path]) -> list[dict]:
-    from eval_set import load_items
+    from eval_set import load_items, read_sources
 
     items: list[dict] = []
     for path in paths:
         if not path.exists():
             sys.exit(f"Evaluation set not found: {path}")
-        loaded, errors = load_items(path)
+        loaded, errors = read_sources(path) if path.suffix == ".csv" else load_items(path)
         if errors:
             sys.exit(f"Evaluation set {path} is not valid JSONL: {errors[0]}")
         items.extend(loaded)
@@ -790,7 +802,8 @@ def main() -> None:
         type=Path,
         action="append",
         default=[],
-        help="Human evaluation set (JSONL); matching corpus pairs go to the eval_holdout split. Repeatable.",
+        help="Human evaluation set (JSONL) or English sources list (.sources.csv); matching corpus pairs go "
+        "to the eval_holdout split. Repeatable. Default: every such file in data/evaluation/human/.",
     )
     parser.add_argument(
         "--reviews",
@@ -815,7 +828,10 @@ def main() -> None:
     except ValueError as error:
         sys.exit(f"Saved reviews are not usable, nothing was built: {error}")
 
+    if not args.eval:
+        args.eval = default_eval_paths()
     eval_items = load_eval_items(args.eval)
+    print(f"Keeping {len(eval_items):,} evaluation items out of training ({len(args.eval)} files)")
 
     dictionary_xlsx = args.raw / "dictionary" / "Zomi_Standard_Dictionary_AI_Cleaned.xlsx"
     parallel_csv = args.raw / "parallel" / "zomi_english_sentences.csv"

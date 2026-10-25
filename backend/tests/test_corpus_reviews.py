@@ -420,6 +420,15 @@ class ApprovalTests(CorpusFixture):
         self.assertEqual((rows[0]["meaning"], rows[0]["fluency"], rows[0]["correction"]), ("2", "1", "CORRECTED_PLACEHOLDER"))
         self.assertEqual([r["english"] for r in rows], [r["english"] for r in self.read(review_path)])
 
+    def test_record_reads_a_sheet_saved_as_excel_csv_with_byte_order_mark(self) -> None:
+        from review_sample import read_csv  # type: ignore
+
+        review_path, key_path, _ = export(self.database, self.dir / "batch-bom", per_model=1, seed="s")
+        review_path.write_bytes(b"\xef\xbb\xbf" + review_path.read_bytes())
+        rows = read_csv(review_path)
+        self.assertIn("sample_id", rows[0])
+        self.assertEqual(rows[0]["sample_id"], self.read(key_path)[0]["sample_id"])
+
     def test_record_needs_the_roster_file(self) -> None:
         review_path, key_path, _ = export(self.database, self.dir / "batch-2", per_model=1, seed="s")
         args = ["record", str(review_path), str(key_path), "--reviewer", "R01",

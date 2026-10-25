@@ -2,6 +2,9 @@
 """Move Siamsil's Excel work sheets in and out of the pipeline formats.
 
 Human evaluation set (docs/EVALUATION_SET.md), English -> Zomi:
+  testset-sheet SOURCES.csv --out SHEET.xlsx
+      Make the translator's "Translate" sheet from the English sources list
+      (columns id, domain, english), with instructions.
   testset-import SHEET.xlsx --translator T01 --origin TEXT --out DRAFT.jsonl
       Read the translator's "Translate" sheet. Translated rows become draft
       items (review_outcome "pending"); blank rows are counted and skipped.
@@ -43,6 +46,16 @@ def _cell(value) -> str:
     return " ".join(str(value).split())
 
 
+def append_text(sheet, values: list) -> None:
+    """Append a row whose text is never run as a formula. openpyxl stores a string
+    starting with '=' as a formula, which Excel would evaluate when the sheet is
+    opened; sentence text and machine-made Zomi must stay plain text."""
+    sheet.append(values)
+    for cell in sheet[sheet.max_row]:
+        if isinstance(cell.value, str) and cell.value.startswith("="):
+            cell.data_type = "s"
+
+
 def read_sheet(path: Path, sheet: str) -> list[dict[str, str]]:
     """Rows of a sheet as dicts keyed by its header row."""
     import openpyxl
@@ -68,6 +81,56 @@ def write_jsonl(path: Path, items: list[dict]) -> None:
     with path.open("w", encoding="utf-8") as handle:
         for item in items:
             handle.write(json.dumps(item, ensure_ascii=False) + "\n")
+
+
+def cmd_testset_sheet(args: argparse.Namespace) -> int:
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    from eval_set import read_sources
+
+    items, errors = read_sources(args.sources)
+    if errors:
+        for error in errors[:20]:
+            print(f"error: {error}")
+        sys.exit(f"{args.sources} is not a valid sources list")
+    wb = Workbook()
+    intro = wb.active
+    intro.title = "Instructions"
+    intro.column_dimensions["A"].width = 110
+    for line in (
+        "Siamsil test set: translate English into Zomi",
+        "",
+        "For every row, write the Zomi you would naturally use, in the agreed spelling standard.",
+        "• Translate the meaning, not word by word. Keep names, numbers and dates as in the English.",
+        "• Do not use Google Translate, ChatGPT, Gemini or any other machine translation, and do not copy from the Bible.",
+        "• If a sentence is unclear or does not fit Zomi life, write why in Notes and leave the translation blank.",
+        "• Do not change the ID, Topic or English columns.",
+        "Keep this file private. Test sentences must never be used for training or shared publicly.",
+    ):
+        intro.append([line])
+    intro["A1"].font = Font(bold=True, size=14, color="1B2A4A")
+
+    sheet = wb.create_sheet("Translate")
+    header = ["ID", "Topic", "English", "Zomi translation", "Notes"]
+    widths = [14, 14, 60, 60, 35]
+    sheet.append(header)
+    for index, width in enumerate(widths, 1):
+        cell = sheet.cell(1, index)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="1B2A4A")
+        sheet.column_dimensions[cell.column_letter].width = width
+    sheet.freeze_panes = "A2"
+    for item in items:
+        append_text(sheet, [item["id"], item["domain"], item["source_text"], "", ""])
+        for col in (3, 4, 5):
+            sheet.cell(sheet.max_row, col).alignment = Alignment(wrap_text=True, vertical="top")
+        for col in (4, 5):
+            sheet.cell(sheet.max_row, col).fill = PatternFill("solid", fgColor="F8F6F0")
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    wb.save(args.out)
+    print(f"wrote translation sheet for {len(items)} sentences to {args.out}")
+    return 0
 
 
 def cmd_testset_import(args: argparse.Namespace) -> int:
@@ -135,7 +198,7 @@ def cmd_review_sheet(args: argparse.Namespace) -> int:
         sheet.column_dimensions[cell.column_letter].width = width
     sheet.freeze_panes = "A2"
     for item in items:
-        sheet.append([item["id"], item["domain"], item["source_text"], item["references"][0], None, "", ""])
+        append_text(sheet, [item["id"], item["domain"], item["source_text"], item["references"][0], None, "", ""])
         for col in (3, 4, 6, 7):
             sheet.cell(sheet.max_row, col).alignment = Alignment(wrap_text=True, vertical="top")
         for col in (5, 6):
@@ -203,7 +266,7 @@ def cmd_ratings_sheet(args: argparse.Namespace) -> int:
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.worksheet.datavalidation import DataValidation
 
-    with args.review.open(encoding="utf-8", newline="") as handle:
+    with args.review.open(encoding="utf-8-sig", newline="") as handle:
         rows = list(csv.DictReader(handle))
     wb = Workbook()
     intro = wb.active
@@ -233,7 +296,7 @@ def cmd_ratings_sheet(args: argparse.Namespace) -> int:
         sheet.column_dimensions[cell.column_letter].width = width
     sheet.freeze_panes = "A2"
     for row in rows:
-        sheet.append([row["sample_id"], row["english"], row["zomi"], None, None, "", ""])
+        append_text(sheet, [row["sample_id"], row["english"], row["zomi"], None, None, "", ""])
         for col in (2, 3, 6, 7):
             sheet.cell(sheet.max_row, col).alignment = Alignment(wrap_text=True, vertical="top")
         for col in (4, 5, 6, 7):
@@ -275,6 +338,11 @@ def cmd_ratings_import(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
+
+    p = commands.add_parser("testset-sheet")
+    p.add_argument("sources", type=Path, help="CSV with columns id, domain, english")
+    p.add_argument("--out", type=Path, required=True)
+    p.set_defaults(func=cmd_testset_sheet)
 
     p = commands.add_parser("testset-import")
     p.add_argument("sheet", type=Path)

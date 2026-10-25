@@ -13,6 +13,7 @@ data/processed/dictionary/
 data/processed/parallel/
 data/datasets/
 data/evaluation/**/*.jsonl
+data/evaluation/**/*.csv
 data/exports/
 # Saved review decisions: private; back them up in the siamsil-data repository
 data/reviews/
