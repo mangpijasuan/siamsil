@@ -76,7 +76,8 @@ def validate(record: dict) -> list[str]:
     if not re.fullmatch(r"[0-9a-f]{40}", str(record["pair_hash"])):
         errors.append("pair_hash must be the 40-character hash from the language database")
     if kind == "review":
-        if record["meaning"] not in SCORES or record["fluency"] not in SCORES:
+        # type() rather than `in SCORES` alone: JSON true and false would pass as 1 and 0.
+        if any(type(record[field]) is not int or record[field] not in SCORES for field in ("meaning", "fluency")):
             errors.append("meaning and fluency must each be 0, 1, or 2")
         if not CODE.match(str(record["reviewer"])):
             errors.append("reviewer must be a roster code such as R01, not a name")
@@ -126,6 +127,19 @@ def load_roster(path: Path) -> dict[str, str]:
             raise ValueError(f"{path.name} line {number}: code {code} listed twice")
         roster[code] = role
     return roster
+
+
+def roster_problems(records: list[dict], roster: dict[str, str]) -> list[str]:
+    """Records whose reviewer or approver is not in the roster with the matching role."""
+    problems = []
+    for number, record in enumerate(records, start=1):
+        if kind_of(record) == "review":
+            code, role = record["reviewer"], "reviewer"
+        else:
+            code, role = record["approver"], "lead_editor"
+        if roster.get(code) != role:
+            problems.append(f"record {number}: {code} is not listed as a {role} in the roster")
+    return problems
 
 
 @dataclass(frozen=True)

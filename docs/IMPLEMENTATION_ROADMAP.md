@@ -158,15 +158,15 @@ Agreed order, 2026-10-25. Each step lists what must be true before it counts as 
 
 Step 4. This is what makes reviewer decisions durable and searchable before the work grows from 800 pairs to thousands.
 
-- [ ] PostgreSQL tables for reviewers, review records, approvals, corrections, and dataset releases. Records are append-only and never edited in place.
-- [ ] Importer for `corpus-reviews.jsonl` that keeps every field of both record kinds:
+- [-] PostgreSQL tables for reviewers, review records, approvals, corrections, and dataset releases. Records are append-only and never edited in place. *4a:* `corpus_review_records` (reviews and approvals, with their corrections and notes) and `review_imports` exist; a database trigger refuses edits and deletes. Reviewer and dataset-release tables are not built yet.
+- [x] Importer for `corpus-reviews.jsonl` (`backend/scripts/import_reviews.py`) that keeps every field of both record kinds:
   - `kind` and `pair_hash`;
   - reviews: `meaning`, `fluency`, `reviewer`, `reviewed_on`, `correction`;
   - approvals: `decision`, `approver`, `approved_on`;
   - both: `recorded_at`, `batch`, `notes`.
   Round-trip tests must show that a file of reviews and approvals exports back unchanged.
-- [ ] Each imported record has a stable source identity (source file and line, or a hash of the record) protected by a database uniqueness constraint. Inserts are conflict-safe inside one transaction, so re-running the import, or running two imports at once, adds nothing twice.
-- [ ] The original record order is stored and kept through import, storage, and export, because `corpus_reviews.decide()` uses order to find the latest review and whether an approval came after it.
+- [x] Each imported record has a stable source identity (source file and line, or a hash of the record) protected by a database uniqueness constraint. Inserts are conflict-safe inside one transaction, so re-running the import, or running two imports at once, adds nothing twice.
+- [-] The original record order is stored and kept through import, storage, and export, because `corpus_reviews.decide()` uses order to find the latest review and whether an approval came after it. *4a:* kept through import and storage, and file order is checked on every import; export back comes in 4b.
 - [ ] The rules of `corpus_reviews.decide()`, reused rather than rewritten: an approval counts only if it comes after the latest review and is by someone other than the reviewers.
 - [ ] An approval names the review records it was shown. The server checks that they are still the latest reviews and saves the approval in the same transaction; if a newer review arrived in between, the approval is refused.
 - [ ] Role enforcement with the existing `reviewer` and `editor` roles; requires web sign-in (Auth foundation).
