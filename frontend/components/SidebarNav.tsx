@@ -177,7 +177,7 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <header className="shell-topbar">
+      <header className={`shell-topbar${collapsed ? " nav-collapsed" : ""}`}>
         <div className="shell-topbar-inner">
           <button
             type="button"
@@ -200,6 +200,15 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
           </form>
           <Link href="/zomidictionary" className="shell-topbar-search-btn" aria-label="Search the dictionary">
             <IconSearch size={18} />
+          </Link>
+          <Link
+            href="/profile"
+            className={`shell-user-link${isActive(pathname, "/profile") ? " active" : ""}`}
+            aria-label="Open guest profile"
+            aria-current={isActive(pathname, "/profile") ? "page" : undefined}
+          >
+            <span className="shell-user-copy"><strong>Guest</strong><small>Local profile</small></span>
+            <span className="shell-user-avatar"><IconUser size={20} /></span>
           </Link>
         </div>
       </header>

@@ -50,23 +50,45 @@
 @media(max-width:767px){.sr-home{padding-bottom:92px}.sr-hero{padding:29px 20px 32px;min-height:auto}.sr-hero:after{right:-33%;bottom:-15%;opacity:.55}.sr-eyebrow{font-size:9px;letter-spacing:.17em}.sr-title{font-size:clamp(31px,9vw,42px);max-width:410px;margin:13px 0}.sr-summary{font-size:13px;line-height:1.6;max-width:410px;margin-bottom:21px}.sr-search{border-radius:13px;max-width:none}.sr-search button{padding:11px 15px;font-size:13px}.sr-search input{font-size:13px}.sr-quick{margin-top:14px;gap:7px}.sr-chip{font-size:12px;padding:5px 10px}.sr-content{padding:13px 12px}.sr-features{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.sr-feature{min-height:148px;padding:13px 12px 27px}.sr-feature-icon{width:40px;height:40px}.sr-feature-title{font-size:16px}.sr-feature-copy{font-size:12px}.sr-metrics{grid-template-columns:repeat(2,minmax(0,1fr));padding:9px;margin-top:11px}.sr-metric{padding:12px;border-bottom:1px solid rgba(255,255,255,.1)}.sr-metric strong{font-size:19px}.sr-metric span{font-size:11px}.sr-cards{grid-template-columns:1fr;gap:11px;margin-top:11px}.sr-cards>.sr-panel:first-child{grid-column:auto}.sr-panel{padding:17px}.sr-panel h2{font-size:20px}}
 @media(prefers-reduced-motion:reduce){.sr-feature,.sr-chip{transition:none}}
 
-/* Polish pass: illustrated hero and accessible/mobile-first interactions */
+/* Polish pass: accessible, mobile-first hero interactions */
 .sr-hero{display:flex;align-items:center;gap:12px;min-height:405px}
 .sr-hero-inner{flex:1 1 58%;min-width:0}
-.sr-hero-art{flex:0 1 37%;min-width:210px;max-width:480px;opacity:.96;filter:drop-shadow(0 15px 28px rgba(0,0,0,.23))}
-.sr-hero-art svg{display:block;width:100%;height:auto}
 .sr-hero .sr-search:focus-within{outline:3px solid #f0ca7b;outline-offset:3px}
 .sr-search input:focus-visible{outline:none}
 .sr-feature:focus-visible,.sr-chip:focus-visible{outline:3px solid #e8bd70;outline-offset:3px}
 .sr-hero .sr-summary{max-width:600px}
-@media(max-width:930px){.sr-hero-art{flex-basis:30%;min-width:150px;opacity:.72}}
 @media(max-width:767px){
 .sr-hero{display:block;min-height:0;padding:26px 17px 27px}
 .sr-hero-inner{position:relative;z-index:2}
-.sr-hero-art{position:absolute;pointer-events:none;width:58%;min-width:0;right:-18%;top:14px;opacity:.17;z-index:0}
 .sr-hero .sr-summary{max-width:340px}
 .sr-search{gap:3px;padding:4px;box-shadow:0 6px 18px rgba(0,0,0,.14)}
 .sr-search input{min-height:44px;padding:10px 2px}
 .sr-search button{min-height:44px;padding:9px 15px;background:#e7c078;color:#102746}
 .sr-content{padding-bottom:calc(108px + env(safe-area-inset-bottom,0px))}
+}
+
+/* The owner's mountain-and-tent artwork replaces the decorative quill. */
+.sr-hero{
+  background:
+    linear-gradient(90deg,rgba(8,25,53,.94) 0%,rgba(8,25,53,.84) 38%,rgba(8,25,53,.24) 72%,rgba(8,25,53,.08) 100%),
+    url("/hero-zomi-hills.webp") right center / cover no-repeat,
+    #10234b;
+  min-height:440px;
+  border-bottom:1px solid rgba(226,188,106,.28);
+  margin:16px 16px 0;
+  border-radius:26px;
+  box-shadow:0 16px 34px rgba(8,25,53,.16);
+}
+.sr-feature,.sr-metrics,.sr-panel{border-radius:22px}
+.sr-hero::before,.sr-hero::after{display:none}
+@media(max-width:767px){
+  .sr-hero{
+    background:
+      linear-gradient(180deg,rgba(8,25,53,.62) 0%,rgba(8,25,53,.8) 48%,rgba(8,25,53,.72) 100%),
+      url("/hero-zomi-hills-sm.webp") right center / cover no-repeat,
+      #10234b;
+    min-height:0;
+    margin:10px 10px 0;
+    border-radius:22px;
+  }
 }
