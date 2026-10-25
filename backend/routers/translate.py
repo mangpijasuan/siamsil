@@ -75,7 +75,7 @@ def search_matches(
         "query": q,
         "count": len(results[:limit]),
         "results": results[:limit],
-        "note": "Parallel corpus matches are machine-translated and unverified.",
+        "note": "Parallel corpus matches are machine-translated; only those marked verified were approved by Zomi reviewers.",
     }
 
 
