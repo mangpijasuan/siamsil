@@ -2,8 +2,14 @@
   "_comment": "Machine-readable training rights, mirroring docs/DATA_RIGHTS.md. Change a status only when that document records the evidence.",
   "sources": {
     "parallel_corpus": {
-      "description": "Tatoeba/OPUS English with Gemini-generated Zomi",
-      "train": "needs_review"
+      "description": "Tatoeba/OPUS English with Gemini-generated Zomi, obtained from Hugging Face ZomiLearner/English-Zomi-OPUS_Tatoeba_v20230412",
+      "source_url": "https://huggingface.co/datasets/ZomiLearner/English-Zomi-OPUS_Tatoeba_v20230412",
+      "declared_license": "CC0 1.0 (as labeled on the Hugging Face dataset page, reported by the project owner on 2026-10-25; not independently verified)",
+      "train": "needs_review",
+      "display": "needs_review",
+      "redistribute": "needs_review",
+      "commercial": "needs_review",
+      "evidence": "English side: Tatoeba sentences via OPUS (OPUS_Tatoeba_v20230412). Zomi side: machine-generated; 1,769,117 of 1,775,043 unique pairs name a Gemini model in the file's model column (gemini-3-flash-preview, gemini-pro, gemini-2.5-flash, gemini-3-pro-preview), 5,926 name none. A CC0 label from the uploader does not by itself settle Tatoeba's attribution terms or the terms under which the Gemini output was generated; train stays needs_review until those are verified. See docs/DATA_RIGHTS.md."
     },
     "bible_original": {
       "description": "KJV English with the 'Original ZSF Text' Zomi column",
