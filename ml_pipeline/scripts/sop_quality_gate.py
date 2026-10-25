@@ -71,7 +71,9 @@ def check_records(records: list[dict[str, Any]]) -> dict[str, Any]:
                 reject(index, record_id, "missing_" + language)
 
         split = row.get("split")
-        if split not in ALLOWED_SPLITS:
+        # A list or object here must be reported, not crash the gate.
+        valid_split = isinstance(split, str) and split in ALLOWED_SPLITS
+        if not valid_split:
             reject(index, record_id, "invalid_split")
         else:
             counts[split] += 1
@@ -101,7 +103,7 @@ def check_records(records: list[dict[str, Any]]) -> dict[str, Any]:
         if row.get("origin_language") not in ("en", "zom"):
             reject(index, record_id, "invalid_origin_language")
 
-        if split in ALLOWED_SPLITS:
+        if valid_split:
             family = row.get("split_family_id")
             if not isinstance(family, str) or not family.strip():
                 reject(index, record_id, "missing_split_family_id")

@@ -71,6 +71,12 @@ class SopQualityGateTests(unittest.TestCase):
                                     english="Welcome back.", zomi="Other test Zomi.", split="test")]
         self.assertTrue(check_records(rows)["passed"])
 
+    def test_malformed_values_are_reported_not_crashing(self):
+        rows = [approved(split=["train"]), approved(id="sentence-002", split={"name": "test"},
+                                                     origin_language=["en"], split_family_id=["f"])]
+        self.assertIn("invalid_split", self.codes(rows))
+        self.assertIn("invalid_origin_language", self.codes(rows))
+
     def test_missing_provenance_rejected(self):
         self.assertIn("missing_provenance", self.codes([approved(source_id="")]))
 
