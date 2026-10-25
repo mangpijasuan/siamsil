@@ -55,8 +55,11 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.CheckConstraint(
-            "(kind = 'review' AND meaning BETWEEN 0 AND 2 AND fluency BETWEEN 0 AND 2 AND decision IS NULL)"
-            " OR (kind = 'approval' AND decision IN ('approve', 'reject') AND meaning IS NULL AND fluency IS NULL)",
+            # IS NOT NULL is spelled out: a NULL inside BETWEEN or IN would make the check pass.
+            "(kind = 'review' AND meaning IS NOT NULL AND fluency IS NOT NULL"
+            " AND meaning BETWEEN 0 AND 2 AND fluency BETWEEN 0 AND 2 AND decision IS NULL)"
+            " OR (kind = 'approval' AND decision IS NOT NULL AND decision IN ('approve', 'reject')"
+            " AND meaning IS NULL AND fluency IS NULL)",
             name="ck_corpus_review_records_kind_fields",
         ),
         sa.CheckConstraint("position >= 0", name="ck_corpus_review_records_position"),
@@ -85,9 +88,18 @@ def upgrade() -> None:
         FOR EACH ROW EXECUTE FUNCTION corpus_review_records_append_only()
         """
     )
+    # Row triggers do not see TRUNCATE, so refuse it with a statement trigger.
+    op.execute(
+        """
+        CREATE TRIGGER corpus_review_records_no_truncate
+        BEFORE TRUNCATE ON corpus_review_records
+        FOR EACH STATEMENT EXECUTE FUNCTION corpus_review_records_append_only()
+        """
+    )
 
 
 def downgrade() -> None:
+    op.execute("DROP TRIGGER corpus_review_records_no_truncate ON corpus_review_records")
     op.execute("DROP TRIGGER corpus_review_records_append_only ON corpus_review_records")
     op.execute("DROP FUNCTION corpus_review_records_append_only()")
     op.drop_index("ix_corpus_review_records_pair_hash", table_name="corpus_review_records")

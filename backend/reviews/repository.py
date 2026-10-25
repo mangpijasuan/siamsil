@@ -3,9 +3,13 @@
 The decisions file is append-only, so the database holds the same records in the same
 order: record N of the file is stored at position N. An import adds only the records
 past what is already stored, after checking that the stored ones still match the file.
-Re-importing a file, or an older copy of it, adds nothing; a file whose history differs
-from what is stored is refused. Records are kept exactly as written (`record`) and the
-database refuses to edit or delete them.
+Re-importing a file, or an older copy of it, adds nothing but is still logged; a file whose
+history differs from what is stored is refused. The database refuses to edit, delete, or
+truncate stored records.
+
+Each record is kept as a JSON value (`record`), so it reads back equal to what was imported,
+and a file written by review_sample.py exports back byte for byte. Formatting that JSON does
+not keep (spacing, key order, how a number is spelled) is not preserved.
 
 Records arrive already validated by ml_pipeline/scripts/corpus_reviews.py (load), which
 is also what decides each pair's status; this module stores them and gives them back.
@@ -37,7 +41,7 @@ class ImportResult:
     records_in_file: int
     already_stored: int
     added: int
-    import_id: UUID | None
+    import_id: UUID
 
 
 def canonical(record: dict[str, Any]) -> str:
@@ -104,10 +108,8 @@ class ReviewRecordRepository:
                     "the decisions file must only ever be appended to"
                 )
 
+        # Every import is logged, including one that adds nothing, so each check of a file is on record.
         new = list(range(len(stored), len(records)))
-        if not new:
-            return ImportResult(len(records), len(stored), 0, None)
-
         batch = ReviewImport(
             source_name=source_name,
             source_sha256=source_sha256,
@@ -127,7 +129,8 @@ class ReviewRecordRepository:
                     "source_name": source_name,
                     "source_sha256": source_sha256,
                     "records_added": len(new),
-                    "first_position": new[0],
+                    "records_in_file": len(records),
+                    "already_stored": len(stored),
                 },
             )
         )

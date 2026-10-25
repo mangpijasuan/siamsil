@@ -34,8 +34,11 @@ class CorpusReviewRecord(Base):
     __tablename__ = "corpus_review_records"
     __table_args__ = (
         CheckConstraint(
-            "(kind = 'review' AND meaning BETWEEN 0 AND 2 AND fluency BETWEEN 0 AND 2 AND decision IS NULL)"
-            " OR (kind = 'approval' AND decision IN ('approve', 'reject') AND meaning IS NULL AND fluency IS NULL)",
+            # IS NOT NULL is spelled out: a NULL inside BETWEEN or IN would make the check pass.
+            "(kind = 'review' AND meaning IS NOT NULL AND fluency IS NOT NULL"
+            " AND meaning BETWEEN 0 AND 2 AND fluency BETWEEN 0 AND 2 AND decision IS NULL)"
+            " OR (kind = 'approval' AND decision IS NOT NULL AND decision IN ('approve', 'reject')"
+            " AND meaning IS NULL AND fluency IS NULL)",
             name="ck_corpus_review_records_kind_fields",
         ),
         CheckConstraint("position >= 0", name="ck_corpus_review_records_position"),

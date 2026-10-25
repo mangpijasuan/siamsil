@@ -88,18 +88,41 @@ class RecordIdentityTests(unittest.TestCase):
         self.assertEqual(record_ids(records)[:3], record_ids(records[:3]))
 
 
+ROSTER = {"R01": "reviewer", "R02": "reviewer", "E01": "lead_editor", "E02": "lead_editor"}
+
+
+class ImportCheckTests(unittest.TestCase):
+    def test_boolean_scores_are_not_scores(self) -> None:
+        record = rating(HASH_A, 2, 2)
+        record["meaning"] = True
+        self.assertEqual(corpus_reviews.validate(record), ["meaning and fluency must each be 0, 1, or 2"])
+
+    def test_every_actor_must_be_in_the_roster_with_the_right_role(self) -> None:
+        self.assertEqual(corpus_reviews.roster_problems(sample_records(), ROSTER), [])
+        forged = [rating(HASH_A, 2, 2, reviewer="R09"), approval(HASH_A, approver="R01")]
+        self.assertEqual(
+            corpus_reviews.roster_problems(forged, ROSTER),
+            [
+                "record 1: R09 is not listed as a reviewer in the roster",
+                "record 2: R01 is not listed as a lead_editor in the roster",
+            ],
+        )
+
+
 @unittest.skipUnless(os.getenv("SIAMSIL_DATABASE_URL"), "application database is not configured")
 class ReviewImportIntegrationTests(unittest.TestCase):
     def setUp(self) -> None:
         engine = get_database_engine()
         if engine is None:
             self.skipTest("application database is not configured")
+        # Check before opening the test transaction: tearDown does not run after a skip.
+        with Session(engine) as probe:
+            if probe.scalar(select(func.count()).select_from(CorpusReviewRecord)):
+                self.skipTest("corpus_review_records is not empty; these tests need an empty table")
         self.connection = engine.connect()
         self.transaction = self.connection.begin()
         self.session = Session(bind=self.connection, expire_on_commit=False)
         self.repository = ReviewRecordRepository(self.session)
-        if self.session.scalar(select(func.count()).select_from(CorpusReviewRecord)):
-            self.skipTest("corpus_review_records is not empty; these tests need an empty table")
         self.folder = tempfile.TemporaryDirectory()
         self.path = Path(self.folder.name) / "corpus-reviews.jsonl"
 
@@ -177,10 +200,12 @@ class ReviewImportIntegrationTests(unittest.TestCase):
         first = self.import_file(records)
         again = self.import_file(records)
 
-        self.assertIsNotNone(first.import_id)
-        self.assertEqual((again.already_stored, again.added, again.import_id), (5, 0, None))
-        self.assertEqual(self.session.scalar(select(func.count()).select_from(ReviewImport)), 1)
+        self.assertEqual((again.already_stored, again.added), (5, 0))
+        self.assertNotEqual(again.import_id, first.import_id)
         self.assertEqual(len(self.repository.records()), 5)
+        # The check that added nothing is still on record.
+        logged = self.session.get(ReviewImport, again.import_id)
+        self.assertEqual((logged.records_in_file, logged.records_added), (5, 0))
 
     def test_appended_records_are_added_after_the_stored_ones(self) -> None:
         self.import_file(self.write(sample_records()[:3]))
@@ -229,11 +254,29 @@ class ReviewImportIntegrationTests(unittest.TestCase):
         for statement in (
             "UPDATE corpus_review_records SET meaning = 0 WHERE position = 0",
             "DELETE FROM corpus_review_records WHERE position = 0",
+            "TRUNCATE corpus_review_records",
         ):
             with self.subTest(statement=statement):
                 savepoint = self.connection.begin_nested()
                 with self.assertRaisesRegex(DBAPIError, "append-only"):
                     self.connection.execute(text(statement))
+                savepoint.rollback()
+
+    def test_database_rejects_a_review_without_scores(self) -> None:
+        self.import_file(self.write(sample_records()))
+        import_id = self.session.scalar(select(ReviewImport.id))
+        for kind, decision in (("review", None), ("approval", None)):
+            with self.subTest(kind=kind):
+                savepoint = self.connection.begin_nested()
+                with self.assertRaises(IntegrityError):
+                    self.connection.execute(
+                        text(
+                            "INSERT INTO corpus_review_records (position, record_id, import_id, kind, pair_hash,"
+                            " actor_code, decided_on, meaning, fluency, decision, record)"
+                            " VALUES (5, 'x', :import_id, :kind, :pair, 'R01', '2026-10-25', NULL, NULL, :decision, '{}')"
+                        ),
+                        {"import_id": import_id, "pair": HASH_A, "kind": kind, "decision": decision},
+                    )
                 savepoint.rollback()
 
     def test_database_rejects_a_record_with_fields_of_the_wrong_kind(self) -> None:
@@ -270,7 +313,10 @@ class ConcurrentImportTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         with self.engine.begin() as connection:
+            # The table refuses TRUNCATE; only this test's own cleanup lifts that, inside one transaction.
+            connection.execute(text("ALTER TABLE corpus_review_records DISABLE TRIGGER corpus_review_records_no_truncate"))
             connection.execute(text("TRUNCATE corpus_review_records, review_imports"))
+            connection.execute(text("ALTER TABLE corpus_review_records ENABLE TRIGGER corpus_review_records_no_truncate"))
             connection.execute(text("DELETE FROM audit_events WHERE action = 'reviews.records_imported'"))
 
     def test_two_imports_at_once_store_each_record_once(self) -> None:
@@ -301,11 +347,22 @@ class ConcurrentImportTests(unittest.TestCase):
         self.assertEqual(sorted(result.added for result in results), [0, 5])
         with Session(self.engine) as session:
             self.assertEqual(ReviewRecordRepository(session).records(), records)
-            self.assertEqual(session.scalar(select(func.count()).select_from(ReviewImport)), 1)
+            self.assertEqual(session.scalar(select(func.count()).select_from(ReviewImport)), 2)
 
 
 @unittest.skipUnless(os.getenv("SIAMSIL_DATABASE_URL"), "application database is not configured")
 class ImportCommandTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.folder = tempfile.TemporaryDirectory()
+        self.path = Path(self.folder.name) / "corpus-reviews.jsonl"
+        self.roster = Path(self.folder.name) / "roster.csv"
+        self.roster.write_text(
+            "code,role\n" + "".join(f"{code},{role}\n" for code, role in ROSTER.items()), encoding="utf-8"
+        )
+
+    def tearDown(self) -> None:
+        self.folder.cleanup()
+
     def run_command(self, *args: str) -> subprocess.CompletedProcess:
         return subprocess.run(
             [sys.executable, str(PROJECT_ROOT / "backend" / "scripts" / "import_reviews.py"), *args],
@@ -314,28 +371,39 @@ class ImportCommandTests(unittest.TestCase):
             cwd=PROJECT_ROOT,
         )
 
+    def stored_count(self) -> int:
+        with Session(get_database_engine()) as session:
+            return session.scalar(select(func.count()).select_from(CorpusReviewRecord))
+
     def test_dry_run_reports_without_saving(self) -> None:
-        engine = get_database_engine()
-        with Session(engine) as session:
-            if session.scalar(select(func.count()).select_from(CorpusReviewRecord)):
-                self.skipTest("corpus_review_records is not empty")
-        with tempfile.TemporaryDirectory() as folder:
-            path = Path(folder) / "corpus-reviews.jsonl"
-            corpus_reviews.append(path, sample_records())
-            completed = self.run_command(str(path), "--dry-run")
+        if self.stored_count():
+            self.skipTest("corpus_review_records is not empty")
+        corpus_reviews.append(self.path, sample_records())
+        completed = self.run_command(str(self.path), "--roster", str(self.roster), "--dry-run")
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertIn("5 records in corpus-reviews.jsonl; 0 already stored; would add 5", completed.stdout)
-        with Session(engine) as session:
-            self.assertEqual(session.scalar(select(func.count()).select_from(CorpusReviewRecord)), 0)
+        self.assertEqual(self.stored_count(), 0)
+
+    def test_records_by_people_outside_the_roster_import_nothing(self) -> None:
+        if self.stored_count():
+            self.skipTest("corpus_review_records is not empty")
+        corpus_reviews.append(self.path, [rating(HASH_A, 2, 2), rating(HASH_A, 2, 2, reviewer="R09"), approval(HASH_A)])
+        completed = self.run_command(str(self.path), "--roster", str(self.roster))
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("record 2: R09 is not listed as a reviewer in the roster", completed.stderr)
+        self.assertEqual(self.stored_count(), 0)
+
+    def test_the_roster_is_required(self) -> None:
+        corpus_reviews.append(self.path, sample_records())
+        completed = self.run_command(str(self.path))
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("--roster", completed.stderr)
 
     def test_a_malformed_file_imports_nothing(self) -> None:
-        with tempfile.TemporaryDirectory() as folder:
-            path = Path(folder) / "corpus-reviews.jsonl"
-            path.write_text('{"kind": "review", "pair_hash": "short"}\n', encoding="utf-8")
-            completed = self.run_command(str(path))
+        self.path.write_text('{"kind": "review", "pair_hash": "short"}\n', encoding="utf-8")
+        completed = self.run_command(str(self.path), "--roster", str(self.roster))
         self.assertNotEqual(completed.returncode, 0)
         self.assertIn("Nothing imported", completed.stderr)
-
 
 if __name__ == "__main__":
     unittest.main()

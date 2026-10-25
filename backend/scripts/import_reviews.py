@@ -2,10 +2,12 @@
 
 From the repository root, with SIAMSIL_DATABASE_URL set and migrations applied:
 
-    python backend/scripts/import_reviews.py ../siamsil-data/reviews/corpus-reviews.jsonl
-    python backend/scripts/import_reviews.py ../siamsil-data/reviews/corpus-reviews.jsonl --dry-run
+    python backend/scripts/import_reviews.py ../siamsil-data/reviews/corpus-reviews.jsonl \
+        --roster ../siamsil-data/reviews/roster.csv [--dry-run]
 
-Safe to run again after more reviews are appended: only the new records are added.
+Safe to run again after more reviews are appended: only the new records are added. Every
+record's reviewer or approver must be in the private roster with the matching role, so a
+file edited by someone outside the roster cannot add reviews or approvals.
 """
 
 from __future__ import annotations
@@ -29,15 +31,25 @@ from reviews.repository import ReviewImportConflict, ReviewRecordRepository  # n
 def main() -> int:
     parser = argparse.ArgumentParser(description="Import corpus review decisions (SOP-07) into PostgreSQL.")
     parser.add_argument("reviews", type=Path, help="the decisions file, e.g. ../siamsil-data/reviews/corpus-reviews.jsonl")
+    parser.add_argument("--roster", type=Path, required=True, help="private CSV: code, role[, name]")
     parser.add_argument("--dry-run", action="store_true", help="check and report without saving")
     args = parser.parse_args()
 
-    if not args.reviews.is_file():
-        sys.exit(f"Reviews file not found: {args.reviews}")
+    for path in (args.reviews, args.roster):
+        if not path.is_file():
+            sys.exit(f"File not found: {path}")
+    checksum = sha256(args.reviews.read_bytes()).hexdigest()
     try:
         records = corpus_reviews.load(args.reviews)
+        roster = corpus_reviews.load_roster(args.roster)
     except ValueError as error:
         sys.exit(f"Nothing imported: {error}")
+    # The checksum is the import's provenance, so it must describe the records that were read.
+    if sha256(args.reviews.read_bytes()).hexdigest() != checksum:
+        sys.exit(f"Nothing imported: {args.reviews.name} changed while it was being read; run the import again")
+    problems = corpus_reviews.roster_problems(records, roster)
+    if problems:
+        sys.exit("Nothing imported:\n  " + "\n  ".join(problems))
 
     session_factory = get_session_factory()
     if session_factory is None:
@@ -48,7 +60,7 @@ def main() -> int:
             result = ReviewRecordRepository(session).import_records(
                 records,
                 source_name=args.reviews.name,
-                source_sha256=sha256(args.reviews.read_bytes()).hexdigest(),
+                source_sha256=checksum,
             )
         except ReviewImportConflict as error:
             session.rollback()
@@ -62,7 +74,7 @@ def main() -> int:
     print(
         f"{result.records_in_file} records in {args.reviews.name}; "
         f"{result.already_stored} already stored; {verb} {result.added}"
-        + (f" (import {result.import_id})" if result.import_id and not args.dry_run else "")
+        + ("" if args.dry_run else f" (import {result.import_id})")
     )
     return 0
 
