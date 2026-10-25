@@ -18,6 +18,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "ml_pipeline" / "scripts"))
 sys.path.insert(0, str(PROJECT_ROOT / "backend"))
 
 import corpus_reviews  # type: ignore  # noqa: E402
+from build_language_db import release_counts  # type: ignore  # noqa: E402
 from database import get_database_engine  # noqa: E402
 from models import AuditEvent, CorpusReviewRecord, ReviewImport  # noqa: E402
 from reviews.repository import (  # noqa: E402
@@ -26,6 +27,9 @@ from reviews.repository import (  # noqa: E402
     canonical,
     record_ids,
 )
+
+sys.path.insert(0, str(PROJECT_ROOT / "backend" / "scripts"))
+from export_reviews import write_export  # type: ignore  # noqa: E402
 
 HASH_A, HASH_B = "a" * 40, "b" * 40
 
@@ -109,6 +113,73 @@ class ImportCheckTests(unittest.TestCase):
         )
 
 
+class ExportTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.folder = tempfile.TemporaryDirectory()
+        self.dir = Path(self.folder.name)
+        self.out = self.dir / "corpus-reviews.jsonl"
+        self.records = sample_records()
+
+    def tearDown(self) -> None:
+        self.folder.cleanup()
+
+    def reference(self, records: list[dict]) -> bytes:
+        path = self.dir / "reference.jsonl"
+        path.unlink(missing_ok=True)
+        corpus_reviews.append(path, records)
+        data = path.read_bytes()
+        path.unlink()
+        return data
+
+    def leftovers(self) -> list[str]:
+        return sorted(path.name for path in self.dir.iterdir() if path.name != self.out.name)
+
+    def test_writes_the_same_bytes_as_the_offline_workflow(self) -> None:
+        write_export(self.records, self.out)
+        self.assertEqual(self.out.read_bytes(), self.reference(self.records))
+        self.assertEqual(corpus_reviews.load(self.out), self.records)
+        self.assertEqual(self.leftovers(), [])
+
+    def test_extends_a_file_the_database_has_moved_past(self) -> None:
+        corpus_reviews.append(self.out, self.records[:2])
+        write_export(self.records, self.out)
+        self.assertEqual(self.out.read_bytes(), self.reference(self.records))
+
+    def test_keeps_a_file_holding_decisions_the_database_lacks(self) -> None:
+        corpus_reviews.append(self.out, self.records)
+        before = self.out.read_bytes()
+        with self.assertRaisesRegex(ValueError, "not stored in the database"):
+            write_export(self.records[:3], self.out)
+        self.assertEqual(self.out.read_bytes(), before)
+        self.assertEqual(self.leftovers(), [])
+
+    def test_keeps_a_file_whose_history_differs(self) -> None:
+        changed = sample_records()
+        changed[0] = rating(HASH_A, 1, 1)
+        corpus_reviews.append(self.out, changed[:2])
+        before = self.out.read_bytes()
+        with self.assertRaises(ValueError):
+            write_export(self.records, self.out)
+        self.assertEqual(self.out.read_bytes(), before)
+
+    def test_keeps_a_malformed_file(self) -> None:
+        self.out.write_text("not json\n", encoding="utf-8")
+        with self.assertRaises(ValueError):
+            write_export(self.records, self.out)
+        self.assertEqual(self.out.read_text(encoding="utf-8"), "not json\n")
+
+
+class ReleaseCountTests(unittest.TestCase):
+    def test_release_records_how_many_review_records_it_used(self) -> None:
+        self.assertEqual(
+            release_counts(10, 20, sample_records()),
+            {"dictionary_entries": 10, "parallel_sentences": 20, "corpus_review_records": 5},
+        )
+
+    def test_release_without_reviews_has_no_review_count(self) -> None:
+        self.assertEqual(release_counts(10, 20, []), {"dictionary_entries": 10, "parallel_sentences": 20})
+
+
 @unittest.skipUnless(os.getenv("SIAMSIL_DATABASE_URL"), "application database is not configured")
 class ReviewImportIntegrationTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -161,6 +232,12 @@ class ReviewImportIntegrationTests(unittest.TestCase):
             {pair: decision.status for pair, decision in corpus_reviews.decide(stored).items()},
             {HASH_A: corpus_reviews.HUMAN_APPROVED, HASH_B: corpus_reviews.REJECTED},
         )
+
+    def test_import_then_export_reproduces_the_file(self) -> None:
+        self.import_file(self.write(sample_records()))
+        exported = Path(self.folder.name) / "exported" / "corpus-reviews.jsonl"
+        write_export(self.repository.records(), exported)
+        self.assertEqual(exported.read_bytes(), self.path.read_bytes())
 
     def test_typed_columns_match_each_record(self) -> None:
         self.import_file(self.write(sample_records()))

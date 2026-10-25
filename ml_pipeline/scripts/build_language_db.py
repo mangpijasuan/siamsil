@@ -32,7 +32,7 @@ from pathlib import Path
 
 import corpus_reviews
 
-SCRIPT_VERSION = "1.2.0"
+SCRIPT_VERSION = "1.3.0"
 DATASET_VERSION = "v2"
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -693,6 +693,15 @@ def release_manifest(
     }
 
 
+def release_counts(dictionary_entries: int, parallel_sentences: int, review_records: list[dict]) -> dict:
+    counts = {"dictionary_entries": dictionary_entries, "parallel_sentences": parallel_sentences}
+    if review_records:
+        # The decisions file is append-only, so this names exactly which review records the release
+        # used: the first N, which the Review Center stores at positions 0..N-1 (import_reviews.py).
+        counts["corpus_review_records"] = len(review_records)
+    return counts
+
+
 def write_release_manifest(manifest: dict, current: Path, versions_dir: Path) -> Path:
     """Write the current manifest and an immutable copy named by version and database hash."""
     text = json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
@@ -938,7 +947,7 @@ def main() -> None:
             **({"corpus_reviews": args.reviews} if review_records else {}),
         },
         eval_files=args.eval,
-        counts={"dictionary_entries": dict_total, "parallel_sentences": parallel_total},
+        counts=release_counts(dict_total, parallel_total, review_records),
         created_at=created_at,
     )
     version_file = write_release_manifest(manifest, DEFAULT_MANIFEST, DEFAULT_VERSIONS)

@@ -166,13 +166,13 @@ Step 4. This is what makes reviewer decisions durable and searchable before the 
   - both: `recorded_at`, `batch`, `notes`.
   Round-trip tests must show that a file of reviews and approvals exports back unchanged.
 - [x] Each imported record has a stable source identity (source file and line, or a hash of the record) protected by a database uniqueness constraint. Inserts are conflict-safe inside one transaction, so re-running the import, or running two imports at once, adds nothing twice.
-- [-] The original record order is stored and kept through import, storage, and export, because `corpus_reviews.decide()` uses order to find the latest review and whether an approval came after it. *4a:* kept through import and storage, and file order is checked on every import; export back comes in 4b.
+- [x] The original record order is stored and kept through import, storage, and export, because `corpus_reviews.decide()` uses order to find the latest review and whether an approval came after it. File order is checked on every import, and export writes records back in that order.
 - [ ] The rules of `corpus_reviews.decide()`, reused rather than rewritten: an approval counts only if it comes after the latest review and is by someone other than the reviewers.
 - [ ] An approval names the review records it was shown. The server checks that they are still the latest reviews and saves the approval in the same transaction; if a newer review arrived in between, the approval is refused.
 - [ ] Role enforcement with the existing `reviewer` and `editor` roles; requires web sign-in (Auth foundation).
 - [ ] Protected screens: review queue, side-by-side comparison, rating, correction, approval, rejection, and notes.
-- [ ] Export back to the decisions format, so `build_language_db.py` keeps applying approvals on every rebuild.
-- [ ] Each dataset release records which review records it used.
+- [x] Export back to the decisions format, so `build_language_db.py` keeps applying approvals on every rebuild (`backend/scripts/export_reviews.py`). It never overwrites decisions the database lacks.
+- [x] Each dataset release records which review records it used: the manifest's `counts.corpus_review_records` is N, meaning stored positions 0 to N-1.
 
 ## Later releases (visible, not Release 1)
 

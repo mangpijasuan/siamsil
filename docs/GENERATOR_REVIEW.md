@@ -87,7 +87,15 @@ This measures the training corpus. It does not replace the human evaluation sets
      --roster ../siamsil-data/reviews/roster.csv
    ```
 
-   The file is checked the same way the build checks it. Every reviewer and approver must also be in the roster with the matching role, so an edited file cannot add reviews or approvals in someone else's name. Each record is then stored as written, in file order, which `decide()` depends on. Run it again after more reviews are appended: it adds only the new records. Every import, including one that adds nothing, is logged with the file's checksum. If an earlier line of the file was changed, the import is refused and nothing is saved, because the file must only ever be appended to. The database itself refuses to edit, delete, or truncate stored records. The file stays the source of truth for rebuilds until the Review Center can export back to it.
+   The file is checked the same way the build checks it. Every reviewer and approver must also be in the roster with the matching role, so an edited file cannot add reviews or approvals in someone else's name. Each record is then stored as written, in file order, which `decide()` depends on. Run it again after more reviews are appended: it adds only the new records. Every import, including one that adds nothing, is logged with the file's checksum. If an earlier line of the file was changed, the import is refused and nothing is saved, because the file must only ever be appended to. The database itself refuses to edit, delete, or truncate stored records.
+
+8. **Export back** for a build, when decisions have been added in the database:
+
+   ```bash
+   python backend/scripts/export_reviews.py --out ../siamsil-data/reviews/corpus-reviews.jsonl
+   ```
+
+   It writes the stored records in the same format and order, then prints how many pairs reach each status by the same rules the build uses. An existing file is replaced only when every record in it is already stored at the same place. If the file holds decisions the database lacks, nothing is written: import the file first. Each release manifest records how many review records the build used (`counts.corpus_review_records`). Because the file only grows, that number identifies exactly which stored records went into the release.
 
 ## Rating scale
 
