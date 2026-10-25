@@ -5,7 +5,7 @@ Scope: **Release 1 — Language MVP** ([`PRODUCTION_MASTER_BUILD_PROMPT.md`](PRO
 
 This is the **single authoritative implementation checklist for Release 1**. Every status here comes from the code, merged pull requests, and CI on `main`, not from earlier plans. Phase gates are in [`ROADMAP.md`](ROADMAP.md); the target mobile and AI design is in [`MOBILE_AI_ARCHITECTURE.md`](MOBILE_AI_ARCHITECTURE.md). Neither of those holds item status.
 
-Later releases are listed at the end so they stay visible. They are not Release 1 work and should not start before Release 1 ships, unless the project owner decides otherwise.
+Later releases are listed at the end so they stay visible. They are not Release 1 work and should not start before Release 1 ships, unless the project owner decides otherwise. The exception is Phase 0 work in [`ROADMAP.md`](ROADMAP.md), which runs continuously alongside Release 1: data rights, human evaluation sets, and consent-based audio collection ([`AUDIO_CONSENT.md`](AUDIO_CONSENT.md)), because speech data takes longest to gather.
 
 ## Status legend
 
@@ -53,13 +53,13 @@ Agreed order, 2026-10-25. Each step lists what must be true before it counts as 
 1. [x] **Merge #29, #27, #28** after checking CI. All three merged 2026-10-25 on green CI.
 2. [-] **Roadmap v2**: this document. Done when merged.
 3. [ ] **Human-review pilot and protected benchmark.**
-   - [ ] The project owner creates the private reviewer roster (`data/reviews/roster.csv`: code, role, name), with at least one reviewer and one lead editor who are different people.
+   - [ ] The project owner creates the private reviewer roster in the `siamsil-data` repository (`reviews/roster.csv`: code, role, name), with at least one reviewer and one lead editor who are different people. Pass it to every `review_sample.py` command as `--roster ../siamsil-data/reviews/roster.csv`, as `docs/GENERATOR_REVIEW.md` does.
    - [ ] Export the 800-pair review sample. Reviewers rate it; a lead editor approves or rejects (`docs/GENERATOR_REVIEW.md`).
-   - [ ] Back up `data/reviews/corpus-reviews.jsonl` to `siamsil-data`.
+   - [ ] Keep the decisions in `siamsil-data` (`reviews/corpus-reviews.jsonl`, passed as `--reviews`), never in this repository.
    - [ ] Freeze the 300 English benchmark sentences, then have qualified translators produce the Zomi (`testset-sheet`, `docs/EVALUATION_SET.md`). Measure reviewer agreement.
    - [ ] Confirm the benchmark and its variants are excluded from training: `build_language_db.py` reports "Keeping N evaluation items out of training".
 4. [ ] **Minimum PostgreSQL Review Center**, built while reviewers work offline. Its scope is [below](#review-center-minimum).
-5. [!] **Training rights, then v2.** Blocked on rights. The corpus is `train: needs_review` (`data/rights.json`), and the Hugging Face dataset card is not yet verified because huggingface.co is blocked in the build environment. Train v2 only on sources marked `cleared`, plus pairs that reached `HUMAN_APPROVED`.
+5. [!] **Training rights, then v2.** Blocked on rights. The corpus is `train: needs_review` (`data/rights.json`), and the Hugging Face dataset card is not yet verified because huggingface.co is blocked in the build environment. A pair may enter v2 training only when its source is `train: cleared` in `data/rights.json`. Reaching `HUMAN_APPROVED` is a quality decision, not a rights decision, and never makes an uncleared source trainable. For the parallel corpus, both are required: the source cleared and the pair `HUMAN_APPROVED`.
 6. [!] **Evaluate v2 against v1 and retrieval** on the frozen human benchmark (`mt_eval.py`). Blocked on step 3 (benchmark) and step 5. Retrieval stays the production translator until a model passes the gate, and qualified Zomi speakers must approve before any deployment.
 7. [ ] **Navy-and-gold redesign** as its own visual PR. The owner chooses between #20 and the alternative home page; #17 is closed or folded in.
 
@@ -159,8 +159,16 @@ Agreed order, 2026-10-25. Each step lists what must be true before it counts as 
 Step 4. This is what makes reviewer decisions durable and searchable before the work grows from 800 pairs to thousands.
 
 - [ ] PostgreSQL tables for reviewers, review records, approvals, corrections, and dataset releases. Records are append-only and never edited in place.
-- [ ] Importer for `corpus-reviews.jsonl` that keeps every field: reviewer and approver codes, decisions, scores, `reviewed_on`, `recorded_at`, batch, notes, and corrections. Re-running it on the same file must change nothing.
+- [ ] Importer for `corpus-reviews.jsonl` that keeps every field of both record kinds:
+  - `kind` and `pair_hash`;
+  - reviews: `meaning`, `fluency`, `reviewer`, `reviewed_on`, `correction`;
+  - approvals: `decision`, `approver`, `approved_on`;
+  - both: `recorded_at`, `batch`, `notes`.
+  Round-trip tests must show that a file of reviews and approvals exports back unchanged.
+- [ ] Each imported record has a stable source identity (source file and line, or a hash of the record) protected by a database uniqueness constraint. Inserts are conflict-safe inside one transaction, so re-running the import, or running two imports at once, adds nothing twice.
+- [ ] The original record order is stored and kept through import, storage, and export, because `corpus_reviews.decide()` uses order to find the latest review and whether an approval came after it.
 - [ ] The rules of `corpus_reviews.decide()`, reused rather than rewritten: an approval counts only if it comes after the latest review and is by someone other than the reviewers.
+- [ ] An approval names the review records it was shown. The server checks that they are still the latest reviews and saves the approval in the same transaction; if a newer review arrived in between, the approval is refused.
 - [ ] Role enforcement with the existing `reviewer` and `editor` roles; requires web sign-in (Auth foundation).
 - [ ] Protected screens: review queue, side-by-side comparison, rating, correction, approval, rejection, and notes.
 - [ ] Export back to the decisions format, so `build_language_db.py` keeps applying approvals on every rebuild.
@@ -172,6 +180,7 @@ Step 4. This is what makes reviewer decisions durable and searchable before the 
 - [~] **Library expansion:** resource and rights models, object storage, scanning, editor publishing, readers. Copyright for proverbs, hymns, recordings, and archives must be resolved first.
 - [~] **Release 3 — Community:** community rules and moderation first, then profiles, groups, reporting, and durable chat. Private messages are never used for training without explicit consent.
 - [~] **Release 4 — Intelligence:** model-backed translation in production (inference service, canary, rollback), Siamsil AI generation, and speech AI after audio consent (`AUDIO_CONSENT.md`) and evaluation design.
+- [~] **Repository restructuring:** move gradually toward the `apps/` and `packages/` workspace in `MOBILE_AI_ARCHITECTURE.md`, and split FastAPI into domain modules without changing public behavior. This is not Release 1 work; do it when a feature needs it, such as the mobile app.
 - [~] **Release 5 — Native iOS and Android:** an Expo app with an offline dictionary, signed language packs, and sync. Design in `MOBILE_AI_ARCHITECTURE.md`.
 
 ## Standing rules

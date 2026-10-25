@@ -31,7 +31,7 @@ Siamsil grows from the digital home for the Zomi language into a literacy platfo
 ## Architecture decisions
 
 - **Keep the current stack**: Next.js frontend, FastAPI backend, PostgreSQL with Alembic, and the existing identity and roles. The learning platform is new modules in this modular monolith, not a rewrite and not separate services.
-- **Restructure the repository gradually**, as [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md) already plans.
+- **Restructure the repository gradually**, toward the workspace in [MOBILE_AI_ARCHITECTURE.md](MOBILE_AI_ARCHITECTURE.md); [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md) tracks it under later work.
 - **Add infrastructure when measurements require it**: Redis, vector search, analytics stores, additional subdomains.
 
 ## Deferred, not rejected
