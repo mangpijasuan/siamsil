@@ -181,7 +181,7 @@ export default function TranslateClient({
           <IconInfo />
           <p>
             Siamsil shows translations it already has. It never makes one up.
-            Corpus examples are machine-translated; only those marked Verified were checked by Zomi reviewers.
+            Corpus examples are machine-translated; only those marked Verified were approved by Zomi reviewers.
           </p>
         </div>
 

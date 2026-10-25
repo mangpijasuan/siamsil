@@ -345,7 +345,7 @@ class LanguageEngine:
             "dataset_split": row["dataset_split"],
             "exact": exact,
             "label": (
-                "Machine-translated example, accepted by Zomi reviewers"
+                "Machine-translated example, approved by Zomi reviewers"
                 if row["verified"]
                 else "Machine-translated example (unverified)"
             ),

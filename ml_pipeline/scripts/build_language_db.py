@@ -637,10 +637,11 @@ def display_path(path: Path) -> str:
 def apply_reviews(con: sqlite3.Connection, decisions: dict) -> dict:
     """Apply saved human review decisions (corpus_reviews.decide) to the corpus.
 
-    accepted: verified = 1 and quality score 1, because reviewers' judgement outranks
-    the automatic checks (their flags stay, for the record). rejected: flagged
-    reviewer_rejected with quality score 0, so the app and the dataset export leave
-    it out. partial: unchanged. Decisions
+    HUMAN_APPROVED (reviewed, then approved by a separate lead editor): verified = 1
+    and quality score 1, because people's judgement outranks the automatic checks
+    (their flags stay, for the record). REJECTED: flagged reviewer_rejected with
+    quality score 0, so the app and the dataset export leave it out.
+    READY_FOR_APPROVAL and NEEDS_CORRECTION: unchanged and unverified. Decisions
     whose pair is no longer in the corpus are counted, never applied elsewhere.
     """
     counts: Counter[str] = Counter()
@@ -652,9 +653,9 @@ def apply_reviews(con: sqlite3.Connection, decisions: dict) -> dict:
             counts["not_in_corpus"] += 1
             continue
         row_id, flags_json = row
-        if decision.status == "accepted":
+        if decision.status == corpus_reviews.HUMAN_APPROVED:
             con.execute("UPDATE parallel_sentences SET verified = 1, quality_score = 1 WHERE id = ?", (row_id,))
-        elif decision.status == "rejected":
+        elif decision.status == corpus_reviews.REJECTED:
             flags = json.loads(flags_json or "[]")
             if "reviewer_rejected" not in flags:
                 flags.append("reviewer_rejected")
@@ -664,7 +665,7 @@ def apply_reviews(con: sqlite3.Connection, decisions: dict) -> dict:
             )
         counts[decision.status] += 1
     con.commit()
-    return {status: counts.get(status, 0) for status in ("accepted", "rejected", "partial", "not_in_corpus")}
+    return {status: counts.get(status, 0) for status in (*corpus_reviews.STATUSES, "not_in_corpus")}
 
 
 def release_manifest(
@@ -801,7 +802,7 @@ def main() -> None:
         "--min-reviewers",
         type=int,
         default=1,
-        help="Accepting reviewers a corpus pair needs before it counts as verified",
+        help="Reviewers who must rate a corpus pair acceptable before a lead editor can approve it",
     )
     args = parser.parse_args()
     if args.reviews is None:
@@ -840,14 +841,11 @@ def main() -> None:
     print(f"  template families: {checks['template_families']:,}")
     print(f"  evaluation holdout pairs: {checks['splits'].get(EVAL_HOLDOUT_SPLIT, 0):,}")
 
-    review_counts = {"accepted": 0, "rejected": 0, "partial": 0, "not_in_corpus": 0}
+    review_counts = {status: 0 for status in (*corpus_reviews.STATUSES, "not_in_corpus")}
     if review_records:
         print(f"Applying {len(review_records):,} saved review ratings from {display_path(args.reviews)}…")
         review_counts = apply_reviews(con, corpus_reviews.decide(review_records, args.min_reviewers))
-        print(
-            f"  verified: {review_counts['accepted']:,}  rejected: {review_counts['rejected']:,}"
-            f"  undecided: {review_counts['partial']:,}  no longer in corpus: {review_counts['not_in_corpus']:,}"
-        )
+        print("  " + "  ".join(f"{status}: {count:,}" for status, count in review_counts.items()))
     verified_pairs = con.execute("SELECT COUNT(*) FROM parallel_sentences WHERE verified = 1").fetchone()[0]
 
     source_files = {
