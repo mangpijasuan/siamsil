@@ -375,7 +375,8 @@ def write_csv(path: Path, columns: list[str], rows: list[dict]) -> None:
 def read_csv(path: Path) -> list[dict]:
     if not path.exists():
         sys.exit(f"File not found: {path}")
-    with path.open(encoding="utf-8", newline="") as handle:
+    # utf-8-sig: a sheet saved from Excel as "CSV UTF-8" starts with a byte-order mark.
+    with path.open(encoding="utf-8-sig", newline="") as handle:
         return list(csv.DictReader(handle))
 
 

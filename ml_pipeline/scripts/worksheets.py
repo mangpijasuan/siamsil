@@ -46,6 +46,16 @@ def _cell(value) -> str:
     return " ".join(str(value).split())
 
 
+def append_text(sheet, values: list) -> None:
+    """Append a row whose text is never run as a formula. openpyxl stores a string
+    starting with '=' as a formula, which Excel would evaluate when the sheet is
+    opened; sentence text and machine-made Zomi must stay plain text."""
+    sheet.append(values)
+    for cell in sheet[sheet.max_row]:
+        if isinstance(cell.value, str) and cell.value.startswith("="):
+            cell.data_type = "s"
+
+
 def read_sheet(path: Path, sheet: str) -> list[dict[str, str]]:
     """Rows of a sheet as dicts keyed by its header row."""
     import openpyxl
@@ -112,7 +122,7 @@ def cmd_testset_sheet(args: argparse.Namespace) -> int:
         sheet.column_dimensions[cell.column_letter].width = width
     sheet.freeze_panes = "A2"
     for item in items:
-        sheet.append([item["id"], item["domain"], item["source_text"], "", ""])
+        append_text(sheet, [item["id"], item["domain"], item["source_text"], "", ""])
         for col in (3, 4, 5):
             sheet.cell(sheet.max_row, col).alignment = Alignment(wrap_text=True, vertical="top")
         for col in (4, 5):
@@ -188,7 +198,7 @@ def cmd_review_sheet(args: argparse.Namespace) -> int:
         sheet.column_dimensions[cell.column_letter].width = width
     sheet.freeze_panes = "A2"
     for item in items:
-        sheet.append([item["id"], item["domain"], item["source_text"], item["references"][0], None, "", ""])
+        append_text(sheet, [item["id"], item["domain"], item["source_text"], item["references"][0], None, "", ""])
         for col in (3, 4, 6, 7):
             sheet.cell(sheet.max_row, col).alignment = Alignment(wrap_text=True, vertical="top")
         for col in (5, 6):
@@ -256,7 +266,7 @@ def cmd_ratings_sheet(args: argparse.Namespace) -> int:
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.worksheet.datavalidation import DataValidation
 
-    with args.review.open(encoding="utf-8", newline="") as handle:
+    with args.review.open(encoding="utf-8-sig", newline="") as handle:
         rows = list(csv.DictReader(handle))
     wb = Workbook()
     intro = wb.active
@@ -286,7 +296,7 @@ def cmd_ratings_sheet(args: argparse.Namespace) -> int:
         sheet.column_dimensions[cell.column_letter].width = width
     sheet.freeze_panes = "A2"
     for row in rows:
-        sheet.append([row["sample_id"], row["english"], row["zomi"], None, None, "", ""])
+        append_text(sheet, [row["sample_id"], row["english"], row["zomi"], None, None, "", ""])
         for col in (2, 3, 6, 7):
             sheet.cell(sheet.max_row, col).alignment = Alignment(wrap_text=True, vertical="top")
         for col in (4, 5, 6, 7):

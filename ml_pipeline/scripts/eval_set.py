@@ -125,8 +125,10 @@ SOURCE_COLUMNS = ("id", "domain", "english")
 
 
 def read_sources(path: Path) -> tuple[list[dict], list[str]]:
-    """English source sentences for an en-zomi set, as items without references yet."""
-    with path.open(encoding="utf-8", newline="") as handle:
+    """English source sentences for an en-zomi set, as items without references yet.
+
+    Read with utf-8-sig: Excel's "CSV UTF-8" adds a byte-order mark before the header."""
+    with path.open(encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         missing = [c for c in SOURCE_COLUMNS if c not in (reader.fieldnames or [])]
         if missing:
@@ -134,7 +136,7 @@ def read_sources(path: Path) -> tuple[list[dict], list[str]]:
         rows = list(reader)
     items, errors, seen = [], [], set()
     for line, row in enumerate(rows, start=2):
-        item_id, domain, english = (row.get(c, "").strip() for c in SOURCE_COLUMNS)
+        item_id, domain, english = ((row.get(c) or "").strip() for c in SOURCE_COLUMNS)
         if not item_id or not english:
             errors.append(f"line {line}: id and english are required")
         elif item_id in seen:

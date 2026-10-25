@@ -81,6 +81,41 @@ class SourcesTests(unittest.TestCase):
         self.assertEqual(default_eval_paths(self.dir / "missing"), [])
 
 
+class SpreadsheetSafetyTests(unittest.TestCase):
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.dir = Path(tmp.name)
+
+    def test_excel_csv_with_byte_order_mark_is_read(self) -> None:
+        path = self.dir / "s.csv"
+        path.write_bytes("\ufeffid,domain,english\nen-0001,news,The market reopened.\n".encode("utf-8"))
+        items, errors = read_sources(path)
+        self.assertEqual((errors, items[0]["id"]), ([], "en-0001"))
+
+    def test_short_rows_are_reported_not_crashing(self) -> None:
+        path = self.dir / "s.csv"
+        path.write_text("id,domain,english\nen-0001,news\n", encoding="utf-8")
+        _, errors = read_sources(path)
+        self.assertIn("id and english are required", errors[0])
+
+    def test_sheet_cells_starting_with_equals_stay_text(self) -> None:
+        sources = write_sources(self.dir / "s.csv", [("en-0001", "news", '=HYPERLINK("http://example.com","x")')])
+        sheet = self.dir / "t.xlsx"
+        with redirect_stdout(StringIO()):
+            worksheets_main(["testset-sheet", str(sources), "--out", str(sheet)])
+        cell = openpyxl.load_workbook(sheet)["Translate"]["C2"]
+        self.assertEqual((cell.data_type, cell.value), ("s", '=HYPERLINK("http://example.com","x")'))
+
+        review = self.dir / "review.csv"
+        review.write_text("sample_id,english,zomi,meaning,fluency,correction,notes\nR00001,Hi.,=1+1,,,,\n",
+                          encoding="utf-8")
+        with redirect_stdout(StringIO()):
+            worksheets_main(["ratings-sheet", str(review), "--out", str(self.dir / "r.xlsx")])
+        cell = openpyxl.load_workbook(self.dir / "r.xlsx")["Rate"]["C2"]
+        self.assertEqual((cell.data_type, cell.value), ("s", "=1+1"))
+
+
 class ExclusionTests(unittest.TestCase):
     def setUp(self) -> None:
         tmp = tempfile.TemporaryDirectory()
