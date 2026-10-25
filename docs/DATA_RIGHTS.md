@@ -36,7 +36,7 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 | Bible, KJV (USX) | 31,102 verses | yes | yes | — (UK) | — (UK) | `restricted` (public domain outside the UK) |
 | Bible, Burmese Judson (BJB), USX | 30,938 verses | yes, with credit | yes | **no** | **no** | `restricted` |
 | Zomi worship songs (songbook, via Zomi Worship Collective) | Song lyrics in Zomi | yes, with credit | yes | — | **no** | `restricted` |
-| Community audio (planned) | Consent-based recordings; per-speaker choices in [AUDIO_CONSENT.md](AUDIO_CONSENT.md) | — | — | — | — | draft form, needs legal review |
+| Community audio (planned) | Consent-based recordings; per-speaker choices in [AUDIO_CONSENT.md](AUDIO_CONSENT.md), recorded per source and speaker in the Speech Data Lab ([SPEECH_DATA_LAB.md](SPEECH_DATA_LAB.md)) | — | — | — | — | draft form, needs legal review |
 
 "—" means not yet permitted.
 

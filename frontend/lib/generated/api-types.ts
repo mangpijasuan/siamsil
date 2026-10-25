@@ -310,6 +310,178 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/speech/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sources */
+        get: operations["list_sources_api_v1_speech_sources_get"];
+        put?: never;
+        /** Register Source */
+        post: operations["register_source_api_v1_speech_sources_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/speech/sources/{source_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Source */
+        get: operations["get_source_api_v1_speech_sources__source_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/speech/sources/{source_id}/eligibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Source Eligibility */
+        get: operations["source_eligibility_api_v1_speech_sources__source_id__eligibility_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/speech/sources/{source_id}/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Permission */
+        post: operations["record_permission_api_v1_speech_sources__source_id__permissions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/speech/sources/{source_id}/permissions/{permission_id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decide Permission */
+        post: operations["decide_permission_api_v1_speech_sources__source_id__permissions__permission_id__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/speech/sources/{source_id}/speakers/{speaker_code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Link Speaker */
+        post: operations["link_speaker_api_v1_speech_sources__source_id__speakers__speaker_code__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/speech/sources/{source_id}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw Source */
+        post: operations["withdraw_source_api_v1_speech_sources__source_id__withdraw_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/speech/speakers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Speakers */
+        get: operations["list_speakers_api_v1_speech_speakers_get"];
+        put?: never;
+        /** Create Speaker */
+        post: operations["create_speaker_api_v1_speech_speakers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/speech/speakers/{speaker_code}/consents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Consent */
+        post: operations["record_consent_api_v1_speech_speakers__speaker_code__consents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/speech/speakers/{speaker_code}/withdrawal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw Consent */
+        post: operations["withdraw_consent_api_v1_speech_speakers__speaker_code__withdrawal_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/translate": {
         parameters: {
             query?: never;
@@ -679,6 +851,95 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /**
+         * ConsentChoices
+         * @description The six separate answers on the consent form. Each must be given; none defaults to yes.
+         */
+        ConsentChoices: {
+            /** Commercial Use */
+            commercial_use: boolean;
+            /** Keep And Evaluate */
+            keep_and_evaluate: boolean;
+            /** Play In App */
+            play_in_app: boolean;
+            /** Public Dataset */
+            public_dataset: boolean;
+            /** Train Recognition */
+            train_recognition: boolean;
+            /** Train Synthesis */
+            train_synthesis: boolean;
+        };
+        /** ConsentCreate */
+        ConsentCreate: {
+            /** Adult Confirmed */
+            adult_confirmed: boolean;
+            choices: components["schemas"]["ConsentChoices"];
+            /** Collector Code */
+            collector_code: string;
+            /**
+             * Consent Date
+             * Format: date
+             */
+            consent_date: string;
+            /**
+             * Consent Method
+             * @enum {string}
+             */
+            consent_method: "written" | "oral";
+            /**
+             * Credit
+             * @enum {string}
+             */
+            credit: "name" | "initials" | "none";
+            /** Evidence Reference */
+            evidence_reference: string;
+            /** Form Language */
+            form_language: string;
+            /** Form Version */
+            form_version: string;
+        };
+        /** ConsentOut */
+        ConsentOut: {
+            /** Adult Confirmed */
+            adult_confirmed: boolean;
+            choices: components["schemas"]["ConsentChoices"];
+            /** Collector Code */
+            collector_code: string;
+            /**
+             * Consent Date
+             * Format: date
+             */
+            consent_date: string;
+            /** Consent Method */
+            consent_method: string;
+            /** Credit */
+            credit: string;
+            /** Evidence Reference */
+            evidence_reference: string;
+            /** Form Language */
+            form_language: string;
+            /** Form Version */
+            form_version: string;
+            /** Id */
+            id: number;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /** Withdrawn */
+            withdrawn: boolean;
+        };
+        /** ConsentWithdrawal */
+        ConsentWithdrawal: {
+            /** Evidence Reference */
+            evidence_reference: string;
+            /**
+             * Withdrawn On
+             * Format: date
+             */
+            withdrawn_on: string;
+        };
         /** DictionaryEntry */
         DictionaryEntry: {
             /** Confidence */
@@ -794,6 +1055,21 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** EligibilityOut */
+        EligibilityOut: {
+            /**
+             * Checked On
+             * Format: date
+             */
+            checked_on: string;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /** Uses */
+            uses: components["schemas"]["UseEligibility"][];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -879,6 +1155,63 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** PermissionCreate */
+        PermissionCreate: {
+            /** Evidence Reference */
+            evidence_reference: string;
+            /** Rights Holder */
+            rights_holder: string;
+            /** Uses */
+            uses: components["schemas"]["SpeechUse"][];
+            /** Valid Until */
+            valid_until?: string | null;
+        };
+        /** PermissionDecision */
+        PermissionDecision: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "verify" | "reject" | "revoke";
+            /** Note */
+            note?: string | null;
+        };
+        /** PermissionOut */
+        PermissionOut: {
+            /** Decided At */
+            decided_at: string | null;
+            /** Decided By */
+            decided_by: string | null;
+            /** Decision Note */
+            decision_note: string | null;
+            /** Evidence Reference */
+            evidence_reference: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /** Recorded By */
+            recorded_by: string | null;
+            /** Rights Holder */
+            rights_holder: string;
+            /** Status */
+            status: string;
+            /** Uses */
+            uses: components["schemas"]["SpeechUse"][];
+            /** Valid Until */
+            valid_until: string | null;
+        };
+        /**
+         * Platform
+         * @enum {string}
+         */
+        Platform: "youtube" | "facebook" | "other" | "creator_file";
         /** RoleAssignmentResponse */
         RoleAssignmentResponse: {
             /** Roles */
@@ -894,6 +1227,107 @@ export interface components {
          * @enum {string}
          */
         RoleName: "learner" | "contributor" | "reviewer" | "editor" | "moderator" | "administrator";
+        /** SourceCreate */
+        SourceCreate: {
+            /** Acquired On */
+            acquired_on?: string | null;
+            /** Dialect */
+            dialect?: string | null;
+            /** Duration Seconds */
+            duration_seconds?: number | null;
+            /** Notes */
+            notes?: string | null;
+            platform: components["schemas"]["Platform"];
+            /** Title */
+            title: string;
+            /** Uploader */
+            uploader?: string | null;
+            /** Url */
+            url?: string | null;
+        };
+        /** SourceList */
+        SourceList: {
+            /** Sources */
+            sources: components["schemas"]["SourceOut"][];
+        };
+        /** SourceOut */
+        SourceOut: {
+            /** Acquired On */
+            acquired_on: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Dialect */
+            dialect: string | null;
+            /** Duration Seconds */
+            duration_seconds: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Language */
+            language: string;
+            /** Notes */
+            notes: string | null;
+            /** Permissions */
+            permissions: components["schemas"]["PermissionOut"][];
+            platform: components["schemas"]["Platform"];
+            /** Speaker Codes */
+            speaker_codes: string[];
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+            /** Uploader */
+            uploader: string | null;
+            /** Url */
+            url: string | null;
+            /** Withdrawn At */
+            withdrawn_at: string | null;
+        };
+        /** SourceWithdrawal */
+        SourceWithdrawal: {
+            /** Reason */
+            reason: string;
+        };
+        /** SpeakerCreate */
+        SpeakerCreate: {
+            /** Age Range */
+            age_range?: string | null;
+            /** Dialect Region */
+            dialect_region?: string | null;
+            /** Speaker Code */
+            speaker_code: string;
+        };
+        /** SpeakerList */
+        SpeakerList: {
+            /** Speakers */
+            speakers: components["schemas"]["SpeakerOut"][];
+        };
+        /** SpeakerOut */
+        SpeakerOut: {
+            /** Age Range */
+            age_range: string | null;
+            current_consent: components["schemas"]["ConsentOut"] | null;
+            /** Dialect Region */
+            dialect_region: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Speaker Code */
+            speaker_code: string;
+        };
+        /**
+         * SpeechUse
+         * @description What a recording may be used for. Each is granted or refused separately.
+         * @enum {string}
+         */
+        SpeechUse: "transcription" | "asr_training" | "tts_training" | "playback" | "redistribution" | "commercial";
         /** TranslateMatch */
         TranslateMatch: {
             /** Category */
@@ -991,6 +1425,14 @@ export interface components {
             translations: components["schemas"]["TranslateMatch"][];
         } & {
             [key: string]: unknown;
+        };
+        /** UseEligibility */
+        UseEligibility: {
+            /** Allowed */
+            allowed: boolean;
+            /** Reasons */
+            reasons: string[];
+            use: components["schemas"]["SpeechUse"];
         };
         /** ValidationError */
         ValidationError: {
@@ -1567,6 +2009,406 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UnifiedSearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sources_api_v1_speech_sources_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_source_api_v1_speech_sources_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_source_api_v1_speech_sources__source_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    source_eligibility_api_v1_speech_sources__source_id__eligibility_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EligibilityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_permission_api_v1_speech_sources__source_id__permissions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PermissionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermissionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_permission_api_v1_speech_sources__source_id__permissions__permission_id__decision_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                permission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PermissionDecision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermissionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_speaker_api_v1_speech_sources__source_id__speakers__speaker_code__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                speaker_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    withdraw_source_api_v1_speech_sources__source_id__withdraw_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceWithdrawal"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_speakers_api_v1_speech_speakers_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpeakerList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_speaker_api_v1_speech_speakers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpeakerCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpeakerOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_consent_api_v1_speech_speakers__speaker_code__consents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                speaker_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpeakerOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    withdraw_consent_api_v1_speech_speakers__speaker_code__withdrawal_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                speaker_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentWithdrawal"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpeakerOut"];
                 };
             };
             /** @description Validation Error */

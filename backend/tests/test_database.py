@@ -90,6 +90,11 @@ class DatabaseTests(unittest.TestCase):
                 "user_sessions",
                 "review_imports",
                 "corpus_review_records",
+                "speech_sources",
+                "speech_source_permissions",
+                "speakers",
+                "speaker_consents",
+                "speech_source_speakers",
             },
             set(Base.metadata.tables),
         )
