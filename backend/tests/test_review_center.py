@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import stat
 import subprocess
 import sys
 import tempfile
@@ -162,6 +163,44 @@ class ExportTests(unittest.TestCase):
             write_export(self.records, self.out)
         self.assertEqual(self.out.read_bytes(), before)
 
+    def test_values_python_calls_equal_still_count_as_different(self) -> None:
+        stored = [rating(HASH_A, 2, 2, flagged=1)]
+        on_disk = [rating(HASH_A, 2, 2, flagged=True)]
+        corpus_reviews.append(self.out, on_disk)
+        before = self.out.read_bytes()
+        with self.assertRaisesRegex(ValueError, "not stored in the database"):
+            write_export(stored, self.out)
+        self.assertEqual(self.out.read_bytes(), before)
+
+    def test_keeps_the_file_permissions(self) -> None:
+        corpus_reviews.append(self.out, self.records[:1])
+        self.out.chmod(0o640)
+        write_export(self.records, self.out)
+        self.assertEqual(stat.S_IMODE(self.out.stat().st_mode), 0o640)
+
+    def test_a_review_recorded_during_an_export_is_kept(self) -> None:
+        corpus_reviews.append(self.out, self.records[:2])
+        late = rating(HASH_B, 2, 2, reviewer="R02", notes="recorded during the export")
+        appended = threading.Event()
+
+        def record_late_review() -> None:
+            corpus_reviews.append(self.out, [late])
+            appended.set()
+
+        # Hold the lock the export holds; an append started meanwhile must wait for it.
+        with corpus_reviews.locked(self.dir):
+            writer = threading.Thread(target=record_late_review)
+            writer.start()
+            self.assertFalse(appended.wait(0.3), "append did not wait for the lock")
+        writer.join(timeout=10)
+        self.assertTrue(appended.is_set())
+        self.assertEqual(corpus_reviews.load(self.out), self.records[:2] + [late])
+
+        # The export then sees the late review and refuses to drop it.
+        with self.assertRaisesRegex(ValueError, "not stored in the database"):
+            write_export(self.records, self.out)
+        self.assertEqual(corpus_reviews.load(self.out), self.records[:2] + [late])
+
     def test_keeps_a_malformed_file(self) -> None:
         self.out.write_text("not json\n", encoding="utf-8")
         with self.assertRaises(ValueError):
@@ -176,8 +215,11 @@ class ReleaseCountTests(unittest.TestCase):
             {"dictionary_entries": 10, "parallel_sentences": 20, "corpus_review_records": 5},
         )
 
-    def test_release_without_reviews_has_no_review_count(self) -> None:
-        self.assertEqual(release_counts(10, 20, []), {"dictionary_entries": 10, "parallel_sentences": 20})
+    def test_release_without_reviews_says_zero(self) -> None:
+        self.assertEqual(
+            release_counts(10, 20, []),
+            {"dictionary_entries": 10, "parallel_sentences": 20, "corpus_review_records": 0},
+        )
 
 
 @unittest.skipUnless(os.getenv("SIAMSIL_DATABASE_URL"), "application database is not configured")

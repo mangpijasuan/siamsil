@@ -95,7 +95,7 @@ This measures the training corpus. It does not replace the human evaluation sets
    python backend/scripts/export_reviews.py --out ../siamsil-data/reviews/corpus-reviews.jsonl
    ```
 
-   It writes the stored records in the same format and order, then prints how many pairs reach each status by the same rules the build uses. An existing file is replaced only when every record in it is already stored at the same place. If the file holds decisions the database lacks, nothing is written: import the file first. Each release manifest records how many review records the build used (`counts.corpus_review_records`). Because the file only grows, that number identifies exactly which stored records went into the release.
+   It writes the stored records in the same format and order, then prints how many pairs reach each status by the same rules the build uses. An existing file is replaced only when every record in it is already stored at the same place. If the file holds decisions the database lacks, nothing is written: import the file first. The export and `review_sample.py` take the same lock on the file's folder, so a review recorded during an export is never lost, and the file keeps its permissions. Each release manifest records how many review records the build used (`counts.corpus_review_records`, 0 when none). Because the file only grows, that number identifies exactly which stored records went into the release.
 
 ## Rating scale
 

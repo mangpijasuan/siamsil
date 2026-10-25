@@ -34,9 +34,17 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import re
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Iterator
+
+try:
+    import fcntl
+except ImportError:  # Windows: no advisory locks; appends and exports are not coordinated there.
+    fcntl = None
 
 SCORES = (0, 1, 2)
 CODE = re.compile(r"^[A-Z]{1,3}[0-9]{2,4}$")
@@ -107,11 +115,34 @@ def load(path: Path) -> list[dict]:
     return records
 
 
+def dumps(record: dict) -> str:
+    """One line of the decisions file."""
+    return json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n"
+
+
+@contextmanager
+def locked(folder: Path) -> Iterator[None]:
+    """Hold an exclusive lock on the folder of a decisions file while it is written.
+
+    The folder, not the file, is locked: an export replaces the file, and a lock on the
+    replaced file would no longer protect anything.
+    """
+    folder.mkdir(parents=True, exist_ok=True)
+    if fcntl is None:
+        yield
+        return
+    descriptor = os.open(folder, os.O_RDONLY)
+    try:
+        fcntl.flock(descriptor, fcntl.LOCK_EX)
+        yield
+    finally:
+        os.close(descriptor)
+
+
 def append(path: Path, records: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as handle:
-        for record in records:
-            handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+    with locked(path.parent):
+        with path.open("a", encoding="utf-8") as handle:
+            handle.writelines(dumps(record) for record in records)
 
 
 def load_roster(path: Path) -> dict[str, str]:

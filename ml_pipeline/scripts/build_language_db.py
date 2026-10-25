@@ -694,12 +694,14 @@ def release_manifest(
 
 
 def release_counts(dictionary_entries: int, parallel_sentences: int, review_records: list[dict]) -> dict:
-    counts = {"dictionary_entries": dictionary_entries, "parallel_sentences": parallel_sentences}
-    if review_records:
-        # The decisions file is append-only, so this names exactly which review records the release
-        # used: the first N, which the Review Center stores at positions 0..N-1 (import_reviews.py).
-        counts["corpus_review_records"] = len(review_records)
-    return counts
+    # The decisions file is append-only, so the review count names exactly which records the release
+    # used: the first N, which the Review Center stores at positions 0..N-1 (import_reviews.py).
+    # 0 is written too, so a release without reviews says so.
+    return {
+        "dictionary_entries": dictionary_entries,
+        "parallel_sentences": parallel_sentences,
+        "corpus_review_records": len(review_records),
+    }
 
 
 def write_release_manifest(manifest: dict, current: Path, versions_dir: Path) -> Path:
