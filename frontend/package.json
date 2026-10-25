@@ -8,7 +8,7 @@
     "start": "next start -p 3002",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --no-warnings=ExperimentalWarning --test lib/bible/*.test.ts",
+    "test": "node --experimental-strip-types --no-warnings=ExperimentalWarning --test lib/*.test.ts lib/bible/*.test.ts",
     "api:export": "python3 ../backend/scripts/export_openapi.py openapi.json",
     "api:generate": "npm run api:export && openapi-typescript openapi.json -o lib/generated/api-types.ts",
     "api:check": "npm run api:generate && git diff --exit-code -- openapi.json lib/generated/api-types.ts",
@@ -17,7 +17,7 @@
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
-    "next": "^16.3.8",
+    "next": "^16.4.3",
     "openapi-fetch": "^0.17.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
@@ -29,7 +29,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "^16.3.8",
+    "eslint-config-next": "^16.4.3",
     "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4",
     "typescript": "^5",

@@ -7,6 +7,13 @@ Commands:
   validate FILE                 schema, unique IDs, independent review
   leakage FILE --corpus CSV     items whose text also appears in the parallel corpus
   manifest FILE                 write FILE's .manifest.json (counts and SHA-256)
+  check-sources SOURCES.csv --database DB [--bible-versions DB]
+                                English source sentences (before translation) that match the
+                                corpus or an English Bible, exactly or as a template variant
+
+A sources list (columns id, domain, english) can be passed to build_language_db.py
+and export_datasets.py like a finished set, so the English is kept out of training
+from the day it is written, before any translation exists.
 
 Each command exits non-zero when the set must not be frozen.
 """
@@ -21,7 +28,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-from build_language_db import normalize_word
+from build_language_db import normalize_word, template_key
 
 SCHEMA_VERSION = 1
 DIRECTIONS = {"en-zomi", "zomi-en"}
@@ -114,6 +121,34 @@ def validate_items(items: list[dict]) -> tuple[list[str], list[str]]:
     return errors, warnings
 
 
+SOURCE_COLUMNS = ("id", "domain", "english")
+
+
+def read_sources(path: Path) -> tuple[list[dict], list[str]]:
+    """English source sentences for an en-zomi set, as items without references yet.
+
+    Read with utf-8-sig: Excel's "CSV UTF-8" adds a byte-order mark before the header."""
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        missing = [c for c in SOURCE_COLUMNS if c not in (reader.fieldnames or [])]
+        if missing:
+            return [], [f"{path.name}: missing columns {', '.join(missing)}"]
+        rows = list(reader)
+    items, errors, seen = [], [], set()
+    for line, row in enumerate(rows, start=2):
+        item_id, domain, english = ((row.get(c) or "").strip() for c in SOURCE_COLUMNS)
+        if not item_id or not english:
+            errors.append(f"line {line}: id and english are required")
+        elif item_id in seen:
+            errors.append(f"line {line}: duplicate id {item_id}")
+        elif domain not in DOMAINS:
+            errors.append(f"line {line}: domain must be one of {', '.join(DOMAINS)}")
+        seen.add(item_id)
+        items.append({"id": item_id, "direction": "en-zomi", "domain": domain,
+                      "source_text": english, "references": [], "_line": line})
+    return items, errors
+
+
 def item_texts(item: dict) -> tuple[list[str], list[str]]:
     """Return (english_texts, zomi_texts) for an item."""
     source = [_text(item.get("source_text"))]
@@ -156,6 +191,27 @@ def read_corpus(path: Path):
     with path.open(encoding="utf-8", newline="") as handle:
         for row in csv.DictReader(handle):
             yield row.get("en") or "", row.get("zomi") or ""
+
+
+def source_overlaps(items: list[dict], english_texts) -> dict[str, set[str]]:
+    """Map item id -> {'exact', 'variant'} for English texts that match an item.
+
+    'variant' is the corpus build's template key (numbers masked), the same rule
+    that later moves matching training pairs to the evaluation holdout.
+    """
+    exact: dict[str, set[str]] = {}
+    variant: dict[str, set[str]] = {}
+    for item in items:
+        text = item["source_text"]
+        exact.setdefault(normalize_word(text), set()).add(item["id"])
+        variant.setdefault(template_key(text, set()), set()).add(item["id"])
+    hits: dict[str, set[str]] = {}
+    for text in english_texts:
+        for item_id in exact.get(normalize_word(text), ()):
+            hits.setdefault(item_id, set()).add("exact")
+        for item_id in variant.get(template_key(text, set()), ()):
+            hits.setdefault(item_id, set()).add("variant")
+    return hits
 
 
 def build_manifest(path: Path, items: list[dict]) -> dict:
@@ -204,6 +260,34 @@ def cmd_leakage(args: argparse.Namespace) -> int:
     return 1 if leaks else 0
 
 
+def cmd_check_sources(args: argparse.Namespace) -> int:
+    import sqlite3
+
+    items, errors = read_sources(args.sources)
+    for error in errors:
+        print(f"error: {error}")
+    if errors:
+        return 1
+    found: dict[str, set[str]] = {}
+    con = sqlite3.connect(f"file:{args.database}?mode=ro", uri=True)
+    corpus = (row[0] for row in con.execute("SELECT normalized_source_text FROM parallel_sentences"))
+    for item_id, kinds in source_overlaps(items, corpus).items():
+        found.setdefault(item_id, set()).update(f"corpus {kind}" for kind in kinds)
+    con.close()
+    if args.bible_versions:
+        con = sqlite3.connect(f"file:{args.bible_versions}?mode=ro", uri=True)
+        verses = (row[0] for row in con.execute(
+            "SELECT text FROM verses WHERE version_id IN (SELECT id FROM versions WHERE language_iso = 'eng')"))
+        for item_id, kinds in source_overlaps(items, verses).items():
+            found.setdefault(item_id, set()).update(f"Bible {kind}" for kind in kinds)
+        con.close()
+    by_id = {item["id"]: item for item in items}
+    for item_id in sorted(found):
+        print(f"overlap: {item_id} ({', '.join(sorted(found[item_id]))}): {by_id[item_id]['source_text']}")
+    print(f"{len(found)} of {len(items)} source sentences overlap; replace them before translation")
+    return 1 if found else 0
+
+
 def cmd_manifest(args: argparse.Namespace) -> int:
     items = _load_or_exit(args.file)
     errors, _ = validate_items(items)
@@ -220,6 +304,12 @@ def cmd_manifest(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
+
+    check = commands.add_parser("check-sources")
+    check.add_argument("sources", type=Path, help="CSV with columns id, domain, english")
+    check.add_argument("--database", type=Path, required=True, help="language database with the corpus")
+    check.add_argument("--bible-versions", type=Path, help="bible_versions.sqlite; checks its English versions")
+    check.set_defaults(run=cmd_check_sources)
 
     validate = commands.add_parser("validate")
     validate.add_argument("file", type=Path)

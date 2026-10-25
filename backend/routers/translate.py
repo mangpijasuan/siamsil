@@ -17,20 +17,28 @@ class TranslateRequest(BaseModel):
     direction: str = Field(default="en-zom", pattern="^(en-zom|zom-en)$")
 
 
-def _overlay_matches(query: str, limit: int) -> list[dict]:
+def _overlay_matches(query: str, limit: int, direction: str | None) -> list[dict]:
     store = get_store()
-    return store.search_translate(query, limit)
+    return store.search_translate(query, limit, direction)
 
 
 @router.get("/search", response_model=TranslationSearchResponse)
-def search_matches(q: str = Query(..., min_length=1, max_length=500), limit: int = Query(20, ge=1, le=50)):
+def search_matches(
+    q: str = Query(..., min_length=1, max_length=500),
+    limit: int = Query(20, ge=1, le=50),
+    direction: str | None = Query(
+        None,
+        pattern="^(en-zom|zom-en)$",
+        description="Search only the side translated from: English for en-zom, Zomi for zom-en. Omit to search both.",
+    ),
+):
     engine = get_engine()
     if not engine.available:
         raise HTTPException(status_code=503, detail="Language database is not built yet.")
 
-    dictionary = engine.search_dictionary(q, limit=min(8, limit))
-    corpus = engine.search_parallel(q, limit=limit)
-    overlay = _overlay_matches(q, limit=8)
+    dictionary = engine.search_dictionary(q, direction=direction or "en-zom", limit=min(8, limit))
+    corpus = engine.search_parallel(q, limit=limit, direction=direction)
+    overlay = _overlay_matches(q, limit=8, direction=direction)
 
     results: list[dict] = []
 
@@ -67,13 +75,13 @@ def search_matches(q: str = Query(..., min_length=1, max_length=500), limit: int
         "query": q,
         "count": len(results[:limit]),
         "results": results[:limit],
-        "note": "Parallel corpus matches are machine-translated and unverified.",
+        "note": "Parallel corpus matches are machine-translated; only those marked verified were approved by Zomi reviewers.",
     }
 
 
 @router.post("", response_model=TranslationResponse)
 def translate(request: TranslateRequest):
-    payload = search_matches(request.text, limit=8)
+    payload = search_matches(request.text, limit=8, direction=request.direction)
     exact = next((item for item in payload["results"] if item.get("exact") or item.get("source") == "dictionary"), None)
     system = active_system()
     return {

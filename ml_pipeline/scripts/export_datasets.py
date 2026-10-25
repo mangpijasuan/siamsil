@@ -9,7 +9,8 @@ Tiers:
   gold    human-made or human-reviewed: Bible ("Original ZSF Text" only, and each
           Zomi Bible version paired verse by verse with each English version) and
           teacher-reviewed daily-use phrases
-  silver  corpus pairs with no quality flags, from generators whose spot-check
+  silver  corpus pairs accepted by human reviewers (build_language_db.py --reviews),
+          and corpus pairs with no quality flags from generators whose spot-check
           acceptable share (lower 95% bound) meets --silver-min-acceptable
   bronze  remaining corpus pairs with quality score >= --min-score
 
@@ -36,6 +37,7 @@ from pathlib import Path
 from build_language_db import (
     EVAL_HOLDOUT_SPLIT,
     ROOT,
+    default_eval_paths,
     eval_match_keys,
     file_fingerprint,
     load_eval_items,
@@ -82,21 +84,24 @@ def corpus_records(con: sqlite3.Connection, silver: set[str], min_score: float):
     rows = con.execute(
         """
         SELECT id, normalized_source_text, normalized_target_text, model,
-               quality_flags, quality_score, dataset_split
+               quality_flags, quality_score, dataset_split, verified
         FROM parallel_sentences
         WHERE dataset_split != ? AND quality_score >= ?
         ORDER BY id
         """,
         (EVAL_HOLDOUT_SPLIT, min_score),
     )
-    for row_id, english, zomi, model, flags_json, score, split in rows:
+    for row_id, english, zomi, model, flags_json, score, split, verified in rows:
         flags = json.loads(flags_json or "[]")
+        # A pair human reviewers accepted is silver whatever its generator scored; rejected
+        # pairs never reach this loop (their quality score is 0).
         yield {
             "id": f"corpus-{row_id}",
             "english": english,
             "zomi": zomi,
             "source": "parallel_corpus",
-            "tier": "silver" if not flags and model in silver else "bronze",
+            "tier": "silver" if verified or (not flags and model in silver) else "bronze",
+            "human_reviewed": bool(verified),
             "split": split,
             "model": model,
             "quality_score": score,
@@ -281,7 +286,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--db", type=Path, default=DEFAULT_DB)
     parser.add_argument("--workbook", type=Path, help="Bible and daily-use workbook (Zomi_Bible_Final_v14.xlsx)")
-    parser.add_argument("--eval", type=Path, action="append", default=[], help="Human evaluation set; repeatable")
+    parser.add_argument(
+        "--eval", type=Path, action="append", default=[],
+        help="Human evaluation set or .sources.csv; repeatable. Default: every such file in data/evaluation/human/",
+    )
     parser.add_argument("--bible-versions", type=Path, help="bible_versions.sqlite from import_usx_bibles.py")
     parser.add_argument("--generator-summary", type=Path, help="summary.json from review_sample.py summarize")
     parser.add_argument("--silver-min-acceptable", type=float, default=0.8)
@@ -290,6 +298,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--allow-uncleared", action="store_true", help="Also export needs_review sources (internal use)")
     parser.add_argument("--out", type=Path, help="Output directory (default: data/datasets/<release>-export)")
     args = parser.parse_args(argv)
+    if not args.eval:
+        args.eval = default_eval_paths()
 
     if not args.db.exists():
         sys.exit(f"Language database not found: {args.db}")

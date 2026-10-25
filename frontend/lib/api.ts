@@ -192,10 +192,14 @@ export function getDictionaryLetters(): Promise<DictionaryLettersResponse> {
   return expectData(apiClient().GET("/api/v1/dictionary/letters"), "/api/v1/dictionary/letters");
 }
 
-export function searchTranslate(query: string): Promise<TranslationSearchResponse> {
+/** Stored English–Zomi matches. With a direction, only the side translated from is searched. */
+export function searchTranslate(
+  query: string,
+  direction?: "en-zom" | "zom-en",
+): Promise<TranslationSearchResponse> {
   return expectData(
     apiClient().GET("/api/v1/translate/search", {
-      params: { query: { q: query } },
+      params: { query: direction ? { q: query, direction } : { q: query } },
     }),
     "/api/v1/translate/search",
   );
