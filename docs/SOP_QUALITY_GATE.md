@@ -27,7 +27,8 @@ identity; it checks declared metadata and rejects missing authorizations.
 ## Manual mapping
 
 - **SOP-07:** Require human approval, distinguish contributor from reviewer
-  and approver, preserve provenance and version IDs.
+  and approver, and require the approver (lead editor) to be a different person
+  from the reviewer; preserve provenance and version IDs.
 - **SOP-08:** Validate schema, IDs, UTF-8 input, duplicate bilingual pairs,
   the same English or Zomi sentence in more than one split, split-family
   isolation, and explicit training permission. Reviewer IDs are compared

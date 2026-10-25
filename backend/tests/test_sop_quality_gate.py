@@ -58,6 +58,10 @@ class SopQualityGateTests(unittest.TestCase):
         rows = [approved(), approved(id="sentence-002", split_family_id="family-002")]
         self.assertIn("duplicate_pair", self.codes(rows))
 
+    def test_reviewer_cannot_also_be_the_approver(self):
+        self.assertIn("reviewer_is_approver", self.codes([approved(approver_id="reviewer-2")]))
+        self.assertIn("reviewer_is_approver", self.codes([approved(approver_id=" Reviewer-2 ")]))
+
     def test_self_approval_ignores_case_and_spaces(self):
         self.assertIn("self_approval", self.codes([approved(reviewer_id=" AUTHOR-1 ")]))
         self.assertIn("self_approval", self.codes([approved(approver_id="Author-1")]))

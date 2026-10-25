@@ -85,6 +85,9 @@ def check_records(records: list[dict[str, Any]]) -> dict[str, Any]:
             reject(index, record_id, "missing_review_identity")
         elif person(contributor) in (person(reviewer), person(approver)):
             reject(index, record_id, "self_approval")
+        elif person(reviewer) == person(approver):
+            # SOP-07 as adopted for the pilot: one reviewer, then a separate lead editor approves.
+            reject(index, record_id, "reviewer_is_approver")
 
         if not isinstance(row.get("approval_version"), str) or not row["approval_version"].strip():
             reject(index, record_id, "missing_approval_version")
