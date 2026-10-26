@@ -97,7 +97,11 @@ To clear it for training, record in this file: (1) the dataset card as published
 - Many songs are Zomi translations of English songs. The permission covers the Zomi text; it does not grant rights to the original English lyrics, which are not imported.
 
 **Translation Master (50K) and Essential 3000**
-- The project owner reported on 2026-10-25 that they wrote both. Still to record: whether any Zomi or Burmese text was drafted by AI (and with which tool), and which uses the owner grants (display, training, redistribution, commercial).
+- The project owner reported on 2026-10-25 that they wrote both.
+- **2026-10-26, project owner:** no AI tool drafted any of the text in either dictionary, and the owner signs off their use for model training.
+- Training stays `needs_review` until a second person confirms this entry (see Closing an item). On confirmation, set `train` to `cleared` for `translation_master_50k` and `essential_3000` in `data/rights.json`.
+- Still to record: which other uses the owner grants (display, redistribution, commercial).
+- Both remain unreviewed (0 senses human-reviewed), so a training clearance does not change their tier: exports keep them `bronze` until reviewers approve senses.
 - Burmese in the Translation Master is marked "reference only" in its review workbook.
 - Imported read-only by `import_reference_dictionaries.py` into a separate database, every sense `unreviewed`. Reviewer decisions live in the two `*-Native-Expert-Review*.xlsx` workbooks; none were recorded as of 2026-10-25.
 
