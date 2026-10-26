@@ -93,7 +93,7 @@
       "train": "needs_review",
       "redistribute": "needs_review",
       "commercial": "needs_review",
-      "evidence": "Project owner reported authoring it on 2026-10-25; whether AI drafted any text, and the intended uses, are not yet recorded"
+      "evidence": "Project owner reported authoring it on 2026-10-25, and on 2026-10-26 that no AI tool drafted any of its text, and signed off its use for model training. Training stays needs_review until a second person confirms (docs/DATA_RIGHTS.md, Closing an item). Display, redistribution and commercial use are not yet granted."
     },
     "essential_3000": {
       "description": "The Essential 3000 English–Zomi Learner's Dictionary, beta (3,000 headwords, 5,342 senses); 0 senses human-reviewed",
@@ -101,7 +101,7 @@
       "train": "needs_review",
       "redistribute": "needs_review",
       "commercial": "needs_review",
-      "evidence": "Project owner reported authoring it on 2026-10-25; whether AI drafted any text, and the intended uses, are not yet recorded"
+      "evidence": "Project owner reported authoring it on 2026-10-25, and on 2026-10-26 that no AI tool drafted any of its text, and signed off its use for model training. Training stays needs_review until a second person confirms (docs/DATA_RIGHTS.md, Closing an item). Display, redistribution and commercial use are not yet granted."
     }
   }
 }
