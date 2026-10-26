@@ -150,7 +150,9 @@ def read_sources(path: Path) -> tuple[list[dict], list[str]]:
 
 
 def item_texts(item: dict) -> tuple[list[str], list[str]]:
-    """Return (english_texts, zomi_texts) for an item."""
+    """Return (english_texts, zomi_texts) for an item, in the human-set or corpus-sample format."""
+    if "source_text" not in item and ("english" in item or "zomi" in item):
+        return [_text(item.get("english"))], [_text(item.get("zomi"))]
     source = [_text(item.get("source_text"))]
     references = [_text(r) for r in item.get("references") or [] if isinstance(r, str)]
     if item.get("direction") == "zomi-en":

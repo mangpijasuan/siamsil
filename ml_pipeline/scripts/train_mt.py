@@ -3,14 +3,23 @@
 
 The default base model is NLLB-200 distilled 600M (CC BY-NC 4.0; acceptable
 because Siamsil is non-profit, see docs/DATA_RIGHTS.md). NLLB has no Zomi
-language code, so training adds `zom_Latn` and starts it from Mizo
-(`lus_Latn`), a closely related Kuki-Chin language that NLLB covers.
+language code, so training adds `ctd_Latn` (ISO 639-3 Tedim Chin, the basis
+of Standard Zomi) and starts it from Mizo (`lus_Latn`), a closely related
+Kuki-Chin language that NLLB covers. Models trained before the rename use
+`zom_Latn` (which is really Zou's code); continuing from one copies its trained
+token into `ctd_Latn`, and `try`/`translate` still work on the old models.
 
 Commands:
   train --data DIR --out DIR [--model ID] [--epochs N] ...
       DIR is an export from export_datasets.py (train/validation/test.jsonl).
       Trains English<->Zomi in both directions, keeps the checkpoint with the
       best validation chrF++, then scores the test split.
+      Before loading a model it refuses to write into the source checkpoint or a
+      non-empty --out, to train on an export that includes uncleared sources
+      without --allow-uncleared-data, on rows from sources the manifest does
+      not admit, or on train/validation rows matching a --benchmark file.
+      train_meta.json records the source checkpoint hashes, Git state, language
+      token mapping, export manifest, source rights, seed and hyperparameters.
   translate --model DIR --eval FILE --out HYP.jsonl [--system NAME]
       Translate a human evaluation set (docs/EVALUATION_SET.md format); score
       the output with `mt_eval.py score`.
@@ -35,11 +44,13 @@ import random
 import subprocess
 import sys
 import time
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
 DEFAULT_MODEL = "facebook/nllb-200-distilled-600M"
-LANG = {"en": "eng_Latn", "zom": "zom_Latn"}
+LANG = {"en": "eng_Latn", "zom": "ctd_Latn"}
+LEGACY_ZOMI_TOKEN = "zom_Latn"
 INIT_FROM = "lus_Latn"  # Mizo
 DIRECTIONS = {"en-zomi": ("en", "zom"), "zomi-en": ("zom", "en")}
 ROOT = Path(__file__).resolve().parents[2]
@@ -112,15 +123,15 @@ def to_examples(pairs: list[dict], directions: list[str]) -> list[tuple[str, str
 
 
 def add_zomi(tokenizer, model) -> dict:
-    """Add the zom_Latn language token, initialised from Mizo when the base model has it."""
+    """Add the Zomi language token, starting from a legacy trained token, else Mizo, else English."""
     code = LANG["zom"]
     vocab = tokenizer.get_vocab()
     if code in vocab:
-        return {"added": False}
+        return {"added": False, "token": code}
     tokenizer.add_tokens([code], special_tokens=True)
     model.resize_token_embeddings(len(tokenizer))
     new_id = tokenizer.convert_tokens_to_ids(code)
-    init = INIT_FROM if INIT_FROM in vocab else LANG["en"]
+    init = next(t for t in (LEGACY_ZOMI_TOKEN, INIT_FROM, LANG["en"]) if t in vocab)
     init_id = tokenizer.convert_tokens_to_ids(init)
     import torch
 
@@ -143,7 +154,14 @@ class Codec:
         self.pad_multiple = max(1, pad_multiple)
         self.eos = tokenizer.eos_token_id
         self.pad = tokenizer.pad_token_id
-        self.lang_id = {key: tokenizer.convert_tokens_to_ids(code) for key, code in LANG.items()}
+        vocab = tokenizer.get_vocab()
+        self.lang_token = {
+            key: code if code in vocab or key != "zom" else LEGACY_ZOMI_TOKEN for key, code in LANG.items()
+        }
+        missing = [token for token in self.lang_token.values() if token not in vocab]
+        if missing:
+            raise ValueError(f"tokenizer has no language token {', '.join(missing)}")
+        self.lang_id = {key: vocab[token] for key, token in self.lang_token.items()}
 
     def encode(self, text: str, lang: str) -> list[int]:
         ids = self.tok(text, add_special_tokens=False)["input_ids"][: self.max_len - 2]
@@ -260,9 +278,121 @@ def git_commit() -> str | None:
         return None
 
 
+def git_uncommitted_code() -> list[str]:
+    """Changed or untracked code files; data files are tracked through their own fingerprints."""
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(ROOT), "status", "--porcelain", "--", "ml_pipeline", "backend"],
+            capture_output=True, text=True,
+        ).stdout
+    except OSError:
+        return []
+    return sorted(line[3:] for line in out.splitlines() if line.strip())
+
+
+CHECKPOINT_FILES = ("config.json", "generation_config.json", "model.safetensors", "tokenizer.json",
+                    "tokenizer_config.json", "train_meta.json")
+
+
+def checkpoint_fingerprint(model: str) -> dict:
+    path = Path(model)
+    if not path.is_dir():
+        return {"hub_id": model}
+    files = {name: file_sha256(path / name) for name in CHECKPOINT_FILES if (path / name).exists()}
+    return {"path": str(path), "sha256": files}
+
+
+def check_output_dir(out: Path, model: str) -> None:
+    """Never write into the source checkpoint or over an earlier run."""
+    if Path(model).is_dir() and out.resolve() == Path(model).resolve():
+        sys.exit(f"--out {out} is the source checkpoint; choose a new directory")
+    if out.exists() and any(out.iterdir()):
+        sys.exit(f"--out {out} already has files; choose a new directory")
+
+
+def benchmark_keys(paths: list[Path]) -> tuple[set[str], set[str], list[dict]]:
+    """English and Zomi match keys for benchmark items, the same keys the export excludes with --eval."""
+    from build_language_db import eval_match_keys, load_eval_items
+
+    files = []
+    for path in paths:
+        files.append({"file": str(path), "sha256": file_sha256(path), "items": len(load_eval_items([path]))})
+    english, zomi = eval_match_keys(load_eval_items(paths), set())
+    return english, zomi, files
+
+
+def preflight(data: Path, allow_uncleared: bool, benchmarks: list[Path]) -> dict:
+    """Refuse to train on data the export manifest does not admit, or that overlaps a benchmark."""
+    from build_language_db import normalize_word, template_key
+
+    manifest_path = data / "manifest.json"
+    if not manifest_path.exists():
+        sys.exit(f"No export manifest at {manifest_path}; export with export_datasets.py")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    rights = manifest.get("sources", {})
+    uncleared = manifest.get("uncleared_sources_included", [])
+    if uncleared and not allow_uncleared:
+        sys.exit(f"Export includes sources not cleared for training ({', '.join(uncleared)}); "
+                 "pass --allow-uncleared-data only for an internal experiment")
+
+    bench_english, bench_zomi, bench_files = benchmark_keys(benchmarks)
+    sources: Counter[str] = Counter()
+    overlap: Counter[str] = Counter()
+    for split in ("train", "validation", "test"):
+        for row in read_jsonl(data / f"{split}.jsonl"):
+            for source in {row.get("source"), row.get("english_source")} - {None}:
+                sources[source] += 1
+                entry = rights.get(source)
+                if not entry or not entry.get("exported") or entry.get("train_rights") == "blocked":
+                    sys.exit(f"{split}.jsonl row {row.get('id')} comes from {source}, which the manifest does not admit")
+            if split != "test" and (
+                template_key(row.get("english") or "", set()) in bench_english
+                or normalize_word(row.get("zomi")) in bench_zomi
+            ):
+                overlap[split] += 1
+    if overlap:
+        sys.exit(f"Training data overlaps a benchmark: {dict(overlap)}; re-export with --eval")
+    return {
+        "export_manifest_sha256": file_sha256(manifest_path),
+        "language_release": manifest.get("language_release"),
+        "export_inputs": manifest.get("inputs"),
+        "rows_by_source": dict(sorted(sources.items())),
+        "source_rights": {name: rights[name] for name in sorted(sources)},
+        "uncleared_sources_included": uncleared,
+        "allow_uncleared_data": allow_uncleared,
+        "benchmarks_checked": bench_files,
+        "benchmark_overlap": 0,
+    }
+
+
+def embedding_report(tokenizer, model, codec: "Codec") -> dict:
+    """Language-token ids and embedding shapes, checked for consistency before training."""
+    inputs = model.get_input_embeddings()
+    outputs = model.get_output_embeddings()
+    tied = outputs is not None and outputs.weight.data_ptr() == inputs.weight.data_ptr()
+    if len(tokenizer) > inputs.num_embeddings:
+        sys.exit(f"tokenizer has {len(tokenizer)} tokens but the model only {inputs.num_embeddings} embeddings")
+    if outputs is not None and outputs.weight.shape[0] != inputs.num_embeddings:
+        sys.exit("input and output embedding sizes differ")
+    return {
+        "tokens": {key: {"token": codec.lang_token[key], "id": codec.lang_id[key]} for key in LANG},
+        "tokenizer_size": len(tokenizer),
+        "embedding_rows": inputs.num_embeddings,
+        "config_vocab_size": model.config.vocab_size,
+        "tied_input_output_embeddings": tied,
+    }
+
+
 def cmd_train(args) -> int:
     import torch
     from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+    check_output_dir(args.out, args.model)
+    data_check = preflight(args.data, args.allow_uncleared_data, args.benchmark)
+    source_checkpoint = checkpoint_fingerprint(args.model)
+    code = {"git_commit": git_commit(), "uncommitted_code_files": git_uncommitted_code()}
+    if code["uncommitted_code_files"]:
+        print(f"WARNING: uncommitted code changes: {', '.join(code['uncommitted_code_files'])}", flush=True)
 
     random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -287,6 +417,8 @@ def cmd_train(args) -> int:
         model.config.use_cache = False
     model.to(device)
     codec = Codec(tokenizer, args.max_len, args.pad_multiple)
+    embeddings = embedding_report(tokenizer, model, codec)
+    print(f"language tokens: {json.dumps(embeddings['tokens'])}", flush=True)
 
     train_examples = to_examples(train_pairs, directions)
     val_examples = to_examples(val_pairs, directions)
@@ -343,25 +475,31 @@ def cmd_train(args) -> int:
     test_count = min(len(test_pairs), test_translate or len(test_pairs))
     print(f"translating {test_count:,} test pairs in {len(directions)} directions", flush=True)
     test = evaluate(best_model, codec, test_pairs, directions, device, args.eval_batch_size, args.beams, test_translate) if test_pairs else {}
+    source_after = checkpoint_fingerprint(args.model)
     meta = {
         "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "base_model": args.model,
+        "source_checkpoint": {**source_checkpoint, "unchanged_after_training": source_after == source_checkpoint},
         "language_token": language,
+        "tokenizer_mapping": embeddings,
         "directions": directions,
         "device": str(device),
         "minutes": round((time.time() - started) / 60, 1),
         "train_minutes": train_minutes,
-        "git_commit": git_commit(),
+        **code,
         "data": {
             "dir": str(args.data),
-            "export_manifest_sha256": file_sha256(args.data / "manifest.json"),
+            **data_check,
             "tiers": sorted(tiers),
             "train_pairs": len(train_pairs),
             "validation_pairs": len(val_pairs),
             "test_pairs": len(test_pairs),
             "test_translated": test_count,
         },
-        "hyperparameters": {k: v for k, v in vars(args).items() if k not in {"func", "data", "out", "model"}},
+        "hyperparameters": {
+            k: [str(p) for p in v] if k == "benchmark" else v
+            for k, v in vars(args).items() if k not in {"func", "data", "out", "model"}
+        },
         "validation_history": history,
         "test": test,
         "test_note": "Export test split: whole Bible books held out (Bible-style text only). Not a claim about everyday quality.",
@@ -451,6 +589,11 @@ def main(argv: list[str] | None = None) -> int:
     train.add_argument("--log-every", type=int, default=50)
     train.add_argument("--seed", type=int, default=13)
     train.add_argument("--device", default="auto", help="auto, mps, cuda, or cpu")
+    train.add_argument("--allow-uncleared-data", action="store_true",
+                       help="accept an export that includes needs_review sources (internal experiments only)")
+    train.add_argument("--benchmark", type=Path, action="append",
+                       help="benchmark file that must not overlap train/validation; repeatable (default: "
+                            "data/evaluation/translation/sample.jsonl and every human evaluation file)")
     train.set_defaults(func=cmd_train)
 
     translate = commands.add_parser("translate", help="translate a human evaluation set")
@@ -473,6 +616,10 @@ def main(argv: list[str] | None = None) -> int:
     try_.set_defaults(func=cmd_try)
 
     args = parser.parse_args(argv)
+    if args.command == "train" and args.benchmark is None:
+        from build_language_db import EVAL_TRANSLATION, default_eval_paths
+
+        args.benchmark = [path for path in (EVAL_TRANSLATION, *default_eval_paths()) if path.exists()]
     return args.func(args)
 
 

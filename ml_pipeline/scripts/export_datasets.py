@@ -12,7 +12,12 @@ Tiers:
   silver  corpus pairs accepted by human reviewers (build_language_db.py --reviews),
           and corpus pairs with no quality flags from generators whose spot-check
           acceptable share (lower 95% bound) meets --silver-min-acceptable
-  bronze  remaining corpus pairs with quality score >= --min-score
+  bronze  remaining corpus pairs with quality score >= --min-score, and unreviewed
+          reference dictionaries (--reference-db): Essential 3000 example sentences
+          and phrases, and the first Zomi equivalent of 50K Master usage-tier A senses
+
+--corpus-fraction keeps a fixed, reproducible share of machine-made corpus pairs
+(by id hash) so a run fits local training time; human-accepted pairs are always kept.
 
 Rights gate: only sources whose training status in data/rights.json is
 "cleared" are exported. --allow-uncleared also admits "needs_review" sources
@@ -28,6 +33,7 @@ Merged verse ranges (such as 17-18) are not paired.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sqlite3
 import sys
@@ -80,7 +86,21 @@ def silver_models(summary: dict | None, min_acceptable: float) -> set[str]:
     }
 
 
-def corpus_records(con: sqlite3.Connection, silver: set[str], min_score: float):
+def in_sample(key: str, fraction: float) -> bool:
+    if fraction >= 1:
+        return True
+    bucket = int.from_bytes(hashlib.sha256(key.encode()).digest()[:4], "big") / 2**32
+    return bucket < fraction
+
+
+def corpus_records(
+    con: sqlite3.Connection,
+    silver: set[str],
+    min_score: float,
+    fraction: float = 1.0,
+    skipped: Counter[str] | None = None,
+):
+    skipped = skipped if skipped is not None else Counter()
     rows = con.execute(
         """
         SELECT id, normalized_source_text, normalized_target_text, model,
@@ -92,6 +112,10 @@ def corpus_records(con: sqlite3.Connection, silver: set[str], min_score: float):
         (EVAL_HOLDOUT_SPLIT, min_score),
     )
     for row_id, english, zomi, model, flags_json, score, split, verified in rows:
+        # Sampling thins machine-made pairs only; every human-accepted pair is kept.
+        if not verified and not in_sample(f"corpus-{row_id}", fraction):
+            skipped["corpus_not_sampled"] += 1
+            continue
         flags = json.loads(flags_json or "[]")
         # A pair human reviewers accepted is silver whatever its generator scored; rejected
         # pairs never reach this loop (their quality score is 0).
@@ -155,6 +179,58 @@ def gold_records(bible: list[dict], phrases: list[dict], skipped: Counter[str] |
             "tier": "gold",
             "split": split_for_key(template_key(phrase["english"], set())),
         }
+
+
+def reference_records(path: Path, skipped: Counter[str]):
+    """Unreviewed reference dictionaries, as bronze pairs split by English text."""
+    con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    seen: set[tuple[str, str]] = set()
+
+    def record(record_id: str, source: str, kind: str, english: str | None, zomi: str | None):
+        english, zomi = (english or "").strip(), (zomi or "").strip()
+        if not english or not zomi:
+            skipped["reference_empty"] += 1
+            return None
+        if (english, zomi) in seen:
+            skipped["reference_duplicate"] += 1
+            return None
+        seen.add((english, zomi))
+        return {
+            "id": record_id,
+            "english": english,
+            "zomi": zomi,
+            "source": source,
+            "tier": "bronze",
+            "split": split_for_key(template_key(english, set())),
+            "kind": kind,
+        }
+
+    try:
+        examples = con.execute(
+            """
+            SELECT x.id, e.source_id, x.kind, x.english, x.zomi
+            FROM examples x JOIN senses s ON s.id = x.sense_id JOIN entries e ON e.id = s.entry_id
+            ORDER BY x.id
+            """
+        )
+        for example_id, source, kind, english, zomi in examples:
+            if (r := record(f"ref-{example_id}", source, kind, english, zomi)):
+                yield r
+        # Tier-A senses only; ";" separates alternative equivalents, so keep the first.
+        senses = con.execute(
+            """
+            SELECT s.id, e.source_id, e.headword, s.zomi
+            FROM senses s JOIN entries e ON e.id = s.entry_id
+            WHERE e.source_id = 'translation_master_50k' AND s.usage_tier = 'A'
+            ORDER BY s.id
+            """
+        )
+        for sense_id, source, headword, zomi in senses:
+            first = (zomi or "").split(";")[0]
+            if (r := record(f"ref-{sense_id}", source, "headword", headword, first)):
+                yield r
+    finally:
+        con.close()
 
 
 def bible_version_records(path: Path, skipped: Counter[str]):
@@ -227,6 +303,8 @@ def export(
     min_acceptable: float,
     min_score: float,
     bible_versions: Path | None = None,
+    reference_db: Path | None = None,
+    corpus_fraction: float = 1.0,
 ) -> dict:
     admitted = admitted_sources(rights, allow_uncleared)
     silver = silver_models(summary, min_acceptable)
@@ -237,9 +315,14 @@ def export(
     out_dir.mkdir(parents=True, exist_ok=True)
     handles = {split: (out_dir / f"{split}.jsonl").open("w", encoding="utf-8") for split in SPLITS}
     try:
-        streams = [gold_records(bible, phrases, skipped), corpus_records(con, silver, min_score)]
+        streams = [
+            gold_records(bible, phrases, skipped),
+            corpus_records(con, silver, min_score, corpus_fraction, skipped),
+        ]
         if bible_versions:
             streams.append(bible_version_records(bible_versions, skipped))
+        if reference_db:
+            streams.append(reference_records(reference_db, skipped))
         for stream in streams:
             for record in stream:
                 if record["source"] not in admitted:
@@ -276,7 +359,11 @@ def export(
         },
         "uncleared_sources_included": sorted(n for n in admitted if rights[n] != "cleared"),
         "silver_models": sorted(silver),
-        "parameters": {"min_score": min_score, "silver_min_acceptable": min_acceptable},
+        "parameters": {
+            "min_score": min_score,
+            "silver_min_acceptable": min_acceptable,
+            "corpus_fraction": corpus_fraction,
+        },
         "bible_split_books": {"test": sorted(BIBLE_TEST_BOOKS), "validation": sorted(BIBLE_VALIDATION_BOOKS)},
         "files": {split: file_fingerprint(out_dir / f"{split}.jsonl") for split in SPLITS},
     }
@@ -291,6 +378,8 @@ def main(argv: list[str] | None = None) -> int:
         help="Human evaluation set or .sources.csv; repeatable. Default: every such file in data/evaluation/human/",
     )
     parser.add_argument("--bible-versions", type=Path, help="bible_versions.sqlite from import_usx_bibles.py")
+    parser.add_argument("--reference-db", type=Path, help="reference_dictionaries.sqlite from import_reference_dictionaries.py")
+    parser.add_argument("--corpus-fraction", type=float, default=1.0, help="Share of corpus pairs to keep, 0-1")
     parser.add_argument("--generator-summary", type=Path, help="summary.json from review_sample.py summarize")
     parser.add_argument("--silver-min-acceptable", type=float, default=0.8)
     parser.add_argument("--min-score", type=float, default=0.5)
@@ -305,6 +394,10 @@ def main(argv: list[str] | None = None) -> int:
         sys.exit(f"Language database not found: {args.db}")
     if args.bible_versions and not args.bible_versions.exists():
         sys.exit(f"Bible versions database not found: {args.bible_versions}")
+    if args.reference_db and not args.reference_db.exists():
+        sys.exit(f"Reference dictionaries database not found: {args.reference_db}")
+    if not 0 < args.corpus_fraction <= 1:
+        sys.exit("--corpus-fraction must be between 0 and 1")
     con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
     try:
         version = con.execute("SELECT version FROM dataset_versions ORDER BY id DESC LIMIT 1").fetchone()[0]
@@ -323,6 +416,8 @@ def main(argv: list[str] | None = None) -> int:
             min_acceptable=args.silver_min_acceptable,
             min_score=args.min_score,
             bible_versions=args.bible_versions,
+            reference_db=args.reference_db,
+            corpus_fraction=args.corpus_fraction,
         )
     finally:
         con.close()
@@ -332,6 +427,8 @@ def main(argv: list[str] | None = None) -> int:
         inputs["workbook"] = file_fingerprint(args.workbook)
     if args.bible_versions:
         inputs["bible_versions"] = file_fingerprint(args.bible_versions)
+    if args.reference_db:
+        inputs["reference_db"] = file_fingerprint(args.reference_db)
     if args.generator_summary:
         inputs["generator_summary"] = file_fingerprint(args.generator_summary)
     inputs["evaluation_sets"] = [{"file": p.name, "sha256": file_fingerprint(p)["sha256"]} for p in args.eval]
