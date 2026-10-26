@@ -86,6 +86,22 @@
       "redistribute": "cleared",
       "commercial": "cleared",
       "evidence": "Public domain dedication in the download's copr.htm (eBible.org, received 2026-10-17). 'World English Bible' is an eBible.org trademark: use the name only for unchanged text."
+    },
+    "translation_master_50k": {
+      "description": "English–Zomi–Burmese Translation Master Source v1.0.1 (50,032 headwords); 0 senses human-reviewed",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "needs_review",
+      "commercial": "needs_review",
+      "evidence": "Project owner reported authoring it on 2026-10-25; whether AI drafted any text, and the intended uses, are not yet recorded"
+    },
+    "essential_3000": {
+      "description": "The Essential 3000 English–Zomi Learner's Dictionary, beta (3,000 headwords, 5,342 senses); 0 senses human-reviewed",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "needs_review",
+      "commercial": "needs_review",
+      "evidence": "Project owner reported authoring it on 2026-10-25; whether AI drafted any text, and the intended uses, are not yet recorded"
     }
   }
 }

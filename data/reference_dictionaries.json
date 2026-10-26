@@ -1,0 +1,21 @@
+{
+  "_comment": "Reference dictionaries read by ml_pipeline/scripts/import_reference_dictionaries.py from the private siamsil-data repository. sha256 pins the exact original; a changed file stops the import until this file is updated on purpose.",
+  "sources": {
+    "translation_master_50k": {
+      "title": "English–Zomi–Burmese Translation Master Source",
+      "version": "1.0.1",
+      "format": "translation_master",
+      "path": "Zomi AI Roadmap/English_Zomi_Burmese_Translation_Master_v1.0.1.json",
+      "sha256": "c07884213d6d1d5b0cd404ea0ba85e873e922055c31fe44e2f8f34af840a1ce6",
+      "review_workbook": "Zomi AI Roadmap/50K-English-Zomi-Burmese-Native-Expert-Review-v1.0.xlsx"
+    },
+    "essential_3000": {
+      "title": "The Essential 3000 English–Zomi Learner's Dictionary",
+      "version": "beta",
+      "format": "learners_dictionary",
+      "path": "Zomi AI Roadmap/Essential_3000_English_Zomi_Learners_Dictionary.json",
+      "sha256": "5e513a996ddd84c8350f1da0539d67a4cd854f58c7bf84e0b3c8d1b259507bcf",
+      "review_workbook": "Zomi AI Roadmap/Essential-3000-English-Zomi-Native-Expert-Review.xlsx"
+    }
+  }
+}
