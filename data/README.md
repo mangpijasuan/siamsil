@@ -46,6 +46,13 @@ python3 ml_pipeline/scripts/import_usx_bibles.py
 
 Add the Bible versions to a dataset export with `--bible-versions data/processed/bible/bible_versions.sqlite`. Each Zomi version is paired verse by verse with each English version (for example the World English Bible, unzipped to `data/raw/bible/usx/web/`). A pair is exported only when both versions' training rights allow it. Splits are by whole book for every version and the workbook: Ruth, Mark, and 1 John are test; Joel, Jonah, Philippians, and Titus are validation. Merged verse ranges are not paired.
 
+Import the reference dictionaries (the English–Zomi–Burmese Translation Master and the Essential 3000 Learner's Dictionary) straight from the private `siamsil-data` clone into `data/processed/reference/reference_dictionaries.sqlite`. The originals are read in place and must match the SHA-256 in `data/reference_dictionaries.json`; `data/raw/` is not used. Every sense is stored as `unreviewed`, and rights come from `data/rights.json` (`translation_master_50k`, `essential_3000`).
+
+```bash
+python3 ml_pipeline/scripts/import_reference_dictionaries.py --data-repo siamsil-data --dry-run
+python3 ml_pipeline/scripts/import_reference_dictionaries.py --data-repo siamsil-data
+```
+
 Expected raw files:
 
 - `raw/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx`

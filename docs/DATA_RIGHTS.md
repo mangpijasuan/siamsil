@@ -36,6 +36,8 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 | Bible, KJV (USX) | 31,102 verses | yes | yes | — (UK) | — (UK) | `restricted` (public domain outside the UK) |
 | Bible, Burmese Judson (BJB), USX | 30,938 verses | yes, with credit | yes | **no** | **no** | `restricted` |
 | Zomi worship songs (songbook, via Zomi Worship Collective) | Song lyrics in Zomi | yes, with credit | yes | — | **no** | `restricted` |
+| English–Zomi–Burmese Translation Master v1.0.1 (private `siamsil-data`) | 50,032 headwords, 50,282 senses; 0 human-reviewed | — | — | — | — | `needs_review` |
+| Essential 3000 English–Zomi Learner's Dictionary, beta (private `siamsil-data`) | 3,000 headwords, 5,342 senses, examples and phrases; 0 human-reviewed | — | — | — | — | `needs_review` |
 | Community audio (planned) | Consent-based recordings; per-speaker choices in [AUDIO_CONSENT.md](AUDIO_CONSENT.md) | — | — | — | — | draft form, needs legal review |
 
 "—" means not yet permitted.
@@ -93,6 +95,11 @@ To clear it for training, record in this file: (1) the dataset card as published
 - Still to record here: the publisher's and collective's names as they appear in the permission, the date of each permission, and where the written copies are kept. Keep the documents in private storage, not in this repository.
 - Credit each song's songwriter and translator where the source gives them.
 - Many songs are Zomi translations of English songs. The permission covers the Zomi text; it does not grant rights to the original English lyrics, which are not imported.
+
+**Translation Master (50K) and Essential 3000**
+- The project owner reported on 2026-10-25 that they wrote both. Still to record: whether any Zomi or Burmese text was drafted by AI (and with which tool), and which uses the owner grants (display, training, redistribution, commercial).
+- Burmese in the Translation Master is marked "reference only" in its review workbook.
+- Imported read-only by `import_reference_dictionaries.py` into a separate database, every sense `unreviewed`. Reviewer decisions live in the two `*-Native-Expert-Review*.xlsx` workbooks; none were recorded as of 2026-10-25.
 
 **Daily-use phrases**
 - Confirm the teacher who reviewed them agrees to their use in training and redistribution, and how they want to be credited.
