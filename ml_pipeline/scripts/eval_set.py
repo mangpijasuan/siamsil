@@ -8,12 +8,14 @@ Commands:
   leakage FILE --corpus CSV     items whose text also appears in the parallel corpus
   manifest FILE                 write FILE's .manifest.json (counts and SHA-256)
   check-sources SOURCES.csv --database DB [--bible-versions DB]
-                                English source sentences (before translation) that match the
-                                corpus or an English Bible, exactly or as a template variant
+                                source sentences (before translation) that match the same
+                                language's side of the corpus or a Bible in that language,
+                                exactly or as a template variant
 
-A sources list (columns id, domain, english) can be passed to build_language_db.py
-and export_datasets.py like a finished set, so the English is kept out of training
-from the day it is written, before any translation exists.
+A sources list has the columns id, domain, and either english (an en-zomi set) or zomi
+(a zomi-en set, from text written by Zomi speakers). It can be passed to
+build_language_db.py and export_datasets.py like a finished set, so the sentences are
+kept out of training from the day they are chosen, before any translation exists.
 
 Each command exits non-zero when the set must not be frozen.
 """
@@ -121,31 +123,41 @@ def validate_items(items: list[dict]) -> tuple[list[str], list[str]]:
     return errors, warnings
 
 
-SOURCE_COLUMNS = ("id", "domain", "english")
+# The source-text column a sources list has decides the set's direction.
+SOURCE_LANGUAGE_COLUMNS = {"english": "en-zomi", "zomi": "zomi-en"}
 
 
 def read_sources(path: Path) -> tuple[list[dict], list[str]]:
-    """English source sentences for an en-zomi set, as items without references yet.
+    """Source sentences for a set, as items without references yet.
 
+    Columns: id, domain, and either english (en-zomi) or zomi (zomi-en), not both.
     Read with utf-8-sig: Excel's "CSV UTF-8" adds a byte-order mark before the header."""
     with path.open(encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
-        missing = [c for c in SOURCE_COLUMNS if c not in (reader.fieldnames or [])]
+        fields = reader.fieldnames or []
+        text_columns = [column for column in SOURCE_LANGUAGE_COLUMNS if column in fields]
+        missing = [c for c in ("id", "domain") if c not in fields]
+        if not text_columns:
+            missing.append(" or ".join(SOURCE_LANGUAGE_COLUMNS))
         if missing:
             return [], [f"{path.name}: missing columns {', '.join(missing)}"]
+        if len(text_columns) > 1:
+            return [], [f"{path.name}: has both english and zomi columns; a sources list holds one language"]
         rows = list(reader)
+    column = text_columns[0]
+    direction = SOURCE_LANGUAGE_COLUMNS[column]
     items, errors, seen = [], [], set()
     for line, row in enumerate(rows, start=2):
-        item_id, domain, english = ((row.get(c) or "").strip() for c in SOURCE_COLUMNS)
-        if not item_id or not english:
-            errors.append(f"line {line}: id and english are required")
+        item_id, domain, text = ((row.get(c) or "").strip() for c in ("id", "domain", column))
+        if not item_id or not text:
+            errors.append(f"line {line}: id and {column} are required")
         elif item_id in seen:
             errors.append(f"line {line}: duplicate id {item_id}")
         elif domain not in DOMAINS:
             errors.append(f"line {line}: domain must be one of {', '.join(DOMAINS)}")
         seen.add(item_id)
-        items.append({"id": item_id, "direction": "en-zomi", "domain": domain,
-                      "source_text": english, "references": [], "_line": line})
+        items.append({"id": item_id, "direction": direction, "domain": domain,
+                      "source_text": text, "references": [], "_line": line})
     return items, errors
 
 
@@ -195,11 +207,12 @@ def read_corpus(path: Path):
             yield row.get("en") or "", row.get("zomi") or ""
 
 
-def source_overlaps(items: list[dict], english_texts) -> dict[str, set[str]]:
-    """Map item id -> {'exact', 'variant'} for English texts that match an item.
+def source_overlaps(items: list[dict], texts) -> dict[str, set[str]]:
+    """Map item id -> {'exact', 'variant'} for texts (in the items' source language) that match an item.
 
-    'variant' is the corpus build's template key (numbers masked), the same rule
-    that later moves matching training pairs to the evaluation holdout.
+    'variant' is the corpus build's template key (numbers masked). For English that is the
+    rule that later moves matching training pairs to the evaluation holdout; the build
+    matches Zomi exactly, so for Zomi sources a variant is reported as a caution.
     """
     exact: dict[str, set[str]] = {}
     variant: dict[str, set[str]] = {}
@@ -208,7 +221,7 @@ def source_overlaps(items: list[dict], english_texts) -> dict[str, set[str]]:
         exact.setdefault(normalize_word(text), set()).add(item["id"])
         variant.setdefault(template_key(text, set()), set()).add(item["id"])
     hits: dict[str, set[str]] = {}
-    for text in english_texts:
+    for text in texts:
         for item_id in exact.get(normalize_word(text), ()):
             hits.setdefault(item_id, set()).add("exact")
         for item_id in variant.get(template_key(text, set()), ()):
@@ -262,6 +275,13 @@ def cmd_leakage(args: argparse.Namespace) -> int:
     return 1 if leaks else 0
 
 
+# Fixed queries, one per source language; nothing from the sources list reaches the SQL text.
+CORPUS_SIDE_QUERY = {
+    "english": "SELECT normalized_source_text FROM parallel_sentences",
+    "zomi": "SELECT normalized_target_text FROM parallel_sentences",
+}
+
+
 def cmd_check_sources(args: argparse.Namespace) -> int:
     import sqlite3
 
@@ -270,16 +290,21 @@ def cmd_check_sources(args: argparse.Namespace) -> int:
         print(f"error: {error}")
     if errors:
         return 1
+    # Compare with the side of the corpus, and the Bibles, written in the sources' own language.
+    zomi = bool(items) and items[0]["direction"] == "zomi-en"
+    corpus_query = CORPUS_SIDE_QUERY["zomi" if zomi else "english"]
+    bible_language = "zom" if zomi else "eng"
     found: dict[str, set[str]] = {}
     con = sqlite3.connect(f"file:{args.database}?mode=ro", uri=True)
-    corpus = (row[0] for row in con.execute("SELECT normalized_source_text FROM parallel_sentences"))
+    corpus = (row[0] for row in con.execute(corpus_query))
     for item_id, kinds in source_overlaps(items, corpus).items():
         found.setdefault(item_id, set()).update(f"corpus {kind}" for kind in kinds)
     con.close()
     if args.bible_versions:
         con = sqlite3.connect(f"file:{args.bible_versions}?mode=ro", uri=True)
         verses = (row[0] for row in con.execute(
-            "SELECT text FROM verses WHERE version_id IN (SELECT id FROM versions WHERE language_iso = 'eng')"))
+            "SELECT text FROM verses WHERE version_id IN (SELECT id FROM versions WHERE language_iso = ?)",
+            (bible_language,)))
         for item_id, kinds in source_overlaps(items, verses).items():
             found.setdefault(item_id, set()).update(f"Bible {kind}" for kind in kinds)
         con.close()
@@ -308,9 +333,9 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
 
     check = commands.add_parser("check-sources")
-    check.add_argument("sources", type=Path, help="CSV with columns id, domain, english")
+    check.add_argument("sources", type=Path, help="CSV with columns id, domain, and english or zomi")
     check.add_argument("--database", type=Path, required=True, help="language database with the corpus")
-    check.add_argument("--bible-versions", type=Path, help="bible_versions.sqlite; checks its English versions")
+    check.add_argument("--bible-versions", type=Path, help="bible_versions.sqlite; checks its versions in the sources' language")
     check.set_defaults(run=cmd_check_sources)
 
     validate = commands.add_parser("validate")
