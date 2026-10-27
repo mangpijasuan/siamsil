@@ -116,8 +116,10 @@ To clear it for training, record in this file: (1) the dataset card as published
 
 **Zomi grammar primer (*Paunam Khenna Leh Kampau Luanzia*, Lia Cingsen)**
 - **2026-10-27, project owner:** the primer's owner gave permission for display in the app and for model training. Redistribution and commercial use were not granted.
-- Display and training stay `needs_review` until a second person confirms this entry (see Closing an item). On confirmation, set `display` and `train` to `cleared` for `primer_lia_cingsen` in `data/rights.json`.
-- Still to record: who granted it (the author, Lia Cingsen, or another rights holder), the date, its exact wording, any required credit line, the publisher and edition, and where the written permission is kept (private storage, not this repository).
+- Display and training stay `needs_review` until both steps are done (see Closing an item):
+  1. Record here who granted it (the author, Lia Cingsen, or another rights holder) and why they hold the rights, the date, its exact wording on display and training, any required credit line, the publisher and edition, and where the written permission is kept (private storage, not this repository).
+  2. A second person reads the written permission and confirms it comes from the rights holder and covers display and training.
+- Only then set `display` and `train` to `cleared` for `primer_lia_cingsen` in `data/rights.json`.
 - The permission covers the sheets made from the primer in `siamsil-data/grammar/derived/` (sentences, word pairs, bilingual examples). Their translations and glosses still need Zomi reviewers before any of it is used as reference data; the extracted text is the book's, not machine output.
 
 **Daily-use phrases**
