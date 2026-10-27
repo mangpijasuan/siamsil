@@ -179,8 +179,7 @@ html[data-bible-focus="true"] .sb-root { background-image: none; }
 .sb-version-line {
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--sb-muted);
 }
 .sb-secondary-label { color: var(--sb-gold-ink); }

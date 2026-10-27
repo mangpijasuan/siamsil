@@ -377,10 +377,9 @@ body {
 .side-panel-foot {
   padding: 12px 14px 16px;
   border-top: 1px solid rgba(27,42,74,0.08);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--gray);
   background: transparent;
 }
@@ -2243,10 +2242,9 @@ a.library-card:hover {
 }
 .dict-detail-section { margin-bottom: 18px; }
 .dict-detail-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--gray);
   margin-bottom: 6px;
 }
@@ -2907,10 +2905,9 @@ a.library-card:hover {
 .tr-result-side { padding: 16px 18px; }
 .tr-result-zomi-side { background: rgba(201,168,76,0.07); border-top: 1px solid var(--gray3); }
 .tr-side-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--gray);
   margin-bottom: 4px;
 }
