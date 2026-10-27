@@ -50,6 +50,16 @@ class Settings(BaseSettings):
     # The system that answers /translate. Rolling back a model is a change to this value.
     translation_system: Literal["retrieval"] = "retrieval"
 
+    # Speech Data Lab media (docs/SPEECH_DATA_LAB.md). Private: only the API and the job worker
+    # read this directory; it must never be served by a web server or synced anywhere public.
+    speech_media_dir: Path = PROJECT_ROOT / "data" / "speech" / "media"
+    speech_max_upload_bytes: int = Field(default=1024**3, ge=1024, le=20 * 1024**3)
+    speech_max_duration_seconds: int = Field(default=6 * 3600, ge=1, le=24 * 3600)
+    speech_job_lease_seconds: int = Field(default=1800, ge=60, le=24 * 3600)
+    speech_job_max_attempts: int = Field(default=3, ge=1, le=20)
+    speech_ffmpeg: str = "ffmpeg"
+    speech_ffprobe: str = "ffprobe"
+
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:3002",

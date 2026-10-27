@@ -57,6 +57,9 @@ jobs:
           alembic upgrade head
           alembic check
 
+      - name: Install FFmpeg for the speech media tests
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
       - name: Run backend and language tests
         run: python -m unittest discover -s backend/tests -p "test_*.py"
 

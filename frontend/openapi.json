@@ -1535,6 +1535,91 @@
         "title": "IdentityResponse",
         "type": "object"
       },
+      "JobOut": {
+        "properties": {
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "output_asset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Asset Id"
+          },
+          "processing_version": {
+            "title": "Processing Version",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "step": {
+            "title": "Step",
+            "type": "string"
+          },
+          "tool_versions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Tool Versions",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "step",
+          "processing_version",
+          "status",
+          "attempts",
+          "error",
+          "tool_versions",
+          "output_asset_id",
+          "created_at",
+          "finished_at"
+        ],
+        "title": "JobOut",
+        "type": "object"
+      },
       "LearningEntry": {
         "additionalProperties": true,
         "properties": {
@@ -1637,6 +1722,226 @@
           "version"
         ],
         "title": "LivenessResponse",
+        "type": "object"
+      },
+      "MediaAssetOut": {
+        "properties": {
+          "channels": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channels"
+          },
+          "codec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codec"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "deleted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted At"
+          },
+          "derived_from_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derived From Id"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/JobOut"
+            },
+            "title": "Jobs",
+            "type": "array"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "provenance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provenance"
+          },
+          "sample_rate": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Rate"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source_id",
+          "kind",
+          "provenance",
+          "derived_from_id",
+          "sha256",
+          "size_bytes",
+          "media_type",
+          "duration_seconds",
+          "sample_rate",
+          "channels",
+          "codec",
+          "status",
+          "deleted_at",
+          "created_at",
+          "jobs"
+        ],
+        "title": "MediaAssetOut",
+        "type": "object"
+      },
+      "MediaDeletion": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "MediaDeletion",
+        "type": "object"
+      },
+      "MediaDeletionOut": {
+        "properties": {
+          "deleted_assets": {
+            "title": "Deleted Assets",
+            "type": "integer"
+          },
+          "deleted_files": {
+            "title": "Deleted Files",
+            "type": "integer"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "deleted_assets",
+          "deleted_files"
+        ],
+        "title": "MediaDeletionOut",
+        "type": "object"
+      },
+      "MediaList": {
+        "properties": {
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/MediaAssetOut"
+            },
+            "title": "Assets",
+            "type": "array"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "transcription_allowed": {
+            "title": "Transcription Allowed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "source_id",
+          "transcription_allowed",
+          "reasons",
+          "assets"
+        ],
+        "title": "MediaList",
         "type": "object"
       },
       "PermissionCreate": {
@@ -3748,6 +4053,187 @@
           }
         ],
         "summary": "Source Eligibility",
+        "tags": [
+          "speech"
+        ]
+      }
+    },
+    "/api/v1/speech/sources/{source_id}/media": {
+      "get": {
+        "operationId": "list_media_api_v1_speech_sources__source_id__media_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Media",
+        "tags": [
+          "speech"
+        ]
+      },
+      "post": {
+        "description": "Upload a source's original file. Refused before any bytes are read unless the source may be\nkept and transcribed. The same file uploaded twice returns the first record.",
+        "operationId": "upload_media_api_v1_speech_sources__source_id__media_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "How the file reached Siamsil: from the creator, or the owner's own platform export.",
+            "in": "query",
+            "name": "provenance",
+            "required": true,
+            "schema": {
+              "description": "How the file reached Siamsil: from the creator, or the owner's own platform export.",
+              "enum": [
+                "creator_provided",
+                "owner_platform_export"
+              ],
+              "title": "Provenance",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "description": "The file itself as the raw request body: WAV, MP3, M4A, or MP4. Its type is read from its bytes.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaAssetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Upload Media",
+        "tags": [
+          "speech"
+        ]
+      }
+    },
+    "/api/v1/speech/sources/{source_id}/media/delete": {
+      "post": {
+        "description": "Delete every stored file of the source, as promised on withdrawal (docs/AUDIO_CONSENT.md).",
+        "operationId": "delete_media_api_v1_speech_sources__source_id__media_delete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaDeletion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaDeletionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Media",
         "tags": [
           "speech"
         ]
