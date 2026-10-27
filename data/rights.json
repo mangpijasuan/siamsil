@@ -110,6 +110,14 @@
       "redistribute": "not_permitted",
       "commercial": "not_permitted",
       "evidence": "Project owner reported on 2026-10-27 written permission from both rights holders, Dr. Dal Lian Haokip and Johs. Lind / Zomi Innkuan Denmark, for display and training. Display and training stay needs_review until a second person confirms; still to record: the date of each permission and where the written copies are kept. Redistribution and commercial use were not granted. The PDF copy was obtained from kupdf.net, a third-party upload."
+    },
+    "primer_lia_cingsen": {
+      "description": "Paunam Khenna Leh Kampau Luanzia, a Zomi literacy and grammar primer by Lia Cingsen (PDF created 2008-12-20, about 184 printed pages, private siamsil-data grammar/), and the review sheets derived from it",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "not_permitted",
+      "commercial": "not_permitted",
+      "evidence": "Project owner reported on 2026-10-27 that the primer's owner gave permission for display and training. Display and training stay needs_review until a second person confirms; still to record: who granted it (the author, Lia Cingsen, or another rights holder), the date, its exact wording, any credit line, and where the written permission is kept. Redistribution and commercial use were not granted."
     }
   }
 }
