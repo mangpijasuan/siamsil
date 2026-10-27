@@ -39,6 +39,14 @@ def write_sources(path: Path, rows: list[tuple[str, str, str]]) -> Path:
     return path
 
 
+def write_zomi_sources(path: Path, rows: list[tuple[str, str, str]]) -> Path:
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["id", "domain", "zomi"])
+        writer.writerows(rows)
+    return path
+
+
 class SourcesTests(unittest.TestCase):
     def setUp(self) -> None:
         tmp = tempfile.TemporaryDirectory()
@@ -53,6 +61,21 @@ class SourcesTests(unittest.TestCase):
             {"id": "en-0001", "direction": "en-zomi", "domain": "health",
              "source_text": "Take two tablets a day.", "references": []},
         )
+
+    def test_zomi_sources_become_zomi_to_english_items(self) -> None:
+        items, errors = read_sources(write_zomi_sources(self.dir / "z.csv", [("zomi-en-0001", "education", "ZOMI_PLACEHOLDER_A")]))
+        self.assertEqual(errors, [])
+        self.assertEqual((items[0]["direction"], items[0]["source_text"]), ("zomi-en", "ZOMI_PLACEHOLDER_A"))
+
+    def test_a_sources_list_holds_one_language(self) -> None:
+        both = self.dir / "both.csv"
+        both.write_text("id,domain,english,zomi\nx,news,One.,ZOMI_PLACEHOLDER\n", encoding="utf-8")
+        self.assertIn("one language", read_sources(both)[1][0])
+        neither = self.dir / "neither.csv"
+        neither.write_text("id,domain,text\nx,news,One.\n", encoding="utf-8")
+        self.assertIn("missing columns english or zomi", read_sources(neither)[1][0])
+        _, errors = read_sources(write_zomi_sources(self.dir / "blank.csv", [("zomi-en-0001", "news", "")]))
+        self.assertIn("id and zomi are required", errors[0])
 
     def test_bad_sources_are_reported(self) -> None:
         rows = [("en-0001", "health", "One."), ("en-0001", "health", "Two."), ("en-0003", "sport", "Three."),
@@ -182,6 +205,95 @@ class ExclusionTests(unittest.TestCase):
         self.assertIn("en-0001 (Bible exact, Bible variant)", out.getvalue())
         self.assertIn("en-0002 (corpus exact, corpus variant)", out.getvalue())
         self.assertNotIn("en-0003", out.getvalue().split("source sentences overlap")[0])
+
+
+class ZomiSourceTests(unittest.TestCase):
+    """Zomi -> English sources: kept out of training and checked against the Zomi side."""
+
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.dir = Path(tmp.name)
+        corpus = self.dir / "corpus.csv"
+        with corpus.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(["index", "en", "zomi", "model", "worker"])
+            for n, english in enumerate(["The clinic opens at 9 o'clock.", "Children walk to school.", "It rained all week."]):
+                writer.writerow([n, english, f"ZOMI PLACEHOLDER SENTENCE {n}", "model-a", "w"])
+        self.database = self.dir / "language.sqlite"
+        con = connect(self.database)
+        create_schema(con)
+        with redirect_stdout(StringIO()):
+            ingest_parallel(con, corpus, "2026-10-25T00:00:00+00:00")
+        con.close()
+        self.sources = write_zomi_sources(self.dir / "zomi-en-v1.sources.csv", [
+            ("zomi-en-0001", "education", "ZOMI PLACEHOLDER SENTENCE 1"),  # the Zomi side of a corpus pair
+            ("zomi-en-0002", "informal", "ZOMI PLACEHOLDER ONLY IN THE BOOK"),
+        ])
+
+    def test_build_keeps_pairs_with_a_zomi_source_out_of_training(self) -> None:
+        con = sqlite3.connect(self.database)
+        apply_corpus_checks(con, load_eval_items([self.sources]))
+        splits = dict(con.execute("SELECT normalized_source_text, dataset_split FROM parallel_sentences"))
+        con.close()
+        self.assertEqual(splits["Children walk to school."], EVAL_HOLDOUT_SPLIT)
+        self.assertNotEqual(splits["It rained all week."], EVAL_HOLDOUT_SPLIT)
+        self.assertIn(self.sources, default_eval_paths(self.dir))
+
+    def test_check_sources_compares_zomi_with_the_zomi_side_and_zomi_bibles(self) -> None:
+        bible = self.dir / "bible.sqlite"
+        con = sqlite3.connect(bible)
+        con.executescript(
+            "CREATE TABLE versions (id TEXT, language_iso TEXT);"
+            "CREATE TABLE verses (version_id TEXT, text TEXT);"
+            "INSERT INTO versions VALUES ('web', 'eng'), ('tdb', 'zom');"
+            "INSERT INTO verses VALUES ('web', 'ZOMI PLACEHOLDER ONLY IN THE BOOK'), ('tdb', 'ZOMI PLACEHOLDER VERSE');"
+        )
+        con.commit()
+        con.close()
+        sources = write_zomi_sources(self.dir / "check.csv", [
+            ("zomi-en-0001", "education", "ZOMI PLACEHOLDER SENTENCE 1"),
+            ("zomi-en-0002", "religion", "ZOMI PLACEHOLDER VERSE"),
+            ("zomi-en-0003", "informal", "ZOMI PLACEHOLDER ONLY IN THE BOOK"),  # only in an English Bible: no match
+        ])
+        out = StringIO()
+        with redirect_stdout(out):
+            code = eval_main(["check-sources", str(sources), "--database", str(self.database), "--bible-versions", str(bible)])
+        report = out.getvalue()
+        self.assertEqual(code, 1)
+        self.assertIn("zomi-en-0001 (corpus exact, corpus variant)", report)
+        self.assertIn("zomi-en-0002 (Bible exact, Bible variant)", report)
+        self.assertNotIn("zomi-en-0003", report.split("source sentences overlap")[0])
+
+    def test_zomi_sheets_round_trip_into_a_valid_zomi_to_english_set(self) -> None:
+        sheet, draft = self.dir / "translate.xlsx", self.dir / "draft.jsonl"
+        review, final = self.dir / "review.xlsx", self.dir / "zomi-en-v1.jsonl"
+        with redirect_stdout(StringIO()):
+            worksheets_main(["testset-sheet", str(self.sources), "--out", str(sheet)])
+            book = openpyxl.load_workbook(sheet)
+            translate = book["Translate"]
+            self.assertEqual([c.value for c in translate[1]], ["ID", "Topic", "Zomi", "English translation", "Notes"])
+            self.assertEqual(book["Instructions"]["A1"].value, "Siamsil test set: translate Zomi into English")
+            translate["D2"] = "The children are going to school."
+            translate["D3"] = "It is raining."
+            book.save(sheet)
+            worksheets_main(["testset-import", str(sheet), "--translator", "T01", "--origin", "primer", "--out", str(draft)])
+            items = [json.loads(line) for line in draft.read_text().splitlines()]
+            self.assertEqual({i["direction"] for i in items}, {"zomi-en"})
+            self.assertEqual(items[0]["references"], ["The children are going to school."])
+
+            worksheets_main(["review-sheet", str(draft), "--out", str(review)])
+            book = openpyxl.load_workbook(review)
+            sheet_rows = book["Review"]
+            self.assertEqual(sheet_rows["F1"].value, "Corrected English")
+            sheet_rows["E2"], sheet_rows["E3"], sheet_rows["F3"] = "Accept", "Correct", "It is raining hard."
+            book.save(review)
+            worksheets_main(["review-merge", str(draft), str(review), "--reviewer", "R01", "--out", str(final)])
+        merged = [json.loads(line) for line in final.read_text().splitlines()]
+        self.assertEqual([(i["direction"], i["review_outcome"], i["references"]) for i in merged], [
+            ("zomi-en", "accepted", ["The children are going to school."]),
+            ("zomi-en", "corrected", ["It is raining hard."]),
+        ])
 
 
 class TranslatorSheetTests(unittest.TestCase):

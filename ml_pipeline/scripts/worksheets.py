@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Move Siamsil's Excel work sheets in and out of the pipeline formats.
 
-Human evaluation set (docs/EVALUATION_SET.md), English -> Zomi:
+Human evaluation set (docs/EVALUATION_SET.md), English -> Zomi or Zomi -> English:
   testset-sheet SOURCES.csv --out SHEET.xlsx
-      Make the translator's "Translate" sheet from the English sources list
-      (columns id, domain, english), with instructions.
+      Make the translator's "Translate" sheet from a sources list (columns id,
+      domain, and english or zomi; the column sets the direction), with instructions.
   testset-import SHEET.xlsx --translator T01 --origin TEXT --out DRAFT.jsonl
       Read the translator's "Translate" sheet. Translated rows become draft
       items (review_outcome "pending"); blank rows are counted and skipped.
@@ -34,8 +34,18 @@ from pathlib import Path
 from eval_set import DOMAINS, validate_items
 from review_sample import REVIEW_COLUMNS
 
-DIRECTION = "en-zomi"
+# direction -> (source language, target language), as the sheets name them.
+LANGUAGES = {"en-zomi": ("English", "Zomi"), "zomi-en": ("Zomi", "English")}
 DECISIONS = ("Accept", "Correct")
+
+
+def sheet_direction(rows: list[dict[str, str]]) -> str:
+    """A Translate or Review sheet's direction, from its translation column."""
+    columns = set(rows[0]) if rows else set()
+    for direction, (_, target) in LANGUAGES.items():
+        if f"{target} translation" in columns:
+            return direction
+    sys.exit("the sheet has neither a 'Zomi translation' nor an 'English translation' column")
 
 
 def _cell(value) -> str:
@@ -94,25 +104,39 @@ def cmd_testset_sheet(args: argparse.Namespace) -> int:
         for error in errors[:20]:
             print(f"error: {error}")
         sys.exit(f"{args.sources} is not a valid sources list")
+    direction = items[0]["direction"] if items else "en-zomi"
+    source, target = LANGUAGES[direction]
     wb = Workbook()
     intro = wb.active
     intro.title = "Instructions"
     intro.column_dimensions["A"].width = 110
+    if direction == "en-zomi":
+        guidance = (
+            "For every row, write the Zomi you would naturally use, in the agreed spelling standard.",
+            "• Translate the meaning, not word by word. Keep names, numbers and dates as in the English.",
+            "• Do not use Google Translate, ChatGPT, Gemini or any other machine translation, and do not copy from the Bible.",
+            "• If a sentence is unclear or does not fit Zomi life, write why in Notes and leave the translation blank.",
+        )
+    else:
+        guidance = (
+            "For every row, write the English a fluent speaker would naturally use for what the Zomi says.",
+            "• Translate the meaning, not word by word. Keep names, numbers and dates as in the Zomi.",
+            "• For a saying or simile, give its meaning in plain English; you may add the literal sense in Notes.",
+            "• Do not use Google Translate, ChatGPT, Gemini or any other machine translation, and do not copy from the Bible.",
+            "• If the Zomi is unclear or looks misspelled, write why in Notes and leave the translation blank.",
+        )
     for line in (
-        "Siamsil test set: translate English into Zomi",
+        f"Siamsil test set: translate {source} into {target}",
         "",
-        "For every row, write the Zomi you would naturally use, in the agreed spelling standard.",
-        "• Translate the meaning, not word by word. Keep names, numbers and dates as in the English.",
-        "• Do not use Google Translate, ChatGPT, Gemini or any other machine translation, and do not copy from the Bible.",
-        "• If a sentence is unclear or does not fit Zomi life, write why in Notes and leave the translation blank.",
-        "• Do not change the ID, Topic or English columns.",
+        *guidance,
+        f"• Do not change the ID, Topic or {source} columns.",
         "Keep this file private. Test sentences must never be used for training or shared publicly.",
     ):
         intro.append([line])
     intro["A1"].font = Font(bold=True, size=14, color="1B2A4A")
 
     sheet = wb.create_sheet("Translate")
-    header = ["ID", "Topic", "English", "Zomi translation", "Notes"]
+    header = ["ID", "Topic", source, f"{target} translation", "Notes"]
     widths = [14, 14, 60, 60, 35]
     sheet.append(header)
     for index, width in enumerate(widths, 1):
@@ -135,10 +159,12 @@ def cmd_testset_sheet(args: argparse.Namespace) -> int:
 
 def cmd_testset_import(args: argparse.Namespace) -> int:
     rows = read_sheet(args.sheet, "Translate")
+    direction = sheet_direction(rows) if rows else "en-zomi"
+    source, target = LANGUAGES[direction]
     items, blank, bad_topic = [], 0, []
     for row in rows:
-        zomi = row.get("Zomi translation", "")
-        if not zomi:
+        translation = row.get(f"{target} translation", "")
+        if not translation:
             blank += 1
             continue
         topic = row.get("Topic", "")
@@ -146,10 +172,10 @@ def cmd_testset_import(args: argparse.Namespace) -> int:
             bad_topic.append(row.get("ID", "?"))
         items.append({
             "id": row["ID"],
-            "direction": DIRECTION,
+            "direction": direction,
             "domain": topic,
-            "source_text": row["English"],
-            "references": [zomi],
+            "source_text": row[source],
+            "references": [translation],
             "source_origin": args.origin,
             "translator": args.translator,
             "reviewer": "",
@@ -170,16 +196,18 @@ def cmd_review_sheet(args: argparse.Namespace) -> int:
     from openpyxl.worksheet.datavalidation import DataValidation
 
     items = read_jsonl(args.draft)
+    direction = items[0]["direction"] if items else "en-zomi"
+    source, target = LANGUAGES[direction]
     wb = Workbook()
     intro = wb.active
     intro.title = "Instructions"
     intro.column_dimensions["A"].width = 110
     for line in (
-        "Siamsil test set: check each Zomi translation",
+        f"Siamsil test set: check each {target} translation",
         "",
-        "For every row, read the English and the Zomi translation.",
-        "• Decision = Accept if the Zomi is correct, natural, and says the same as the English.",
-        "• Decision = Correct if anything should change; write your full corrected Zomi in 'Corrected Zomi'.",
+        f"For every row, read the {source} and the {target} translation.",
+        f"• Decision = Accept if the {target} is correct, natural, and says the same as the {source}.",
+        f"• Decision = Correct if anything should change; write your full corrected {target} in 'Corrected {target}'.",
         "• Do not use Google Translate, ChatGPT, Gemini, or other machine translation.",
         "• Leave Decision blank if you are unsure; that row stays out of the test set for now.",
         "Keep this file private. Test sentences must never be used for training or shared publicly.",
@@ -188,7 +216,7 @@ def cmd_review_sheet(args: argparse.Namespace) -> int:
     intro["A1"].font = Font(bold=True, size=14, color="1B2A4A")
 
     sheet = wb.create_sheet("Review")
-    header = ["ID", "Topic", "English", "Zomi translation", "Decision", "Corrected Zomi", "Notes"]
+    header = ["ID", "Topic", source, f"{target} translation", "Decision", f"Corrected {target}", "Notes"]
     widths = [14, 14, 55, 55, 12, 55, 35]
     sheet.append(header)
     for index, width in enumerate(widths, 1):
@@ -227,9 +255,10 @@ def cmd_review_merge(args: argparse.Namespace) -> int:
         if decision == "Accept":
             merged["review_outcome"] = "accepted"
         elif decision == "Correct":
-            corrected = row.get("Corrected Zomi", "")
+            target = LANGUAGES.get(item.get("direction"), LANGUAGES["en-zomi"])[1]
+            corrected = row.get(f"Corrected {target}", "")
             if not corrected:
-                problems.append(f"{item_id}: 'Correct' needs the corrected Zomi")
+                problems.append(f"{item_id}: 'Correct' needs the corrected {target}")
                 continue
             merged["review_outcome"] = "corrected"
             merged["references"] = [corrected]
@@ -340,14 +369,14 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
 
     p = commands.add_parser("testset-sheet")
-    p.add_argument("sources", type=Path, help="CSV with columns id, domain, english")
+    p.add_argument("sources", type=Path, help="CSV with columns id, domain, and english or zomi")
     p.add_argument("--out", type=Path, required=True)
     p.set_defaults(func=cmd_testset_sheet)
 
     p = commands.add_parser("testset-import")
     p.add_argument("sheet", type=Path)
     p.add_argument("--translator", required=True, help="contributor ID, e.g. T01")
-    p.add_argument("--origin", required=True, help="where the English sentences came from")
+    p.add_argument("--origin", required=True, help="where the source sentences came from")
     p.add_argument("--out", type=Path, required=True)
     p.set_defaults(func=cmd_testset_import)
 
