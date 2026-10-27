@@ -1,8 +1,8 @@
 """Speech Data Lab rights and consent records (docs/SPEECH_DATA_LAB.md, PR 1).
 
-Revision ID: 20261025_0004
-Revises: 20261025_0003
-Create Date: 2026-10-25
+Revision ID: 20261027_0005
+Revises: 20261027_0004
+Create Date: 2026-10-27
 """
 
 from typing import Sequence
@@ -11,8 +11,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = "20261025_0004"
-down_revision: str | None = "20261025_0003"
+revision: str = "20261027_0005"
+down_revision: str | None = "20261027_0004"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -36,7 +36,7 @@ def upgrade() -> None:
     sa.Column('url', sa.Text(), nullable=True),
     sa.Column('title', sa.Text(), nullable=False),
     sa.Column('uploader', sa.Text(), nullable=True),
-    sa.Column('language', sa.String(length=8), server_default='zom', nullable=False),
+    sa.Column('language', sa.String(length=8), server_default='ctd', nullable=False),
     sa.Column('dialect', sa.Text(), nullable=True),
     sa.Column('duration_seconds', sa.Integer(), nullable=True),
     sa.Column('acquired_on', sa.Date(), nullable=True),
@@ -47,7 +47,7 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint("(platform = 'creator_file') = (url IS NULL)", name='ck_speech_sources_url'),
     sa.CheckConstraint("(status = 'withdrawn') = (withdrawn_at IS NOT NULL)", name='ck_speech_sources_withdrawn'),
-    sa.CheckConstraint("language = 'zom'", name='ck_speech_sources_language'),
+    sa.CheckConstraint("language = 'ctd'", name='ck_speech_sources_language'),
     sa.CheckConstraint("platform IN ('youtube', 'facebook', 'other', 'creator_file')", name='ck_speech_sources_platform'),
     sa.CheckConstraint("status IN ('registered', 'withdrawn')", name='ck_speech_sources_status'),
     sa.CheckConstraint('duration_seconds IS NULL OR duration_seconds >= 0', name='ck_speech_sources_duration'),

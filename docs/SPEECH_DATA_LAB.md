@@ -43,7 +43,7 @@ Each table arrives with the PR that first uses it, so no table exists before cod
 
 | Model | Table | PR | Purpose |
 | --- | --- | --- | --- |
-| `SpeechSource` | `speech_sources` | 1 | A recording: its link (YouTube, Facebook, another https page) or a creator-provided file with no link. Title, uploader, dialect, duration, acquisition date. The language is always `zom` (see below). Status is `registered` or `withdrawn`. |
+| `SpeechSource` | `speech_sources` | 1 | A recording: its link (YouTube, Facebook, another https page) or a creator-provided file with no link. Title, uploader, dialect, duration, acquisition date. The language is always `ctd` (see below). Status is `registered` or `withdrawn`. |
 | `SourcePermission` | `speech_source_permissions` | 1 | The rights holder's grant of each of the six uses, a reference to the evidence, an optional end date, and a status of `pending`, `verified`, `rejected`, or `revoked`. The database refuses a decision by the person who recorded it. |
 | `Speaker` | `speakers` | 1 | A pseudonymous speaker code (`S0001`), with optional self-described dialect region and age range. |
 | `SpeakerConsent` | `speaker_consents` | 1 | One consent record as in AUDIO_CONSENT.md: form version and language, written or oral, collector, adult confirmation, the six choices, credit, and an evidence reference. Append-only (a database trigger refuses UPDATE, DELETE, and TRUNCATE). The latest record is current, and a withdrawal is a new record that grants nothing. |
@@ -70,7 +70,7 @@ Each table arrives with the PR that first uses it, so no table exists before cod
 
 ### Language code
 
-Sources are labeled `zom`, Siamsil's label for Zomi (Tedim-based; the related ISO 639-3 code is `ctd`). It is **not** ISO 639-3 Zou ([DATA_RIGHTS.md](DATA_RIGHTS.md), decision of 2026-10-04). Every published speech dataset or model card must say so. Dialect is recorded separately, as the speaker or collector describes it.
+Sources are labeled `ctd`, the ISO 639-3 code for Tedim, which Siamsil uses for Zomi ([DATA_RIGHTS.md](DATA_RIGHTS.md), decision of 2026-10-27). Published speech dataset and model cards declare `language: [ctd]` and name the language "Zomi (Zolai), Tedim-based". Dialect is recorded separately, as the speaker or collector describes it.
 
 ## API (PR 1)
 

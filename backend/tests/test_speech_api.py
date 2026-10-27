@@ -165,7 +165,7 @@ class SpeechWorkflowTests(unittest.TestCase):
     def test_rights_and_consent_workflow(self) -> None:
         source = self.register(url="https://WWW.YOUTUBE.com/watch?v=test0001#t=5")
         self.assertEqual(source["url"], "https://www.youtube.com/watch?v=test0001")
-        self.assertEqual(source["language"], "zom")
+        self.assertEqual(source["language"], "ctd")
         source_id = source["id"]
 
         # A registered public video is cleared for nothing.

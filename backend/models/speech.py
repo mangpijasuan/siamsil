@@ -56,7 +56,7 @@ class SpeechSource(Base):
             "platform IN ('youtube', 'facebook', 'other', 'creator_file')", name="ck_speech_sources_platform"
         ),
         CheckConstraint("(platform = 'creator_file') = (url IS NULL)", name="ck_speech_sources_url"),
-        CheckConstraint("language = 'zom'", name="ck_speech_sources_language"),
+        CheckConstraint("language = 'ctd'", name="ck_speech_sources_language"),
         CheckConstraint("duration_seconds IS NULL OR duration_seconds >= 0", name="ck_speech_sources_duration"),
         CheckConstraint("status IN ('registered', 'withdrawn')", name="ck_speech_sources_status"),
         CheckConstraint("(status = 'withdrawn') = (withdrawn_at IS NOT NULL)", name="ck_speech_sources_withdrawn"),
@@ -67,7 +67,7 @@ class SpeechSource(Base):
     url: Mapped[Optional[str]] = mapped_column(Text, unique=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     uploader: Mapped[Optional[str]] = mapped_column(Text)
-    language: Mapped[str] = mapped_column(String(8), nullable=False, default="zom", server_default="zom")
+    language: Mapped[str] = mapped_column(String(8), nullable=False, default="ctd", server_default="ctd")
     dialect: Mapped[Optional[str]] = mapped_column(Text)
     duration_seconds: Mapped[Optional[int]] = mapped_column(Integer)
     acquired_on: Mapped[Optional[date]] = mapped_column(Date)
