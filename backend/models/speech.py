@@ -1,4 +1,4 @@
-"""Speech Data Lab rights and consent records (docs/SPEECH_DATA_LAB.md, PR 1).
+"""Speech Data Lab records (docs/SPEECH_DATA_LAB.md): rights and consent (PR 1), media and jobs (PR 2).
 
 Speakers are pseudonymous codes only. Names and contact details stay in the private
 roster in siamsil-data (docs/AUDIO_CONSENT.md); consent documents stay in private
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy import (
     BigInteger,
@@ -17,14 +17,16 @@ from sqlalchemy import (
     CheckConstraint,
     Date,
     DateTime,
+    Float,
     ForeignKey,
     Identity,
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from models.base import Base
@@ -197,3 +199,103 @@ class SourceSpeaker(Base):
     )
     added_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"))
     added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MediaAsset(Base):
+    """A stored media file for a source: the original upload, or a working copy made from it.
+
+    The file itself is in private media storage under `storage_key`; only its facts are here.
+    """
+
+    __tablename__ = "speech_media_assets"
+    __table_args__ = (
+        UniqueConstraint("source_id", "kind", "sha256", name="uq_speech_media_assets_source_kind_sha256"),
+        CheckConstraint("kind IN ('original', 'normalized_wav')", name="ck_speech_media_assets_kind"),
+        # An original says how it reached Siamsil and comes from nothing; a working copy comes from an original.
+        CheckConstraint(
+            "(kind = 'original') = (derived_from_id IS NULL)", name="ck_speech_media_assets_derivation"
+        ),
+        CheckConstraint(
+            "(kind = 'original') = (provenance IS NOT NULL)", name="ck_speech_media_assets_provenance_set"
+        ),
+        CheckConstraint(
+            "provenance IS NULL OR provenance IN ('creator_provided', 'owner_platform_export')",
+            name="ck_speech_media_assets_provenance",
+        ),
+        CheckConstraint(
+            "media_type IN ('audio/wav', 'audio/mpeg', 'audio/mp4', 'video/mp4')", name="ck_speech_media_assets_type"
+        ),
+        CheckConstraint("sha256 ~ '^[0-9a-f]{64}$'", name="ck_speech_media_assets_sha256"),
+        CheckConstraint("size_bytes > 0", name="ck_speech_media_assets_size"),
+        CheckConstraint("status IN ('stored', 'deleted')", name="ck_speech_media_assets_status"),
+        CheckConstraint("(status = 'deleted') = (deleted_at IS NOT NULL)", name="ck_speech_media_assets_deleted"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    source_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("speech_sources.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    provenance: Mapped[Optional[str]] = mapped_column(String(32))
+    derived_from_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("speech_media_assets.id", ondelete="RESTRICT")
+    )
+    storage_key: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    media_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    duration_seconds: Mapped[Optional[float]] = mapped_column(Float)
+    sample_rate: Mapped[Optional[int]] = mapped_column(Integer)
+    channels: Mapped[Optional[int]] = mapped_column(Integer)
+    codec: Mapped[Optional[str]] = mapped_column(String(32))
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="stored", server_default="stored")
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    deletion_reason: Mapped[Optional[str]] = mapped_column(Text)
+    created_by: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AudioProcessingJob(Base):
+    """One pipeline step for one stored file.
+
+    Unique per (asset, step, processing version), so a retry or a second worker never repeats
+    finished work. A worker holds a job through a lease; an expired lease lets another take over.
+    """
+
+    __tablename__ = "speech_processing_jobs"
+    __table_args__ = (
+        UniqueConstraint("asset_id", "step", "processing_version", name="uq_speech_processing_jobs_step"),
+        CheckConstraint("step IN ('normalize_wav')", name="ck_speech_processing_jobs_step"),
+        CheckConstraint(
+            "status IN ('pending', 'running', 'succeeded', 'failed', 'blocked')", name="ck_speech_processing_jobs_status"
+        ),
+        CheckConstraint("attempts >= 0", name="ck_speech_processing_jobs_attempts"),
+        CheckConstraint(
+            "(status = 'running') = (lease_owner IS NOT NULL AND lease_expires_at IS NOT NULL)",
+            name="ck_speech_processing_jobs_lease",
+        ),
+        CheckConstraint(
+            "(status = 'succeeded') = (output_asset_id IS NOT NULL)", name="ck_speech_processing_jobs_output"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
+    asset_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("speech_media_assets.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    step: Mapped[str] = mapped_column(String(32), nullable=False)
+    processing_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending", server_default="pending")
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    lease_owner: Mapped[Optional[str]] = mapped_column(String(128))
+    lease_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    tool_versions: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict, server_default="{}")
+    error: Mapped[Optional[str]] = mapped_column(Text)
+    output_asset_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("speech_media_assets.id", ondelete="RESTRICT")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))

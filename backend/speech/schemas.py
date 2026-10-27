@@ -173,3 +173,61 @@ class EligibilityOut(BaseModel):
     source_id: UUID
     checked_on: date
     uses: list[UseEligibility]
+
+
+# Media (PR 2) -----------------------------------------------------------------------------------
+
+# How an original file reached Siamsil. Ground rule 2: only from the creator, or through an export
+# the platform itself offers the owner; never downloaded or scraped by Siamsil.
+Provenance = Literal["creator_provided", "owner_platform_export"]
+
+
+class JobOut(BaseModel):
+    id: int
+    step: str
+    processing_version: str
+    status: str
+    attempts: int
+    error: Optional[str]
+    tool_versions: dict[str, str]
+    output_asset_id: Optional[UUID]
+    created_at: datetime
+    finished_at: Optional[datetime]
+
+
+class MediaAssetOut(BaseModel):
+    id: UUID
+    source_id: UUID
+    kind: str
+    provenance: Optional[str]
+    derived_from_id: Optional[UUID]
+    sha256: str
+    size_bytes: int
+    media_type: str
+    duration_seconds: Optional[float]
+    sample_rate: Optional[int]
+    channels: Optional[int]
+    codec: Optional[str]
+    status: str
+    deleted_at: Optional[datetime]
+    created_at: datetime
+    jobs: list[JobOut]
+
+
+class MediaList(BaseModel):
+    source_id: UUID
+    # Whether the source may still be kept and transcribed. When false, its stored files should be
+    # deleted (POST .../media/delete); docs/AUDIO_CONSENT.md promises removal on withdrawal.
+    transcription_allowed: bool
+    reasons: list[str]
+    assets: list[MediaAssetOut]
+
+
+class MediaDeletion(Strict):
+    reason: str = Field(min_length=3, max_length=2000)
+
+
+class MediaDeletionOut(BaseModel):
+    source_id: UUID
+    deleted_assets: int
+    deleted_files: int

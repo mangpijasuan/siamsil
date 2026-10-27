@@ -95,6 +95,8 @@ class DatabaseTests(unittest.TestCase):
                 "speakers",
                 "speaker_consents",
                 "speech_source_speakers",
+                "speech_media_assets",
+                "speech_processing_jobs",
             },
             set(Base.metadata.tables),
         )

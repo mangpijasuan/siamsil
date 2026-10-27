@@ -362,6 +362,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/speech/sources/{source_id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Media */
+        get: operations["list_media_api_v1_speech_sources__source_id__media_get"];
+        put?: never;
+        /**
+         * Upload Media
+         * @description Upload a source's original file. Refused before any bytes are read unless the source may be
+         *     kept and transcribed. The same file uploaded twice returns the first record.
+         */
+        post: operations["upload_media_api_v1_speech_sources__source_id__media_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/speech/sources/{source_id}/media/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Media
+         * @description Delete every stored file of the source, as promised on withdrawal (docs/AUDIO_CONSENT.md).
+         */
+        post: operations["delete_media_api_v1_speech_sources__source_id__media_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/speech/sources/{source_id}/permissions": {
         parameters: {
             query?: never;
@@ -1112,6 +1154,34 @@ export interface components {
              */
             user_id: string;
         };
+        /** JobOut */
+        JobOut: {
+            /** Attempts */
+            attempts: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /** Id */
+            id: number;
+            /** Output Asset Id */
+            output_asset_id: string | null;
+            /** Processing Version */
+            processing_version: string;
+            /** Status */
+            status: string;
+            /** Step */
+            step: string;
+            /** Tool Versions */
+            tool_versions: {
+                [key: string]: string;
+            };
+        };
         /** LearningEntry */
         LearningEntry: {
             /** Category */
@@ -1154,6 +1224,81 @@ export interface components {
             version: string;
         } & {
             [key: string]: unknown;
+        };
+        /** MediaAssetOut */
+        MediaAssetOut: {
+            /** Channels */
+            channels: number | null;
+            /** Codec */
+            codec: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Deleted At */
+            deleted_at: string | null;
+            /** Derived From Id */
+            derived_from_id: string | null;
+            /** Duration Seconds */
+            duration_seconds: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Jobs */
+            jobs: components["schemas"]["JobOut"][];
+            /** Kind */
+            kind: string;
+            /** Media Type */
+            media_type: string;
+            /** Provenance */
+            provenance: string | null;
+            /** Sample Rate */
+            sample_rate: number | null;
+            /** Sha256 */
+            sha256: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /** Status */
+            status: string;
+        };
+        /** MediaDeletion */
+        MediaDeletion: {
+            /** Reason */
+            reason: string;
+        };
+        /** MediaDeletionOut */
+        MediaDeletionOut: {
+            /** Deleted Assets */
+            deleted_assets: number;
+            /** Deleted Files */
+            deleted_files: number;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+        };
+        /** MediaList */
+        MediaList: {
+            /** Assets */
+            assets: components["schemas"]["MediaAssetOut"][];
+            /** Reasons */
+            reasons: string[];
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /** Transcription Allowed */
+            transcription_allowed: boolean;
         };
         /** PermissionCreate */
         PermissionCreate: {
@@ -2136,6 +2281,111 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EligibilityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_media_api_v1_speech_sources__source_id__media_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_media_api_v1_speech_sources__source_id__media_post: {
+        parameters: {
+            query: {
+                /** @description How the file reached Siamsil: from the creator, or the owner's own platform export. */
+                provenance: "creator_provided" | "owner_platform_export";
+            };
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description The file itself as the raw request body: WAV, MP3, M4A, or MP4. Its type is read from its bytes. */
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaAssetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_media_api_v1_speech_sources__source_id__media_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MediaDeletion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaDeletionOut"];
                 };
             };
             /** @description Validation Error */
