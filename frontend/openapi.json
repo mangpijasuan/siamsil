@@ -802,6 +802,208 @@
         "title": "BibleVersionsResponse",
         "type": "object"
       },
+      "ConsentChoices": {
+        "additionalProperties": false,
+        "description": "The six separate answers on the consent form. Each must be given; none defaults to yes.",
+        "properties": {
+          "commercial_use": {
+            "title": "Commercial Use",
+            "type": "boolean"
+          },
+          "keep_and_evaluate": {
+            "title": "Keep And Evaluate",
+            "type": "boolean"
+          },
+          "play_in_app": {
+            "title": "Play In App",
+            "type": "boolean"
+          },
+          "public_dataset": {
+            "title": "Public Dataset",
+            "type": "boolean"
+          },
+          "train_recognition": {
+            "title": "Train Recognition",
+            "type": "boolean"
+          },
+          "train_synthesis": {
+            "title": "Train Synthesis",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "keep_and_evaluate",
+          "train_recognition",
+          "train_synthesis",
+          "play_in_app",
+          "public_dataset",
+          "commercial_use"
+        ],
+        "title": "ConsentChoices",
+        "type": "object"
+      },
+      "ConsentCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "adult_confirmed": {
+            "title": "Adult Confirmed",
+            "type": "boolean"
+          },
+          "choices": {
+            "$ref": "#/components/schemas/ConsentChoices"
+          },
+          "collector_code": {
+            "pattern": "^C[0-9]{2,4}$",
+            "title": "Collector Code",
+            "type": "string"
+          },
+          "consent_date": {
+            "format": "date",
+            "title": "Consent Date",
+            "type": "string"
+          },
+          "consent_method": {
+            "enum": [
+              "written",
+              "oral"
+            ],
+            "title": "Consent Method",
+            "type": "string"
+          },
+          "credit": {
+            "enum": [
+              "name",
+              "initials",
+              "none"
+            ],
+            "title": "Credit",
+            "type": "string"
+          },
+          "evidence_reference": {
+            "maxLength": 500,
+            "minLength": 3,
+            "pattern": "^[^\\r\\n]+$",
+            "title": "Evidence Reference",
+            "type": "string"
+          },
+          "form_language": {
+            "maxLength": 32,
+            "minLength": 2,
+            "title": "Form Language",
+            "type": "string"
+          },
+          "form_version": {
+            "pattern": "^audio-consent-v[0-9]{1,3}$",
+            "title": "Form Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "form_version",
+          "form_language",
+          "consent_method",
+          "consent_date",
+          "collector_code",
+          "adult_confirmed",
+          "choices",
+          "credit",
+          "evidence_reference"
+        ],
+        "title": "ConsentCreate",
+        "type": "object"
+      },
+      "ConsentOut": {
+        "properties": {
+          "adult_confirmed": {
+            "title": "Adult Confirmed",
+            "type": "boolean"
+          },
+          "choices": {
+            "$ref": "#/components/schemas/ConsentChoices"
+          },
+          "collector_code": {
+            "title": "Collector Code",
+            "type": "string"
+          },
+          "consent_date": {
+            "format": "date",
+            "title": "Consent Date",
+            "type": "string"
+          },
+          "consent_method": {
+            "title": "Consent Method",
+            "type": "string"
+          },
+          "credit": {
+            "title": "Credit",
+            "type": "string"
+          },
+          "evidence_reference": {
+            "title": "Evidence Reference",
+            "type": "string"
+          },
+          "form_language": {
+            "title": "Form Language",
+            "type": "string"
+          },
+          "form_version": {
+            "title": "Form Version",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "withdrawn": {
+            "title": "Withdrawn",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "form_version",
+          "form_language",
+          "consent_method",
+          "consent_date",
+          "collector_code",
+          "adult_confirmed",
+          "choices",
+          "credit",
+          "withdrawn",
+          "evidence_reference",
+          "recorded_at"
+        ],
+        "title": "ConsentOut",
+        "type": "object"
+      },
+      "ConsentWithdrawal": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_reference": {
+            "maxLength": 500,
+            "minLength": 3,
+            "pattern": "^[^\\r\\n]+$",
+            "title": "Evidence Reference",
+            "type": "string"
+          },
+          "withdrawn_on": {
+            "format": "date",
+            "title": "Withdrawn On",
+            "type": "string"
+          }
+        },
+        "required": [
+          "withdrawn_on",
+          "evidence_reference"
+        ],
+        "title": "ConsentWithdrawal",
+        "type": "object"
+      },
       "DictionaryEntry": {
         "additionalProperties": true,
         "properties": {
@@ -1189,6 +1391,34 @@
         "title": "DictionarySuggestionsResponse",
         "type": "object"
       },
+      "EligibilityOut": {
+        "properties": {
+          "checked_on": {
+            "format": "date",
+            "title": "Checked On",
+            "type": "string"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "uses": {
+            "items": {
+              "$ref": "#/components/schemas/UseEligibility"
+            },
+            "title": "Uses",
+            "type": "array"
+          }
+        },
+        "required": [
+          "source_id",
+          "checked_on",
+          "uses"
+        ],
+        "title": "EligibilityOut",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1409,6 +1639,199 @@
         "title": "LivenessResponse",
         "type": "object"
       },
+      "PermissionCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_reference": {
+            "maxLength": 500,
+            "minLength": 3,
+            "pattern": "^[^\\r\\n]+$",
+            "title": "Evidence Reference",
+            "type": "string"
+          },
+          "rights_holder": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Rights Holder",
+            "type": "string"
+          },
+          "uses": {
+            "items": {
+              "$ref": "#/components/schemas/SpeechUse"
+            },
+            "maxItems": 6,
+            "title": "Uses",
+            "type": "array"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          }
+        },
+        "required": [
+          "rights_holder",
+          "evidence_reference",
+          "uses"
+        ],
+        "title": "PermissionCreate",
+        "type": "object"
+      },
+      "PermissionDecision": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "enum": [
+              "verify",
+              "reject",
+              "revoke"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "title": "PermissionDecision",
+        "type": "object"
+      },
+      "PermissionOut": {
+        "properties": {
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decided_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided By"
+          },
+          "decision_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Note"
+          },
+          "evidence_reference": {
+            "title": "Evidence Reference",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "recorded_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded By"
+          },
+          "rights_holder": {
+            "title": "Rights Holder",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "uses": {
+            "items": {
+              "$ref": "#/components/schemas/SpeechUse"
+            },
+            "title": "Uses",
+            "type": "array"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          }
+        },
+        "required": [
+          "id",
+          "rights_holder",
+          "evidence_reference",
+          "valid_until",
+          "uses",
+          "status",
+          "recorded_by",
+          "recorded_at",
+          "decided_by",
+          "decided_at",
+          "decision_note"
+        ],
+        "title": "PermissionOut",
+        "type": "object"
+      },
+      "Platform": {
+        "enum": [
+          "youtube",
+          "facebook",
+          "other",
+          "creator_file"
+        ],
+        "title": "Platform",
+        "type": "string"
+      },
       "RoleAssignmentResponse": {
         "properties": {
           "roles": {
@@ -1441,6 +1864,394 @@
           "administrator"
         ],
         "title": "RoleName",
+        "type": "string"
+      },
+      "SourceCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "acquired_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acquired On"
+          },
+          "dialect": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dialect"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "maximum": 86400.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/Platform"
+          },
+          "title": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "uploader": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploader"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "platform",
+          "title"
+        ],
+        "title": "SourceCreate",
+        "type": "object"
+      },
+      "SourceList": {
+        "properties": {
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceOut"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sources"
+        ],
+        "title": "SourceList",
+        "type": "object"
+      },
+      "SourceOut": {
+        "properties": {
+          "acquired_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acquired On"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dialect": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dialect"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "permissions": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionOut"
+            },
+            "title": "Permissions",
+            "type": "array"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/Platform"
+          },
+          "speaker_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Speaker Codes",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "uploader": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploader"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "withdrawn_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Withdrawn At"
+          }
+        },
+        "required": [
+          "id",
+          "platform",
+          "url",
+          "title",
+          "uploader",
+          "language",
+          "dialect",
+          "duration_seconds",
+          "acquired_on",
+          "notes",
+          "status",
+          "withdrawn_at",
+          "created_at",
+          "speaker_codes",
+          "permissions"
+        ],
+        "title": "SourceOut",
+        "type": "object"
+      },
+      "SourceWithdrawal": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "SourceWithdrawal",
+        "type": "object"
+      },
+      "SpeakerCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "age_range": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{2}-[0-9]{2}$|^[0-9]{2}\\+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age Range"
+          },
+          "dialect_region": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dialect Region"
+          },
+          "speaker_code": {
+            "pattern": "^S[0-9]{4,6}$",
+            "title": "Speaker Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "speaker_code"
+        ],
+        "title": "SpeakerCreate",
+        "type": "object"
+      },
+      "SpeakerList": {
+        "properties": {
+          "speakers": {
+            "items": {
+              "$ref": "#/components/schemas/SpeakerOut"
+            },
+            "title": "Speakers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "speakers"
+        ],
+        "title": "SpeakerList",
+        "type": "object"
+      },
+      "SpeakerOut": {
+        "properties": {
+          "age_range": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age Range"
+          },
+          "current_consent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConsentOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dialect_region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dialect Region"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "speaker_code": {
+            "title": "Speaker Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "speaker_code",
+          "dialect_region",
+          "age_range",
+          "current_consent"
+        ],
+        "title": "SpeakerOut",
+        "type": "object"
+      },
+      "SpeechUse": {
+        "description": "What a recording may be used for. Each is granted or refused separately.",
+        "enum": [
+          "transcription",
+          "asr_training",
+          "tts_training",
+          "playback",
+          "redistribution",
+          "commercial"
+        ],
+        "title": "SpeechUse",
         "type": "string"
       },
       "TranslateMatch": {
@@ -1763,6 +2574,31 @@
           "bible"
         ],
         "title": "UnifiedSearchResponse",
+        "type": "object"
+      },
+      "UseEligibility": {
+        "properties": {
+          "allowed": {
+            "title": "Allowed",
+            "type": "boolean"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "use": {
+            "$ref": "#/components/schemas/SpeechUse"
+          }
+        },
+        "required": [
+          "use",
+          "allowed",
+          "reasons"
+        ],
+        "title": "UseEligibility",
         "type": "object"
       },
       "ValidationError": {
@@ -2713,6 +3549,667 @@
         "summary": "Unified Search",
         "tags": [
           "search"
+        ]
+      }
+    },
+    "/api/v1/speech/sources": {
+      "get": {
+        "operationId": "list_sources_api_v1_speech_sources_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Sources",
+        "tags": [
+          "speech"
+        ]
+      },
+      "post": {
+        "operationId": "register_source_api_v1_speech_sources_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Register Source",
+        "tags": [
+          "speech"
+        ]
+      }
+    },
+    "/api/v1/speech/sources/{source_id}": {
+      "get": {
+        "operationId": "get_source_api_v1_speech_sources__source_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Source",
+        "tags": [
+          "speech"
+        ]
+      }
+    },
+    "/api/v1/speech/sources/{source_id}/eligibility": {
+      "get": {
+        "operationId": "source_eligibility_api_v1_speech_sources__source_id__eligibility_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EligibilityOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Source Eligibility",
+        "tags": [
+          "speech"
+        ]
+      }
+    },
+    "/api/v1/speech/sources/{source_id}/permissions": {
+      "post": {
+        "operationId": "record_permission_api_v1_speech_sources__source_id__permissions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record Permission",
+        "tags": [
+          "speech"
+        ]
+      }
+    },
+    "/api/v1/speech/sources/{source_id}/permissions/{permission_id}/decision": {
+      "post": {
+        "operationId": "decide_permission_api_v1_speech_sources__source_id__permissions__permission_id__decision_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "permission_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Permission Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissionDecision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decide Permission",
+        "tags": [
+          "speech"
+        ]
+      }
+    },
+    "/api/v1/speech/sources/{source_id}/speakers/{speaker_code}": {
+      "post": {
+        "operationId": "link_speaker_api_v1_speech_sources__source_id__speakers__speaker_code__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "speaker_code",
+            "required": true,
+            "schema": {
+              "title": "Speaker Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Link Speaker",
+        "tags": [
+          "speech"
+        ]
+      }
+    },
+    "/api/v1/speech/sources/{source_id}/withdraw": {
+      "post": {
+        "operationId": "withdraw_source_api_v1_speech_sources__source_id__withdraw_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceWithdrawal"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Withdraw Source",
+        "tags": [
+          "speech"
+        ]
+      }
+    },
+    "/api/v1/speech/speakers": {
+      "get": {
+        "operationId": "list_speakers_api_v1_speech_speakers_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeakerList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Speakers",
+        "tags": [
+          "speech"
+        ]
+      },
+      "post": {
+        "operationId": "create_speaker_api_v1_speech_speakers_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeakerCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeakerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Speaker",
+        "tags": [
+          "speech"
+        ]
+      }
+    },
+    "/api/v1/speech/speakers/{speaker_code}/consents": {
+      "post": {
+        "operationId": "record_consent_api_v1_speech_speakers__speaker_code__consents_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "speaker_code",
+            "required": true,
+            "schema": {
+              "title": "Speaker Code",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeakerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record Consent",
+        "tags": [
+          "speech"
+        ]
+      }
+    },
+    "/api/v1/speech/speakers/{speaker_code}/withdrawal": {
+      "post": {
+        "operationId": "withdraw_consent_api_v1_speech_speakers__speaker_code__withdrawal_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "speaker_code",
+            "required": true,
+            "schema": {
+              "title": "Speaker Code",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentWithdrawal"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeakerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Withdraw Consent",
+        "tags": [
+          "speech"
         ]
       }
     },
