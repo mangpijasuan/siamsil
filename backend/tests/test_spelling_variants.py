@@ -123,7 +123,7 @@ class CommandTests(unittest.TestCase):
             self.assertEqual((forms["bak"]["book"], forms["bak"]["dict"], forms["bak"]["total"]), ("2", "1", "3"))
             summary = json.loads((out / "summary.json").read_text(encoding="utf-8"))
             self.assertEqual([s["name"] for s in summary["sources"]], ["book", "dict"])
-            workbook = load_workbook(out / "Siamsil_Zolai_Standard_Review.xlsx")
+            workbook = load_workbook(out / "Siamsil_Zomi_Standard_Form_Review.xlsx")
             self.assertEqual(workbook.sheetnames, ["Read me", "Rules", "Joins", "Families", "Sources"])
             rules = workbook["Rules"]
             self.assertEqual(rules["A2"].value, "join")
