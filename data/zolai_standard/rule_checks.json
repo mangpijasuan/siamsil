@@ -1,0 +1,354 @@
+{
+  "_comment": "Spelling points the Zolai style guides address, for the Siamsil Zolai Standard review (docs/ZOLAI_STANDARD.md). Each check lists the guides' positions with page or section references and the spellings to count in the sources. Variants are the guides' own examples, or spellings a Zomi speaker gave (recorded in 'owner_input'); none were made up. A guide with nothing explicit on a point says so: its own text still shows its practice in the counts. 'zsf' = Lian Than Tuang, Zolai Standard Format (2018); 'zokam' = Khoi Lam Thang, Zokam le Zolai, chapter 6 Laigelhzia (ZCLS 2013); 'primer' = Lia Cingsen, Paunam Khenna Leh Kampau Luanzia. 'suggestion' is Siamsil's AI-drafted proposal for the reviewers, made from the counts and the guides; it is not a decision.",
+  "guides": {
+    "zsf": "Lian Than Tuang, Zolai Standard Format (2018)",
+    "zokam": "Khoi Lam Thang, Zokam le Zolai, ch. 6 Laigelhzia (ZCLS, 2013)",
+    "primer": "Lia Cingsen, Paunam Khenna Leh Kampau Luanzia"
+  },
+  "checks": [
+    {
+      "id": "uh-hi",
+      "topic": "Plural 'uh' before 'hi': joined or separate",
+      "zsf": "§17 (p. 18): write joined, 'A pai uhhi', 'Ahi uhhi'; also 'uhhiam', 'uhdiam', 'uhhen'.",
+      "zokam": "No explicit rule.",
+      "primer": "No explicit rule.",
+      "variants": [
+        [
+          "uh hi",
+          "uhhi"
+        ],
+        [
+          "uh hiam",
+          "uhhiam"
+        ]
+      ],
+      "suggestion": {
+        "spelling": "uh hi; uh hiam",
+        "reason": "Every main source writes it separately (21,822 against 34, nearly all in the Zolai Standard Format itself); two grammar markers stay two words, as they would in English."
+      }
+    },
+    {
+      "id": "locative-ah",
+      "topic": "Locative 'ah' after a place word: joined or separate",
+      "zsf": "§17 (p. 18): write 'ah' separate, 'Inntung ah, Zogam ah, Nang kiang ah', because joining makes reading harder.",
+      "zokam": "No explicit rule.",
+      "primer": "p. 61-62: one-syllable place words stand alone ('Inn sung'); two-syllable ones are joined: 'kiangah, sungah'.",
+      "variants": [
+        [
+          "kiang ah",
+          "kiangah"
+        ],
+        [
+          "sung ah",
+          "sungah"
+        ],
+        [
+          "tung ah",
+          "tungah"
+        ]
+      ],
+      "suggestion": {
+        "spelling": "kiangah; sungah; tungah",
+        "reason": "The primer's rule and every main source (26,178 against 22); each is one English preposition (to/at, in, on)."
+      }
+    },
+    {
+      "id": "possessive",
+      "topic": "Possessive: 'ii' or an apostrophe",
+      "zsf": "§6 (p. 12): 'ii' after a noun ('I mawtaw ii a mei'); §16 (p. 18): the apostrophe may replace 'ii' ('Sangpi' mawtaw'), but in formal writing contractions are better avoided.",
+      "zokam": "No explicit rule; its own text writes the apostrophe ('Pasian'', 'mi'').",
+      "primer": "p. 64-65 and 93: possessive is written with an apostrophe ('pasalno' laibu', 'Ka pa' sum'), replacing 'ii', which it calls awkward to read.",
+      "variants": [
+        [
+          "ii",
+          "'"
+        ]
+      ],
+      "special": "possessive",
+      "suggestion": {
+        "spelling": "apostrophe (Pasian')",
+        "reason": "The Bibles' form (about 38,000) and the primer's rule; it matches English 's. 'ii' stays readable as a variant."
+      }
+    },
+    {
+      "id": "subject-in",
+      "topic": "Subject marker 'in' after a noun or pronoun: full or contracted to 'n",
+      "zsf": "§16 (p. 18): 'Kote in' and 'Kote'n' are both shown; in formal writing the full form is better.",
+      "zokam": "6.2.3: the subject-marker 'in' stands alone ('Pasian in ki-itna ahi hi'); its own text also writes 'ama'n'.",
+      "primer": "p. 93: contraction with an apostrophe: 'Amahin / Amah'n', 'Kei-in / Ken'n'.",
+      "variants": [
+        [
+          "amah in",
+          "amah'n"
+        ],
+        [
+          "pasian in",
+          "pasian'n"
+        ]
+      ],
+      "suggestion": {
+        "spelling": "amah in; pasian in",
+        "reason": "Every main source writes the full form (9,332 against 6); the Zolai Standard Format prefers it in formal writing."
+      }
+    },
+    {
+      "id": "i-ih",
+      "topic": "First person plural 'i' or 'ih'",
+      "zsf": "No explicit rule; its text writes 'i'.",
+      "zokam": "6.2.1 (5): write 'i', not 'ih': 'i nu i pa', not 'ih nu ih pa'.",
+      "primer": "No explicit rule; its text writes 'ih' in places.",
+      "variants": [
+        [
+          "i",
+          "ih"
+        ]
+      ],
+      "suggestion": {
+        "spelling": "i",
+        "reason": "ZCLS's rule (Zokam le Zolai 6.2.1) and the Bibles; 'ih' is mostly the primer's and the dictionary's."
+      }
+    },
+    {
+      "id": "le-leh",
+      "topic": "'le' (and) and 'leh' (if); fixed pairs written as one word",
+      "zsf": "§6 (p. 10): 'leh' = if, 'le' = and. §12 (p. 15): pairs said together are joined: 'Nulepa', 'Innlelo'.",
+      "zokam": "6.2.1 (1-3): conditional 'leh' keeps its 'h'; fixed pairs use 'le' and are joined: 'Nulepa' not 'Nu leh pa', 'Khatlekhat' not 'Khat leh khat', 'Munlemual' not 'Mun leh mual'.",
+      "primer": "p. 62: 'leh' is used for 'and': 'Nang leh kei', 'Thangpu leh Khampite'.",
+      "variants": [
+        [
+          "nu leh pa",
+          "nu le pa",
+          "nulepa",
+          "nulehpa"
+        ],
+        [
+          "khat leh khat",
+          "khat le khat",
+          "khatlekhat",
+          "khatlehkhat"
+        ],
+        [
+          "inn leh lo",
+          "inn le lo",
+          "innlelo",
+          "innlehlo"
+        ],
+        [
+          "mun leh mual",
+          "mun le mual",
+          "munlemual",
+          "munlehmual"
+        ],
+        [
+          "nang leh kei",
+          "nang le kei"
+        ]
+      ],
+      "suggestion": {
+        "spelling": "nulehpa; khatlehkhat; innlehlo; munlehmual (joined, leh keeps its h)",
+        "reason": "The project owner's proposal, as one rule: the join carries the paired meaning, and 'leh' is spelled the same everywhere. The guides' 'le' forms ('nulepa', 'khatlekhat') would be read as variants. A separate 'nu leh pa' or 'khat leh khat' is a 'check meaning' case: older text writes it for the paired meaning too."
+      },
+      "owner_input": "2026-10-27, project owner (a Zomi speaker): a fixed pair said as one meaning is written joined and 'leh' keeps its h: 'nulehpa' (parents), 'khatlehkhat' (one another), 'innlehlo', 'munlehmual'. Written separately, 'nu leh pa' means female and male. Both guides drop the h ('Nulepa', 'Khatlekhat', 'Innlelo', 'Munlemual'), as does the 2011 Bible. Needs a second reviewer."
+    },
+    {
+      "id": "hiam-diam",
+      "topic": "Question words 'hiam' and 'diam' or the spoken 'hia' and 'dia'",
+      "zsf": "§6 (p. 11): in writing use 'hiam' and 'diam'; 'hia' and 'dia' are speech. (Its §8 table, p. 13, still lists 'Dia?' as the question form.)",
+      "zokam": "No explicit rule.",
+      "primer": "No explicit rule.",
+      "variants": [
+        [
+          "hiam",
+          "hia"
+        ],
+        [
+          "diam",
+          "dia"
+        ]
+      ],
+      "suggestion": {
+        "spelling": "hiam; diam",
+        "reason": "The Zolai Standard Format's rule and the sources (12,230 against 44 for hiam)."
+      }
+    },
+    {
+      "id": "khua-khaw",
+      "topic": "'khua' written as pronounced ('khaw')",
+      "zsf": "§6 (p. 11): write 'khua'; 'khaw' is speech.",
+      "zokam": "6.2.4: 'ia' and 'ua' are written as such even where they are said 'e' and 'aw' ('pia', 'khua'); only some personal names write the sound (Kam Khaw Thang, Cin Kho Gin, Vum Ko Hau).",
+      "primer": "No explicit rule.",
+      "variants": [
+        [
+          "khua",
+          "khaw"
+        ]
+      ],
+      "suggestion": {
+        "spelling": "khua (names as their owners write them)",
+        "reason": "The Zolai Standard Format and ZCLS agree; 'khaw' remains in personal names."
+      }
+    },
+    {
+      "id": "in-after-vowel",
+      "topic": "Conjunction 'in' after a word ending in a vowel: hyphen, joined, or separate",
+      "zsf": "§6 (p. 10): 'in' joining clauses is attached to the word before ('laitakin'); 'in' as a separate verb or subject marker stands alone.",
+      "zokam": "6.2.3: the conjunction 'in' is attached to the word before, with a hyphen after a vowel ('Tedim pai-in', 'Japan gallai-in'); imperative and subject-marker 'in' stand alone.",
+      "primer": "p. 61: attached ('hangin, ciangin'), with a hyphen after a vowel, h, l, or p ('pai-in', 'tu-in'); imperative 'in' stands alone ('Tu in', 'Pai in').",
+      "variants": [
+        [
+          "pai-in",
+          "paiin",
+          "pai in"
+        ],
+        [
+          "tu-in",
+          "tuin",
+          "tu in"
+        ]
+      ],
+      "note": "Separate 'pai in' and 'tu in' can also be the imperative, which all three guides write separately, so those counts mix two uses.",
+      "suggestion": {
+        "spelling": "pai-in; tu-in (imperative 'in' separate)",
+        "reason": "ZCLS's and the primer's rule, and the Bibles' practice (3,275 against 5 joined)."
+      }
+    },
+    {
+      "id": "zong-zongh",
+      "topic": "Final 'h' in 'zong' and 'kizang'",
+      "zsf": "No explicit rule; its text writes 'zongh' and 'kizangh'.",
+      "zokam": "No explicit rule; its text writes 'zong' and 'kizang'.",
+      "primer": "No explicit rule.",
+      "variants": [
+        [
+          "zong",
+          "zongh"
+        ],
+        [
+          "kizang",
+          "kizangh"
+        ]
+      ],
+      "suggestion": {
+        "spelling": "zong; kizang",
+        "reason": "Every main source except the dictionary and the Zolai Standard Format; no guide asks for the final h."
+      }
+    },
+    {
+      "id": "hi-ing",
+      "topic": "'hi ing' or the shortened 'hing'",
+      "zsf": "§6 (p. 9): 'hing' is short for 'hi ing'; careful writing should use 'hi ing'.",
+      "zokam": "No explicit rule.",
+      "primer": "p. 94: the contraction is written with an apostrophe: 'hi ing e = hi'ng e'.",
+      "variants": [
+        [
+          "hi ing",
+          "hing",
+          "hi'ng"
+        ]
+      ],
+      "suggestion": {
+        "spelling": "hi ing (hing as a variant)",
+        "reason": "The Zolai Standard Format's rule; 'hing' is common in the Bibles, so reviewers should weigh it."
+      }
+    },
+    {
+      "id": "a-copula",
+      "topic": "'a' joined in 'ahi' and 'ahih'",
+      "zsf": "§14 (p. 16): 'a' before a pronoun or position word is joined ('Amah', 'Atung'); before a verb it is separate. §17 (p. 18-19) writes 'ahi hi', 'ahih manin'.",
+      "zokam": "6.2.2: the pronoun 'a' stands alone ('a lawmnu'); the copula 'a' is joined: 'ahi hi, ahih hangin'.",
+      "primer": "No explicit rule.",
+      "variants": [
+        [
+          "ahi hi",
+          "a hi hi"
+        ],
+        [
+          "ahih hangin",
+          "a hih hangin"
+        ]
+      ],
+      "suggestion": {
+        "spelling": "ahi hi; ahih hangin",
+        "reason": "All guides and sources agree."
+      }
+    },
+    {
+      "id": "ki-prefix",
+      "topic": "Prefix 'ki-' joined, with a hyphen where it would be misread",
+      "zsf": "§14 (p. 16): 'Ki + verb' is joined ('kipawlna').",
+      "zokam": "6.3.4: prefixes are joined; a hyphen where the joined word would be misread: 'ki-um', 'ki-it'.",
+      "primer": "No explicit rule.",
+      "variants": [
+        [
+          "ki-it",
+          "kiit",
+          "ki it"
+        ]
+      ],
+      "suggestion": {
+        "spelling": "ki-it",
+        "reason": "ZCLS's rule and all sources (65 against 0)."
+      }
+    },
+    {
+      "id": "compound-pairs",
+      "topic": "Long paired expressions joined with a hyphen",
+      "zsf": "No explicit rule.",
+      "zokam": "6.3.7: long paired words are split with a hyphen: 'nungak-tangval', 'annek-tuidawn'.",
+      "primer": "No explicit rule.",
+      "variants": [
+        [
+          "nungak-tangval",
+          "nungak tangval",
+          "nungaktangval"
+        ],
+        [
+          "annek-tuidawn",
+          "annek tuidawn"
+        ]
+      ],
+      "suggestion": {
+        "spelling": "annek tuidawn; nungak tangval (as the Bibles write them)",
+        "reason": "The Bibles write them as two words; ZCLS's hyphen rule is not followed in the sources. Reviewers should decide."
+      }
+    },
+    {
+      "id": "comparison-suffixes",
+      "topic": "'zaw' and 'pen' after an adjective: joined or separate",
+      "zsf": "§4 (p. 7): joined when they compare: 'hoihzaw', 'hoihpen'; separate 'hoih penpen'.",
+      "zokam": "No explicit rule.",
+      "primer": "No explicit rule.",
+      "variants": [
+        [
+          "hoihzaw",
+          "hoih zaw"
+        ],
+        [
+          "hoihpen",
+          "hoih pen"
+        ]
+      ],
+      "suggestion": {
+        "spelling": "hoihzaw; hoihpen",
+        "reason": "The Zolai Standard Format's rule and the Bibles' majority; one comparative word, as in English 'better', 'best'."
+      }
+    },
+    {
+      "id": "mahmah",
+      "topic": "'mahmah' (very): joined or separate",
+      "zsf": "§6 (p. 9): written separately ('Gik mahmah').",
+      "zokam": "6.3.2: written separately in its examples ('hoih mahmah').",
+      "primer": "No explicit rule.",
+      "variants": [
+        [
+          "hoih mahmah",
+          "hoihmahmah"
+        ]
+      ],
+      "suggestion": {
+        "spelling": "hoih mahmah",
+        "reason": "All guides and sources; two English words, 'very good'."
+      }
+    }
+  ]
+}
