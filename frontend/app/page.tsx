@@ -3,6 +3,7 @@ import type { ComponentType } from "react";
 import { IconAcademic, IconArrow, IconBook, IconChat, IconCross, IconLibrary, IconSearch, IconTranslate } from "@/components/Icons";
 import { getDailyVerse, getHealth, getWordOfDay } from "@/lib/api";
 import type { DictionaryEntry } from "@/lib/api";
+import { SITE_URL, websiteJsonLd } from "@/lib/site";
 import "./siamsil-home.css";
 
 type IconType = ComponentType<{ size?: number; className?: string }>;
@@ -44,6 +45,7 @@ function WordPanel({ word }: { word: DictionaryEntry | null }) {
 export default async function Home() {
   const { stats, verse, word } = await loadHome();
   return <div className="sr-home">
+    {SITE_URL && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: websiteJsonLd(SITE_URL) }} />}
     <section className="sr-hero" aria-labelledby="sr-title">
       <div className="sr-hero-inner">
         <p className="sr-eyebrow">The digital home for the Zomi language</p>
