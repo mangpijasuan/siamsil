@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from api_schemas import TranslationResponse, TranslationSearchResponse
 from rate_limit import rate_limited
 from services.data_loader import get_store
-from services.language_engine import get_engine
+from services.language_engine import DIRECTION_PATTERN, canonical_direction, get_engine
 from services.translation import active_system
 
 router = APIRouter(prefix="/translate", tags=["translate"], dependencies=[Depends(rate_limited("translate"))])
@@ -14,7 +14,12 @@ router = APIRouter(prefix="/translate", tags=["translate"], dependencies=[Depend
 
 class TranslateRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=2000)
-    direction: str = Field(default="en-zom", pattern="^(en-zom|zom-en)$")
+    direction: str = Field(default="en-ctd", pattern=DIRECTION_PATTERN)
+
+    @field_validator("direction")
+    @classmethod
+    def _canonical(cls, value: str) -> str:
+        return canonical_direction(value)
 
 
 def _overlay_matches(query: str, limit: int, direction: str | None) -> list[dict]:
@@ -28,15 +33,17 @@ def search_matches(
     limit: int = Query(20, ge=1, le=50),
     direction: str | None = Query(
         None,
-        pattern="^(en-zom|zom-en)$",
-        description="Search only the side translated from: English for en-zom, Zomi for zom-en. Omit to search both.",
+        pattern=DIRECTION_PATTERN,
+        description="Search only the side translated from: English for en-ctd, Zomi for ctd-en. Omit to search both."
+        " The older names en-zom and zom-en are still accepted.",
     ),
 ):
+    direction = canonical_direction(direction)
     engine = get_engine()
     if not engine.available:
         raise HTTPException(status_code=503, detail="Language database is not built yet.")
 
-    dictionary = engine.search_dictionary(q, direction=direction or "en-zom", limit=min(8, limit))
+    dictionary = engine.search_dictionary(q, direction=direction or "en-ctd", limit=min(8, limit))
     corpus = engine.search_parallel(q, limit=limit, direction=direction)
     overlay = _overlay_matches(q, limit=8, direction=direction)
 

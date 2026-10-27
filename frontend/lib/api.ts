@@ -162,7 +162,7 @@ export function getHealth(): Promise<HealthResponse> {
 
 export function searchDictionary(
   query: string,
-  options?: { letter?: string; direction?: "en-zom" | "zom-en"; limit?: number },
+  options?: { letter?: string; direction?: "en-ctd" | "ctd-en"; limit?: number },
 ): Promise<DictionarySearchResponse> {
   return expectData(
     apiClient().GET("/api/v1/dictionary", {
@@ -170,7 +170,7 @@ export function searchDictionary(
         query: {
           q: query,
           letter: options?.letter,
-          direction: options?.direction ?? "en-zom",
+          direction: options?.direction ?? "en-ctd",
           limit: options?.limit ?? 40,
         },
       },
@@ -195,7 +195,7 @@ export function getDictionaryLetters(): Promise<DictionaryLettersResponse> {
 /** Stored English–Zomi matches. With a direction, only the side translated from is searched. */
 export function searchTranslate(
   query: string,
-  direction?: "en-zom" | "zom-en",
+  direction?: "en-ctd" | "ctd-en",
 ): Promise<TranslationSearchResponse> {
   return expectData(
     apiClient().GET("/api/v1/translate/search", {

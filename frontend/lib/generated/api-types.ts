@@ -1019,7 +1019,7 @@ export interface components {
             count: number;
             /**
              * Direction
-             * @default en-zom
+             * @default en-ctd
              */
             direction: string;
             /** Letter */
@@ -1372,7 +1372,7 @@ export interface components {
         TranslateRequest: {
             /**
              * Direction
-             * @default en-zom
+             * @default en-ctd
              */
             direction: string;
             /** Text */
@@ -2460,7 +2460,7 @@ export interface operations {
             query: {
                 q: string;
                 limit?: number;
-                /** @description Search only the side translated from: English for en-zom, Zomi for zom-en. Omit to search both. */
+                /** @description Search only the side translated from: English for en-ctd, Zomi for ctd-en. Omit to search both. The older names en-zom and zom-en are still accepted. */
                 direction?: string | null;
             };
             header?: never;

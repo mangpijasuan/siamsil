@@ -36,6 +36,8 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 | Bible, KJV (USX) | 31,102 verses | yes | yes | — (UK) | — (UK) | `restricted` (public domain outside the UK) |
 | Bible, Burmese Judson (BJB), USX | 30,938 verses | yes, with credit | yes | **no** | **no** | `restricted` |
 | Zomi worship songs (songbook, via Zomi Worship Collective) | Song lyrics in Zomi | yes, with credit | yes | — | **no** | `restricted` |
+| English–Zomi–Burmese Translation Master v1.0.1 (private `siamsil-data`) | 50,032 headwords, 50,282 senses; 0 human-reviewed | — | — | — | — | `needs_review` |
+| Essential 3000 English–Zomi Learner's Dictionary, beta (private `siamsil-data`) | 3,000 headwords, 5,342 senses, examples and phrases; 0 human-reviewed | — | — | — | — | `needs_review` |
 | Community audio (planned) | Consent-based recordings; per-speaker choices in [AUDIO_CONSENT.md](AUDIO_CONSENT.md), recorded per source and speaker in the Speech Data Lab ([SPEECH_DATA_LAB.md](SPEECH_DATA_LAB.md)) | — | — | — | — | draft form, needs legal review |
 
 "—" means not yet permitted.
@@ -85,7 +87,7 @@ To clear it for training, record in this file: (1) the dataset card as published
 - KJV: public domain outside the United Kingdom. Judson (Burmese, 1835) is generally public domain, but this file is a Digital Bible Library edition whose `license.xml` covers 2012-02-29 to 2015-02-28; confirm the edition's terms.
 - The bundle has two HCL06 copies. The complete-looking one marks about 2,600 verse numbers with `#` and leaves 598 unnumbered; the clean one is missing about 2,900 verses (Genesis 1:1 among them). The clean copy is imported; a clean, complete source is needed.
 - Setting `display` to `blocked` in `data/rights.json` and rebuilding hides a version from the app.
-- TDB and TB77 are shown in the app as Zomi Bibles (`zom`), following the language-code decision below; the publisher's titles, `ctd` code, and copyright lines are kept unchanged in the data and shown under each chapter.
+- TDB and TB77 are shown in the app as Zomi Bibles (`ctd`), following the language-code decision below; the publisher's titles, language code, and copyright lines are kept unchanged in the data and shown under each chapter.
 - Training is a separate permission from display. Ask the Bible Society of Myanmar for both. Until `train` is `cleared` for both versions in a pair (for example `bible_tdb` and `bible_kjv`), `export_datasets.py --bible-versions` exports nothing from them.
 
 **Zomi worship songs**
@@ -94,18 +96,26 @@ To clear it for training, record in this file: (1) the dataset card as published
 - Credit each song's songwriter and translator where the source gives them.
 - Many songs are Zomi translations of English songs. The permission covers the Zomi text; it does not grant rights to the original English lyrics, which are not imported.
 
+**Translation Master (50K) and Essential 3000**
+- The project owner reported on 2026-10-25 that they wrote both.
+- **2026-10-26, project owner:** no AI tool drafted any of the text in either dictionary, and the owner signs off their use for model training.
+- Training stays `needs_review` until a second person confirms this entry (see Closing an item). On confirmation, set `train` to `cleared` for `translation_master_50k` and `essential_3000` in `data/rights.json`.
+- Still to record: which other uses the owner grants (display, redistribution, commercial).
+- Both remain unreviewed (0 senses human-reviewed), so a training clearance does not change their tier: exports keep them `bronze` until reviewers approve senses.
+- Burmese in the Translation Master is marked "reference only" in its review workbook.
+- Imported read-only by `import_reference_dictionaries.py` into a separate database, every sense `unreviewed`. Reviewer decisions live in the two `*-Native-Expert-Review*.xlsx` workbooks; none were recorded as of 2026-10-25.
+
 **Daily-use phrases**
 - Confirm the teacher who reviewed them agrees to their use in training and redistribution, and how they want to be credited.
 
 ## Language code
 
-The pipeline stores Zomi text with the code `zom` (for example `target_language` in `build_language_db.py`). In ISO 639-3, `zom` is **Zou**, a different Kuki-Chin language. Tedim, the language Zolai/Zomi writing is based on, is `ctd`.
+**Decision (2026-10-27, project owner):** Siamsil labels Zomi **`ctd`**, the ISO 639-3 code for Tedim, the language Zolai/Zomi writing is based on. This replaces the 2026-10-04 decision to label it `zom`, which ISO 639-3 assigns to **Zou**, a different Kuki-Chin language.
 
-**Decision (2026-10-04, project owner):** Siamsil labels its Zomi text `zom`. `ctd` (Tedim) is the reference code for source material, such as Tedim Bible text, that is being transferred into Siamsil's Zomi.
-
-- Stored data, API responses, and dataset records keep `zom`; no migration is planned.
-- Source records that are Tedim text before transfer are described as `ctd` in their provenance.
-- Because ISO 639-3 assigns `zom` to Zou, outside tools (dataset hubs, language-ID models, translation benchmarks) will read `zom` as Zou. Every published dataset, model card, or API document must say so explicitly, for example: "`zom` is Siamsil's label for Zomi (Tedim-based, related ISO 639-3 code `ctd`); it is not ISO 639-3 Zou."
+- Code, stored data, API values, and dataset records use `ctd`: Bible versions (`language_iso`), corpus pairs (`target_language`), user locales, quality-gate records (`origin_language`), the model's language token (`ctd_Latn`), and the HTML `lang` attribute. Translation and dictionary directions are `en-ctd` and `ctd-en`.
+- Hugging Face dataset and model cards declare `language: [ctd]` and name the language "Zomi (Zolai), Tedim-based". Declaring `zom` would list the data under Zou.
+- Kept for links and databases from before the change: the API still accepts the directions `en-zom` and `zom-en`, the website still opens `?dir=zom-en` links, Bible databases imported before 2026-10-27 have their `zom` versions served as `ctd` until they are rebuilt, and migration `20261027_0004` relabels stored user locales. Rebuild the language and Bible databases (`build_language_db.py`, `import_usx_bibles.py`) to store `ctd`.
+- The interface still says "Zomi"; `ctd` is a code, not a name shown to people.
 
 ## Non-profit use
 

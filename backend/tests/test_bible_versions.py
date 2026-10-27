@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import sys
 import tempfile
 import unittest
@@ -83,7 +84,7 @@ class ImportUsxTests(unittest.TestCase):
         write_version(self.source, "d", "TST", "ctd", JOHN.replace('number="2-3"', 'number="#"'))
         self.config = self.root / "bible_versions.json"
         self.config.write_text(json.dumps({"versions": {
-            "tst": {"name": "Zomi Test", "language_name": "Zomi", "language_iso": "zom", "book_names": {"JHN": "FIXTURE JOHN"}},
+            "tst": {"name": "Zomi Test", "language_name": "Zomi", "language_iso": "ctd", "book_names": {"JHN": "FIXTURE JOHN"}},
             "teb": {"language_name": "English", "language_iso": "eng", "copyright": "Public domain."},
         }}))
         self.assertEqual(self.build(self.source, self.db), 0)
@@ -153,9 +154,16 @@ class ImportUsxTests(unittest.TestCase):
 
     def test_configured_name_keeps_publisher_source(self) -> None:
         version = self.versions.version("tst")
-        self.assertEqual((version["name"], version["language_iso"], version["language_name"]), ("Zomi Test", "zom", "Zomi"))
+        self.assertEqual((version["name"], version["language_iso"], version["language_name"]), ("Zomi Test", "ctd", "Zomi"))
         self.assertEqual((version["source_name"], version["source_language_iso"]), ("Test Version TST", "ctd"))
         self.assertEqual(self.versions.version("eng")["name"], "Test Version ENG")
+
+    def test_databases_imported_before_ctd_serve_zomi_as_ctd(self) -> None:
+        con = sqlite3.connect(self.versions.db_path)
+        con.execute("UPDATE versions SET language_iso = 'zom' WHERE id = 'tst'")
+        con.commit()
+        con.close()
+        self.assertEqual(self.versions.version("tst")["language_iso"], "ctd")
 
     def test_books_list_the_chapters_present(self) -> None:
         self.assertEqual(self.versions.books("tst"), [

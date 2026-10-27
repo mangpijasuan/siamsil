@@ -1,0 +1,59 @@
+{
+  "script": "import_reference_dictionaries.py",
+  "script_version": "1.0.0",
+  "built_at": "2026-10-26T01:44:38+00:00",
+  "database": "data/processed/reference/reference_dictionaries.sqlite",
+  "database_sha256": "beaa28b2b9850af1b54d5213aa0c54d6765d315919900f38acec62124ee5bf3c",
+  "config_sha256": "c8d2a11c01d643e948ef15b30be72f4dc5f0978b18baedaaa3ebfa08fce7b511",
+  "sources": [
+    {
+      "id": "translation_master_50k",
+      "file": "Zomi AI Roadmap/English_Zomi_Burmese_Translation_Master_v1.0.1.json",
+      "sha256": "c07884213d6d1d5b0cd404ea0ba85e873e922055c31fe44e2f8f34af840a1ce6",
+      "entries": 50032,
+      "senses": 50282,
+      "examples": 0,
+      "review_status": {
+        "unreviewed": 50282
+      },
+      "usage_tiers": {
+        "A": 21633,
+        "B": 24582,
+        "C": 4065,
+        "D": 2
+      },
+      "flags": {
+        "working_reference": 24582,
+        "native_editorial_review_required": 4065,
+        "translation_conflict": 3184,
+        "standard_zomi_review_required": 481,
+        "english_editorial_review_required": 418,
+        "burmese_review_required": 360,
+        "do_not_use_automatically": 2,
+        "foreign_script_contamination": 2
+      },
+      "display_rights": "needs_review",
+      "train_rights": "needs_review",
+      "rights_recorded": true
+    },
+    {
+      "id": "essential_3000",
+      "file": "Zomi AI Roadmap/Essential_3000_English_Zomi_Learners_Dictionary.json",
+      "sha256": "5e513a996ddd84c8350f1da0539d67a4cd854f58c7bf84e0b3c8d1b259507bcf",
+      "entries": 3000,
+      "senses": 5342,
+      "examples": 26685,
+      "review_status": {
+        "unreviewed": 5342
+      },
+      "usage_tiers": {},
+      "flags": {
+        "native_confirmation_required": 2
+      },
+      "display_rights": "needs_review",
+      "train_rights": "needs_review",
+      "rights_recorded": true
+    }
+  ],
+  "note": "Unreviewed reference data. Not human-approved; not cleared for training."
+}

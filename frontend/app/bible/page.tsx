@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { cache } from "react";
 import BibleReader from "@/components/BibleReader";
 import VersionReader from "@/components/bible/BibleReader";
 import { chooseCompanion } from "@/lib/bible/references";
@@ -11,7 +13,8 @@ import {
   getBibleVersionChapter,
   getBibleVersions,
 } from "@/lib/api";
-import type { BibleVersionChapter, BibleVersionInfo } from "@/lib/api";
+import type { BibleVersionBook, BibleVersionChapter, BibleVersionInfo } from "@/lib/api";
+import { bibleChapterPath } from "@/lib/site";
 
 type Props = {
   searchParams: Promise<{ book?: string; chapter?: string; testament?: string; v?: string; compare?: string }>;
@@ -23,13 +26,57 @@ function positiveInt(value: string | undefined) {
 }
 
 // 503 means no versions database is loaded: use the workbook reader. Other failures are errors.
-async function loadVersions(): Promise<{ versions: BibleVersionInfo[]; error: string | null }> {
+// Cached per request, so the page and its metadata share one API call.
+const loadVersions = cache(async (): Promise<{ versions: BibleVersionInfo[]; error: string | null }> => {
   try {
     return { versions: (await getBibleVersions()).versions, error: null };
   } catch (caught) {
     if (caught instanceof ApiError && caught.status === 503) return { versions: [], error: null };
     return { versions: [], error: describeApiError(caught, "Bible") };
   }
+});
+
+const loadBooks = cache(async (versionId: string): Promise<{ books: BibleVersionBook[]; error: string | null }> => {
+  try {
+    return { books: (await getBibleVersionBooks(versionId)).books, error: null };
+  } catch (caught) {
+    return { books: [], error: describeApiError(caught, "Bible") };
+  }
+});
+
+type Params = Awaited<Props["searchParams"]>;
+
+// A requested book decides the testament; otherwise the requested testament picks its first book.
+function chooseChapter(books: BibleVersionBook[], params: Params): { book: BibleVersionBook | null; chapter: number } {
+  const requested = books.find((item) => item.book_id === positiveInt(params.book));
+  const requestedTestament = params.testament === "new" || params.testament === "old" ? params.testament : null;
+  const book = requested
+    ?? books.find((item) => item.testament === (requestedTestament ?? "old"))
+    ?? books[0]
+    ?? null;
+  const wantedChapter = requested ? positiveInt(params.chapter) : null;
+  const chapter = book
+    ? (wantedChapter && book.chapters.includes(wantedChapter) ? wantedChapter : book.chapters[0] ?? 1)
+    : 1;
+  return { book, chapter };
+}
+
+// Each chapter of each version gets its own title and address, so search engines can list it.
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const params = await searchParams;
+  const { versions } = await loadVersions();
+  const version = versions.find((item) => item.id === params.v) ?? versions[0];
+  if (!version) return { title: "Zomi Bible", alternates: { canonical: "/bible" } };
+  const { book, chapter } = chooseChapter((await loadBooks(version.id)).books, params);
+  if (!book) return { title: `Bible (${version.abbreviation})`, alternates: { canonical: "/bible" } };
+  const name = book.name_local || book.name;
+  const language = version.language_iso === "ctd" ? "Zomi Bible" : "Bible";
+  return {
+    title: `${name} ${chapter} — ${language} (${version.abbreviation})`,
+    // The English book name too, for people who search "Matthew 5 Zomi".
+    description: `Read ${name}${name !== book.name ? ` (${book.name})` : ""} chapter ${chapter} in the ${version.name} on Siamsil.`,
+    alternates: { canonical: bibleChapterPath(version.id, book.book_id, chapter) },
+  };
 }
 
 export default async function BiblePage({ searchParams }: Props) {
@@ -41,25 +88,10 @@ export default async function BiblePage({ searchParams }: Props) {
   const version = versions.find((item) => item.id === params.v) ?? versions[0];
   // Bilingual by default: a Zomi version is paired with English unless the link says otherwise (compare=none).
   const compare = chooseCompanion(versions, version, params.compare);
-  let error: string | null = null;
-  let books: Awaited<ReturnType<typeof getBibleVersionBooks>>["books"] = [];
-  try {
-    books = (await getBibleVersionBooks(version.id)).books;
-  } catch (caught) {
-    error = describeApiError(caught, "Bible");
-  }
-
-  // A requested book decides the testament; otherwise the requested testament picks its first book.
-  const requested = books.find((item) => item.book_id === positiveInt(params.book));
-  const requestedTestament = params.testament === "new" || params.testament === "old" ? params.testament : null;
-  const book = requested
-    ?? books.find((item) => item.testament === (requestedTestament ?? "old"))
-    ?? books[0]
-    ?? null;
-  const wantedChapter = requested ? positiveInt(params.chapter) : null;
-  const chapter = book
-    ? (wantedChapter && book.chapters.includes(wantedChapter) ? wantedChapter : book.chapters[0] ?? 1)
-    : 1;
+  const loaded = await loadBooks(version.id);
+  const books = loaded.books;
+  let error: string | null = loaded.error;
+  const { book, chapter } = chooseChapter(books, params);
 
   let primary: BibleVersionChapter | null = null;
   let secondary: BibleVersionChapter | null = null;

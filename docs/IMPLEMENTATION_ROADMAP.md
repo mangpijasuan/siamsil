@@ -79,6 +79,7 @@ Agreed order, 2026-10-25. Each step lists what must be true before it counts as 
 - [-] Deployment: Dockerfiles, local Compose, and `backend/railway.toml` exist. No staging or production environment is documented as live.
 - [ ] Backup and restore procedure for PostgreSQL and the language database release.
 - [ ] Privacy policy, terms, and dataset/source disclosure pages.
+- [-] Search engines: robots, sitemap (pages and Zomi Bible chapters), per-chapter titles, canonical links, social previews, and schema.org data, all switched on by `SIAMSIL_SITE_URL` ([`SEARCH_ENGINES.md`](SEARCH_ENGINES.md)). Still needed: the public domain, Search Console, and per-word dictionary pages, which wait on dictionary rights.
 
 ### Auth foundation
 
@@ -140,8 +141,8 @@ Agreed order, 2026-10-25. Each step lists what must be true before it counts as 
 - [x] Corpus provenance recorded: 1,769,117 pairs name a Gemini model; 5,926 name none.
 - [x] SOP-07/08 quality gates (`sop_quality_gate.py`).
 - [x] Training export enforces `data/rights.json`; nothing marked `needs_review` exports for training.
-- [x] Language code decision (2026-10-04): Siamsil labels Zomi `zom`; `ctd` (Tedim) is the source reference code (`DATA_RIGHTS.md`).
-- [ ] Every external dataset card, model card, and API document says that `zom` is Siamsil's label for Zomi (Tedim-based, related ISO 639-3 code `ctd`) and is not ISO 639-3 Zou.
+- [x] Language code decision (2026-10-27, replacing 2026-10-04): Siamsil labels Zomi `ctd` (ISO 639-3, Tedim) in code, data, and APIs (`DATA_RIGHTS.md`).
+- [ ] Every external dataset card and model card declares `language: [ctd]` and names the language "Zomi (Zolai), Tedim-based".
 - [!] Verify the Hugging Face dataset card for `ZomiLearner/English-Zomi-OPUS_Tatoeba_v20230412`: the declared CC0 1.0 label, plus Tatoeba attribution. Needs a screenshot or saved copy in `siamsil-data`, or huggingface.co allowed by the network policy.
 - [ ] Settle training rights for the parallel corpus, Gemini output terms, the dictionary, and the daily-use phrases.
 
