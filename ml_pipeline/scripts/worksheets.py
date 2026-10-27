@@ -104,7 +104,9 @@ def cmd_testset_sheet(args: argparse.Namespace) -> int:
         for error in errors[:20]:
             print(f"error: {error}")
         sys.exit(f"{args.sources} is not a valid sources list")
-    direction = items[0]["direction"] if items else "en-zomi"
+    if not items:
+        sys.exit(f"{args.sources} has no sentences; nothing to translate")
+    direction = items[0]["direction"]
     source, target = LANGUAGES[direction]
     wb = Workbook()
     intro = wb.active

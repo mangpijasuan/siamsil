@@ -265,6 +265,13 @@ class ZomiSourceTests(unittest.TestCase):
         self.assertIn("zomi-en-0002 (Bible exact, Bible variant)", report)
         self.assertNotIn("zomi-en-0003", report.split("source sentences overlap")[0])
 
+    def test_an_empty_sources_list_makes_no_sheet(self) -> None:
+        empty = write_zomi_sources(self.dir / "empty.csv", [])
+        with redirect_stdout(StringIO()), self.assertRaises(SystemExit) as stopped:
+            worksheets_main(["testset-sheet", str(empty), "--out", str(self.dir / "empty.xlsx")])
+        self.assertIn("no sentences", str(stopped.exception))
+        self.assertFalse((self.dir / "empty.xlsx").exists())
+
     def test_zomi_sheets_round_trip_into_a_valid_zomi_to_english_set(self) -> None:
         sheet, draft = self.dir / "translate.xlsx", self.dir / "draft.jsonl"
         review, final = self.dir / "review.xlsx", self.dir / "zomi-en-v1.jsonl"

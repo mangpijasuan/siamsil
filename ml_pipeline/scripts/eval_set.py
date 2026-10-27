@@ -275,6 +275,13 @@ def cmd_leakage(args: argparse.Namespace) -> int:
     return 1 if leaks else 0
 
 
+# Fixed queries, one per source language; nothing from the sources list reaches the SQL text.
+CORPUS_SIDE_QUERY = {
+    "english": "SELECT normalized_source_text FROM parallel_sentences",
+    "zomi": "SELECT normalized_target_text FROM parallel_sentences",
+}
+
+
 def cmd_check_sources(args: argparse.Namespace) -> int:
     import sqlite3
 
@@ -285,11 +292,11 @@ def cmd_check_sources(args: argparse.Namespace) -> int:
         return 1
     # Compare with the side of the corpus, and the Bibles, written in the sources' own language.
     zomi = bool(items) and items[0]["direction"] == "zomi-en"
-    corpus_column = "normalized_target_text" if zomi else "normalized_source_text"
+    corpus_query = CORPUS_SIDE_QUERY["zomi" if zomi else "english"]
     bible_language = "zom" if zomi else "eng"
     found: dict[str, set[str]] = {}
     con = sqlite3.connect(f"file:{args.database}?mode=ro", uri=True)
-    corpus = (row[0] for row in con.execute(f"SELECT {corpus_column} FROM parallel_sentences"))
+    corpus = (row[0] for row in con.execute(corpus_query))
     for item_id, kinds in source_overlaps(items, corpus).items():
         found.setdefault(item_id, set()).update(f"corpus {kind}" for kind in kinds)
     con.close()
