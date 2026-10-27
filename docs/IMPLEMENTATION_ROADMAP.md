@@ -102,6 +102,8 @@ Agreed order, 2026-10-25. Each step lists what must be true before it counts as 
 - [-] Entries are unreviewed: none is verified yet. Rights are `needs_review` and the compiler and copyright holder are unknown (`DATA_RIGHTS.md`).
 - [ ] Dictionary entry in `data/rights.json`. It is listed in `DATA_RIGHTS.md` but has no machine-readable record.
 - [~] Candidate generation (#25) and lexicographer approval tools come after the Review Center.
+- [x] Word completion (step 1 of predictive text): Zomi words in the dictionary search (Zomi → English) and the Translate input (Zomi source), from the Zomi Bible text the app shows (`GET /api/v1/words/suggest`, `backend/services/word_suggest.py`); English headwords in the dictionary search. Single words only, chosen by the user; never from the machine-translated corpus. More sources join as their display rights clear.
+- [ ] Predictive text step 2: next-word suggestions for Zomi in Translate and Siamsil AI. Step 3: spelling hints from approved Siamsil Zomi Standard Form rules (`ZOMI_STANDARD_FORM.md`).
 
 ### Search
 

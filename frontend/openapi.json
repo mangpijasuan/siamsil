@@ -2640,6 +2640,60 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "WordSuggestion": {
+        "additionalProperties": true,
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "word": {
+            "title": "Word",
+            "type": "string"
+          }
+        },
+        "required": [
+          "word",
+          "count"
+        ],
+        "title": "WordSuggestion",
+        "type": "object"
+      },
+      "WordSuggestionsResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "prefix": {
+            "title": "Prefix",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "words": {
+            "items": {
+              "$ref": "#/components/schemas/WordSuggestion"
+            },
+            "title": "Words",
+            "type": "array"
+          }
+        },
+        "required": [
+          "prefix",
+          "language",
+          "sources",
+          "words"
+        ],
+        "title": "WordSuggestionsResponse",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -4326,6 +4380,65 @@
         "summary": "Search Matches",
         "tags": [
           "translate"
+        ]
+      }
+    },
+    "/api/v1/words/suggest": {
+      "get": {
+        "description": "Zomi words starting with `prefix`, most frequent first. English completion is /dictionary/suggest.",
+        "operationId": "suggest_words_api_v1_words_suggest_get",
+        "parameters": [
+          {
+            "description": "The start of a Zomi word",
+            "in": "query",
+            "name": "prefix",
+            "required": true,
+            "schema": {
+              "description": "The start of a Zomi word",
+              "maxLength": 40,
+              "minLength": 1,
+              "title": "Prefix",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 8,
+              "maximum": 20,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WordSuggestionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Suggest Words",
+        "tags": [
+          "words"
         ]
       }
     },
