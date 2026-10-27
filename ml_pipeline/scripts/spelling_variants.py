@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Count how Zolai sources actually spell things, as evidence for the Siamsil Zolai Standard.
+"""Count how Zomi sources actually spell things, as evidence for the Siamsil Zomi Standard Form.
 
 Reads Zomi text from several sources, counts every word form per source, and reports:
 
   forms.csv            every word form with its count in each source
   variant_families.csv forms that differ only by apostrophes, hyphens, or doubled vowels
   joins.csv            words written both joined and split ("ab" / "a b" / "a-b")
-  rule_checks.csv      the spellings each style-guide point is about (data/zolai_standard/rule_checks.json)
-  Siamsil_Zolai_Standard_Review.xlsx  the same, with decision columns for the language reviewers
+  rule_checks.csv      the spellings each style-guide point is about (data/zomi_standard_form/rule_checks.json)
+  Siamsil_Zomi_Standard_Form_Review.xlsx  the same, with decision columns for the language reviewers
   summary.md           sources, sizes, and the most divided points
 
 Nothing is corrected or decided here: the reports only show what the sources do, so Zomi
-reviewers can decide (docs/ZOLAI_STANDARD.md). Source text is copyrighted and private;
+reviewers can decide (docs/ZOMI_STANDARD_FORM.md). Source text is copyrighted and private;
 write the output to the private siamsil-data repository, not this one.
 
   python3 ml_pipeline/scripts/spelling_variants.py --out ../siamsil-data/standard/derived \\
@@ -38,7 +38,7 @@ from pathlib import Path
 from typing import Iterable, Iterator
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_CHECKS = ROOT / "data" / "zolai_standard" / "rule_checks.json"
+DEFAULT_CHECKS = ROOT / "data" / "zomi_standard_form" / "rule_checks.json"
 
 APOSTROPHES = str.maketrans({"’": "'", "‘": "'", "ʼ": "'", "`": "'", "´": "'"})
 DASHES = str.maketrans({"‐": "-", "‑": "-"})
@@ -311,7 +311,7 @@ def write_reports(out: Path, sources: list[Source], checks: list[dict], min_tota
               ([row["check"], row["set"], row["variant"], sum(row["counts"].values()),
                 *(row["counts"][name] for name in names)] for row in checked))
 
-    write_workbook(out / "Siamsil_Zolai_Standard_Review.xlsx", sources, checks, checked, joined, families, reference)
+    write_workbook(out / "Siamsil_Zomi_Standard_Form_Review.xlsx", sources, checks, checked, joined, families, reference)
 
     summary = {
         "sources": [{"name": source.name, "description": source.description, "words": sum(source.words.values()),
@@ -373,7 +373,7 @@ def write_workbook(path: Path, sources, checks, checked, joined, families, refer
     intro = book.active
     intro.title = "Read me"
     for line in (
-        "Siamsil Zolai Standard: spelling evidence for review",
+        "Siamsil Zomi Standard Form: spelling evidence for review",
         "",
         "Each row shows how the sources spell something, and what the three style guides say.",
         "Fill in the yellow columns: the spelling Siamsil should use, and why. Leave a row blank if unsure.",
@@ -479,7 +479,7 @@ WORKBOOK_ROWS = 500  # rows per sheet a reviewer can work through; the CSV files
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Count how Zolai sources spell things (evidence for the Siamsil Zolai Standard).")
+    parser = argparse.ArgumentParser(description="Count how Zomi sources spell things (evidence for the Siamsil Zomi Standard Form).")
     parser.add_argument("--text", action="append", default=[], metavar="NAME=PATH", help="a .txt or .pdf source")
     parser.add_argument("--bible", action="append", default=[], metavar="NAME=SQLITE:VERSION",
                         help="a version in bible_versions.sqlite (import_usx_bibles.py)")
