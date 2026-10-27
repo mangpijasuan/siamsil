@@ -79,6 +79,7 @@ Agreed order, 2026-10-25. Each step lists what must be true before it counts as 
 - [-] Deployment: Dockerfiles, local Compose, and `backend/railway.toml` exist. No staging or production environment is documented as live.
 - [ ] Backup and restore procedure for PostgreSQL and the language database release.
 - [ ] Privacy policy, terms, and dataset/source disclosure pages.
+- [-] Search engines: robots, sitemap (pages and Zomi Bible chapters), per-chapter titles, canonical links, social previews, and schema.org data, all switched on by `SIAMSIL_SITE_URL` ([`SEARCH_ENGINES.md`](SEARCH_ENGINES.md)). Still needed: the public domain, Search Console, and per-word dictionary pages, which wait on dictionary rights.
 
 ### Auth foundation
 
