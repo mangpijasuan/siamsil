@@ -73,6 +73,26 @@ class AnalysisTests(unittest.TestCase):
         self.assertEqual(counts[("possessive", "word ending in an apostrophe")], {"one": 1, "two": 4})
 
 
+class SuggestionTests(unittest.TestCase):
+    def test_the_spelling_most_sources_prefer_is_suggested(self) -> None:
+        counts = {"one": {"qaqo": 9, "qa qo": 1}, "two": {"qaqo": 5}, "three": {"qa qo": 4}}
+        self.assertEqual(sv.suggest(counts, ["qaqo", "qa qo"], "three"),
+                         ("qaqo", "mixed", "preferred by one, two; other spellings in three (qa qo)"))
+        self.assertEqual(sv.suggest({"one": {"qaqo": 9}, "two": {"qaqo": 3}}, ["qaqo", "qa qo"], "one")[:2],
+                         ("qaqo", "strong"))
+
+    def test_the_reference_source_breaks_a_tie(self) -> None:
+        counts = {"one": {"bak": 5}, "two": {"baak": 5}}
+        self.assertEqual(sv.suggest(counts, ["bak", "baak"], "two")[0], "baak")
+        self.assertEqual(sv.suggest(counts, ["bak", "baak"], "one")[0], "bak")
+
+    def test_no_suggestion_when_a_source_uses_both_often_or_too_few_uses(self) -> None:
+        best, strength, why = sv.suggest({"one": {"tu": 30, "tuu": 10}}, ["tu", "tuu"], "one")
+        self.assertEqual((best, strength), ("", "check meaning"))
+        self.assertIn("tu (30) and tuu (10)", why)
+        self.assertEqual(sv.suggest({"one": {"tu": 2}}, ["tu", "tuu"], "one")[:2], ("", "too few uses"))
+
+
 class CommandTests(unittest.TestCase):
     def test_reports_from_text_and_workbook_sources(self) -> None:
         from openpyxl import Workbook, load_workbook
@@ -107,7 +127,9 @@ class CommandTests(unittest.TestCase):
             self.assertEqual(workbook.sheetnames, ["Read me", "Rules", "Joins", "Families", "Sources"])
             rules = workbook["Rules"]
             self.assertEqual(rules["A2"].value, "join")
-            self.assertIn("Decision", [cell.value for cell in rules[1]])
+            header = [cell.value for cell in rules[1]]
+            self.assertIn("Decision", header)
+            self.assertLess(header.index("Siamsil suggestion (AI)"), header.index("Decision"))
 
     def test_unknown_column_and_missing_sources_are_refused(self) -> None:
         from openpyxl import Workbook
@@ -117,7 +139,9 @@ class CommandTests(unittest.TestCase):
             book = Workbook()
             book.active.append(["ID", "Text"])
             book.save(folder / "d.xlsx")
-            for args in ([], ["--xlsx", f"dict={folder / 'd.xlsx'}:Nope"]):
+            (folder / "a.txt").write_text("qa qo\n", encoding="utf-8")
+            for args in ([], ["--xlsx", f"dict={folder / 'd.xlsx'}:Nope"],
+                         ["--text", f"book={folder / 'a.txt'}", "--reference", "nobody"]):
                 with self.subTest(args=args):
                     result = subprocess.run([sys.executable, str(SCRIPT), *args, "--out", str(folder / "out")],
                                             capture_output=True, text=True)

@@ -234,6 +234,41 @@ def rule_checks(sources: list[Source], checks: list[dict]) -> list[dict]:
     return rows
 
 
+# Suggestions -------------------------------------------------------------------------------------
+
+SUGGEST_MIN_USES = 3  # a source with fewer uses of a word does not vote
+SPLIT_SHARE = 0.2  # a source using a second spelling this often may mean two different words
+SPLIT_MIN_USES = 20  # ... judged only where the source uses the word this often, so a handful of uses cannot block
+
+
+def suggest(counts: dict[str, dict[str, int]], forms: list[str], reference: str) -> tuple[str, str, str]:
+    """Siamsil's suggestion for a reviewer, from the counts alone: (spelling, strength, why).
+
+    Each source with enough uses votes for the spelling it uses most; the spelling most sources
+    prefer is suggested, and the reference source breaks ties. When one source itself uses two
+    spellings often, they may be different words, so nothing is suggested. A draft for the
+    reviewers, never a decision.
+    """
+    preferred: dict[str, str] = {}
+    for source, by_form in counts.items():
+        uses = sum(by_form.get(form, 0) for form in forms)
+        if uses < SUGGEST_MIN_USES:
+            continue
+        ranked = sorted(forms, key=lambda form: -by_form.get(form, 0))
+        if len(ranked) > 1 and uses >= SPLIT_MIN_USES and by_form.get(ranked[1], 0) / uses >= SPLIT_SHARE:
+            return "", "check meaning", (f"{source} uses both {ranked[0]} ({by_form[ranked[0]]}) and "
+                                         f"{ranked[1]} ({by_form[ranked[1]]}): different words, or {source} is inconsistent")
+        preferred[source] = ranked[0]
+    if not preferred:
+        return "", "too few uses", f"no source uses it {SUGGEST_MIN_USES} or more times"
+    votes = Counter(preferred.values())
+    best = max(votes, key=lambda form: (votes[form], form == preferred.get(reference)))
+    agree = [source for source, form in preferred.items() if form == best]
+    others = [f"{source} ({form})" for source, form in preferred.items() if form != best]
+    why = f"preferred by {', '.join(agree)}" + (f"; other spellings in {', '.join(others)}" if others else "")
+    return best, "strong" if not others else "mixed", why
+
+
 # Output ------------------------------------------------------------------------------------------
 
 
@@ -248,9 +283,12 @@ def write_csv(path: Path, header: list[str], rows: Iterable[list]) -> None:
         writer.writerows(rows)
 
 
-def write_reports(out: Path, sources: list[Source], checks: list[dict], min_total: int) -> dict:
+def write_reports(out: Path, sources: list[Source], checks: list[dict], min_total: int, reference: str | None = None) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     names = [source.name for source in sources]
+    reference = reference or names[0]
+    if reference not in names:
+        raise ValueError(f"reference source {reference!r} is not one of {', '.join(names)}")
     totals = all_words(sources)
 
     write_csv(out / "forms.csv", ["form", "total", *names],
@@ -273,7 +311,7 @@ def write_reports(out: Path, sources: list[Source], checks: list[dict], min_tota
               ([row["check"], row["set"], row["variant"], sum(row["counts"].values()),
                 *(row["counts"][name] for name in names)] for row in checked))
 
-    write_workbook(out / "Siamsil_Zolai_Standard_Review.xlsx", sources, checks, checked, joined, families)
+    write_workbook(out / "Siamsil_Zolai_Standard_Review.xlsx", sources, checks, checked, joined, families, reference)
 
     summary = {
         "sources": [{"name": source.name, "description": source.description, "words": sum(source.words.values()),
@@ -318,7 +356,7 @@ def write_summary(path: Path, summary: dict, sources, checks, checked, joined, f
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def write_workbook(path: Path, sources, checks, checked, joined, families) -> None:
+def write_workbook(path: Path, sources, checks, checked, joined, families, reference: str) -> None:
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.worksheet.datavalidation import DataValidation
@@ -340,6 +378,8 @@ def write_workbook(path: Path, sources, checks, checked, joined, families) -> No
         "Each row shows how the sources spell something, and what the three style guides say.",
         "Fill in the yellow columns: the spelling Siamsil should use, and why. Leave a row blank if unsure.",
         "Use your reviewer code (R01, E01), never your name. Two people must agree before a rule is adopted.",
+        "The 'Siamsil suggestion (AI)' columns are drafts to save time, not decisions: on Rules they weigh the guides and",
+        f"the counts; on Joins and Families they are the spelling most sources prefer ({reference} breaks ties). Overrule freely.",
         "",
         "Rules: the points the guides address. Joins: words written both joined and split. Families: spellings",
         "differing only by apostrophes, hyphens, or doubled vowels (some are different words).",
@@ -383,11 +423,15 @@ def write_workbook(path: Path, sources, checks, checked, joined, families) -> No
     for (check_id, _), variants in sets.items():
         check = by_check[check_id]
         counts = "\n".join(f"{v['variant']}: " + ", ".join(f"{n} {v['counts'][n]}" for n in names) for v in variants)
+        suggestion = check.get("suggestion", {})
         rule_rows.append([check_id, check["topic"], " / ".join(v["variant"] for v in variants),
-                          check["zsf"], check["zokam"], check["primer"], counts, check.get("note", ""), "", "", "", ""])
+                          check["zsf"], check["zokam"], check["primer"], counts, check.get("note", ""),
+                          suggestion.get("spelling", ""), suggestion.get("reason", ""), "", "", "", ""])
     table("Rules", ["Check", "Topic", "Spellings", "Zolai Standard Format", "Zokam le Zolai", "Primer",
-                    "Counts in the sources", "Note", "Decision", "Spelling to use", "Reason", "Reviewer"],
-          rule_rows, {"A": 16, "B": 30, "C": 22, "D": 40, "E": 40, "F": 40, "G": 46, "H": 30, "I": 14, "J": 18, "K": 30, "L": 10},
+                    "Counts in the sources", "Note", "Siamsil suggestion (AI)", "Why",
+                    "Decision", "Spelling to use", "Reason", "Reviewer"],
+          rule_rows, {"A": 16, "B": 30, "C": 22, "D": 40, "E": 40, "F": 40, "G": 46, "H": 30, "I": 24, "J": 44,
+                      "K": 14, "L": 18, "M": 30, "N": 10},
           ["Adopt", "Allow both", "Need more evidence"])
 
     pairs: Counter = Counter()
@@ -398,17 +442,27 @@ def write_workbook(path: Path, sources, checks, checked, joined, families) -> No
         if not row["minority"]:
             continue
         left, right = row["split"].split(" ")
+        spellings = [row["joined"], row["split"], row["hyphenated"]]
+        counts = {source.name: {row["joined"]: source.words[row["joined"]], row["split"]: source.pairs[(left, right)],
+                                row["hyphenated"]: source.words[row["hyphenated"]]} for source in sources}
+        best, strength, why = suggest(counts, spellings, reference)
         join_rows.append([row["joined"], words[row["joined"]], pairs[(left, right)], words[row["hyphenated"]],
-                          row["split"], row["hyphenated"], "", "", ""])
+                          row["split"], row["hyphenated"], best, strength, why, "", "", ""])
     table("Joins", ["Joined", "Joined count", "Split count", "Hyphen count", "Split form", "Hyphenated form",
-                    "Decision", "Reason", "Reviewer"],
-          join_rows[:WORKBOOK_ROWS], {"A": 22, "E": 22, "F": 22, "G": 14, "H": 30}, ["Joined", "Split", "Hyphenated", "Depends on meaning"])
+                    "Siamsil suggestion (AI)", "Strength", "Why", "Decision", "Reason", "Reviewer"],
+          join_rows[:WORKBOOK_ROWS], {"A": 22, "E": 22, "F": 22, "G": 22, "H": 14, "I": 44, "J": 14, "K": 30},
+          ["Joined", "Split", "Hyphenated", "Depends on meaning"])
 
     folded = base_counts(words)
-    family_rows = [[", ".join(f"{form} ({folded[form]})" for form in family["forms"]), family["total"], "", "", ""]
-                   for family in families[:WORKBOOK_ROWS]]
-    table("Families", ["Forms (count)", "Total", "Decision", "Spelling to use", "Reviewer"], family_rows,
-          {"A": 70, "C": 18, "D": 18}, ["Same word", "Different words"])
+    per_source_folded = {source.name: base_counts(source.words) for source in sources}
+    family_rows = []
+    for family in families[:WORKBOOK_ROWS]:
+        best, strength, why = suggest(per_source_folded, family["forms"], reference)
+        family_rows.append([", ".join(f"{form} ({folded[form]})" for form in family["forms"]), family["total"],
+                            best, strength, why, "", "", ""])
+    table("Families", ["Forms (count)", "Total", "Siamsil suggestion (AI)", "Strength", "Why",
+                       "Decision", "Spelling to use", "Reviewer"], family_rows,
+          {"A": 60, "C": 20, "D": 14, "E": 50, "F": 16, "G": 18}, ["Same word", "Different words"])
 
     sources_sheet = book.create_sheet("Sources")
     sources_sheet.append(["Name", "Read from", "Words", "Distinct forms"])
@@ -419,7 +473,7 @@ def write_workbook(path: Path, sources, checks, checked, joined, families) -> No
     book.save(path)
 
 
-DECISION_HEADERS = {"Decision", "Spelling to use", "Reason", "Reviewer"}
+DECISION_HEADERS = {"Decision", "Spelling to use", "Reason", "Reviewer"}  # filled in by reviewers
 WORKBOOK_ROWS = 500  # rows per sheet a reviewer can work through; the CSV files have everything
 
 
@@ -431,6 +485,7 @@ def main() -> int:
     parser.add_argument("--xlsx", action="append", default=[], metavar="NAME=PATH:COLUMN", help="a text column of a workbook")
     parser.add_argument("--checks", type=Path, default=DEFAULT_CHECKS, help="style-guide points to count")
     parser.add_argument("--min-total", type=int, default=5, help="ignore joins and families seen fewer times")
+    parser.add_argument("--reference", help="source that breaks ties in the suggestions (default: the first)")
     parser.add_argument("--out", type=Path, required=True, help="output folder (private: siamsil-data)")
     args = parser.parse_args()
 
@@ -448,7 +503,10 @@ def main() -> int:
 
     checks = json.loads(args.checks.read_text(encoding="utf-8"))["checks"]
     sources = load_sources(args)
-    summary = write_reports(args.out, sources, checks, args.min_total)
+    try:
+        summary = write_reports(args.out, sources, checks, args.min_total, args.reference)
+    except ValueError as error:
+        sys.exit(str(error))
     for source in summary["sources"]:
         print(f"{source['name']:<12} {source['words']:>10,} words  {source['distinct_forms']:>8,} forms")
     print(f"{summary['variant_families']:,} spelling families, {summary['divided_joins']:,} divided joins, "
