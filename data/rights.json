@@ -102,6 +102,14 @@
       "redistribute": "needs_review",
       "commercial": "needs_review",
       "evidence": "Project owner reported authoring it on 2026-10-25, and on 2026-10-26 that no AI tool drafted any of its text, and signed off its use for model training. Training stays needs_review until a second person confirms (docs/DATA_RIGHTS.md, Closing an item). Display, redistribution and commercial use are not yet granted."
+    },
+    "haokip_lind_2011": {
+      "description": "Zomi Ordbog, dansk-[engelsk]-zomi (Johs. Lind, Zomi Innkuan Denmark, 2011), based on Dr. Dal Lian Haokip's English-Zomi Dictionary; 15,105 entries with Danish, English and Zomi, 220-page PDF (private siamsil-data)",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "not_permitted",
+      "commercial": "not_permitted",
+      "evidence": "Project owner reported on 2026-10-27 written permission from both rights holders, Dr. Dal Lian Haokip and Johs. Lind / Zomi Innkuan Denmark, for display and training. Display and training stay needs_review until a second person confirms; still to record: the date of each permission and where the written copies are kept. Redistribution and commercial use were not granted. The PDF copy was obtained from kupdf.net, a third-party upload."
     }
   }
 }
