@@ -69,7 +69,7 @@ test("references read naturally", () => {
 });
 
 const versions = [
-  { id: "tdb", abbreviation: "TDB", language_iso: "zom" },
+  { id: "tdb", abbreviation: "TDB", language_iso: "ctd" },
   { id: "kjv", abbreviation: "KJV", language_iso: "eng" },
   { id: "web", abbreviation: "WEB", language_iso: "eng" },
 ];

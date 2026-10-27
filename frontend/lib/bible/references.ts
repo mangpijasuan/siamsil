@@ -134,7 +134,7 @@ export function chooseCompanion<V extends VersionLike>(versions: V[], main: V, r
 /** URL-selected versions, never a device preference, determine the visible reading mode. */
 export function readingMode(main: VersionLike, compare: VersionLike | null): "both" | "zomi" | "english" | "single" {
   if (compare) return "both";
-  if (main.language_iso === "zom") return "zomi";
+  if (main.language_iso === "ctd") return "zomi";
   if (main.language_iso === "eng") return "english";
   return "single";
 }
@@ -142,9 +142,9 @@ export function readingMode(main: VersionLike, compare: VersionLike | null): "bo
 /** Prefer the versions already on screen, then TDB/WEB, when building the three reader choices. */
 export function readingModeTargets<V extends VersionLike>(versions: V[], main: V, compare: V | null) {
   const visible = compare ? [main, compare] : [main];
-  const zomi = visible.find((item) => item.language_iso === "zom")
+  const zomi = visible.find((item) => item.language_iso === "ctd")
     ?? versions.find((item) => item.id === "tdb")
-    ?? versions.find((item) => item.language_iso === "zom")
+    ?? versions.find((item) => item.language_iso === "ctd")
     ?? null;
   const english = visible.find((item) => item.language_iso === "eng")
     ?? versions.find((item) => item.id === "web")

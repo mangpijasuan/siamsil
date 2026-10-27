@@ -238,9 +238,11 @@ def bible_version_records(path: Path, skipped: Counter[str]):
     con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     try:
         versions = con.execute(
-            "SELECT id, language_iso, rights_source FROM versions WHERE language_iso IN ('zom', 'eng') ORDER BY sort_order"
+            "SELECT id, language_iso, rights_source FROM versions WHERE language_iso IN ('ctd', 'zom', 'eng')"
+            " ORDER BY sort_order"
         ).fetchall()
-        zomi = [(vid, rights) for vid, iso, rights in versions if iso == "zom"]
+        # Zomi is ctd; databases imported before 2026-10-27 label it zom until they are rebuilt.
+        zomi = [(vid, rights) for vid, iso, rights in versions if iso in ("ctd", "zom")]
         english = [(vid, rights) for vid, iso, rights in versions if iso == "eng"]
         for zomi_id, zomi_rights in zomi:
             for english_id, english_rights in english:

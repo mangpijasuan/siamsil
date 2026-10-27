@@ -45,8 +45,8 @@ class TrainHelpersTests(unittest.TestCase):
     def test_examples_cover_both_directions(self) -> None:
         examples = to_examples(PAIRS[:1], ["en-zomi", "zomi-en"])
         self.assertEqual(examples, [
-            ("One.", "en", "ZOMI_PLACEHOLDER_1", "zom"),
-            ("ZOMI_PLACEHOLDER_1", "zom", "One.", "en"),
+            ("One.", "en", "ZOMI_PLACEHOLDER_1", "ctd"),
+            ("ZOMI_PLACEHOLDER_1", "ctd", "One.", "en"),
         ])
 
     @unittest.skipUnless(importlib.util.find_spec("torch"), "torch is not installed")
@@ -62,7 +62,7 @@ class TrainHelpersTests(unittest.TestCase):
 
         codec = Codec(Tokenizer(), max_len=128, pad_multiple=32)
         self.assertEqual([codec.padded(w) for w in (1, 32, 33, 100, 200)], [32, 32, 64, 128, 128])
-        batch = codec.batch([("a b c", "en", "x y", "zom")], "cpu")
+        batch = codec.batch([("a b c", "en", "x y", "ctd")], "cpu")
         self.assertEqual(tuple(batch["input_ids"].shape), (1, 32))
         self.assertEqual(batch["labels"][0][:5].tolist(), [5, 10, 11, 2, -100])
 
@@ -78,8 +78,8 @@ class TrainHelpersTests(unittest.TestCase):
 
         new = Codec(Tokenizer({"eng_Latn": 5, "ctd_Latn": 7, "zom_Latn": 6}), max_len=128)
         old = Codec(Tokenizer({"eng_Latn": 5, "zom_Latn": 6}), max_len=128)
-        self.assertEqual(new.lang_id, {"en": 5, "zom": 7})
-        self.assertEqual(old.lang_id, {"en": 5, "zom": 6})
+        self.assertEqual(new.lang_id, {"en": 5, "ctd": 7})
+        self.assertEqual(old.lang_id, {"en": 5, "ctd": 6})
 
     @unittest.skipUnless(importlib.util.find_spec("torch"), "torch is not installed")
     def test_new_token_starts_from_legacy_then_mizo(self) -> None:
@@ -162,7 +162,7 @@ class TrainHelpersTests(unittest.TestCase):
         for name, vocab in vocabularies.items():
             codec, model = Codec(Tokenizer(vocab), max_len=128), Model()
             model.calls = []
-            for direction, (src, tgt) in (("en-zomi", ("en", "zom")), ("zomi-en", ("zom", "en"))):
+            for direction, (src, tgt) in (("en-zomi", ("en", "ctd")), ("zomi-en", ("ctd", "en"))):
                 translate_texts(model, codec, ["text"], src, tgt, torch.device("cpu"), 1, 1)
             self.assertEqual(model.calls, [(5, zomi_id[name]), (zomi_id[name], 5)], name)
 
@@ -191,7 +191,7 @@ class TrainHelpersTests(unittest.TestCase):
             self.assertTrue(torch.equal(outputs[new], outputs[old]))
             report = embedding_report(tok, model, Codec(tok, max_len=128))
             self.assertEqual(report["tied_input_output_embeddings"], tied)
-            self.assertEqual(report["tokens"]["zom"], {"token": "ctd_Latn", "id": new})
+            self.assertEqual(report["tokens"]["ctd"], {"token": "ctd_Latn", "id": new})
 
     @unittest.skipUnless(importlib.util.find_spec("torch"), "torch is not installed")
     def test_embedding_report_rejects_short_embeddings(self) -> None:

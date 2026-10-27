@@ -293,7 +293,8 @@ def cmd_check_sources(args: argparse.Namespace) -> int:
     # Compare with the side of the corpus, and the Bibles, written in the sources' own language.
     zomi = bool(items) and items[0]["direction"] == "zomi-en"
     corpus_query = CORPUS_SIDE_QUERY["zomi" if zomi else "english"]
-    bible_language = "zom" if zomi else "eng"
+    # Zomi is ctd; databases imported before 2026-10-27 label it zom until they are rebuilt.
+    bible_languages = ("ctd", "zom") if zomi else ("eng", "eng")
     found: dict[str, set[str]] = {}
     con = sqlite3.connect(f"file:{args.database}?mode=ro", uri=True)
     corpus = (row[0] for row in con.execute(corpus_query))
@@ -303,8 +304,8 @@ def cmd_check_sources(args: argparse.Namespace) -> int:
     if args.bible_versions:
         con = sqlite3.connect(f"file:{args.bible_versions}?mode=ro", uri=True)
         verses = (row[0] for row in con.execute(
-            "SELECT text FROM verses WHERE version_id IN (SELECT id FROM versions WHERE language_iso = ?)",
-            (bible_language,)))
+            "SELECT text FROM verses WHERE version_id IN (SELECT id FROM versions WHERE language_iso IN (?, ?))",
+            bible_languages))
         for item_id, kinds in source_overlaps(items, verses).items():
             found.setdefault(item_id, set()).update(f"Bible {kind}" for kind in kinds)
         con.close()

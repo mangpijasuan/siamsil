@@ -140,9 +140,9 @@ The UI displays sync state and remains usable when disconnected. Authentication 
 Separate interface locale from learning language and translation direction:
 
 ```text
-interface_locale: en | zom | my
-source_language:  en | zom | my
-target_language:  en | zom | my
+interface_locale: en | ctd | my
+source_language:  en | ctd | my
+target_language:  en | ctd | my
 ```
 
 Content uses a localized-value model instead of fixed `english`, `zomi`, and `burmese` columns:
@@ -380,7 +380,7 @@ POST /internal/v1/models/translate
 {
   "request_id": "...",
   "source_language": "en",
-  "target_language": "zom",
+  "target_language": "ctd",
   "text": "...",
   "domain": "conversation"
 }

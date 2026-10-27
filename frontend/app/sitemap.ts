@@ -16,7 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (!SITE_URL) return [];
   let bibles: { id: string; books: { book_id: number; chapters: number[] }[] }[] = [];
   try {
-    const zomi = (await getBibleVersions()).versions.filter((version) => version.language_iso === "zom");
+    const zomi = (await getBibleVersions()).versions.filter((version) => version.language_iso === "ctd");
     bibles = await Promise.all(
       zomi.map(async (version) => ({ id: version.id, books: (await getBibleVersionBooks(version.id)).books })),
     );

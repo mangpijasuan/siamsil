@@ -32,7 +32,7 @@ from pathlib import Path
 
 import corpus_reviews
 
-SCRIPT_VERSION = "1.3.0"
+SCRIPT_VERSION = "1.4.0"
 DATASET_VERSION = "v2"
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -287,7 +287,7 @@ def create_schema(con: sqlite3.Connection) -> None:
             normalized_source_text TEXT NOT NULL,
             normalized_target_text TEXT NOT NULL,
             source_language TEXT NOT NULL DEFAULT 'en',
-            target_language TEXT NOT NULL DEFAULT 'zom',
+            target_language TEXT NOT NULL DEFAULT 'ctd',
             source TEXT,
             source_reference TEXT,
             model TEXT,
@@ -440,19 +440,19 @@ def ingest_parallel(con: sqlite3.Connection, path: Path, created_at: str) -> dic
         for row in reader:
             stats["source_rows"] += 1
             raw_en = str(row.get("en") or "")
-            raw_zom = str(row.get("zomi") or "")
+            raw_zomi = str(row.get("zomi") or "")
             en = normalize_text(raw_en)
-            zom = normalize_text(raw_zom)
-            if not en or not zom:
+            zomi = normalize_text(raw_zomi)
+            if not en or not zomi:
                 stats["empty"] += 1
                 continue
-            digest = pair_key(en, zom)
+            digest = pair_key(en, zomi)
             if digest in seen_hashes:
                 stats["duplicates"] += 1
                 continue
             seen_hashes.add(digest)
 
-            flags = quality_flags(en, zom)
+            flags = quality_flags(en, zomi)
             score = quality_score(flags)
             for flag in flags:
                 flag_counts[flag] += 1
@@ -472,11 +472,11 @@ def ingest_parallel(con: sqlite3.Connection, path: Path, created_at: str) -> dic
                 (
                     next_id,
                     raw_en,
-                    raw_zom,
+                    raw_zomi,
                     en,
-                    zom,
+                    zomi,
                     "en",
-                    "zom",
+                    "ctd",
                     "OPUS/Tatoeba + Gemini machine translation",
                     worker,
                     model,
@@ -490,7 +490,7 @@ def ingest_parallel(con: sqlite3.Connection, path: Path, created_at: str) -> dic
                     created_at,
                 )
             )
-            batch_fts.append((en, zom))
+            batch_fts.append((en, zomi))
             next_id += 1
 
             if len(batch_rows) >= 10_000:
@@ -527,8 +527,8 @@ def apply_corpus_checks(con: sqlite3.Connection, eval_items: list[dict] | None =
     ratios = sorted(
         ratio
         for ratio in (
-            length_log_ratio(en, zom)
-            for en, zom in con.execute(
+            length_log_ratio(en, zomi)
+            for en, zomi in con.execute(
                 "SELECT normalized_source_text, normalized_target_text FROM parallel_sentences"
             )
         )
@@ -567,20 +567,20 @@ def apply_corpus_checks(con: sqlite3.Connection, eval_items: list[dict] | None =
         if not rows:
             break
         updates = []
-        for row_id, en, zom, flags_json in rows:
+        for row_id, en, zomi, flags_json in rows:
             flags = json.loads(flags_json or "[]")
             extra = []
-            if zom in reused_targets:
+            if zomi in reused_targets:
                 extra.append("target_reused")
-            if number_mismatch(en, zom):
+            if number_mismatch(en, zomi):
                 extra.append("number_mismatch")
-            ratio = length_log_ratio(en, zom)
+            ratio = length_log_ratio(en, zomi)
             if bounds and ratio is not None and not bounds[0] <= ratio <= bounds[1]:
                 extra.append("length_ratio_outlier")
             flags += [flag for flag in extra if flag not in flags]
 
             key = template_key(en, names)
-            if key in eval_english or normalize_word(zom) in eval_zomi:
+            if key in eval_english or normalize_word(zomi) in eval_zomi:
                 split = EVAL_HOLDOUT_SPLIT
             else:
                 split = split_for_key(key)

@@ -204,13 +204,13 @@ class ApplyReviewTests(CorpusFixture):
         ))
         con.close()
         engine = LanguageEngine(self.database)
-        for direction in (None, "en-zom"):
+        for direction in (None, "en-ctd"):
             approved = engine.search_parallel("English sentence number 0.", direction=direction)
             self.assertEqual(approved[0]["label"], "Machine-translated example, approved by Zomi reviewers")
             self.assertTrue(approved[0]["verified"])
             shown = [hit["english"] for hit in engine.search_parallel("English sentence number 1.", direction=direction)]
             self.assertNotIn("English sentence number 1.", shown)
-        self.assertEqual(engine.search_parallel("ZOMI_PLACEHOLDER_1", direction="zom-en"), [])
+        self.assertEqual(engine.search_parallel("ZOMI_PLACEHOLDER_1", direction="ctd-en"), [])
 
     def test_people_outrank_a_low_automatic_score(self) -> None:
         con = sqlite3.connect(self.database)
