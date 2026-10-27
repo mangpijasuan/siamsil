@@ -1,6 +1,6 @@
 # Siamsil data rights register
 
-Updated: 2026-10-25
+Updated: 2026-10-27
 Phase: [ROADMAP.md](ROADMAP.md) Phase 0
 
 One row per source Siamsil holds or plans to use. Nothing here is legal advice; every `needs_review` must be closed by the rights holder's written answer or by counsel, not by an engineer's reading.
@@ -39,6 +39,8 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 | English–Zomi–Burmese Translation Master v1.0.1 (private `siamsil-data`) | 50,032 headwords, 50,282 senses; 0 human-reviewed | — | — | — | — | `needs_review` |
 | Essential 3000 English–Zomi Learner's Dictionary, beta (private `siamsil-data`) | 3,000 headwords, 5,342 senses, examples and phrases; 0 human-reviewed | — | — | — | — | `needs_review` |
 | Zomi Ordbog, dansk-[engelsk]-zomi (Johs. Lind, Zomi Innkuan Denmark, 2011), based on Dr. Dal Lian Haokip's English-Zomi Dictionary (private `siamsil-data`) | 15,105 entries: Danish, English, Zomi | reported | reported | **no** | **no** | `needs_review` (written permission reported, awaiting confirmation) |
+| *Paunam Khenna Leh Kampau Luanzia*, Zomi grammar primer by Lia Cingsen (private `siamsil-data`), and the review sheets made from it | About 184 printed pages; 732 numbered sentences, 258 word pairs, 28 bilingual examples extracted | reported | reported | **no** | **no** | `needs_review` (permission reported, awaiting confirmation) |
+| *Zokam le Zolai* (Rev. Khoi Lam Thang, Zomi Christian Literature Society, 2013) (private `siamsil-data`) | About 23,600 words of Zomi prose: the language, writing history, spelling | reported, with credit | reported | **no** | **no** | `needs_review` (permission reported, awaiting confirmation) |
 | Community audio (planned) | Consent-based recordings; per-speaker choices in [AUDIO_CONSENT.md](AUDIO_CONSENT.md), recorded per source and speaker in the Speech Data Lab ([SPEECH_DATA_LAB.md](SPEECH_DATA_LAB.md)) | — | — | — | — | draft form, needs legal review |
 
 "—" means not yet permitted.
@@ -112,6 +114,23 @@ To clear it for training, record in this file: (1) the dataset card as published
 - Still to record: the date of each permission, its exact wording on display and training, any required credit line, and where the written copies are kept (private storage, not this repository).
 - The PDF in `siamsil-data` (`Dictionary Sources/Haokip-Lind 2011/`) was obtained from kupdf.net, a third-party upload, not from the rights holders. The permission covers the work; ask whether they can supply an authoritative copy.
 - The original lists each entry as `Danish [English] (part of speech): Zomi`, so the English is the authors'. A ChatGPT-made English-alphabetical draft is kept beside it as a reading copy only; three English labels it supplied (bathtub, shoot, shower) are not from the source.
+
+**Zomi grammar primer (*Paunam Khenna Leh Kampau Luanzia*, Lia Cingsen)**
+- **2026-10-27, project owner:** the primer's owner gave permission for display in the app and for model training. Redistribution and commercial use were not granted.
+- Display and training stay `needs_review` until both steps are done (see Closing an item):
+  1. Record here who granted it (the author, Lia Cingsen, or another rights holder) and why they hold the rights, the date, its exact wording on display and training, any required credit line, the publisher and edition, and where the written permission is kept (private storage, not this repository).
+  2. A second person reads the written permission and confirms it comes from the rights holder and covers display and training.
+- Only then set `display` and `train` to `cleared` for `primer_lia_cingsen` in `data/rights.json`.
+- The permission covers the sheets made from the primer in `siamsil-data/grammar/derived/` (sentences, word pairs, bilingual examples). Their translations and glosses still need Zomi reviewers before any of it is used as reference data; the extracted text is the book's, not machine output.
+
+**Zokam le Zolai (Khoi Lam Thang, ZCLS 2013)**
+- **2026-10-27, project owner:** the owner allows Siamsil to use the book with credit, which covers display in the app and model training. Redistribution and commercial use were not granted.
+- Credit wherever its text is shown, and in the sources of any model trained on it: "Khoi Lam Thang, *Zokam le Zolai* (Zomi Christian Literature Society, 2013)".
+- Display and training stay `needs_review` until both steps are done (see Closing an item):
+  1. Record here who granted it (the author or ZCLS) and why they hold the rights, the date, its exact wording, and where the written permission is kept (private storage, not this repository).
+  2. A second person reads the written permission and confirms it comes from the rights holder and covers display and training.
+- Only then set `display` and `train` to `cleared` for `zokam_le_zolai_2013` in `data/rights.json`.
+- The extracted text in `siamsil-data/books/derived/` is the PDF's own text layer, not OCR or machine output.
 
 **Daily-use phrases**
 - Confirm the teacher who reviewed them agrees to their use in training and redistribution, and how they want to be credited.
