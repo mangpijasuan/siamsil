@@ -118,6 +118,15 @@
       "redistribute": "not_permitted",
       "commercial": "not_permitted",
       "evidence": "Project owner reported on 2026-10-27 that the primer's owner gave permission for display and training. Display and training stay needs_review until a second person confirms; still to record: who granted it (the author, Lia Cingsen, or another rights holder), the date, its exact wording, any credit line, and where the written permission is kept. Redistribution and commercial use were not granted."
+    },
+    "zokam_le_zolai_2013": {
+      "description": "Zokam le Zolai: Zolai Simbu kum 100 (1913-2013) cin ciaptehna, by Rev. Khoi Lam Thang, Zomi Christian Literature Society, Kalaymyo, 2013; about 23,600 words of Zomi prose on the language, its writing history, and spelling (private siamsil-data books/)",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "not_permitted",
+      "commercial": "not_permitted",
+      "credit": "Khoi Lam Thang, Zokam le Zolai (Zomi Christian Literature Society, 2013)",
+      "evidence": "Project owner reported on 2026-10-27 that the owner allows its use with credit (display and training). Display and training stay needs_review until the permission is recorded and a second person confirms it; still to record: who granted it (the author or ZCLS), the date, its wording, and where it is kept. Redistribution and commercial use were not granted."
     }
   }
 }
