@@ -1,5 +1,5 @@
 {
-  "_comment": "Spelling points the Zolai style guides address, for the Siamsil Zolai Standard review (docs/ZOLAI_STANDARD.md). Each check lists the guides' positions with page or section references and the spellings to count in the sources. Variants are the guides' own examples; none were made up. A guide with nothing explicit on a point says so: its own text still shows its practice in the counts. 'zsf' = Lian Than Tuang, Zolai Standard Format (2018); 'zokam' = Khoi Lam Thang, Zokam le Zolai, chapter 6 Laigelhzia (ZCLS 2013); 'primer' = Lia Cingsen, Paunam Khenna Leh Kampau Luanzia. 'suggestion' is Siamsil's AI-drafted proposal for the reviewers, made from the counts and the guides; it is not a decision.",
+  "_comment": "Spelling points the Zolai style guides address, for the Siamsil Zolai Standard review (docs/ZOLAI_STANDARD.md). Each check lists the guides' positions with page or section references and the spellings to count in the sources. Variants are the guides' own examples, or spellings a Zomi speaker gave (recorded in 'owner_input'); none were made up. A guide with nothing explicit on a point says so: its own text still shows its practice in the counts. 'zsf' = Lian Than Tuang, Zolai Standard Format (2018); 'zokam' = Khoi Lam Thang, Zokam le Zolai, chapter 6 Laigelhzia (ZCLS 2013); 'primer' = Lia Cingsen, Paunam Khenna Leh Kampau Luanzia. 'suggestion' is Siamsil's AI-drafted proposal for the reviewers, made from the counts and the guides; it is not a decision.",
   "guides": {
     "zsf": "Lian Than Tuang, Zolai Standard Format (2018)",
     "zokam": "Khoi Lam Thang, Zokam le Zolai, ch. 6 Laigelhzia (ZCLS, 2013)",
@@ -118,7 +118,8 @@
         [
           "nu leh pa",
           "nu le pa",
-          "nulepa"
+          "nulepa",
+          "nulehpa"
         ],
         [
           "khat leh khat",
@@ -131,9 +132,10 @@
         ]
       ],
       "suggestion": {
-        "spelling": "nulepa; khatlekhat; 'leh' only for 'if'",
-        "reason": "ZCLS's and the Zolai Standard Format's rule, followed by the 2011 Bible; one meaning (parents, one another) is one word."
-      }
+        "spelling": "nulehpa = parents; nu leh pa = female and male",
+        "reason": "The project owner's proposal: the join carries the meaning (parents), and 'leh' keeps its h. The sources write 'nulepa' for parents (2011 Bible 21 verses; ZCLS's guide), so 'nulepa' would be read as a variant of 'nulehpa'. Older text writes 'nu leh pa' for parents too (1977 Bible, Exodus 20:12), so a separate 'nu leh pa' cannot be changed without checking the meaning."
+      },
+      "owner_input": "2026-10-27, project owner (a Zomi speaker): in the Siamsil standard, 'nulehpa' (joined, with h) means parents and 'nu leh pa' (separate) means female and male. This differs from ZCLS's guide and the 2011 Bible, which write 'nulepa'. Needs a second reviewer."
     },
     {
       "id": "hiam-diam",

@@ -425,7 +425,8 @@ def write_workbook(path: Path, sources, checks, checked, joined, families, refer
         counts = "\n".join(f"{v['variant']}: " + ", ".join(f"{n} {v['counts'][n]}" for n in names) for v in variants)
         suggestion = check.get("suggestion", {})
         rule_rows.append([check_id, check["topic"], " / ".join(v["variant"] for v in variants),
-                          check["zsf"], check["zokam"], check["primer"], counts, check.get("note", ""),
+                          check["zsf"], check["zokam"], check["primer"], counts,
+                          "\n".join(text for text in (check.get("note"), check.get("owner_input")) if text),
                           suggestion.get("spelling", ""), suggestion.get("reason", ""), "", "", "", ""])
     table("Rules", ["Check", "Topic", "Spellings", "Zolai Standard Format", "Zokam le Zolai", "Primer",
                     "Counts in the sources", "Note", "Siamsil suggestion (AI)", "Why",
