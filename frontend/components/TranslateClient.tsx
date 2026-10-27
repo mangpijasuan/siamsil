@@ -19,7 +19,7 @@ const MAX_LENGTH = 500;
 const VISIBLE_ALTERNATES = 5;
 // English starters only: Siamsil never shows Zomi it does not hold, so Zomi → English has none.
 const EXAMPLES = ["water", "thank you", "good morning", "family", "school"];
-const LANG_ATTR = { en: "en", zom: "zom" } as const;
+const LANG_ATTR = { en: "en", ctd: "ctd" } as const;
 
 const SOURCE_LABEL: Record<string, string> = {
   dictionary: "Dictionary",
@@ -284,7 +284,7 @@ export default function TranslateClient({
                 </div>
               </>
             )}
-            {selected === "en-zom" && (
+            {selected === "en-ctd" && (
               <>
                 <div className="word-section-label">Try</div>
                 <div className="tr-suggestions">

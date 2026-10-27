@@ -34,7 +34,7 @@ Deliverables:
 - Translation and review guidelines (spelling, dialect, borrowing, names, punctuation).
 - Hidden, human-translated evaluation sets in both directions, ~1–2k sentences each, balanced across conversation, education, government, health, religion, and news. Stored under `data/evaluation/`, never used for training, prompting, or filter tuning.
 - Consent-based audio collection started (scripture reading, hymns, everyday phrases), because speech data has the longest lead time.
-- Language code policy: decided 2026-10-04. Data and APIs label Zomi `zom`, with `ctd` (Tedim) as the source reference code, and external cards say `zom` here is not ISO 639-3 Zou (see [`DATA_RIGHTS.md`](DATA_RIGHTS.md)). The UI shows "Zomi".
+- Language code policy: decided 2026-10-27, replacing 2026-10-04. Code, data, APIs, and Hugging Face cards label Zomi `ctd` (ISO 639-3, Tedim); see [`DATA_RIGHTS.md`](DATA_RIGHTS.md). The UI shows "Zomi".
 
 Exit gate: evaluation sets frozen with measured reviewer agreement; license status for each source is either cleared or explicitly restricted.
 

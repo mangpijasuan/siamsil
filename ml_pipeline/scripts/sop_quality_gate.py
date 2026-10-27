@@ -100,7 +100,7 @@ def check_records(records: list[dict[str, Any]]) -> dict[str, Any]:
         permissions = row.get("rights")
         if not isinstance(permissions, dict) or permissions.get("train") is not True:
             reject(index, record_id, "training_rights_not_cleared")
-        if row.get("origin_language") not in ("en", "zom"):
+        if row.get("origin_language") not in ("en", "ctd"):
             reject(index, record_id, "invalid_origin_language")
 
         if valid_split:

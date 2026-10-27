@@ -57,7 +57,7 @@ class DictionaryEntry(ApiModel):
 class DictionarySearchResponse(ApiModel):
     query: str
     letter: str | None = None
-    direction: str = "en-zom"
+    direction: str = "en-ctd"
     count: int
     results: list[DictionaryEntry]
 

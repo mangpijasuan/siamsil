@@ -71,7 +71,7 @@ export default async function Home() {
       <div className="sr-cards">
         <section className="sr-panel" aria-labelledby="sr-verse-heading">
           <div className="sr-panel-head"><div><span className="sr-eyebrow">Nisim Thalakna</span><h2 id="sr-verse-heading">Daily Verse</h2></div><Link href="/bible">Read Bible →</Link></div>
-          <div className="sr-verse-box">{verse ? <><p lang="zom">{verse.zomi_iso}</p><small>{verse.reference}</small></> : <p className="sr-verse-empty">Daily verse is temporarily unavailable. Visit the Bible reader to explore scripture.</p>}</div>
+          <div className="sr-verse-box">{verse ? <><p lang="ctd">{verse.zomi_iso}</p><small>{verse.reference}</small></> : <p className="sr-verse-empty">Daily verse is temporarily unavailable. Visit the Bible reader to explore scripture.</p>}</div>
         </section>
         <WordPanel word={word} />
         <section className="sr-panel" aria-labelledby="sr-resources-heading">

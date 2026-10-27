@@ -188,7 +188,7 @@ class ExclusionTests(unittest.TestCase):
         con.executescript(
             "CREATE TABLE versions (id TEXT, language_iso TEXT);"
             "CREATE TABLE verses (version_id TEXT, text TEXT);"
-            "INSERT INTO versions VALUES ('web', 'eng'), ('tdb', 'zom');"
+            "INSERT INTO versions VALUES ('web', 'eng'), ('tdb', 'ctd');"
             "INSERT INTO verses VALUES ('web', 'Jesus wept.'), ('tdb', 'ZOMI_PLACEHOLDER_VERSE');"
         )
         con.commit()
@@ -246,7 +246,7 @@ class ZomiSourceTests(unittest.TestCase):
         con.executescript(
             "CREATE TABLE versions (id TEXT, language_iso TEXT);"
             "CREATE TABLE verses (version_id TEXT, text TEXT);"
-            "INSERT INTO versions VALUES ('web', 'eng'), ('tdb', 'zom');"
+            "INSERT INTO versions VALUES ('web', 'eng'), ('tdb', 'ctd');"
             "INSERT INTO verses VALUES ('web', 'ZOMI PLACEHOLDER ONLY IN THE BOOK'), ('tdb', 'ZOMI PLACEHOLDER VERSE');"
         )
         con.commit()

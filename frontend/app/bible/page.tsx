@@ -70,7 +70,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const { book, chapter } = chooseChapter((await loadBooks(version.id)).books, params);
   if (!book) return { title: `Bible (${version.abbreviation})`, alternates: { canonical: "/bible" } };
   const name = book.name_local || book.name;
-  const language = version.language_iso === "zom" ? "Zomi Bible" : "Bible";
+  const language = version.language_iso === "ctd" ? "Zomi Bible" : "Bible";
   return {
     title: `${name} ${chapter} — ${language} (${version.abbreviation})`,
     // The English book name too, for people who search "Matthew 5 Zomi".

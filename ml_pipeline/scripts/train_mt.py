@@ -49,10 +49,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 DEFAULT_MODEL = "facebook/nllb-200-distilled-600M"
-LANG = {"en": "eng_Latn", "zom": "ctd_Latn"}
+LANG = {"en": "eng_Latn", "ctd": "ctd_Latn"}
 LEGACY_ZOMI_TOKEN = "zom_Latn"
 INIT_FROM = "lus_Latn"  # Mizo
-DIRECTIONS = {"en-zomi": ("en", "zom"), "zomi-en": ("zom", "en")}
+DIRECTIONS = {"en-zomi": ("en", "ctd"), "zomi-en": ("ctd", "en")}
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -115,7 +115,7 @@ def to_examples(pairs: list[dict], directions: list[str]) -> list[tuple[str, str
     """(source text, source lang, target text, target lang) for every pair and direction."""
     out = []
     for pair in pairs:
-        text = {"en": pair["english"], "zom": pair["zomi"]}
+        text = {"en": pair["english"], "ctd": pair["zomi"]}
         for direction in directions:
             src, tgt = DIRECTIONS[direction]
             out.append((text[src], src, text[tgt], tgt))
@@ -124,7 +124,7 @@ def to_examples(pairs: list[dict], directions: list[str]) -> list[tuple[str, str
 
 def add_zomi(tokenizer, model) -> dict:
     """Add the Zomi language token, starting from a legacy trained token, else Mizo, else English."""
-    code = LANG["zom"]
+    code = LANG["ctd"]
     vocab = tokenizer.get_vocab()
     if code in vocab:
         return {"added": False, "token": code}
@@ -156,7 +156,7 @@ class Codec:
         self.pad = tokenizer.pad_token_id
         vocab = tokenizer.get_vocab()
         self.lang_token = {
-            key: code if code in vocab or key != "zom" else LEGACY_ZOMI_TOKEN for key, code in LANG.items()
+            key: code if code in vocab or key != "ctd" else LEGACY_ZOMI_TOKEN for key, code in LANG.items()
         }
         missing = [token for token in self.lang_token.values() if token not in vocab]
         if missing:
@@ -241,7 +241,7 @@ def evaluate(model, codec, pairs, directions, device, batch_size, beams, limit=N
     results = {}
     for direction in directions:
         src, tgt = DIRECTIONS[direction]
-        key = {"en": "english", "zom": "zomi"}
+        key = {"en": "english", "ctd": "zomi"}
         hyps = translate_texts(model, codec, [p[key[src]] for p in sample], src, tgt, device, batch_size, beams)
         results[direction] = score(hyps, [p[key[tgt]] for p in sample])
     results["mean_chrf++"] = round(sum(results[d]["chrf++"] for d in directions) / len(directions), 2)

@@ -12,7 +12,7 @@ python ml_pipeline/scripts/sop_quality_gate.py candidate.jsonl --report quality-
 ```
 
 The gate exits nonzero on failure. Each JSONL candidate record requires:
-`id`, `english`, `zomi`, `origin_language` (`en` or `zom`),
+`id`, `english`, `zomi`, `origin_language` (`en` or `ctd`),
 `split` (`train`/`validation`/`test`), `split_family_id`,
 `review_status=HUMAN_APPROVED`, `contributor_id`, `reviewer_id`,
 `approver_id`, `approval_version`, `source_id`, and

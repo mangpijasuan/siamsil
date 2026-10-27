@@ -123,7 +123,7 @@ class DataStore:
                 return
             if not english or not zomi:
                 return
-            searched = {"en-zom": english, "zom-en": zomi}.get(direction or "", f"{english}\n{zomi}")
+            searched = {"en-ctd": english, "ctd-en": zomi}.get(direction or "", f"{english}\n{zomi}")
             if needle in searched.lower():
                 results.append(
                     {

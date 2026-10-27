@@ -79,18 +79,18 @@ class CorpusDirectionTests(unittest.TestCase):
         return [pair["id"] for pair in self.engine.search_parallel(query, direction=direction)]
 
     def test_english_to_zomi_searches_only_english(self) -> None:
-        self.assertEqual(self.ids("road", "en-zom"), [1])
+        self.assertEqual(self.ids("road", "en-ctd"), [1])
 
     def test_zomi_to_english_searches_only_zomi(self) -> None:
-        self.assertEqual(self.ids("road", "zom-en"), [2])
+        self.assertEqual(self.ids("road", "ctd-en"), [2])
 
     def test_no_direction_searches_both_sides(self) -> None:
         self.assertEqual(sorted(self.ids("road", None)), [1, 2])
 
     def test_exact_match_respects_direction(self) -> None:
-        hits = self.engine.search_parallel("ZOMI_PLACEHOLDER_ALPHA", direction="zom-en")
+        hits = self.engine.search_parallel("ZOMI_PLACEHOLDER_ALPHA", direction="ctd-en")
         self.assertEqual([(hit["id"], hit["exact"]) for hit in hits], [(1, True)])
-        self.assertEqual(self.ids("ZOMI_PLACEHOLDER_ALPHA", "en-zom"), [])
+        self.assertEqual(self.ids("ZOMI_PLACEHOLDER_ALPHA", "en-ctd"), [])
 
 
 class DictionaryDirectionTests(unittest.TestCase):
@@ -106,11 +106,11 @@ class DictionaryDirectionTests(unittest.TestCase):
 
     def test_english_to_zomi_matches_headwords_not_definitions(self) -> None:
         # "road" is a prefix of the headword "roadside" and also appears in the other entry's definition.
-        self.assertEqual(self.words("road", "en-zom"), ["roadside"])
+        self.assertEqual(self.words("road", "en-ctd"), ["roadside"])
 
     def test_zomi_to_english_matches_definitions(self) -> None:
-        self.assertEqual(self.words("ZOMI_PLACEHOLDER_DELTA", "zom-en"), ["path"])
-        self.assertEqual(self.words("ZOMI_PLACEHOLDER_DELTA", "en-zom"), [])
+        self.assertEqual(self.words("ZOMI_PLACEHOLDER_DELTA", "ctd-en"), ["path"])
+        self.assertEqual(self.words("ZOMI_PLACEHOLDER_DELTA", "en-ctd"), [])
 
 
 class WorkbookDirectionTests(unittest.TestCase):
@@ -119,8 +119,8 @@ class WorkbookDirectionTests(unittest.TestCase):
         store.daily_use_pairs = [{"english": "road", "zomi": "ZOMI_PLACEHOLDER_ALPHA"}]
         store.translation_pairs = [{"english": "other", "zomi": "ZOMI_PLACEHOLDER_BETA road"}]
         store.bible_verses = []
-        self.assertEqual([r["source"] for r in store.search_translate("road", direction="en-zom")], ["daily_use"])
-        self.assertEqual([r["source"] for r in store.search_translate("road", direction="zom-en")], ["translation_pair"])
+        self.assertEqual([r["source"] for r in store.search_translate("road", direction="en-ctd")], ["daily_use"])
+        self.assertEqual([r["source"] for r in store.search_translate("road", direction="ctd-en")], ["translation_pair"])
         self.assertEqual(len(store.search_translate("road")), 2)
 
 
@@ -139,16 +139,22 @@ class TranslateEndpointDirectionTests(unittest.TestCase):
         return engine, store, response.status_code
 
     def test_requested_direction_reaches_every_source(self) -> None:
-        engine, store, status = self.request({"text": "hello", "direction": "zom-en"})
+        engine, store, status = self.request({"text": "hello", "direction": "ctd-en"})
         self.assertEqual(status, 200)
-        self.assertEqual(engine.search_parallel.call_args.kwargs["direction"], "zom-en")
-        self.assertEqual(engine.search_dictionary.call_args.kwargs["direction"], "zom-en")
-        self.assertEqual(store.search_translate.call_args.args[2], "zom-en")
+        self.assertEqual(engine.search_parallel.call_args.kwargs["direction"], "ctd-en")
+        self.assertEqual(engine.search_dictionary.call_args.kwargs["direction"], "ctd-en")
+        self.assertEqual(store.search_translate.call_args.args[2], "ctd-en")
 
     def test_default_direction_is_english_to_zomi(self) -> None:
         engine, _, status = self.request({"text": "hello"})
         self.assertEqual(status, 200)
-        self.assertEqual(engine.search_parallel.call_args.kwargs["direction"], "en-zom")
+        self.assertEqual(engine.search_parallel.call_args.kwargs["direction"], "en-ctd")
+
+    def test_directions_named_before_ctd_still_work(self) -> None:
+        engine, store, status = self.request({"text": "hello", "direction": "zom-en"})
+        self.assertEqual(status, 200)
+        self.assertEqual(engine.search_parallel.call_args.kwargs["direction"], "ctd-en")
+        self.assertEqual(store.search_translate.call_args.args[2], "ctd-en")
 
     def test_unknown_direction_is_rejected(self) -> None:
         _, _, status = self.request({"text": "hello", "direction": "fr-zom"})

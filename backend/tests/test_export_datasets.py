@@ -181,7 +181,7 @@ class BibleVersionExportTests(ExportTests):
             for code in ("JHN", "MRK"):
                 (usx / f"{code}.usx").write_text(BIBLE_BOOK.format(code=code, text=f"{text} {code}"), encoding="utf-8")
         config = self.dir / "bible_versions.json"
-        config.write_text(json.dumps({"versions": {"zt": {"name": "Zomi Test", "language_iso": "zom"}}}))
+        config.write_text(json.dumps({"versions": {"zt": {"name": "Zomi Test", "language_iso": "ctd"}}}))
         db = self.dir / "bible_versions.sqlite"
         with redirect_stdout(StringIO()), patch("sys.stderr"):
             import_bibles(["--source", str(source), "--out", str(db), "--manifest", str(self.dir / "m.json"),

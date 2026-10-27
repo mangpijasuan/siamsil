@@ -12,7 +12,7 @@ Reads (never modifies):
   data/raw/bible/usx/**
 
 Names versions as configured in data/bible_versions.json (for example, the Tedim
-Bibles as "Zomi Bible", language zom), keeping the publisher's title, language code,
+Bibles as "Zomi Bible", language ctd), keeping the publisher's title, language code,
 and copyright as source_name, source_language_iso, and copyright.
 
 Writes:

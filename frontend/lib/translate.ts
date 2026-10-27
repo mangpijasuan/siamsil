@@ -2,30 +2,31 @@
  * Translation direction for Zomi Translate. Pure functions only, so they can be
  * unit-tested without a browser.
  *
- * en-zom: the user types English and reads Zomi. zom-en: the reverse.
- * Links without a direction (from before the selector existed) read as en-zom.
+ * en-ctd: the user types English and reads Zomi. ctd-en: the reverse. Zomi's code is ctd
+ * (ISO 639-3, Tedim); links from before 2026-10-27 say zom-en, which still works.
+ * Links without a direction (from before the selector existed) read as en-ctd.
  */
 
-export type Direction = "en-zom" | "zom-en";
+export type Direction = "en-ctd" | "ctd-en";
 
-export const DEFAULT_DIRECTION: Direction = "en-zom";
+export const DEFAULT_DIRECTION: Direction = "en-ctd";
 
-export type Language = { code: "en" | "zom"; name: string };
+export type Language = { code: "en" | "ctd"; name: string };
 
 const ENGLISH: Language = { code: "en", name: "English" };
-const ZOMI: Language = { code: "zom", name: "Zomi" };
+const ZOMI: Language = { code: "ctd", name: "Zomi" };
 
 export function parseDirection(value: string | string[] | undefined | null): Direction {
   const raw = Array.isArray(value) ? value[0] : value;
-  return raw === "zom-en" ? "zom-en" : DEFAULT_DIRECTION;
+  return raw === "ctd-en" || raw === "zom-en" ? "ctd-en" : DEFAULT_DIRECTION;
 }
 
 export function reverseDirection(direction: Direction): Direction {
-  return direction === "en-zom" ? "zom-en" : "en-zom";
+  return direction === "en-ctd" ? "ctd-en" : "en-ctd";
 }
 
 export function languages(direction: Direction): { source: Language; target: Language } {
-  return direction === "en-zom" ? { source: ENGLISH, target: ZOMI } : { source: ZOMI, target: ENGLISH };
+  return direction === "en-ctd" ? { source: ENGLISH, target: ZOMI } : { source: ZOMI, target: ENGLISH };
 }
 
 /** A stored English–Zomi pair, read in the order of the chosen direction. */
@@ -33,7 +34,7 @@ export function orientPair<T extends { english: string; zomi: string }>(
   match: T,
   direction: Direction,
 ): { source: string; target: string } {
-  return direction === "en-zom"
+  return direction === "en-ctd"
     ? { source: match.english, target: match.zomi }
     : { source: match.zomi, target: match.english };
 }
