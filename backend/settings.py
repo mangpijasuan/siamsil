@@ -50,6 +50,12 @@ class Settings(BaseSettings):
     # The system that answers /translate. Rolling back a model is a change to this value.
     translation_system: Literal["retrieval"] = "retrieval"
 
+    # Opt-in experimental machine translation (docs/ROADMAP.md, Phase 2 decision of 2026-10-28):
+    # a folder made by ml_pipeline/scripts/export_mt_serving.py. Unset turns the mode off.
+    experimental_mt_dir: Path | None = None
+    # Development only: serve a model trained on sources not yet cleared for training.
+    experimental_mt_allow_uncleared: bool = False
+
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:3002",
@@ -80,6 +86,8 @@ class Settings(BaseSettings):
     def require_database_when_configured(self) -> "Settings":
         if self.database_required and not self.database_url:
             raise ValueError("SIAMSIL_DATABASE_URL is required when SIAMSIL_DATABASE_REQUIRED=true")
+        if self.experimental_mt_allow_uncleared and self.environment != "development":
+            raise ValueError("SIAMSIL_EXPERIMENTAL_MT_ALLOW_UNCLEARED is only allowed in development")
         if self.environment in {"staging", "production"} and not self.database_url:
             raise ValueError("SIAMSIL_DATABASE_URL is required in staging and production")
         if self.oidc_enabled:

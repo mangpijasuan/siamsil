@@ -499,6 +499,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/translate/experimental": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Experimental Status
+         * @description Whether the opt-in experimental model is available, so the page can offer it.
+         */
+        get: operations["experimental_status_api_v1_translate_experimental_get"];
+        put?: never;
+        /**
+         * Translate Experimental
+         * @description Opt-in machine translation, always labelled experimental (docs/ROADMAP.md, Phase 2).
+         */
+        post: operations["translate_experimental_api_v1_translate_experimental_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/translate/search": {
         parameters: {
             query?: never;
@@ -1069,6 +1093,53 @@ export interface components {
             source_id: string;
             /** Uses */
             uses: components["schemas"]["UseEligibility"][];
+        };
+        /** ExperimentalTranslateRequest */
+        ExperimentalTranslateRequest: {
+            /**
+             * Direction
+             * @default en-ctd
+             */
+            direction: string;
+            /** Text */
+            text: string;
+        };
+        /** ExperimentalTranslationResponse */
+        ExperimentalTranslationResponse: {
+            /** Direction */
+            direction: string;
+            /**
+             * Experimental
+             * @default true
+             */
+            experimental: boolean;
+            /** Input */
+            input: string;
+            /** Label */
+            label: string;
+            /** Note */
+            note: string;
+            /** System */
+            system: string;
+            /** System Version */
+            system_version: string;
+            /** Translation */
+            translation: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ExperimentalTranslationStatus */
+        ExperimentalTranslationStatus: {
+            /** Available */
+            available: boolean;
+            /** Note */
+            note: string;
+            /** System */
+            system?: string | null;
+            /** System Version */
+            system_version?: string | null;
+        } & {
+            [key: string]: unknown;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2442,6 +2513,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TranslationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    experimental_status_api_v1_translate_experimental_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentalTranslationStatus"];
+                };
+            };
+        };
+    };
+    translate_experimental_api_v1_translate_experimental_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExperimentalTranslateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentalTranslationResponse"];
                 };
             };
             /** @description Validation Error */
