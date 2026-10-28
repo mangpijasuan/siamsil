@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { TranslateMatch } from "@/lib/api";
 import { pushHistory, useRecentSearches } from "@/lib/localData";
 import { IconSwap } from "@/components/Icons";
+import ExperimentalTranslation from "@/components/ExperimentalTranslation";
 import {
   type Direction,
   languages,
@@ -179,8 +180,9 @@ export default function TranslateClient({
         <div className="tr-notice">
           <IconInfo />
           <p>
-            Siamsil shows translations it already has. It never makes one up.
+            The matches below are translations Siamsil already has; it never makes one up.
             Corpus examples are machine-translated; only those marked Verified were approved by Zomi reviewers.
+            Machine translation, when you turn it on, is labelled experimental and kept separate.
           </p>
         </div>
 
@@ -240,6 +242,8 @@ export default function TranslateClient({
             </p>
           </div>
         )}
+
+        {query && <ExperimentalTranslation query={query} direction={direction} />}
 
         {alternates.length > 0 && (
           <section aria-label="Other matches">
