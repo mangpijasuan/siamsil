@@ -127,6 +127,14 @@
       "commercial": "not_permitted",
       "credit": "Khoi Lam Thang, Zokam le Zolai (Zomi Christian Literature Society, 2013)",
       "evidence": "Project owner reported on 2026-10-27 that the owner allows its use with credit (display and training). Display and training stay needs_review until the permission is recorded and a second person confirms it; still to record: who granted it (the author or ZCLS), the date, its wording, and where it is kept. Redistribution and commercial use were not granted."
+    },
+    "zomi_standard_dictionary": {
+      "description": "Zomi Standard Dictionary (Zomi_Standard_Dictionary_AI_Cleaned.xlsx, Master Data sheet), 20,826 English headwords with Zomi definitions; Siamsil's live dictionary",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "needs_review",
+      "commercial": "needs_review",
+      "evidence": "Shown in the app with an unreviewed label. Who compiled it and who holds the copyright are not recorded (docs/DATA_RIGHTS.md); data/raw/dictionary/provenance.json lists author and license as needs_review. The file name says it was cleaned with AI; what that changed is not recorded."
     }
   }
 }
