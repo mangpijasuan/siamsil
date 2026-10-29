@@ -127,6 +127,22 @@
       "commercial": "not_permitted",
       "credit": "Khoi Lam Thang, Zokam le Zolai (Zomi Christian Literature Society, 2013)",
       "evidence": "Project owner reported on 2026-10-27 that the owner allows its use with credit (display and training). Display and training stay needs_review until the permission is recorded and a second person confirms it; still to record: who granted it (the author or ZCLS), the date, its wording, and where it is kept. Redistribution and commercial use were not granted."
+    },
+    "owner_sheets_2026": {
+      "description": "Two short lists of Zomi words and sentences (10 and 41 lines, Zomi only), uploaded by the project owner on 2026-10-29 (private siamsil-data owner-sheets/)",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "not_permitted",
+      "commercial": "not_permitted",
+      "evidence": "Uploaded by the project owner on 2026-10-29. Who wrote the lines, and whether they may be shown and trained on, is not yet recorded. The spellings are not reviewed."
+    },
+    "zomi_bethel_church_web": {
+      "description": "Zomi Bethel Church (Portland, Oregon) website: the church bylaw in Zomi and a Zomi sermon note by Rev. Muana Khuptong, about 3,250 words (private siamsil-data web/zomi-bethel-church/)",
+      "display": "not_permitted",
+      "train": "not_permitted",
+      "redistribute": "not_permitted",
+      "commercial": "not_permitted",
+      "evidence": "A text capture of the public website, uploaded by the project owner on 2026-10-29. A public website is not permission. Nothing is permitted until the church gives written permission; ask its lead pastor, Rev. Muana Khuptong."
     }
   }
 }

@@ -41,6 +41,8 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 | Zomi Ordbog, dansk-[engelsk]-zomi (Johs. Lind, Zomi Innkuan Denmark, 2011), based on Dr. Dal Lian Haokip's English-Zomi Dictionary (private `siamsil-data`) | 15,105 entries: Danish, English, Zomi | reported | reported | **no** | **no** | `needs_review` (written permission reported, awaiting confirmation) |
 | *Paunam Khenna Leh Kampau Luanzia*, Zomi grammar primer by Lia Cingsen (private `siamsil-data`), and the review sheets made from it | About 184 printed pages; 732 numbered sentences, 258 word pairs, 28 bilingual examples extracted | reported | reported | **no** | **no** | `needs_review` (permission reported, awaiting confirmation) |
 | *Zokam le Zolai* (Rev. Khoi Lam Thang, Zomi Christian Literature Society, 2013) (private `siamsil-data`) | About 23,600 words of Zomi prose: the language, writing history, spelling | reported, with credit | reported | **no** | **no** | `needs_review` (permission reported, awaiting confirmation) |
+| Owner sheets: two short Zomi word and sentence lists (private `siamsil-data`) | 51 lines of Zomi, no English | — | — | **no** | **no** | `needs_review` (author not recorded) |
+| Zomi Bethel Church website: church bylaw and a sermon note (private `siamsil-data`) | About 3,250 words of Zomi | **no** | **no** | **no** | **no** | `not_permitted` (no permission) |
 | Community audio (planned) | Consent-based recordings; per-speaker choices in [AUDIO_CONSENT.md](AUDIO_CONSENT.md), recorded per source and speaker in the Speech Data Lab ([SPEECH_DATA_LAB.md](SPEECH_DATA_LAB.md)) | — | — | — | — | draft form, needs legal review |
 
 "—" means not yet permitted.
@@ -114,6 +116,15 @@ To clear it for training, record in this file: (1) the dataset card as published
 - Still to record: the date of each permission, its exact wording on display and training, any required credit line, and where the written copies are kept (private storage, not this repository).
 - The PDF in `siamsil-data` (`Dictionary Sources/Haokip-Lind 2011/`) was obtained from kupdf.net, a third-party upload, not from the rights holders. The permission covers the work; ask whether they can supply an authoritative copy.
 - The original lists each entry as `Danish [English] (part of speech): Zomi`, so the English is the authors'. A ChatGPT-made English-alphabetical draft is kept beside it as a reading copy only; three English labels it supplied (bathtub, shoot, shower) are not from the source.
+
+- **2026-10-29:** a plain-text extraction of the Ordbog was added to `siamsil-data` (`dictionary/haokip-lind-2011/`). Its two page columns run together, so entries cannot be read from it reliably; extract them column by column from the PDF.
+
+**Owner sheets (`owner_sheets_2026`)**
+- **2026-10-29:** the project owner uploaded two short lists of Zomi words and sentences. Still to record: who wrote them, and whether they may be shown and trained on. If the owner wrote them, record that as for the daily-use phrases; a second person confirms before anything is cleared.
+
+**Zomi Bethel Church website (`zomi_bethel_church_web`)**
+- **2026-10-29:** a capture of the church's public website was uploaded. Only the Zomi bylaw and a Zomi sermon note are kept in `siamsil-data`; pages with members' names, biographies, a phone number and a visitor's prayer request were not kept.
+- A public website is not permission. Nothing is permitted until the church gives written permission for display and training (ask its lead pastor, Rev. Muana Khuptong), recorded here with its date and wording.
 
 **Zomi grammar primer (*Paunam Khenna Leh Kampau Luanzia*, Lia Cingsen)**
 - **2026-10-27, project owner:** the primer's owner gave permission for display in the app and for model training. Redistribution and commercial use were not granted.
