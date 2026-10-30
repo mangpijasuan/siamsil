@@ -205,6 +205,25 @@ export function searchTranslate(
   );
 }
 
+export type ExperimentalTranslationStatus = components["schemas"]["ExperimentalTranslationStatus"];
+export type ExperimentalTranslation = components["schemas"]["ExperimentalTranslationResponse"];
+
+/** Whether the opt-in experimental model is available (docs/EXPERIMENTAL_TRANSLATION.md). */
+export function getExperimentalTranslationStatus(): Promise<ExperimentalTranslationStatus> {
+  return expectData(apiClient().GET("/api/v1/translate/experimental"), "/api/v1/translate/experimental");
+}
+
+/** A machine translation, always labelled experimental; never a verified translation. */
+export function translateExperimental(
+  text: string,
+  direction: "en-ctd" | "ctd-en",
+): Promise<ExperimentalTranslation> {
+  return expectData(
+    apiClient().POST("/api/v1/translate/experimental", { body: { text, direction } }),
+    "/api/v1/translate/experimental",
+  );
+}
+
 export function getBibleBooks(): Promise<BibleBooksResponse> {
   return expectData(apiClient().GET("/api/v1/bible/books"), "/api/v1/bible/books");
 }
