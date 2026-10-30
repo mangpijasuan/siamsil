@@ -8,8 +8,12 @@ Each version is a folder holding either
     language come from data/bible_versions.json, keyed by the abbreviation in
     the `\\id` line, for example "(WEB)".
 
-Reads (never modifies):
-  data/raw/bible/usx/**
+Reads (never modifies), by default straight from the private siamsil-data repository
+(beside this one, or $SIAMSIL_DATA_REPO), each zip checked against data/source_files.json
+and unpacked only into a temporary folder:
+  bible/Chin-Bible.zip     (ProPresenter USX bundle)  as chin/
+  bible/engwebu_usfm.zip   (eBible.org USFM)          as web/
+With --source FOLDER it searches an unpacked folder instead (e.g. data/raw/bible/usx).
 
 Names versions as configured in data/bible_versions.json (for example, the Tedim
 Bibles as "Zomi Bible", language ctd), keeping the publisher's title, language code,
@@ -39,10 +43,11 @@ from pathlib import Path
 # Bundles come from third parties: parse with defusedxml (no entity expansion or external entities).
 import defusedxml.ElementTree as SafeET
 
+from data_repo import DataRepo, SourceError, default_data_repo
+
 SCRIPT_VERSION = "1.3.0"
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_SOURCE = ROOT / "data" / "raw" / "bible" / "usx"
 DEFAULT_OUT_DB = ROOT / "data" / "processed" / "bible" / "bible_versions.sqlite"
 DEFAULT_MANIFEST = ROOT / "data" / "processed" / "bible" / "manifest.json"
 DEFAULT_RIGHTS = ROOT / "data" / "rights.json"
@@ -408,7 +413,10 @@ def write_db(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE, help="folder searched for metadata.xml + USX")
+    parser.add_argument("--source", type=Path, default=None,
+                        help="unpacked folder searched for metadata.xml + USX (default: the zips in siamsil-data)")
+    parser.add_argument("--data-repo", type=Path, default=None,
+                        help="siamsil-data clone (default: $SIAMSIL_DATA_REPO, else ../siamsil-data)")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT_DB)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--rights", type=Path, default=DEFAULT_RIGHTS)
@@ -416,6 +424,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dry-run", action="store_true", help="report what would be imported; write nothing")
     args = parser.parse_args(argv)
 
+    if args.source is not None:
+        return run(args)
+    try:
+        repo = DataRepo(args.data_repo or default_data_repo())
+        print(f"Checking Bible archives in {repo.root}…")
+        with repo.unzipped(["bible_chin_usx", "bible_web_usfm"]) as unpacked:
+            args.source = unpacked
+            return run(args)
+    except SourceError as error:
+        print(f"Nothing was imported: {error}", file=sys.stderr)
+        return 1
+
+
+def run(args: argparse.Namespace) -> int:
     folders = find_versions(args.source)
     if not folders:
         print(f"No USX Bible folders (metadata.xml + USX_1/ or USX/) under {args.source}", file=sys.stderr)
