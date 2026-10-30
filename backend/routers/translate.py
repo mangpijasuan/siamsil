@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 from api_schemas import TranslationResponse, TranslationSearchResponse
 from rate_limit import rate_limited
 from services.data_loader import get_store
-from services.language_engine import DIRECTION_PATTERN, canonical_direction, get_engine
+from services.language_engine import DIRECTION_PATTERN, canonical_direction, entry_zomi, get_engine
 from services.translation import active_system
 
 router = APIRouter(prefix="/translate", tags=["translate"], dependencies=[Depends(rate_limited("translate"))])
@@ -54,7 +54,7 @@ def search_matches(
             {
                 "source": "dictionary",
                 "english": entry["english"],
-                "zomi": entry["definition"],
+                "zomi": entry_zomi(entry),
                 "verified": entry["verified"],
                 "verification_status": entry["verification_status"],
                 "flagged": entry["flagged"],
