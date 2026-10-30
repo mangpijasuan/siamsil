@@ -40,7 +40,7 @@ python3 ml_pipeline/scripts/spelling_variants.py --out ../siamsil-data/standard/
   --text zokam=../siamsil-data/books/derived/zokam-le-zolai.txt \
   --text primer=../siamsil-data/grammar/Paunam_Khenna_Leh_Kampau_Luanzia.pdf \
   --text zsf=../siamsil-data/standard/Zolai_Standard_Format_2018.pdf \
-  --xlsx "dictionary=../siamsil-data/dictionary/Zomi_Dictionary_Master_Data.xlsx:Definition (Zomi)"
+  --xlsx "dictionary=../siamsil-data/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx:Definition (Zomi)"
 ```
 
 It writes `forms.csv`, `variant_families.csv`, `joins.csv`, `rule_checks.csv`, `summary.md`, and `Siamsil_Zolai_Standard_Review.xlsx`. The workbook has a sheet for the guide points, for joined and split words, and for spelling families, each with yellow decision columns. Reviewers sign with their codes (R01, E01), never their names.

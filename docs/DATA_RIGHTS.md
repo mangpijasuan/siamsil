@@ -39,6 +39,7 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 | English–Zomi–Burmese Translation Master v1.0.1 (private `siamsil-data`) | 50,032 headwords, 50,282 senses; 0 human-reviewed | — | — | — | — | `needs_review` |
 | Essential 3000 English–Zomi Learner's Dictionary, beta (private `siamsil-data`) | 3,000 headwords, 5,342 senses, examples and phrases; 0 human-reviewed | — | — | — | — | `needs_review` |
 | Zomi Ordbog, dansk-[engelsk]-zomi (Johs. Lind, Zomi Innkuan Denmark, 2011), based on Dr. Dal Lian Haokip's English-Zomi Dictionary (private `siamsil-data`) | 15,105 entries: Danish, English, Zomi | reported | reported | **no** | **no** | `needs_review` (written permission reported, awaiting confirmation) |
+| TongDot Zomi–English dictionary (tongdot.com) (private `siamsil-data`, `dictionary/sources/tongdot/`) | About 75,931 English–Zomi entries with Burmese; siamsil-data holds only partial copies until TongDot sends the full file | reported | reported | reported | **no** | `needs_review` (verbal permission reported, awaiting written confirmation) |
 | *Paunam Khenna Leh Kampau Luanzia*, Zomi grammar primer by Lia Cingsen (private `siamsil-data`), and the review sheets made from it | About 184 printed pages; 732 numbered sentences, 258 word pairs, 28 bilingual examples extracted | reported | reported | **no** | **no** | `needs_review` (permission reported, awaiting confirmation) |
 | *Zokam le Zolai* (Rev. Khoi Lam Thang, Zomi Christian Literature Society, 2013) (private `siamsil-data`) | About 23,600 words of Zomi prose: the language, writing history, spelling | reported, with credit | reported | **no** | **no** | `needs_review` (permission reported, awaiting confirmation) |
 | *Zolai Standard Format* (Lian Than Tuang, 2018) (private `siamsil-data`) | 31-page Zolai spelling guide | — | — | — | — | `needs_review` (no permission yet; private reference for the spelling review) |
@@ -109,11 +110,19 @@ To clear it for training, record in this file: (1) the dataset card as published
 - Burmese in the Translation Master is marked "reference only" in its review workbook.
 - Imported read-only by `import_reference_dictionaries.py` into a separate database, every sense `unreviewed`. Reviewer decisions live in the two `*-Native-Expert-Review*.xlsx` workbooks; none were recorded as of 2026-10-25.
 
+**TongDot Zomi–English dictionary (tongdot.com)**
+- **2026-10-30, project owner:** TongDot gave permission, by message or in conversation (not yet in writing), for display in the app, model training, and redistribution. Commercial use was not granted.
+- Display, training, and redistribution stay `needs_review` until both steps are done (see Closing an item):
+  1. Get the permission **in writing** from TongDot and record here who gave it and on whose behalf, the date, its exact wording for each use, any required credit line, and where the written copy is kept (private storage, not this repository).
+  2. A second person reads the written permission and confirms it comes from TongDot and covers those uses.
+- Only then set `display`, `train`, and `redistribute` to `cleared` for `tongdot` in `data/rights.json`.
+- **The data.** The project owner is asking TongDot for the complete dictionary file. Until it arrives, siamsil-data holds partial copies taken from a public third-party dataset (`dictionary/sources/tongdot/`): the first 5,000 of 75,931 entries, a list of 27,784 headwords without definitions, and a few phrases. They passed through a Kaggle upload by another person, so the file from TongDot replaces them as the source of record.
+
 **Zomi Ordbog / Haokip English-Zomi Dictionary (Haokip-Lind 2011)**
 - **2026-10-27, project owner:** both rights holders, Dr. Dal Lian Haokip and Johs. Lind / Zomi Innkuan Denmark, gave written permission for display and training. Redistribution and commercial use were not granted.
 - Display and training stay `needs_review` until a second person confirms this entry (see Closing an item). On confirmation, set `display` and `train` to `cleared` for `haokip_lind_2011` in `data/rights.json`.
 - Still to record: the date of each permission, its exact wording on display and training, any required credit line, and where the written copies are kept (private storage, not this repository).
-- The PDF in `siamsil-data` (`Dictionary Sources/Haokip-Lind 2011/`) was obtained from kupdf.net, a third-party upload, not from the rights holders. The permission covers the work; ask whether they can supply an authoritative copy.
+- The PDF in `siamsil-data` (`dictionary/sources/haokip-lind-2011/`) was obtained from kupdf.net, a third-party upload, not from the rights holders. The permission covers the work; ask whether they can supply an authoritative copy.
 - The original lists each entry as `Danish [English] (part of speech): Zomi`, so the English is the authors'. A ChatGPT-made English-alphabetical draft is kept beside it as a reading copy only; three English labels it supplied (bathtub, shoot, shower) are not from the source.
 
 **Zomi grammar primer (*Paunam Khenna Leh Kampau Luanzia*, Lia Cingsen)**
