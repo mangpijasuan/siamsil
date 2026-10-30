@@ -41,6 +41,7 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 | Zomi Ordbog, dansk-[engelsk]-zomi (Johs. Lind, Zomi Innkuan Denmark, 2011), based on Dr. Dal Lian Haokip's English-Zomi Dictionary (private `siamsil-data`) | 15,105 entries: Danish, English, Zomi | reported | reported | **no** | **no** | `needs_review` (written permission reported, awaiting confirmation) |
 | *Paunam Khenna Leh Kampau Luanzia*, Zomi grammar primer by Lia Cingsen (private `siamsil-data`), and the review sheets made from it | About 184 printed pages; 732 numbered sentences, 258 word pairs, 28 bilingual examples extracted | reported | reported | **no** | **no** | `needs_review` (permission reported, awaiting confirmation) |
 | *Zokam le Zolai* (Rev. Khoi Lam Thang, Zomi Christian Literature Society, 2013) (private `siamsil-data`) | About 23,600 words of Zomi prose: the language, writing history, spelling | reported, with credit | reported | **no** | **no** | `needs_review` (permission reported, awaiting confirmation) |
+| *Zolai Standard Format* (Lian Than Tuang, 2018) (private `siamsil-data`) | 31-page Zolai spelling guide | — | — | — | — | `needs_review` (no permission yet; private reference for the spelling review) |
 | Community audio (planned) | Consent-based recordings; per-speaker choices in [AUDIO_CONSENT.md](AUDIO_CONSENT.md), recorded per source and speaker in the Speech Data Lab ([SPEECH_DATA_LAB.md](SPEECH_DATA_LAB.md)) | — | — | — | — | draft form, needs legal review |
 
 "—" means not yet permitted.
@@ -131,6 +132,12 @@ To clear it for training, record in this file: (1) the dataset card as published
   2. A second person reads the written permission and confirms it comes from the rights holder and covers display and training.
 - Only then set `display` and `train` to `cleared` for `zokam_le_zolai_2013` in `data/rights.json`.
 - The extracted text in `siamsil-data/books/derived/` is the PDF's own text layer, not OCR or machine output.
+
+**Zolai Standard Format (Lian Than Tuang, 2018)**
+- No permission yet. It is a private reference for the Zolai Standard review ([ZOLAI_STANDARD.md](ZOLAI_STANDARD.md)): the evidence script counts its spellings, and `data/zolai_standard/rule_checks.json` cites its sections with page numbers and quotes only the short example words it gives.
+- Keep the PDF in `siamsil-data/standard/`, never in this repository. Do not show its text in the app or train on it.
+- A full copy is published at github.com/peterlianpi/zolai-ai (`wiki/Zolai_Standard_Format.md`) under that repository's MIT license. That license is the uploader's and does not show the author's permission, so it gives Siamsil no rights.
+- To use it beyond reference, ask Lian Than Tuang for written permission and record who granted it, the date, the uses covered, any credit line, and where it is kept. The 2018 PDF names no publisher.
 
 **Daily-use phrases**
 - Confirm the teacher who reviewed them agrees to their use in training and redistribution, and how they want to be credited.

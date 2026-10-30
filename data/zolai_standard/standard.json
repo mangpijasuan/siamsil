@@ -1,0 +1,5 @@
+{
+  "_comment": "The adopted Siamsil Zolai Standard (docs/ZOLAI_STANDARD.md, steps 4-5). Only rules Zomi language reviewers adopted belong here: each needs two different reviewer codes in approved_by, the date, and the reason. AI suggestions in rule_checks.json and the review workbook are never copied here unreviewed. Applied by ml_pipeline/scripts/zolai_standard.py, which keeps every original text and stores the standard form beside it. mode 'replace' writes the standard spelling; mode 'flag' only lists the match, for spellings whose meaning depends on context. Bump the version when rules change: minor for new rules, major for a changed or removed rule.",
+  "version": "0.0.0",
+  "rules": []
+}
