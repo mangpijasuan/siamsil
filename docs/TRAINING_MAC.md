@@ -104,3 +104,16 @@ A model reaches the app only after it passes the gate and a Zomi speaker approve
 ## Keep out of git
 
 Model checkpoints (`models/`), exports (`data/datasets/`, `data/exports/`) and evaluation sets are gitignored. Store checkpoints you want to keep in private storage, and record which checkpoint is in use with its `train_meta.json`.
+
+## Model backup
+
+Trained models are backed up in the **private** Hugging Face repository `ZomiDatasets/siamsil-models` (the Siamsil organization). Since 2026-10-30 it holds `nllb-zomi-bible-v1`, `nllb-zomi-everyday-v2-exp`, their CTranslate2 serving copies, and `BACKUP_MANIFEST.sha256`; all 25 files were checked against the local copies. Keep it private: NLLB weights are CC BY-NC 4.0, the Bible permission does not cover redistribution, and everyday-v2 was trained on sources not yet cleared. A transfer between accounts can change visibility, so check it afterwards.
+
+```bash
+python3 ml_pipeline/scripts/models_backup.py manifest   # after training a new model (add it with --folder NAME for each folder)
+python3 ml_pipeline/scripts/models_backup.py upload
+python3 ml_pipeline/scripts/models_backup.py verify     # ALL MATCH, and fails if the repository is public
+python3 ml_pipeline/scripts/models_backup.py restore    # on a new computer: download into models/ and check
+```
+
+You need a Hugging Face token that can write to ZomiDatasets (`hf auth login`).
