@@ -6,7 +6,7 @@
       "version": "1.0 (Master Source 1.0.1)",
       "format": "master_workbook",
       "root": "data_repo",
-      "path": "Zomi AI Data/50K-English-Zomi-Burmese-Native-Expert-Review-v1.0.xlsx",
+      "path": "dictionary/sources/translation-master-v1.0.1/50K-English-Zomi-Burmese-Native-Expert-Review-v1.0.xlsx",
       "sha256": "640fea5182467a5ab1741240b8c64c255581410a36f0b619639933bd9252c77f",
       "rights": "translation_master_50k"
     },
@@ -15,7 +15,7 @@
       "version": "beta",
       "format": "learners_json",
       "root": "data_repo",
-      "path": "Zomi AI Data/Essential_3000_English_Zomi_Learners_Dictionary.json",
+      "path": "dictionary/sources/essential-3000-beta/Essential_3000_English_Zomi_Learners_Dictionary.json",
       "sha256": "5e513a996ddd84c8350f1da0539d67a4cd854f58c7bf84e0b3c8d1b259507bcf",
       "rights": "essential_3000"
     },
@@ -23,8 +23,8 @@
       "title": "Zomi Standard Dictionary",
       "version": null,
       "format": "standard_workbook",
-      "root": "project",
-      "path": "data/raw/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx",
+      "root": "data_repo",
+      "path": "dictionary/versions/Zomi_Standard_Dictionary_AI_Cleaned_2026-08-18.xlsx",
       "sha256": "e8563a0f1cdde0647611fb073a86fabde0b0ae9678ca1347f36ea25de96f0610",
       "rights": "zomi_standard_dictionary"
     },
@@ -33,7 +33,7 @@
       "version": "2011",
       "format": "ordbog_pdf",
       "root": "data_repo",
-      "path": "Dictionary Sources/Haokip-Lind 2011/Zomi-Ordbog-dansk-engelsk-zomi-2011-original.pdf",
+      "path": "dictionary/sources/haokip-lind-2011/Zomi-Ordbog-dansk-engelsk-zomi-2011-original.pdf",
       "sha256": "8762f0e4219a591bff0235c50c32ce4f516c36cc33bcf1ed4a2cfd3e73d98b82",
       "rights": "haokip_lind_2011"
     }

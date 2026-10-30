@@ -38,7 +38,7 @@ def file_sha256(path: Path) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Import dictionary sources into the editorial dictionary.")
-    parser.add_argument("--data-repo", type=Path, default=PROJECT_ROOT / "siamsil-data",
+    parser.add_argument("--data-repo", type=Path, default=PROJECT_ROOT.parent / "siamsil-data",
                         help="the private siamsil-data checkout")
     parser.add_argument("--config", type=Path, default=PROJECT_ROOT / "data" / "dictionary_sources.json")
     parser.add_argument("--rights", type=Path, default=PROJECT_ROOT / "data" / "rights.json")
