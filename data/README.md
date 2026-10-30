@@ -15,7 +15,7 @@ data/
 
 This folder holds only settings the code depends on (`rights.json`, `bible_versions.json`, `source_files.json`, …) and what the scripts build from siamsil-data (`processed/`, `datasets/`, `exports/`, `evaluation/`). You can delete the built folders at any time and rebuild them. `raw/` is no longer needed; `restore_private_data.py` still unpacks it for tools that expect the older layout, and `build_language_db.py --raw data/raw` builds from it.
 
-Build the language database:
+The language database's dictionary is the 50K Translation Master (`--dictionary standard` for the Zomi Standard Dictionary; [DICTIONARY.md](../docs/DICTIONARY.md)). Build the language database:
 
 ```bash
 python3 -m pip install -r ml_pipeline/requirements.txt

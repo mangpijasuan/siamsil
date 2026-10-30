@@ -33,6 +33,12 @@ Listed in import order in [`data/dictionary_sources.json`](../data/dictionary_so
 
 First import (2026-10-27): 62,927 entries (43,651 words, 19,270 multi-word terms); 13,633 entries have two or more sources.
 
+## What the app shows
+
+Since 2026-10-30 the Dictionary page, Translate, and Siamsil AI show the **50K Translation Master**: 50,282 senses, English headword → Zomi equivalents, with the simple English definition, domain and usage tier. `build_language_db.py` reads it from siamsil-data (`data/source_files.json`, key `dictionary_50k`) into the read-only language release. Every entry is labelled unreviewed until reviewers approve it. Zomi → English searches put entries whose Zomi is exactly the word searched first. `build_language_db.py --dictionary standard` still builds from the Zomi Standard Dictionary.
+
+Next: publish from the editorial dictionary instead, showing each approved 50K sense as reviewed.
+
 ## Importing
 
 ```bash

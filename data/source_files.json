@@ -1,10 +1,15 @@
 {
   "_comment": "Originals the build reads directly from the private siamsil-data repository (the primary source; data/README.md). Paths are relative to that repository. sha256 pins the exact file: a changed or missing file stops the build until this entry is updated on purpose. The parallel corpus is pinned through its parts manifest, which pins each part and the original CSV.",
   "sources": {
+    "dictionary_50k": {
+      "path": "dictionary/sources/translation-master-v1.0.1/50K-English-Zomi-Burmese-Native-Expert-Review-v1.0.xlsx",
+      "sha256": "640fea5182467a5ab1741240b8c64c255581410a36f0b619639933bd9252c77f",
+      "note": "The live dictionary since 2026-10-30 (project owner's decision): the 50K Translation Master, native-review workbook."
+    },
     "dictionary_master": {
       "path": "dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx",
       "sha256": "e8563a0f1cdde0647611fb073a86fabde0b0ae9678ca1347f36ea25de96f0610",
-      "note": "Master since 2026-10-30 (project owner's decision)."
+      "note": "Zomi Standard Dictionary; the live dictionary until 2026-10-30. Build it with build_language_db.py --dictionary standard."
     },
     "parallel_manifest": {
       "path": "parallel/manifest.json",
