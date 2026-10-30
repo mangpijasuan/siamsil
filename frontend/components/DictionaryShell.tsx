@@ -368,7 +368,7 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
                 {selected.source && (
                   <div className="dict-detail-section">
                     <div className="dict-detail-label">Source</div>
-                    <p className="dict-detail-source">{selected.source} · English headwords defined in Zomi</p>
+                    <p className="dict-detail-source">{selected.source} · {selected.verified ? "Reviewed" : "Unreviewed: not yet checked by Zomi reviewers"}</p>
                   </div>
                 )}
               </>

@@ -22,16 +22,13 @@ Free disk space needed: about 15 GB (language database, model download, checkpoi
 
 ## 2. Prepare the data
 
-Raw files come from the private `siamsil-data` repository. Never edit them; the scripts only read them.
+The scripts read the originals straight from the private `siamsil-data` repository, cloned beside this one (`~/Projects/siamsil-data`), or wherever `SIAMSIL_DATA_REPO` points. Every file is checked against `data/source_files.json` first. Never edit the originals.
 
 ```bash
-# Dictionary and corpus, as data/raw expects them
-#   data/raw/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx  (copy of dictionary/Zomi_Dictionary_Master_Data.xlsx)
-#   data/raw/parallel/zomi_english_sentences.csv
+# Dictionary and corpus, from siamsil-data
 python3 ml_pipeline/scripts/build_language_db.py                     # about 5 minutes
 
-# Bibles: unzip Chin-Bible.zip and engwebu_usfm.zip under data/raw/bible/usx/
-#   data/raw/bible/usx/chin/...   data/raw/bible/usx/web/...
+# Bibles, from the zips in siamsil-data (unpacked only into a temporary folder)
 python3 ml_pipeline/scripts/import_usx_bibles.py
 
 # Training files: only sources cleared in data/rights.json are exported

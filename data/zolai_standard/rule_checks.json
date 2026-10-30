@@ -5,6 +5,11 @@
     "zokam": "Khoi Lam Thang, Zokam le Zolai, ch. 6 Laigelhzia (ZCLS, 2013)",
     "primer": "Lia Cingsen, Paunam Khenna Leh Kampau Luanzia"
   },
+  "owner_policy": {
+    "date": "2026-10-27",
+    "by": "project owner",
+    "text": "Where the sources disagree, the suggestions follow the Bibles and common published usage, the spelling most readers already see. The Zolai Standard Format decides only where that usage is itself split. A spelling the owner proposed for a specific point (as in 'le-leh') is weighed as that proposal. This guides the AI suggestions only: Zomi reviewers still decide every rule, and two must agree."
+  },
   "checks": [
     {
       "id": "uh-hi",
@@ -50,6 +55,39 @@
       "suggestion": {
         "spelling": "kiangah; sungah; tungah",
         "reason": "The primer's rule and every main source (26,178 against 22); each is one English preposition (to/at, in, on)."
+      }
+    },
+    {
+      "id": "locative-ah-noun",
+      "topic": "Locative 'ah' after a noun (not a position word): joined, hyphenated, or separate",
+      "zsf": "§17 (p. 18): write 'ah' separate ('Zogam ah', 'Inntung ah'), because many joined Zolai words already contain 'a' and 'h', so joining 'ah' makes reading harder.",
+      "zokam": "Not yet checked for this point.",
+      "primer": "Not yet checked for this point (its rule under 'locative-ah' is about position words such as 'sung' and 'kiang').",
+      "variants": [
+        [
+          "gam ah",
+          "gamah",
+          "gam-ah"
+        ],
+        [
+          "mun ah",
+          "munah",
+          "mun-ah"
+        ],
+        [
+          "khua ah",
+          "khua-ah"
+        ],
+        [
+          "inn ah",
+          "innah",
+          "inn-ah"
+        ]
+      ],
+      "note": "Added 2026-10-27 from counts made with spelling_variants.py on public copies of the 1932 Tedim Bible and two Zomi news sites (Zomipedia, Tedim Post) in github.com/paumkim/zomi-dataset. Those copies are not Siamsil sources and are not in siamsil-data. The 1932 Bible joins some ('gamah' 440, 'munah' 405) and hyphenates others ('khua-ah' 320, 'inn-ah' 302), never separate. The news sites are mixed: 'khua ah' 619 against 'khua-ah' 72, 'mun ah' 88 against 'munah' 52, but 'gamah' 87 against 'gam ah' 77. Every variant listed occurs in those texts. Position words ('tungah', 'kiangah') are the 'locative-ah' check, and all those sources mostly join them.",
+      "suggestion": {
+        "spelling": "gam ah; khua ah (separate), until the TDB and TB77 counts are in",
+        "reason": "Under the owner's tie-break (owner_policy): the 1932 Bible joins or hyphenates, and current news is mixed, so usage is split and the Zolai Standard Format's rule applies. If TDB 2011 and TB77 agree with each other, follow them instead."
       }
     },
     {

@@ -95,6 +95,12 @@ class DatabaseTests(unittest.TestCase):
                 "speakers",
                 "speaker_consents",
                 "speech_source_speakers",
+                "dictionary_sources",
+                "dictionary_entries",
+                "dictionary_senses",
+                "dictionary_equivalents",
+                "dictionary_examples",
+                "dictionary_issues",
             },
             set(Base.metadata.tables),
         )

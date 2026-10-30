@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from api_schemas import AskResponse
 from rate_limit import rate_limited
 from services.data_loader import get_store
-from services.language_engine import get_engine
+from services.language_engine import entry_zomi, get_engine
 
 router = APIRouter(prefix="/ai", tags=["ai"], dependencies=[Depends(rate_limited("assistant"))])
 
@@ -58,7 +58,7 @@ def ask(request: AskRequest):
                 "type": "dictionary",
                 "id": top["id"],
                 "english": top["english"],
-                "zomi": top["definition"],
+                "zomi": entry_zomi(top),
                 "verified": top["verified"],
                 "verification_status": top["verification_status"],
                 "source": top["source"],

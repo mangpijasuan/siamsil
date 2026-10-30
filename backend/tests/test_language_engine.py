@@ -119,3 +119,58 @@ class FtsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TranslationMasterDictionaryTests(unittest.TestCase):
+    """The live dictionary built from the 50K Translation Master (placeholder Zomi only)."""
+
+    def build(self, tmp: Path) -> Path:
+        import openpyxl
+
+        from build_language_db import connect, create_schema, ingest_translation_master  # type: ignore
+
+        wb = openpyxl.Workbook()
+        records = wb.active
+        records.title = "01_All_Records"
+        records.append(["group header"])
+        records.append(["Entry ID", "Headword", "Part of speech", "Sense number", "Simple English definition",
+                        "Current Standard Zomi", "Current Burmese (reference only)", "Usage tier code", "Domain"])
+        records.append(["ZD-000001", "ability", "n.", "1", "The power to do something.", "QAVO; QAZU", "MY_A",
+                        "A1", "general"])
+        records.append(["ZD-000002", "abandon", "v.", "1", "To leave.", "VOZE", None, "B1", None])
+        issues = wb.create_sheet("04_Open_Issue_Index")
+        issues.append(["title"])
+        issues.append(["Item ID", "Record ID", "Issue category", "Issue code"])
+        source = tmp / "50k.xlsx"
+        wb.save(source)
+        db = tmp / "lang.sqlite"
+        con = connect(db)
+        create_schema(con)
+        stats = ingest_translation_master(con, source, "2026-10-30T00:00:00+00:00")
+        con.close()
+        self.assertEqual(stats["ingested"], 2)
+        return db
+
+    def test_entries_show_zomi_equivalents_and_english_definition(self) -> None:
+        from language_engine import entry_zomi  # type: ignore
+
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = LanguageEngine(self.build(Path(tmp)))
+            entry = engine.search_dictionary("ability")[0]
+            self.assertEqual(entry["english"], "ability")
+            self.assertEqual(entry["zomi"], "QAVO ; QAZU")  # alternatives kept whole, not split
+            self.assertEqual(entry["definition"], "The power to do something.")
+            self.assertEqual((entry["domain"], entry["source_reference"]), ("general", "ZD-000001"))
+            self.assertEqual(entry["verification_status"], "unreviewed")
+            self.assertFalse(entry["verified"])
+            self.assertEqual(entry_zomi(entry), "QAVO ; QAZU")
+            # Zomi -> English searches the Zomi side.
+            self.assertEqual([e["english"] for e in engine.search_dictionary("vozE", direction="ctd-en")], ["abandon"])
+            # An exact Zomi alternative ranks before looser matches.
+            self.assertEqual(engine.search_dictionary("qazu", direction="ctd-en")[0]["english"], "ability")
+
+    def test_zomi_standard_rows_are_presented_as_before(self) -> None:
+        from language_engine import entry_zomi  # type: ignore
+
+        entry = {"zomi": "gloss", "definition": "longer Zomi definition", "definition_language": "ctd"}
+        self.assertEqual(entry_zomi(entry), "longer Zomi definition")

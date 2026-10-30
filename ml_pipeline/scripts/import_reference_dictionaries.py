@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Import reference dictionaries from the private siamsil-data repository, unchanged and unreviewed.
 
-  python3 ml_pipeline/scripts/import_reference_dictionaries.py --data-repo siamsil-data
-  python3 ml_pipeline/scripts/import_reference_dictionaries.py --data-repo siamsil-data --dry-run
+  python3 ml_pipeline/scripts/import_reference_dictionaries.py --data-repo ../siamsil-data
+  python3 ml_pipeline/scripts/import_reference_dictionaries.py --data-repo ../siamsil-data --dry-run
 
 Reads (never modifies), as listed in data/reference_dictionaries.json:
-  <data-repo>/Zomi AI Roadmap/English_Zomi_Burmese_Translation_Master_v1.0.1.json
-  <data-repo>/Zomi AI Roadmap/Essential_3000_English_Zomi_Learners_Dictionary.json
+  <data-repo>/dictionary/sources/translation-master-v1.0.1/English_Zomi_Burmese_Translation_Master_v1.0.1.json
+  <data-repo>/dictionary/sources/essential-3000-beta/Essential_3000_English_Zomi_Learners_Dictionary.json
 
 Each file must match the SHA-256 pinned in that config; otherwise nothing is written.
 data/raw/ is not read or written.
@@ -37,7 +37,7 @@ from pathlib import Path
 SCRIPT_VERSION = "1.0.0"
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DATA_REPO = ROOT / "siamsil-data"
+DEFAULT_DATA_REPO = ROOT.parent / "siamsil-data"  # the clone sits beside this repository
 DEFAULT_CONFIG = ROOT / "data" / "reference_dictionaries.json"
 DEFAULT_RIGHTS = ROOT / "data" / "rights.json"
 DEFAULT_OUT_DB = ROOT / "data" / "processed" / "reference" / "reference_dictionaries.sqlite"
