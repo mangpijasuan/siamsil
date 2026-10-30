@@ -47,8 +47,33 @@ Every file's checksum is checked before anything is written, and all selected so
 - Records without a part of speech (mostly 1,451 from the Zomi Standard Dictionary) get their own entry instead of joining one with a part of speech: 788 entries, 499 of which share a headword with another entry. Reviewers merge them.
 - Haokip-Lind: one entry (page 182, *bevy*) has the next entry joined to it in the book's own text; it carries a `MERGED_ENTRY` issue. Three entries with no English headword are skipped.
 
+## Reviewing
+
+Senses are reviewed in batches with `backend/scripts/dictionary_review.py`, in the same two human steps as corpus reviews (SOP-07): a reviewer judges each sense, then a lead editor who did not review it approves it. Nothing is approved automatically. Decisions are appended to `reviews/dictionary-reviews.jsonl` in the private siamsil-data repository and never edited. Each exported batch is recorded in `reviews/dictionary-batches.jsonl`, so no two reviewers get the same senses. Reviewer codes are checked against `reviews/roster.csv` (`code,role`, roles `reviewer` and `lead_editor`). Names never appear in the decisions.
+
+```bash
+python backend/scripts/dictionary_review.py export --reviewer R01 --out batch-R01-1.xlsx   # 500 senses
+python backend/scripts/dictionary_review.py export --reviewer R02 --out tongdot-R02.xlsx --source tongdot --issue VARIETY_CHECK
+python backend/scripts/dictionary_review.py record --sheet batch-R01-1.xlsx --reviewer R01
+python backend/scripts/dictionary_review.py approval-sheet --out approve-1.xlsx
+python backend/scripts/dictionary_review.py approve --sheet approve-1.xlsx --approver E01
+python backend/scripts/dictionary_review.py apply      # sets review_status in the database
+python backend/scripts/dictionary_review.py status
+```
+
+A batch puts every source's version of a word together, starting with words that the most sources share, then common words (usage tiers A1 to C2). Next to the Zomi to check it shows what the other sources say and any open flags. Reviewers choose one decision per row:
+
+| Decision | Meaning | Result |
+|---|---|---|
+| `correct` | Right and natural Tedim for this meaning | Ready for the lead editor; `approved` once approved |
+| `fix` | Should change; the full corrected Zomi goes in *Corrected Zomi* | `needs_correction`; the correction is kept for editors and never replaces the text automatically |
+| `not_tedim` | Another Chin language, or not Zomi | `rejected` |
+| `wrong` | The Zomi does not mean this | `rejected` |
+
+Each review records a fingerprint of the Zomi the reviewer saw. If that text changes later, the review no longer counts, and the sense goes back for review.
+
 ## Next steps
 
-1. Review batches: export about 500 senses per reviewer file, import decisions back (as for corpus reviews).
+1. Corrections: an editing step that turns approved `fix` corrections into revised senses.
 2. New headwords: candidates from the corpus and community, matched against existing entries before they are added.
 3. Release: copy published senses into the SQLite language release, showing each source only as its rights allow.
