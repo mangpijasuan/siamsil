@@ -107,7 +107,7 @@ class ServingRulesTests(unittest.TestCase):
             with self.assertRaisesRegex(experimental_mt.ModelNotServable, "parallel_corpus"):
                 experimental_mt.read_serving(path)
         with patch.object(experimental_mt, "get_settings",
-                          return_value=self.settings(experimental_mt_allow_uncleared=True)):
+                          return_value=self.settings(environment="development", experimental_mt_allow_uncleared=True)):
             self.assertEqual(experimental_mt.read_serving(path)["name"], "m")
 
     def test_override_is_rejected_outside_development(self) -> None:
