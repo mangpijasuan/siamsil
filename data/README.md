@@ -12,7 +12,9 @@ data/
 └── versions/      named dataset releases
 ```
 
-Large raw files are gitignored. On a new computer, copy them from a clone of the private `siamsil-data` repository (Windows, macOS and Linux; existing files are never overwritten):
+Large raw files are gitignored. The private `siamsil-data` repository is the archive of every original; keep its clone **beside** this one (`../siamsil-data`, not inside it), since the commands in these docs use that path. Its README lists each file with its source, checksum, and rights, and explains the folder layout (`dictionary/sources/`, `standard/`, `grammar/`, `reviews/`, ...).
+
+On a new computer, copy the raw files from that clone (Windows, macOS and Linux; existing files are never overwritten):
 
 ```bash
 python3 ml_pipeline/scripts/restore_private_data.py --data-repo ../siamsil-data

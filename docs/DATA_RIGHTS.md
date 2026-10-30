@@ -112,7 +112,7 @@ To clear it for training, record in this file: (1) the dataset card as published
 - **2026-10-27, project owner:** both rights holders, Dr. Dal Lian Haokip and Johs. Lind / Zomi Innkuan Denmark, gave written permission for display and training. Redistribution and commercial use were not granted.
 - Display and training stay `needs_review` until a second person confirms this entry (see Closing an item). On confirmation, set `display` and `train` to `cleared` for `haokip_lind_2011` in `data/rights.json`.
 - Still to record: the date of each permission, its exact wording on display and training, any required credit line, and where the written copies are kept (private storage, not this repository).
-- The PDF in `siamsil-data` (`Dictionary Sources/Haokip-Lind 2011/`) was obtained from kupdf.net, a third-party upload, not from the rights holders. The permission covers the work; ask whether they can supply an authoritative copy.
+- The PDF in `siamsil-data` (`dictionary/sources/haokip-lind-2011/`) was obtained from kupdf.net, a third-party upload, not from the rights holders. The permission covers the work; ask whether they can supply an authoritative copy.
 - The original lists each entry as `Danish [English] (part of speech): Zomi`, so the English is the authors'. A ChatGPT-made English-alphabetical draft is kept beside it as a reading copy only; three English labels it supplied (bathtub, shoot, shower) are not from the source.
 
 **Zomi grammar primer (*Paunam Khenna Leh Kampau Luanzia*, Lia Cingsen)**
