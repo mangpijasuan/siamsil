@@ -1,8 +1,9 @@
 {
-  "_comment": "Sources of the editorial Siamsil Dictionary (docs/DICTIONARY.md), read by backend/scripts/import_dictionary_sources.py in this order. root is data_repo (the private siamsil-data checkout) or project (this repository). sha256 pins the exact file; a changed file stops its import until this entry is updated on purpose. rights names the data/rights.json entry.",
+  "_comment": "Sources of the editorial Siamsil Dictionary (docs/DICTIONARY.md), read by backend/scripts/import_dictionary_sources.py in this order. root is data_repo (the private siamsil-data checkout) or project (this repository). sha256 pins the exact file; a changed file stops its import until this entry is updated on purpose. rights names the data/rights.json entry. role: 'primary' is the dictionary's main source (owner decision 2026-10-30: the 50K Translation Master); 'reference' sources are kept for comparison, shown to reviewers beside the primary, and not reviewed or published on their own.",
   "sources": {
     "translation_master_50k": {
       "title": "English–Zomi–Burmese Translation Master, native-expert review workbook",
+      "role": "primary",
       "version": "1.0 (Master Source 1.0.1)",
       "format": "master_workbook",
       "root": "data_repo",
@@ -12,6 +13,7 @@
     },
     "essential_3000": {
       "title": "The Essential 3000 English–Zomi Learner's Dictionary",
+      "role": "reference",
       "version": "beta",
       "format": "learners_json",
       "root": "data_repo",
@@ -21,6 +23,7 @@
     },
     "zomi_standard_dictionary": {
       "title": "Zomi Standard Dictionary",
+      "role": "reference",
       "version": null,
       "format": "standard_workbook",
       "root": "data_repo",
@@ -30,6 +33,7 @@
     },
     "haokip_lind_2011": {
       "title": "Zomi Ordbog, dansk-[engelsk]-zomi (Johs. Lind, Zomi Innkuan Denmark), based on Dr. Dal Lian Haokip's English-Zomi Dictionary",
+      "role": "reference",
       "version": "2011",
       "format": "ordbog_pdf",
       "root": "data_repo",
@@ -39,6 +43,7 @@
     },
     "tongdot": {
       "title": "TongDot Zomi-English dictionary (tongdot.com), partial interim copy: first 5,000 of 75,931 lines",
+      "role": "reference",
       "version": "interim (Kaggle peterpausianlian/zolai-language-dataset-v2, via the Paumkim dataset)",
       "format": "tongdot_tsv",
       "root": "data_repo",

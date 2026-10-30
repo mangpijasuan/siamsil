@@ -19,6 +19,8 @@ Ids are never reused. They are numbered under the import lock rather than by dat
 
 ## Sources
 
+**Primary source (project owner's decision, 2026-10-30): the 50K Translation Master.** Having compared a review batch of all five sources side by side, the project owner, a Zomi speaker, judged it the best. Its senses are the ones reviewed and published. The other four sources are kept as **reference**: imported and unchanged, shown to reviewers beside each 50K sense under "Other sources say", but not reviewed or published on their own. The `role` of each source in `data/dictionary_sources.json` records this; `dictionary_review.py export --all-sources` or `--source ID` reaches the reference sources when needed.
+
 Listed in import order in [`data/dictionary_sources.json`](../data/dictionary_sources.json), each pinned by checksum, with rights in [DATA_RIGHTS.md](DATA_RIGHTS.md).
 
 | Source | Senses | Notes |
@@ -61,7 +63,7 @@ python backend/scripts/dictionary_review.py apply      # sets review_status in t
 python backend/scripts/dictionary_review.py status
 ```
 
-A batch puts every source's version of a word together, starting with words that the most sources share, then common words (usage tiers A1 to C2). Next to the Zomi to check it shows what the other sources say and any open flags. Reviewers choose one decision per row:
+A batch holds 50K senses only, starting with words that the most sources share, then common words (usage tiers A1 to C2). Next to the Zomi to check it shows what the other sources say and any open flags. Reviewers choose one decision per row:
 
 | Decision | Meaning | Result |
 |---|---|---|
