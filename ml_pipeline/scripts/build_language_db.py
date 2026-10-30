@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-"""Build the Siamsil language database from immutable raw files.
+"""Build the Siamsil language database from the originals in siamsil-data.
 
-Reads:
-  data/raw/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx
-  data/raw/parallel/zomi_english_sentences.csv
+Reads, directly from the private siamsil-data repository (beside this one, or $SIAMSIL_DATA_REPO),
+each file checked against data/source_files.json:
+  dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx
+  parallel/zomi_english_sentences.part-*.csv.gz (joined; the original CSV's checksum is confirmed)
+
+With --raw FOLDER it reads the older layout instead, unpinned:
+  FOLDER/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx
+  FOLDER/parallel/zomi_english_sentences.csv
 
 Optionally reads human evaluation sets (--eval) so matching pairs are held out.
 
@@ -18,6 +23,7 @@ Writes (never touches raw files):
 from __future__ import annotations
 
 import argparse
+import contextlib
 import csv
 import hashlib
 import json
@@ -31,12 +37,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import corpus_reviews
+from data_repo import DataRepo, ParallelParts, SourceError, default_data_repo
+from data_repo import fingerprint as repo_fingerprint
 
 SCRIPT_VERSION = "1.4.0"
 DATASET_VERSION = "v2"
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_RAW = ROOT / "data" / "raw"
 DEFAULT_OUT_DB = ROOT / "data" / "processed" / "language" / "siamsil_language.sqlite"
 DEFAULT_REPORT = ROOT / "data" / "processed" / "language" / "quality_report.json"
 DEFAULT_MANIFEST = ROOT / "data" / "processed" / "language" / "manifest.json"
@@ -397,8 +404,9 @@ def ingest_master_dictionary(con: sqlite3.Connection, path: Path, created_at: st
     return dict(stats)
 
 
-def ingest_parallel(con: sqlite3.Connection, path: Path, created_at: str) -> dict:
-    if not path.exists():
+def ingest_parallel(con: sqlite3.Connection, path: Path | ParallelParts, created_at: str) -> dict:
+    """Ingest the corpus from a CSV file, or from siamsil-data's parts (ParallelParts)."""
+    if isinstance(path, Path) and not path.exists():
         sys.exit(f"Parallel corpus not found: {path}")
 
     csv.field_size_limit(min(sys.maxsize, 8_000_000))
@@ -431,7 +439,12 @@ def ingest_parallel(con: sqlite3.Connection, path: Path, created_at: str) -> dic
         batch_rows.clear()
         batch_fts.clear()
 
-    with path.open(encoding="utf-8", errors="replace", newline="") as handle:
+    source = (
+        path.open(encoding="utf-8", errors="replace", newline="")
+        if isinstance(path, Path)
+        else contextlib.nullcontext(path.lines())
+    )
+    with source as handle:
         reader = csv.DictReader(handle)
         expected = {"en", "zomi"}
         if not reader.fieldnames or not expected.issubset(set(reader.fieldnames)):
@@ -670,7 +683,7 @@ def apply_reviews(con: sqlite3.Connection, decisions: dict) -> dict:
 
 def release_manifest(
     database: Path,
-    source_files: dict[str, Path],
+    source_files: dict[str, Path | dict],
     eval_files: list[Path],
     counts: dict,
     created_at: str,
@@ -686,7 +699,9 @@ def release_manifest(
         "script_version": SCRIPT_VERSION,
         "database": file_fingerprint(database),
         "counts": counts,
-        "source_files": {key: file_fingerprint(path) for key, path in source_files.items()},
+        "source_files": {
+            key: value if isinstance(value, dict) else file_fingerprint(value) for key, value in source_files.items()
+        },
         "evaluation_sets": [
             {"file": path.name, "sha256": file_fingerprint(path)["sha256"]} for path in eval_files
         ],
@@ -805,7 +820,18 @@ def export_evaluation_samples(con: sqlite3.Connection) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--raw", type=Path, default=DEFAULT_RAW)
+    parser.add_argument(
+        "--data-repo",
+        type=Path,
+        default=None,
+        help="siamsil-data clone to read originals from (default: $SIAMSIL_DATA_REPO, else ../siamsil-data)",
+    )
+    parser.add_argument(
+        "--raw",
+        type=Path,
+        default=None,
+        help="read the older unpinned layout from this folder instead of siamsil-data (e.g. data/raw)",
+    )
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT_DB)
     parser.add_argument("--limit-parallel", type=int, default=0, help="Optional cap for tests")
     parser.add_argument(
@@ -844,8 +870,19 @@ def main() -> None:
     eval_items = load_eval_items(args.eval)
     print(f"Keeping {len(eval_items):,} evaluation items out of training ({len(args.eval)} files)")
 
-    dictionary_xlsx = args.raw / "dictionary" / "Zomi_Standard_Dictionary_AI_Cleaned.xlsx"
-    parallel_csv = args.raw / "parallel" / "zomi_english_sentences.csv"
+    repo: DataRepo | None = None
+    if args.raw is not None:
+        dictionary_xlsx = args.raw / "dictionary" / "Zomi_Standard_Dictionary_AI_Cleaned.xlsx"
+        parallel: Path | ParallelParts = args.raw / "parallel" / "zomi_english_sentences.csv"
+        print(f"Reading the older layout in {args.raw} (unpinned)")
+    else:
+        try:
+            repo = DataRepo(args.data_repo or default_data_repo())
+            print(f"Checking originals in {repo.root}…")
+            dictionary_xlsx = repo.verified("dictionary_master")
+            parallel = repo.parallel()
+        except SourceError as error:
+            sys.exit(f"Nothing was built: {error}")
 
     if not dictionary_xlsx.exists():
         sys.exit(f"Dictionary workbook not found: {dictionary_xlsx}")
@@ -860,7 +897,13 @@ def main() -> None:
     print(f"  master entries: {dict_stats.get('ingested', 0):,}")
 
     print("Ingesting parallel corpus (this can take a few minutes)…")
-    parallel_stats = ingest_parallel(con, parallel_csv, created_at)
+    parallel_stats = ingest_parallel(con, parallel, created_at)
+    parallel_record: Path | dict = parallel
+    if isinstance(parallel, ParallelParts):
+        try:
+            parallel_record = parallel.finish()
+        except SourceError as error:
+            sys.exit(f"Not released: {error}")
     print(f"  unique pairs kept: {parallel_stats['counts'].get('ingested', 0):,}")
 
     print("Running whole-corpus checks (template families, alignment, evaluation holdout)…")
@@ -875,9 +918,12 @@ def main() -> None:
         print("  " + "  ".join(f"{status}: {count:,}" for status, count in review_counts.items()))
     verified_pairs = con.execute("SELECT COUNT(*) FROM parallel_sentences WHERE verified = 1").fetchone()[0]
 
+    dictionary_record: Path | dict = (
+        repo_fingerprint(repo.root, dictionary_xlsx, repo.sources["dictionary_master"]["sha256"]) if repo else dictionary_xlsx
+    )
     source_files = {
-        "dictionary_master": display_path(dictionary_xlsx),
-        "parallel_csv": display_path(parallel_csv),
+        "dictionary_master": dictionary_record["path"] if isinstance(dictionary_record, dict) else display_path(dictionary_record),
+        "parallel_csv": parallel_record["path"] if isinstance(parallel_record, dict) else display_path(parallel_record),
     }
     con.execute(
         """
@@ -944,8 +990,8 @@ def main() -> None:
     manifest = release_manifest(
         database=args.out,
         source_files={
-            "dictionary_master": dictionary_xlsx,
-            "parallel_csv": parallel_csv,
+            "dictionary_master": dictionary_record,
+            "parallel_csv": parallel_record,
             **({"corpus_reviews": args.reviews} if review_records else {}),
         },
         eval_files=args.eval,
