@@ -9,6 +9,7 @@ Formats (data/dictionary_sources.json):
   learners_json      Essential 3000 learner's dictionary JSON
   standard_workbook  Zomi Standard Dictionary workbook (Master Data sheet)
   ordbog_pdf         Zomi Ordbog, dansk-[engelsk]-zomi PDF (needs poppler's pdftotext)
+  tongdot_tsv        TongDot dictionary lines: headword, headword as shown, "(pos) definition"
 """
 
 from __future__ import annotations
@@ -322,9 +323,70 @@ def read_ordbog_pdf(path: Path) -> SourceRead:
     return parse_ordbog_pages(text.split("\f"))
 
 
+TONGDOT_POS = {"a": "adj.", "vt": "v.", "vi": "v.", "v.t": "v.", "v.i": "v.", "abbr": None, "abbrev": None}
+MYANMAR = re.compile("[\u1000-\u109f]")
+LATIN_WORD = re.compile(r"[A-Za-z]{2,}")
+
+
+def _tongdot_pos(label: str | None) -> str | None:
+    key = re.sub(r"[()\s]+", " ", label or "").strip().rstrip(".").lower()
+    if key in TONGDOT_POS:
+        return TONGDOT_POS[key]
+    return normalize_pos(key)
+
+
+def read_tongdot_tsv(path: Path) -> SourceRead:
+    """One sense per line. TongDot mixes Tedim, other Chin languages and Burmese without labels.
+
+    A definition in Myanmar script becomes a Burmese (`my`) gloss. Any other definition becomes a
+    `ctd` gloss with an open VARIETY_CHECK issue: a reviewer confirms it is Tedim (or rejects it)
+    before it can be approved. Definitions are kept whole; nothing is split, corrected or guessed.
+    """
+    records: list[SourceRecord] = []
+    skipped: dict[str, int] = {}
+    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        parts = line.split("\t")
+        if len(parts) != 3:
+            if line.strip():
+                skipped["not_three_columns"] = skipped.get("not_three_columns", 0) + 1
+            continue
+        headword, shown, definition = (clean(part) for part in parts)
+        if not headword or not definition:
+            skipped["no_headword_or_definition"] = skipped.get("no_headword_or_definition", 0) + 1
+            continue
+        match = re.match(r"^\(+([^()]*)\)*\.?\)?\s*:?\s*", definition)
+        label = match.group(1) if match else None
+        text = clean(definition[match.end():] if match else definition)
+        if not text:
+            skipped["no_definition_text"] = skipped.get("no_definition_text", 0) + 1
+            continue
+        record_id = f"L{number:06d}"
+        issues: list[Issue] = []
+        if MYANMAR.search(text):
+            equivalents = [("my", "gloss", text)]
+            if LATIN_WORD.search(MYANMAR.sub(" ", text)):
+                issues.append(Issue(f"{record_id}:mixed", "Burmese definition with Latin-script text", "MIXED_SCRIPT",
+                                    "Separate any English or Chin words from the Burmese.", None, None, {}))
+        else:
+            equivalents = [("ctd", "gloss", text)]
+            issues.append(Issue(f"{record_id}:variety", "Language not labelled in source", "VARIETY_CHECK",
+                                "TongDot mixes Chin languages: confirm this gloss is Tedim Zomi before approving.",
+                                None, None, {}))
+        records.append(SourceRecord(
+            record_id=record_id,
+            headword=headword,
+            part_of_speech=_tongdot_pos(label),
+            equivalents=equivalents,
+            issues=issues,
+            raw={"line": number, "headword": parts[0], "shown": parts[1], "definition": parts[2], "pos_label": label},
+        ))
+    return SourceRead(records, skipped)
+
+
 READERS = {
     "master_workbook": read_master_workbook,
     "learners_json": read_learners_json,
     "standard_workbook": read_standard_workbook,
     "ordbog_pdf": read_ordbog_pdf,
+    "tongdot_tsv": read_tongdot_tsv,
 }

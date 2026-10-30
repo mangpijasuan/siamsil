@@ -27,6 +27,7 @@ Listed in import order in [`data/dictionary_sources.json`](../data/dictionary_so
 | Essential 3000 | 5,342 | 26,685 example sentences and phrases |
 | Zomi Standard Dictionary (live dictionary) | 20,826 | Zomi definitions; 1,773 flagged rows become issues |
 | Haokip-Lind 2011 (*Zomi Ordbog*) | 11,831 | From the original PDF; a headword repeated under several Danish labels with identical Zomi is one sense listing every label and page |
+| TongDot (tongdot.com), partial interim copy | 4,999 | First 5,000 of 75,931 lines, until TongDot sends the full file. Labels no languages: 1,593 Burmese glosses become `my`; 3,406 others become `ctd` glosses, each with an open `VARIETY_CHECK` issue, because many are Hakha, Falam or other Chin, not Tedim. 1,092 of its headword–part-of-speech pairs join existing entries; 986 headwords are new |
 
 First import (2026-10-27): 62,927 entries (43,651 words, 19,270 multi-word terms); 13,633 entries have two or more sources.
 
@@ -40,6 +41,8 @@ python backend/scripts/import_dictionary_sources.py --data-repo ../siamsil-data
 Every file's checksum is checked before anything is written, and all selected sources are imported in one transaction. Re-running adds nothing. A source whose file changed is refused; updating an imported source is not supported yet. PDF sources need poppler's `pdftotext`.
 
 ## Known gaps
+
+- TongDot: a reviewer must confirm each Chin gloss is Tedim (`VARIETY_CHECK`) before approving it; reject the others. 186 Burmese glosses also contain English or Chin words (`MIXED_SCRIPT`).
 
 - Records without a part of speech (mostly 1,451 from the Zomi Standard Dictionary) get their own entry instead of joining one with a part of speech: 788 entries, 499 of which share a headword with another entry. Reviewers merge them.
 - Haokip-Lind: one entry (page 182, *bevy*) has the next entry joined to it in the book's own text; it carries a `MERGED_ENTRY` issue. Three entries with no English headword are skipped.

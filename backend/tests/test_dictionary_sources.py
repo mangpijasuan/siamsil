@@ -18,6 +18,7 @@ from dictionary_sources import (  # type: ignore  # noqa: E402
     read_learners_json,
     read_master_workbook,
     read_standard_workbook,
+    read_tongdot_tsv,
     split_alternatives,
 )
 
@@ -156,6 +157,34 @@ class HelperTests(unittest.TestCase):
             self.assertIn(spec["rights"], rights, source_id)
             self.assertIn(spec["root"], ("data_repo", "project"), source_id)
             self.assertRegex(spec["sha256"], r"^[0-9a-f]{64}$", source_id)
+
+
+class TongDotTests(unittest.TestCase):
+    def test_tongdot_lines_become_labelled_senses(self) -> None:
+        lines = [
+            "Zomi-English Dictionary (from TongDot.com)", "Source: test", "Entries: 4", "",
+            "Qavo\tQavo\t(n.): zu ve, ri ko",
+            "Qavo\tqavo\t(n.) \u1000\u1001\u1002\u104b",
+            "Zeta\tZeta\t(vt) \u1000\u1001 zeta oneself",
+            "Wix\tWix\t((abbrev).) wo ka",
+            "Broken line without tabs",
+            "Empty\tEmpty\t(n.)",
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "tongdot.txt"
+            path.write_text("\n".join(lines), encoding="utf-8")
+            read = read_tongdot_tsv(path)
+        self.assertEqual([r.record_id for r in read.records], ["L000005", "L000006", "L000007", "L000008"])
+        chin, burmese, mixed, abbrev = read.records
+        self.assertEqual((chin.headword, chin.part_of_speech, chin.equivalents), ("Qavo", "n.", [("ctd", "gloss", "zu ve, ri ko")]))
+        self.assertEqual([i.code for i in chin.issues], ["VARIETY_CHECK"])
+        self.assertEqual(burmese.equivalents[0][0], "my")
+        self.assertEqual(burmese.issues, [])
+        self.assertEqual((mixed.part_of_speech, [i.code for i in mixed.issues]), ("v.", ["MIXED_SCRIPT"]))
+        self.assertIsNone(abbrev.part_of_speech)
+        self.assertEqual(abbrev.equivalents, [("ctd", "gloss", "wo ka")])
+        self.assertEqual(chin.raw["definition"], "(n.): zu ve, ri ko")
+        self.assertEqual(read.skipped, {"not_three_columns": 4, "no_definition_text": 1})
 
 
 if __name__ == "__main__":

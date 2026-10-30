@@ -135,6 +135,14 @@
       "redistribute": "needs_review",
       "commercial": "needs_review",
       "evidence": "Shown in the app with an unreviewed label. Who compiled it and who holds the copyright are not recorded (docs/DATA_RIGHTS.md); data/raw/dictionary/provenance.json lists author and license as needs_review. The file name says it was cleaned with AI; what that changed is not recorded."
+    },
+    "tongdot": {
+      "description": "TongDot Zomi-English dictionary (tongdot.com): about 75,931 English-Zomi entries with Burmese. siamsil-data dictionary/sources/tongdot/ holds partial copies until TongDot supplies the full file",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "needs_review",
+      "commercial": "not_permitted",
+      "evidence": "Project owner reported on 2026-10-30 that TongDot gave permission (verbally or by message, not yet in writing) for display, training, and redistribution; commercial use was not granted. Stays needs_review until the permission is in writing, recorded in docs/DATA_RIGHTS.md, and confirmed by a second person."
     }
   }
 }

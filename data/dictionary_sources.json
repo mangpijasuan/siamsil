@@ -36,6 +36,15 @@
       "path": "dictionary/sources/haokip-lind-2011/Zomi-Ordbog-dansk-engelsk-zomi-2011-original.pdf",
       "sha256": "8762f0e4219a591bff0235c50c32ce4f516c36cc33bcf1ed4a2cfd3e73d98b82",
       "rights": "haokip_lind_2011"
+    },
+    "tongdot": {
+      "title": "TongDot Zomi-English dictionary (tongdot.com), partial interim copy: first 5,000 of 75,931 lines",
+      "version": "interim (Kaggle peterpausianlian/zolai-language-dataset-v2, via the Paumkim dataset)",
+      "format": "tongdot_tsv",
+      "root": "data_repo",
+      "path": "dictionary/sources/tongdot/tongdot_dictionary_first5000.txt",
+      "sha256": "01d5936111f769728331a74f5e7edb44d1d9b426770fca3f19a1c3933eb58dd9",
+      "rights": "tongdot"
     }
   }
 }
