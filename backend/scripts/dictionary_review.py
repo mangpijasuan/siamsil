@@ -2,7 +2,9 @@
 
 From the repository root, with SIAMSIL_DATABASE_URL set and the dictionary imported:
 
-  export          a sheet of senses for one reviewer (default 500), remembered so no one else gets them
+  export          a sheet of senses for one reviewer (default 500), remembered so no one else gets them;
+                  by default only the primary source's senses (data/dictionary_sources.json), with the
+                  reference sources shown beside them
   record          save a reviewer's completed sheet to the decisions file
   approval-sheet  senses every reviewer found correct, for a lead editor
   approve         save the lead editor's decisions
@@ -61,6 +63,11 @@ INSTRUCTIONS = (
 
 def now_utc() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def primary_sources(config: Path = PROJECT_ROOT / "data" / "dictionary_sources.json") -> list[str]:
+    sources = json.loads(config.read_text(encoding="utf-8"))["sources"]
+    return [source_id for source_id, spec in sources.items() if spec.get("role") == "primary"]
 
 
 def default_reviews_dir() -> Path:
@@ -223,6 +230,9 @@ def cmd_export(args: argparse.Namespace) -> int:
     if args.source:
         where.append("s.source_id = :source")
         params["source"] = args.source
+    elif not args.all_sources:
+        where.append("s.source_id = ANY(:primary)")
+        params["primary"] = primary_sources()
     if args.issue:
         where.append("EXISTS (SELECT 1 FROM dictionary_issues i WHERE i.sense_id = s.id AND i.status = 'open' "
                      "AND i.code = :issue)")
@@ -407,7 +417,8 @@ def main(argv: list[str] | None = None) -> int:
     export.add_argument("--reviewer", required=True, help="roster code, e.g. R01")
     export.add_argument("--out", type=Path, required=True)
     export.add_argument("--size", type=int, default=500)
-    export.add_argument("--source", help="only senses from this source id, e.g. tongdot")
+    export.add_argument("--source", help="only senses from this source id (default: the primary source)")
+    export.add_argument("--all-sources", action="store_true", help="senses from every source, not only the primary")
     export.add_argument("--issue", help="only senses with this open issue code, e.g. VARIETY_CHECK")
     export.add_argument("--batch", help="batch name (default: dict-<reviewer>-NNNN)")
     export.add_argument("--again", action="store_true", help="include senses already sent in earlier batches")

@@ -30,6 +30,15 @@ def approval(sense: str, decision: str = "approve", approver: str = "E01") -> di
             "approved_on": "2026-11-02"}
 
 
+class ConfigTests(unittest.TestCase):
+    def test_exactly_one_primary_source(self) -> None:
+        import dictionary_review
+
+        config = json.loads((BACKEND_ROOT.parent / "data" / "dictionary_sources.json").read_text(encoding="utf-8"))
+        self.assertTrue(all(spec.get("role") in ("primary", "reference") for spec in config["sources"].values()))
+        self.assertEqual(dictionary_review.primary_sources(), ["translation_master_50k"])
+
+
 class RuleTests(unittest.TestCase):
     def test_validate(self) -> None:
         self.assertEqual(dr.validate(review("ZD-000001", "correct")), [])
