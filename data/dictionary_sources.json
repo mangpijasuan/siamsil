@@ -24,7 +24,7 @@
       "version": null,
       "format": "standard_workbook",
       "root": "data_repo",
-      "path": "dictionary/versions/Zomi_Standard_Dictionary_AI_Cleaned_2026-08-18.xlsx",
+      "path": "dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx",
       "sha256": "e8563a0f1cdde0647611fb073a86fabde0b0ae9678ca1347f36ea25de96f0610",
       "rights": "zomi_standard_dictionary"
     },
