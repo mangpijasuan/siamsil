@@ -80,8 +80,45 @@ A batch holds 50K senses only, starting with words that the most sources share, 
 
 Each review records a fingerprint of the Zomi the reviewer saw. If that text changes later, the review no longer counts, and the sense goes back for review.
 
+### Corrections
+
+A `fix` changes the dictionary only after a lead editor who did not propose it approves it:
+
+```bash
+python backend/scripts/dictionary_review.py corrections-sheet --out corrections-1.xlsx
+python backend/scripts/dictionary_review.py revise --sheet corrections-1.xlsx --approver E01
+python backend/scripts/dictionary_review.py apply      # writes approved corrections, then sets statuses
+```
+
+- The corrections sheet lists each reviewer's correction beside the current Zomi. The lead editor chooses `approve` or `decline`.
+- `revise` appends each decision to `reviews/dictionary-revisions.jsonl` in siamsil-data:
+  - an approval is a `revision` record with the Zomi before and after, who proposed it and who approved it;
+  - a declined correction is not offered again, and the sense stays open for review.
+- `apply` writes approved corrections into the editorial database and marks those senses `approved`, since a reviewer wrote the correction and a lead editor approved it.
+- `build_language_db.py` applies the same file to the language release, so Dictionary, Translate and Siamsil AI show the corrected Zomi as verified.
+- Both steps change a sense only while it still holds the text that was corrected. The 50K workbook itself is never edited.
+
+### Terms
+
+Some English words need the same Zomi decision across many senses. For example, the project owner said on 2026-10-31 that the better word for *refugee* is **gambelmi**. Earlier that day they said **galtaimi**, and that **cimawh**, **dongtuak** and **galtaimi** all mean refugee, chosen by context, and **cimawh**, **dongtuak**, **liangvai** and **genthei** all mean someone helpless. The term keeps all of them for reviewers, with **gambelmi** first.
+
+`data/dictionary_terms.json` records each such term:
+- the English words it covers;
+- the Zomi words to choose from;
+- who decided it and when, and whether a second person has confirmed it;
+- optional mechanical replacements, which draft a suggestion (for refugee: `gamtaik mi` → `gambelmi`, so `gamtaik mite` → `gambelmite`).
+
+```bash
+python backend/scripts/dictionary_review.py export --reviewer R01 --term refugee --out refugee-R01.xlsx
+```
+
+A term sheet holds every unreviewed 50K sense whose headword uses the term: 348 senses for *refugee*, 279 of them with a suggested draft. Each row has two extra columns:
+- *Term words*: the term's Zomi words and when to use each;
+- *Suggested Zomi (AI draft)*: the Zomi with the replacements applied.
+
+The draft is only a starting point: the reviewer chooses `fix` and writes the right wording (the draft, or another word if the context needs it), or `correct` if the Zomi is already right. Corrections then follow the steps above. Nothing is replaced in bulk.
+
 ## Next steps
 
-1. Corrections: an editing step that turns approved `fix` corrections into revised senses.
-2. New headwords: candidates from the corpus and community, matched against existing entries before they are added.
-3. Release: copy published senses into the SQLite language release, showing each source only as its rights allow.
+1. New headwords: candidates from the corpus and community, matched against existing entries before they are added.
+2. Release: copy published senses into the SQLite language release, showing each source only as its rights allow. Approved corrections already reach it (see Corrections).

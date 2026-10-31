@@ -28,6 +28,17 @@ and never replace the stored text automatically. Status per sense:
   NEEDS_CORRECTION    a reviewer asked for a fix (or too few reviewers so far)
 
 Reviewer and approver codes are checked against the private roster (corpus_reviews.load_roster).
+
+Corrections become text only through a third record, in reviews/dictionary-revisions.jsonl: a lead
+editor who did not propose it approves one reviewer's fix, and the revision records the Zomi before
+and after, who proposed it, and who approved it.
+   {"kind": "revision", "sense_id": "ZD-000123", "before": "...", "after": "...",
+    "proposed_by": ["R01"], "approver": "E01", "approved_on": "2026-11-03", "recorded_at": "...Z",
+    "batch": "dict-corrections-0001", "notes": ""}
+A declined correction is recorded as {"kind": "declined", "sense_id", "after", "approver", ...}, so
+it is not offered again; the sense stays open for review.
+Revisions are applied to the editorial database (dictionary_review.py apply) and to the language
+release (build_language_db.py) only where the sense still holds the `before` text.
 """
 
 from __future__ import annotations
@@ -57,6 +68,8 @@ SENSE_ID = re.compile(r"^(ZD|ZS)-[0-9]{6,}$")
 REQUIRED = {
     "review": ("sense_id", "decision", "shown", "reviewer", "reviewed_on"),
     "approval": ("sense_id", "decision", "approver", "approved_on"),
+    "revision": ("sense_id", "before", "after", "proposed_by", "approver", "approved_on"),
+    "declined": ("sense_id", "after", "approver", "approved_on"),
 }
 # Database review_status for each decision status (models/dictionary.py REVIEW_STATUSES).
 REVIEW_STATUS = {
@@ -65,6 +78,19 @@ REVIEW_STATUS = {
     NEEDS_CORRECTION: "needs_correction",
     REJECTED: "rejected",
 }
+
+
+def same_text(a: str, b: str) -> bool:
+    return " ".join(str(a).split()) == " ".join(str(b).split())
+
+
+def latest_revisions(records: list[dict]) -> dict[str, dict]:
+    """The newest revision of each sense, from a revisions file in order."""
+    latest: dict[str, dict] = {}
+    for record in records:
+        if kind_of(record) == "revision":
+            latest[record["sense_id"]] = record
+    return latest
 
 
 def shown_digest(zomi: str) -> str:
@@ -88,6 +114,19 @@ def validate(record: dict) -> list[str]:
             errors.append("a fix needs the corrected Zomi")
         if not CODE.match(str(record["reviewer"])):
             errors.append("reviewer must be a roster code such as R01, not a name")
+    elif kind == "revision":
+        proposers = record["proposed_by"]
+        if not isinstance(proposers, list) or not all(CODE.match(str(code)) for code in proposers):
+            errors.append("proposed_by must be a list of roster codes")
+        elif record["approver"] in proposers:
+            errors.append("a lead editor cannot approve their own correction")
+        if not CODE.match(str(record["approver"])):
+            errors.append("approver must be a roster code such as E01, not a name")
+        if same_text(record["before"], record["after"]):
+            errors.append("the correction does not change the Zomi")
+    elif kind == "declined":
+        if not CODE.match(str(record["approver"])):
+            errors.append("approver must be a roster code such as E01, not a name")
     else:
         if record["decision"] not in APPROVAL_DECISIONS:
             errors.append("decision must be approve or reject")
@@ -135,7 +174,7 @@ def decide(records: list[dict], min_reviewers: int = 1) -> dict[str, Decision]:
         if kind_of(record) == "review":
             reviews.setdefault(sense, {})[record["reviewer"]] = (
                 record["decision"], str(record.get("correction") or "").strip(), position)
-        else:
+        elif kind_of(record) == "approval":
             approvals[sense] = (position, record["decision"], record["approver"])
 
     decisions = {}
