@@ -42,6 +42,8 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 | TongDot Zomi–English dictionary (tongdot.com) (private `siamsil-data`, `dictionary/sources/tongdot/`) | About 75,931 English–Zomi entries with Burmese; siamsil-data holds only partial copies until TongDot sends the full file | reported | reported | reported | **no** | `needs_review` (verbal permission reported, awaiting written confirmation) |
 | *Paunam Khenna Leh Kampau Luanzia*, Zomi grammar primer by Lia Cingsen (private `siamsil-data`), and the review sheets made from it | About 184 printed pages; 732 numbered sentences, 258 word pairs, 28 bilingual examples extracted | reported | reported | **no** | **no** | `needs_review` (permission reported, awaiting confirmation) |
 | *Zokam le Zolai* (Rev. Khoi Lam Thang, Zomi Christian Literature Society, 2013) (private `siamsil-data`) | About 23,600 words of Zomi prose: the language, writing history, spelling | reported, with credit | reported | **no** | **no** | `needs_review` (permission reported, awaiting confirmation) |
+| Paumkim dataset sheets: two short Zomi word and sentence lists (private `siamsil-data`, `zomi-data/`) | 51 lines of Zomi, no English | — | — | **no** | **no** | `needs_review` (author not recorded) |
+| Zomi Bethel Church website capture, in the Paumkim dataset (private `siamsil-data`, `zomi-data/`) | About 3,250 words of Zomi | **no** | **no** | **no** | **no** | `not_permitted` (no permission) |
 | *Zolai Standard Format* (Lian Than Tuang, 2018) (private `siamsil-data`) | 31-page Zolai spelling guide | — | — | — | — | `needs_review` (no permission yet; private reference for the spelling review) |
 | Community audio (planned) | Consent-based recordings; per-speaker choices in [AUDIO_CONSENT.md](AUDIO_CONSENT.md), recorded per source and speaker in the Speech Data Lab ([SPEECH_DATA_LAB.md](SPEECH_DATA_LAB.md)) | — | — | — | — | draft form, needs legal review |
 
@@ -124,6 +126,14 @@ To clear it for training, record in this file: (1) the dataset card as published
 - Still to record: the date of each permission, its exact wording on display and training, any required credit line, and where the written copies are kept (private storage, not this repository).
 - The PDF in `siamsil-data` (`dictionary/sources/haokip-lind-2011/`) was obtained from kupdf.net, a third-party upload, not from the rights holders. The permission covers the work; ask whether they can supply an authoritative copy.
 - The original lists each entry as `Danish [English] (part of speech): Zomi`, so the English is the authors'. A ChatGPT-made English-alphabetical draft is kept beside it as a reading copy only; three English labels it supplied (bathtub, shoot, shower) are not from the source.
+- **2026-10-29:** the Paumkim dataset in `siamsil-data` holds a plain-text extraction of the Ordbog (`zomi-data/zomi-data/zomi_ordbog_raw.txt`). Its two page columns run together, so entries cannot be read from it reliably; extract them column by column from the PDF.
+
+**Paumkim dataset sheets (`paumkim_zomi_sheets`)**
+- **2026-10-29:** two short lists of Zomi words and sentences, files of the Paumkim dataset (`zomi-data/zomi-data/zomi_phrases_sheet3_raw.txt`, `zomi_sheet_raw.txt`). The collection's CC0 label does not say who wrote them. Still to record: the author, and whether they may be shown and trained on; a second person confirms before anything is cleared.
+
+**Zomi Bethel Church website (`zomi_bethel_church_web`)**
+- **2026-10-29:** the Paumkim dataset holds a capture of the church's public website (`zomi-data/zomi-data/zomibethelchurch_raw.txt`). Only its Zomi bylaw and sermon note are useful language data. It also holds members' names, staff biographies, a phone number and a visitor's prayer request about health and immigration: never use or show those.
+- A public website, or a CC0 label on a collection that copied it, is not permission. Nothing is permitted until the church gives written permission for display and training (ask its lead pastor, Rev. Muana Khuptong), recorded here with its date and wording.
 
 **Zomi grammar primer (*Paunam Khenna Leh Kampau Luanzia*, Lia Cingsen)**
 - **2026-10-27, project owner:** the primer's owner gave permission for display in the app and for model training. Redistribution and commercial use were not granted.

@@ -151,6 +151,22 @@
       "redistribute": "needs_review",
       "commercial": "not_permitted",
       "evidence": "Project owner reported on 2026-10-30 that TongDot gave permission (verbally or by message, not yet in writing) for display, training, and redistribution; commercial use was not granted. Stays needs_review until the permission is in writing, recorded in docs/DATA_RIGHTS.md, and confirmed by a second person."
+    },
+    "paumkim_zomi_sheets": {
+      "description": "Two short lists of Zomi words and sentences (51 lines, Zomi only) in the Paumkim Zomi dataset (private siamsil-data zomi-data/zomi-data/zomi_phrases_sheet3_raw.txt, zomi_sheet_raw.txt)",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "not_permitted",
+      "commercial": "not_permitted",
+      "evidence": "Files of the public paumkim/zomi-dataset, which declares CC0 for the collection; who wrote these lines is not recorded, so the label does not settle their rights. The project owner uploaded the same files on 2026-10-29. Spellings are not reviewed."
+    },
+    "zomi_bethel_church_web": {
+      "description": "Zomi Bethel Church (Portland, Oregon) website capture in the Paumkim Zomi dataset (private siamsil-data zomi-data/zomi-data/zomibethelchurch_raw.txt); its Zomi bylaw and sermon note by Rev. Muana Khuptong are about 3,250 words",
+      "display": "not_permitted",
+      "train": "not_permitted",
+      "redistribute": "not_permitted",
+      "commercial": "not_permitted",
+      "evidence": "A capture of the church's public website, included in paumkim/zomi-dataset; the project owner uploaded the same file on 2026-10-29. A public website, or a CC0 label on a collection that copied it, is not the church's permission. Nothing is permitted until the church gives written permission; ask its lead pastor, Rev. Muana Khuptong. The capture also holds members' names, a phone number, and a visitor's prayer request about health and immigration: never use or show those."
     }
   }
 }
