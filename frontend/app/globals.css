@@ -3706,6 +3706,22 @@ body::before {
 .dict-langs:hover svg { transform: rotate(180deg); }
 .dict-langs:focus-visible { outline: 2px solid var(--gold2); outline-offset: 2px; }
 
+/* Dictionary and Translate headers are centered: the title and the language switch sit over
+   the centered search or input box, and under the centered logo on phones. Results stay
+   left-aligned for reading. */
+.dict-header,
+.tr-header { text-align: center; }
+.dict-langs { margin-left: auto; margin-right: auto; padding: 4px 8px; }
+.tr-langs { justify-content: center; }
+/* Equal widths keep the swap button in the middle whichever language comes first. */
+.tr-langs-switch .tr-lang { min-width: 64px; }
+.tr-langs-switch .tr-lang:last-child { text-align: left; }
+.dict-langs span { min-width: 56px; text-align: left; }
+.dict-langs span:first-child { text-align: right; }
+.dict-search-form,
+.tr-input,
+.tr-input-card { text-align: left; }
+
 /* Side menu: desktop uses the same layout as the phone menu
    (bigger icons, a short description under each item, blue highlight). */
 .mobile-drawer {
