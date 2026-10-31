@@ -124,7 +124,7 @@ if __name__ == "__main__":
 class TranslationMasterDictionaryTests(unittest.TestCase):
     """The live dictionary built from the 50K Translation Master (placeholder Zomi only)."""
 
-    def build(self, tmp: Path) -> Path:
+    def build(self, tmp: Path, revisions: dict | None = None) -> Path:
         import openpyxl
 
         from build_language_db import connect, create_schema, ingest_translation_master  # type: ignore
@@ -146,10 +146,25 @@ class TranslationMasterDictionaryTests(unittest.TestCase):
         db = tmp / "lang.sqlite"
         con = connect(db)
         create_schema(con)
-        stats = ingest_translation_master(con, source, "2026-10-30T00:00:00+00:00")
+        stats = ingest_translation_master(con, source, "2026-10-30T00:00:00+00:00", revisions)
         con.close()
         self.assertEqual(stats["ingested"], 2)
+        self.stats = stats
         return db
+
+    def test_an_approved_correction_replaces_the_zomi_while_the_source_is_unchanged(self) -> None:
+        revisions = {
+            "ZD-000001": {"before": "QAVO ; QAZU", "after": "QAVU ; QAZU"},
+            "ZD-000002": {"before": "OLDER TEXT", "after": "VOZU"},  # the source changed since: not applied
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = LanguageEngine(self.build(Path(tmp), revisions))
+            ability = engine.search_dictionary("ability")[0]
+            self.assertEqual((ability["zomi"], ability["verification_status"]), ("QAVU ; QAZU", "verified"))
+            self.assertTrue(ability["verified"])
+            abandon = engine.search_dictionary("abandon")[0]
+            self.assertEqual((abandon["zomi"], abandon["verification_status"]), ("VOZE", "unreviewed"))
+            self.assertEqual((self.stats["revisions_applied"], self.stats["revisions_skipped_changed_source"]), (1, 1))
 
     def test_entries_show_zomi_equivalents_and_english_definition(self) -> None:
         from language_engine import entry_zomi  # type: ignore
