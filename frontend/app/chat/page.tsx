@@ -52,7 +52,7 @@ export default function ChatPage() {
     <>
       <header className="page-header page-header-compact" style={{ paddingBottom: 16 }}>
         <div className="font-playfair" style={{ color: "#fff", fontSize: 18, fontWeight: 700 }}>Siamsil AI</div>
-        <div style={{ color: "var(--gold2)", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 4 }}>
+        <div style={{ color: "var(--gold2)", fontSize: 13, fontWeight: 700, marginTop: 4 }}>
           Retrieval assistant · no generated Zomi
         </div>
       </header>
