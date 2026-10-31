@@ -105,7 +105,42 @@ class BundleTests(unittest.TestCase):
         with mock.patch.dict(os.environ, env, clear=True), redirect_stdout(io.StringIO()):
             with self.assertRaises(SystemExit):
                 fetch_data.main()
-        self.assertFalse((data / "siamsil_language.sqlite").exists())
+        # Nothing from the bundle, no marker, and no leftover download.
+        self.assertEqual(sorted(p.name for p in data.iterdir()), [".fetch.lock"])
+
+    def test_a_failed_download_leaves_nothing_behind(self) -> None:
+        data = self.root / "data"
+        env = {"SIAMSIL_DATA_BUNDLE_URL": (self.root / "missing.tar.gz").as_uri(),
+               "SIAMSIL_DATA_BUNDLE_SHA256": "0" * 64, "SIAMSIL_DATA_ROOT": str(data)}
+        with mock.patch.dict(os.environ, env, clear=True), redirect_stdout(io.StringIO()):
+            with self.assertRaises(OSError):
+                fetch_data.main()
+        self.assertEqual(sorted(p.name for p in data.iterdir()), [".fetch.lock"])
+
+    def test_an_installed_bundle_starts_without_download_credentials(self) -> None:
+        data = self.root / "data"
+        data.mkdir()
+        (data / f".bundle-{'a' * 64}").touch()
+        env = {"SIAMSIL_DATA_BUNDLE_S3_ENDPOINT": "https://acct.r2.cloudflarestorage.com",  # keys missing
+               "SIAMSIL_DATA_BUNDLE_SHA256": "a" * 64, "SIAMSIL_DATA_ROOT": str(data)}
+        with mock.patch.dict(os.environ, env, clear=True), redirect_stdout(io.StringIO()) as out:
+            fetch_data.main()
+        self.assertIn("already present", out.getvalue())
+
+    def test_a_new_bundle_removes_files_the_old_one_had(self) -> None:
+        data = self.root / "data"
+        (data / "json").mkdir(parents=True)
+        (data / "json" / "bible_verses.json").write_text("[]", encoding="utf-8")  # from an older bundle
+        (data / "stale.sqlite").write_text("old", encoding="utf-8")
+        (data / ".bundle-old").touch()
+        bundle, sha256 = self.package()
+        env = {"SIAMSIL_DATA_BUNDLE_URL": bundle.as_uri(), "SIAMSIL_DATA_BUNDLE_SHA256": sha256,
+               "SIAMSIL_DATA_ROOT": str(data)}
+        with mock.patch.dict(os.environ, env, clear=True), redirect_stdout(io.StringIO()):
+            fetch_data.main()
+        self.assertEqual(sorted(p.relative_to(data).as_posix() for p in data.rglob("*")),
+                         [f".bundle-{sha256}", ".fetch.lock", "bible_versions.sqlite", "json",
+                          "json/daily_use_pairs.json", "siamsil_language.sqlite"])
 
 
 if __name__ == "__main__":

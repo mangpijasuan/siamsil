@@ -11,9 +11,11 @@ SIAMSIL_DATA_BUNDLE_SHA256, so restarts are instant.
 """
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import hmac
 import os
+import shutil
 import sys
 import tarfile
 import tempfile
@@ -86,52 +88,74 @@ def bundle_url(env: dict[str, str]) -> str:
     return env.get("SIAMSIL_DATA_BUNDLE_URL", "").strip()
 
 
+def install(archive: Path, root: Path, expected: str) -> None:
+    """Unpack a checked bundle beside the live files and, only once all of it is unpacked, replace them.
+
+    Files from an earlier bundle that this one leaves out are removed, so data dropped from a
+    bundle (for example a source no longer cleared for display) stops being served. The API starts
+    only after this script finishes (backend/Dockerfile), so it never reads a half-replaced tree.
+    """
+    staging = root / f".staging-{expected}"
+    shutil.rmtree(staging, ignore_errors=True)
+    staging.mkdir()
+    try:
+        with tarfile.open(archive, "r:gz") as tar:
+            members = tar.getmembers()
+            resolved = staging.resolve()
+            for member in members:
+                target = (staging / member.name).resolve()
+                if not (member.isfile() or member.isdir()) or resolved not in target.parents:
+                    sys.exit(f"fetch_data: refusing unsafe bundle entry {member.name!r}")
+            tar.extractall(staging, members=members)
+        for old in root.iterdir():
+            if not old.name.startswith(".") and old.name != "lost+found":
+                shutil.rmtree(old) if old.is_dir() and not old.is_symlink() else old.unlink()
+        for new in staging.iterdir():
+            os.replace(new, root / new.name)
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
+    for old_marker in root.glob(".bundle-*"):
+        old_marker.unlink()
+    (root / f".bundle-{expected}").touch()
+
+
 def main() -> None:
+    expected = os.environ.get("SIAMSIL_DATA_BUNDLE_SHA256", "").strip().lower()
+    root = Path(os.environ.get("SIAMSIL_DATA_ROOT", "/data"))
+    # An installed bundle needs no download, so no credentials either.
+    if expected and (root / f".bundle-{expected}").exists():
+        print("fetch_data: bundle already present")
+        return
     try:
         url = bundle_url(dict(os.environ))
     except ValueError as error:
         sys.exit(f"fetch_data: {error}")
-    expected = os.environ.get("SIAMSIL_DATA_BUNDLE_SHA256", "").strip().lower()
-    root = Path(os.environ.get("SIAMSIL_DATA_ROOT", "/data"))
-
     if not url:
         print("fetch_data: no data bundle configured (SIAMSIL_DATA_BUNDLE_S3_ENDPOINT or _URL); skipping")
         return
     if not expected:
         sys.exit("fetch_data: SIAMSIL_DATA_BUNDLE_SHA256 is required with a data bundle")
 
-    marker = root / f".bundle-{expected}"
-    if marker.exists():
-        print("fetch_data: bundle already present")
-        return
-
     root.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(dir=root, suffix=".tar.gz", delete=False) as tmp:
-        tmp_path = Path(tmp.name)
-        digest = hashlib.sha256()
-        print("fetch_data: downloading bundle")
-        with urllib.request.urlopen(url, timeout=60) as response:
-            for chunk in iter(lambda: response.read(1 << 20), b""):
-                digest.update(chunk)
-                tmp.write(chunk)
-
-    try:
-        if digest.hexdigest() != expected:
-            sys.exit(f"fetch_data: checksum mismatch (got {digest.hexdigest()})")
-        with tarfile.open(tmp_path, "r:gz") as tar:
-            members = tar.getmembers()
-            resolved_root = root.resolve()
-            for member in members:
-                target = (root / member.name).resolve()
-                if not (member.isfile() or member.isdir()) or resolved_root not in target.parents:
-                    sys.exit(f"fetch_data: refusing unsafe bundle entry {member.name!r}")
-            tar.extractall(root, members=members)
-    finally:
-        tmp_path.unlink(missing_ok=True)
-
-    for old in root.glob(".bundle-*"):
-        old.unlink()
-    marker.touch()
+    with (root / ".fetch.lock").open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)  # one install at a time on this volume
+        if (root / f".bundle-{expected}").exists():
+            print("fetch_data: bundle already present")
+            return
+        handle, name = tempfile.mkstemp(dir=root, prefix=".download-", suffix=".tar.gz")
+        archive = Path(name)
+        try:
+            digest = hashlib.sha256()
+            print("fetch_data: downloading bundle")
+            with os.fdopen(handle, "wb") as out, urllib.request.urlopen(url, timeout=60) as response:
+                for chunk in iter(lambda: response.read(1 << 20), b""):
+                    digest.update(chunk)
+                    out.write(chunk)
+            if digest.hexdigest() != expected:
+                sys.exit(f"fetch_data: checksum mismatch (got {digest.hexdigest()})")
+            install(archive, root, expected)
+        finally:
+            archive.unlink(missing_ok=True)
     print("fetch_data: bundle installed")
 
 

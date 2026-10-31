@@ -40,14 +40,14 @@ The bundle (about 600 MB; 1.7 GB unpacked) is too large for the dashboard's uplo
 
 ```bash
 aws s3 cp dist/siamsil-data.tar.gz s3://siamsil-data-bundle/siamsil-data.tar.gz \
-  --endpoint-url https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+  --endpoint-url https://<ACCOUNT_ID>.r2.cloudflarestorage.com --region auto
 ```
 
 The bundle contains `siamsil_language.sqlite`, `bible_versions.sqlite` and any reviewed phrase lists in `backend/data`. It leaves out `bible_verses.json`, the workbook's "ISO Improved Text" Bible, which is not cleared for display.
 
 ## 3. API (Railway)
 
-1. **New project → Deploy from GitHub repo** → `mangpijasuan/siamsil`. In the service's settings, set the root directory to `backend`. It builds `backend/Dockerfile` and checks `/health` (`backend/railway.toml`).
+1. **New project → Deploy from GitHub repo** → `mangpijasuan/siamsil`. In the service's settings, set the root directory to `backend`. It builds `backend/Dockerfile` and, before switching traffic to a new deployment, waits for `/health/ready`, which fails while the language database or PostgreSQL is not ready (`backend/railway.toml`).
 2. **Add a PostgreSQL database** to the project.
 3. **Add a volume** to the API service, mounted at `/data`. It needs room for the bundle and its unpacked files: about 5 GB.
 4. **Variables** on the API service:
@@ -64,7 +64,7 @@ The bundle contains `siamsil_language.sqlite`, `bible_versions.sqlite` and any r
 | `SIAMSIL_DATA_BUNDLE_S3_SECRET_ACCESS_KEY` | the read-only token's Secret Access Key |
 | `SIAMSIL_DATA_BUNDLE_SHA256` | the SHA-256 that `package_data.py` printed |
 
-The Dockerfile already points the API at `/data` (`SIAMSIL_LANGUAGE_DB`, `SIAMSIL_BIBLE_VERSIONS_DB`, `SIAMSIL_DATA_DIR`). On its first start the API downloads the bundle into the volume. That takes a few minutes, which is why the health check waits up to 10 minutes. It then applies the database migrations and starts. Later restarts skip the download while the SHA-256 is unchanged.
+The Dockerfile already points the API at `/data` (`SIAMSIL_LANGUAGE_DB`, `SIAMSIL_BIBLE_VERSIONS_DB`, `SIAMSIL_DATA_DIR`). On its first start the API downloads the bundle into the volume. It unpacks the whole bundle before replacing anything, and removes files an earlier bundle had that the new one leaves out. That takes a few minutes, which is why the health check waits up to 10 minutes. It then applies the database migrations and starts. Later restarts skip the download while the SHA-256 is unchanged.
 
 5. **Settings → Networking → Custom domain**: `api.siamsil.com`. Railway shows a CNAME record to add in step 5.
 
