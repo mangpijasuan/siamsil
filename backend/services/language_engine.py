@@ -36,14 +36,25 @@ def canonical_direction(direction: str | None) -> str | None:
 # Translation direction -> the corpus side that holds the text being translated.
 # English is stored in normalized_source_text and Zomi in normalized_target_text.
 PARALLEL_FTS_COLUMN = {"en-ctd": "normalized_source_text", "ctd-en": "normalized_target_text"}
+PARALLEL_LENGTH_COLUMN = {None: "normalized_source_text", **PARALLEL_FTS_COLUMN}
 # Pairs Zomi reviewers rejected (build_language_db.py --reviews) are never shown, even on an exact match.
 _EXACT_ORDER = " AND quality_flags NOT LIKE '%reviewer_rejected%' ORDER BY quality_score DESC, id LIMIT ?"
+# An exact match ignores case and closing punctuation: "Thank you" finds "Thank you." and "Thank you!".
+EXACT_FORMS = 4
+_EXACT_IN = "(" + ", ".join("?" * EXACT_FORMS) + ")"
 PARALLEL_EXACT_SQL = {
-    None: "SELECT * FROM parallel_sentences WHERE (lower(normalized_source_text) = lower(?)"
-    " OR lower(normalized_target_text) = lower(?))" + _EXACT_ORDER,
-    "en-ctd": "SELECT * FROM parallel_sentences WHERE lower(normalized_source_text) = lower(?)" + _EXACT_ORDER,
-    "ctd-en": "SELECT * FROM parallel_sentences WHERE lower(normalized_target_text) = lower(?)" + _EXACT_ORDER,
+    None: f"SELECT * FROM parallel_sentences WHERE (lower(normalized_source_text) IN {_EXACT_IN}"
+    f" OR lower(normalized_target_text) IN {_EXACT_IN})" + _EXACT_ORDER,
+    "en-ctd": f"SELECT * FROM parallel_sentences WHERE lower(normalized_source_text) IN {_EXACT_IN}" + _EXACT_ORDER,
+    "ctd-en": f"SELECT * FROM parallel_sentences WHERE lower(normalized_target_text) IN {_EXACT_IN}" + _EXACT_ORDER,
 }
+
+
+def exact_forms(text: str) -> list[str]:
+    """The query in lower case, bare and with each closing mark, for PARALLEL_EXACT_SQL."""
+    bare = text.strip().lower().rstrip(".!?").rstrip()
+    return [bare, f"{bare}.", f"{bare}!", f"{bare}?"]
+
 
 def split_zomi_definition(text: str | None) -> tuple[str | None, str | None]:
     """Split 'gloss; longer Zomi definition' without inventing English text."""
@@ -311,8 +322,8 @@ class LanguageEngine:
             return []
         con = self.connect()
         limit = min(max(limit, 1), 50)
-        text = query.strip()
-        exact_params = (text, text, limit) if direction is None else (text, limit)
+        forms = exact_forms(query)
+        exact_params = (*forms, *forms, limit) if direction is None else (*forms, limit)
         exact = con.execute(PARALLEL_EXACT_SQL[direction], exact_params).fetchall()
         remaining = limit - len(exact)
         fts_rows: list[sqlite3.Row] = []
@@ -330,7 +341,8 @@ class LanguageEngine:
             if exact_ids:
                 sql += f" AND p.id NOT IN ({placeholders})"
                 params.extend(exact_ids)
-            sql += " ORDER BY p.quality_score DESC, p.id LIMIT ?"
+            # Closest first: the shortest sentence on the searched side, then the best text match.
+            sql += f" ORDER BY length(p.{PARALLEL_LENGTH_COLUMN[direction]}), bm25(parallel_fts), p.id LIMIT ?"
             params.append(remaining)
             fts_rows = con.execute(sql, params).fetchall()
         return [self._present_pair(row, exact=row["id"] in {r["id"] for r in exact}) for row in [*exact, *fts_rows]]
