@@ -100,13 +100,13 @@ python backend/scripts/dictionary_review.py apply      # writes approved correct
 
 ### Terms
 
-Some English words need the same Zomi decision across many senses. For example, the project owner said on 2026-10-31 that *refugee* is **galtaimi**: **cimawh**, **dongtuak** and **galtaimi** all mean refugee, chosen by context, and **cimawh**, **dongtuak**, **liangvai** and **genthei** all mean someone helpless.
+Some English words need the same Zomi decision across many senses. For example, the project owner said on 2026-10-31 that the better word for *refugee* is **gambelmi**. Earlier that day they said **galtaimi**, and that **cimawh**, **dongtuak** and **galtaimi** all mean refugee, chosen by context, and **cimawh**, **dongtuak**, **liangvai** and **genthei** all mean someone helpless. The term keeps all of them for reviewers, with **gambelmi** first.
 
 `data/dictionary_terms.json` records each such term:
 - the English words it covers;
 - the Zomi words to choose from;
 - who decided it and when, and whether a second person has confirmed it;
-- optional mechanical replacements, which draft a suggestion (for refugee: `gamtaik mi` → `galtaimi`, so `gamtaik mite` → `galtaimite`).
+- optional mechanical replacements, which draft a suggestion (for refugee: `gamtaik mi` → `gambelmi`, so `gamtaik mite` → `gambelmite`).
 
 ```bash
 python backend/scripts/dictionary_review.py export --reviewer R01 --term refugee --out refugee-R01.xlsx
