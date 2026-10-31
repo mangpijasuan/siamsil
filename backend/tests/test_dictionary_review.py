@@ -83,6 +83,23 @@ class RuleTests(unittest.TestCase):
                 dr.load(path)
             self.assertEqual(dr.load(Path(tmp) / "missing.jsonl"), [])
 
+    def test_revisions(self) -> None:
+        revision = {"kind": "revision", "sense_id": "ZD-000001", "before": "QA VO", "after": "QA VU",
+                    "proposed_by": ["R01"], "approver": "E01", "approved_on": "2026-11-03"}
+        self.assertEqual(dr.validate(revision), [])
+        self.assertIn("a lead editor cannot approve their own correction",
+                      dr.validate({**revision, "approver": "R01"}))
+        self.assertIn("the correction does not change the Zomi", dr.validate({**revision, "after": " QA  VO "}))
+        self.assertTrue(dr.validate({**revision, "proposed_by": "R01"}))
+        newer = {**revision, "after": "QA VA"}
+        self.assertEqual(dr.latest_revisions([revision, newer]), {"ZD-000001": newer})
+        # Revisions and declined corrections never count as approvals of a review.
+        declined = {"kind": "declined", "sense_id": "ZD-000001", "after": "QA VA", "approver": "E01",
+                    "approved_on": "2026-11-03"}
+        self.assertEqual(dr.validate(declined), [])
+        records = [review("ZD-000001", "correct"), revision, declined]
+        self.assertEqual(dr.decide(records)["ZD-000001"].status, dr.READY_FOR_APPROVAL)
+
     def test_shown_digest_ignores_spacing(self) -> None:
         self.assertEqual(dr.shown_digest("qa  vo"), dr.shown_digest(" qa vo "))
         self.assertNotEqual(dr.shown_digest("qa vo"), dr.shown_digest("qa vu"))
@@ -197,6 +214,57 @@ class WorkflowTests(unittest.TestCase):
             "zzqreview-3": ("rejected", "rejected"),
             "zzqreview-4": ("unreviewed", "draft"),
         })
+
+    def zomi_of(self, headword: str) -> str:
+        from sqlalchemy import text
+
+        return self.session.execute(text(
+            "SELECT string_agg(q.text, ' ; ' ORDER BY q.position) FROM dictionary_equivalents q "
+            "JOIN dictionary_senses s ON s.id = q.sense_id JOIN dictionary_entries e ON e.id = s.entry_id "
+            "WHERE e.headword = :headword AND q.language = 'ctd'"), {"headword": headword}).scalar()
+
+    def test_a_term_sheet_and_an_approved_correction(self) -> None:
+        terms = self.reviews / "terms.json"
+        terms.write_text(json.dumps({"terms": {"zzq": {
+            "english": ["zzqreview"], "zomi": [{"word": "QAVU", "meaning": "placeholder"}],
+            "suggest": [{"from": "QAVO", "to": "QAVU"}], "decided_by": "project owner", "decided_on": "2026-10-31",
+        }}}), encoding="utf-8")
+        sheet = self.reviews / "term.xlsx"
+        self.assertEqual(self.run_tool("export", "--reviewer", "R01", "--out", str(sheet), "--source",
+                                       "zzq_review_source", "--term", "zzq", "--terms-file", str(terms)), 0)
+        import openpyxl
+
+        ws = openpyxl.load_workbook(sheet)["Review"]
+        header = [c.value for c in ws[1]]
+        self.assertLess(header.index("Suggested Zomi (AI draft)"), header.index("Decision"))
+        self.assertEqual(ws.cell(2, header.index("Suggested Zomi (AI draft)") + 1).value, "QAVU 1")
+        with self.assertRaises(SystemExit):
+            self.run_tool("export", "--reviewer", "R01", "--out", str(sheet), "--term", "nope",
+                          "--terms-file", str(terms))
+
+        self.fill(sheet, "Review", [("fix", "QAVU 1"), ("fix", "QAVU 2"), ("correct", ""), ("", "")])
+        self.assertEqual(self.run_tool("record", "--sheet", str(sheet), "--reviewer", "R01"), 0)
+
+        corrections = self.reviews / "corrections.xlsx"
+        self.assertEqual(self.run_tool("corrections-sheet", "--out", str(corrections)), 0)
+        self.fill(corrections, "Corrections", [("approve", ""), ("decline", "")])
+        with self.assertRaises(SystemExit):  # the reviewer who proposed it cannot approve it
+            self.run_tool("revise", "--sheet", str(corrections), "--approver", "R01")
+        self.assertEqual(self.run_tool("revise", "--sheet", str(corrections), "--approver", "E01"), 0)
+        self.assertEqual(self.run_tool("apply"), 0)
+
+        self.assertEqual(self.zomi_of("zzqreview-1"), "QAVU 1")
+        self.assertEqual(self.zomi_of("zzqreview-2"), "QAVO 2")  # declined: unchanged
+        status = self.status_of()
+        self.assertEqual(status["zzqreview-1"], ("approved", "approved"))
+        self.assertEqual(status["zzqreview-2"], ("needs_correction", "in_review"))
+        # A declined correction is not offered again, and applying twice changes nothing more.
+        again = self.reviews / "again.xlsx"
+        self.run_tool("corrections-sheet", "--out", str(again))
+        self.assertFalse(again.exists())
+        self.assertEqual(self.run_tool("apply"), 0)
+        self.assertEqual((self.zomi_of("zzqreview-1"), self.status_of()["zzqreview-1"]),
+                         ("QAVU 1", ("approved", "approved")))
 
     def test_reviews_of_changed_zomi_are_ignored(self) -> None:
         from sqlalchemy import text

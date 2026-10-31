@@ -413,13 +413,20 @@ def ingest_master_dictionary(con: sqlite3.Connection, path: Path, created_at: st
 TRANSLATION_MASTER = "English–Zomi–Burmese Translation Master"
 
 
-def ingest_translation_master(con: sqlite3.Connection, path: Path, created_at: str) -> dict:
+def ingest_translation_master(con: sqlite3.Connection, path: Path, created_at: str,
+                              revisions: dict[str, dict] | None = None) -> dict:
     """The 50K Translation Master as the live dictionary: one row per sense, text as written.
 
     `definition` holds the Zomi equivalents (the searchable Zomi side, as for the Zomi Standard
     Dictionary), `zomi` the same text for display, `definition_en` the simple English definition.
-    Burmese is kept but marked reference-only in the source. Every row is unreviewed.
+    Burmese is kept but marked reference-only in the source. Every row is unreviewed, except a sense
+    with an approved correction (dictionary_reviews.py, revisions): a reviewer wrote it and a lead
+    editor approved it, so it shows the corrected Zomi as verified. A correction applies only while
+    the source still holds the text that was corrected.
     """
+    import dictionary_reviews
+
+    revisions = revisions or {}
     from dictionary_sources import read_master_workbook
 
     read = read_master_workbook(path)
@@ -429,13 +436,23 @@ def ingest_translation_master(con: sqlite3.Connection, path: Path, created_at: s
     for next_id, record in enumerate(read.records, start=1):
         zomi = " ; ".join(text for language, _, text in record.equivalents if language == "ctd") or None
         burmese = " ; ".join(text for language, _, text in record.equivalents if language == "my") or None
+        status = "unreviewed"
+        revision = revisions.get(record.record_id)
+        if revision:
+            before = revision["before"].partition(" | ")[0]
+            after = revision["after"].partition(" | ")[0].strip()
+            if zomi and dictionary_reviews.same_text(zomi, before):
+                zomi, status = after, "verified"
+                stats["revisions_applied"] += 1
+            else:
+                stats["revisions_skipped_changed_source"] += 1
         if not zomi:
             stats["empty_definition"] += 1
         stats["with_open_issues"] += bool(record.issues)
         word = normalize_text(record.headword)
         rows_out.append((
             next_id, word, normalize_word(word), "en", None, record.part_of_speech, None, zomi, None, None,
-            TRANSLATION_MASTER, record.record_id, 0.6, "unreviewed", 0, None, word[:1].upper(), DATASET_VERSION,
+            TRANSLATION_MASTER, record.record_id, 0.6, status, 0, None, word[:1].upper(), DATASET_VERSION,
             created_at, zomi, record.definition_en, burmese, record.domain, record.usage_tier,
         ))
         fts_out.append((word, zomi or "", record.part_of_speech or ""))
@@ -909,6 +926,12 @@ def main() -> None:
         f"without it, {display_path(DEFAULT_REVIEWS)} is applied if present",
     )
     parser.add_argument(
+        "--dictionary-revisions",
+        type=Path,
+        help="Approved dictionary corrections (dictionary_review.py revise). Must exist when given; without it, "
+        "reviews/dictionary-revisions.jsonl in siamsil-data is applied if present",
+    )
+    parser.add_argument(
         "--min-reviewers",
         type=int,
         default=1,
@@ -956,8 +979,25 @@ def main() -> None:
     create_schema(con)
 
     if args.dictionary == "50k":
+        revisions_path = args.dictionary_revisions
+        if revisions_path is not None and not revisions_path.exists():
+            sys.exit(f"Dictionary revisions file not found: {revisions_path}")
+        if revisions_path is None and repo is not None:
+            revisions_path = repo.root / "reviews" / "dictionary-revisions.jsonl"
+        revisions: dict[str, dict] = {}
+        if revisions_path is not None and revisions_path.exists():
+            import dictionary_reviews
+
+            try:
+                revisions = dictionary_reviews.latest_revisions(dictionary_reviews.load(revisions_path))
+            except ValueError as error:
+                sys.exit(f"Dictionary revisions are not usable, nothing was built: {error}")
+            print(f"Applying {len(revisions):,} approved dictionary corrections from {revisions_path}…")
         print("Ingesting the 50K Translation Master…")
-        dict_stats = ingest_translation_master(con, dictionary_xlsx, created_at)
+        dict_stats = ingest_translation_master(con, dictionary_xlsx, created_at, revisions)
+        if revisions:
+            print(f"  corrections applied: {dict_stats.get('revisions_applied', 0):,}; skipped because the source "
+                  f"changed: {dict_stats.get('revisions_skipped_changed_source', 0):,}")
     else:
         print("Ingesting the Zomi Standard Dictionary…")
         dict_stats = ingest_master_dictionary(con, dictionary_xlsx, created_at)
@@ -1018,8 +1058,11 @@ def main() -> None:
             "verified": verified_dict,
             "empty_headword": dict_stats.get("empty_headword", 0),
             "empty_definition": dict_stats.get("empty_definition", 0),
+            "approved_corrections": dict_stats.get("revisions_applied", 0),
+            "corrections_skipped_changed_source": dict_stats.get("revisions_skipped_changed_source", 0),
             "source": TRANSLATION_MASTER if args.dictionary == "50k" else "Zomi Standard Dictionary",
-            "note": "Sole dictionary source shown in the app; every entry unreviewed until approved in the editorial dictionary.",
+            "note": "Sole dictionary source shown in the app; every entry unreviewed except approved corrections "
+            "(reviewed and approved by two people), which are verified.",
         },
         "parallel": {
             "source_rows": parallel_stats["counts"].get("source_rows"),

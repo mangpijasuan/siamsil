@@ -8,13 +8,20 @@ From the repository root, with SIAMSIL_DATABASE_URL set and the dictionary impor
   record          save a reviewer's completed sheet to the decisions file
   approval-sheet  senses every reviewer found correct, for a lead editor
   approve         save the lead editor's decisions
-  apply           set each sense's review status in the database from the decisions file
+  corrections-sheet  reviewers' corrections, for a lead editor to approve or decline
+  revise          save the lead editor's decisions on corrections (reviews/dictionary-revisions.jsonl)
+  apply           write approved corrections into the database, then set each sense's review status
   status          counts per status
+
+  export --term refugee  only senses whose headword uses a term in data/dictionary_terms.json, with the
+                  term's Zomi words beside each row and a suggested rewrite marked as a draft
 
   python backend/scripts/dictionary_review.py export --reviewer R01 --out batch-R01-1.xlsx
   python backend/scripts/dictionary_review.py record --sheet batch-R01-1.xlsx --reviewer R01
   python backend/scripts/dictionary_review.py approval-sheet --out approve-1.xlsx
   python backend/scripts/dictionary_review.py approve --sheet approve-1.xlsx --approver E01
+  python backend/scripts/dictionary_review.py corrections-sheet --out corrections-1.xlsx
+  python backend/scripts/dictionary_review.py revise --sheet corrections-1.xlsx --approver E01
   python backend/scripts/dictionary_review.py apply
 
 Decisions, the batch ledger, and the roster live in the private siamsil-data repository
@@ -36,6 +43,7 @@ sys.path.insert(0, str(BACKEND_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / "ml_pipeline" / "scripts"))
 
 import dictionary_reviews as dr  # type: ignore  # noqa: E402
+import dictionary_terms  # type: ignore  # noqa: E402
 from data_repo import default_data_repo  # type: ignore  # noqa: E402
 
 TIER_ORDER = "CASE usage_tier WHEN 'A1' THEN 1 WHEN 'A2' THEN 2 WHEN 'B1' THEN 3 WHEN 'B2' THEN 4 " \
@@ -43,8 +51,12 @@ TIER_ORDER = "CASE usage_tier WHEN 'A1' THEN 1 WHEN 'A2' THEN 2 WHEN 'B1' THEN 3
 REVIEW_COLUMNS = ["Sense ID", "Headword", "Part of speech", "English meaning", "Zomi to check",
                   "Burmese (reference)", "Example", "Other sources say", "Source", "Flags",
                   "Decision", "Corrected Zomi", "Notes", "Shown"]
+TERM_COLUMNS = ["Suggested Zomi (AI draft)", "Term words"]
 APPROVE_COLUMNS = ["Sense ID", "Headword", "Part of speech", "English meaning", "Zomi", "Reviewed by",
                    "Decision", "Notes"]
+CORRECTION_COLUMNS = ["Sense ID", "Headword", "Part of speech", "English meaning", "Zomi now", "Corrected Zomi",
+                      "Proposed by", "Decision", "Notes", "Shown"]
+CORRECTION_DECISIONS = ("approve", "decline")
 INSTRUCTIONS = (
     "Siamsil Dictionary review",
     "",
@@ -57,6 +69,22 @@ INSTRUCTIONS = (
     "'Other sources say' shows what other dictionaries give for the same word. It may help, but it may also be wrong.",
     "'Flags' are problems the sources reported (VARIETY_CHECK: the source mixes Chin languages).",
     "Do not use Google Translate, ChatGPT, Gemini, or other machine translation.",
+    "Do not change the Sense ID or Shown columns. Keep this file private.",
+)
+TERM_INSTRUCTIONS = (
+    "",
+    "This sheet is about one term. 'Term words' lists the Zomi words a Zomi speaker gave for it, and when to use each.",
+    "'Suggested Zomi (AI draft)' is the Zomi with the term's words put in mechanically. It is only a draft:",
+    "if it is right, choose fix and copy it into 'Corrected Zomi'; if another word fits the meaning better, write that;",
+    "if the Zomi is already right, choose correct. Nothing changes until a lead editor approves the correction.",
+)
+CORRECTION_INSTRUCTIONS = (
+    "Siamsil Dictionary corrections",
+    "",
+    "Each row is a reviewer's correction of one sense. Compare 'Zomi now' with 'Corrected Zomi'. Choose a Decision:",
+    "• approve: the correction is right; the dictionary will use it.",
+    "• decline: keep the Zomi as it is for now; the sense stays open for review.",
+    "You cannot approve a correction you proposed. If a sense has two different corrections, approve at most one.",
     "Do not change the Sense ID or Shown columns. Keep this file private.",
 )
 
@@ -145,7 +173,8 @@ def next_batch_name(batches: list[dict], prefix: str) -> str:
 # Spreadsheets -------------------------------------------------------------------------------------
 
 def write_sheet(path: Path, title: str, columns: list[str], rows: list[list], decisions: tuple[str, ...],
-                about: dict, decision_column: str, editable: tuple[str, ...], hidden: tuple[str, ...] = ()) -> None:
+                about: dict, decision_column: str, editable: tuple[str, ...], hidden: tuple[str, ...] = (),
+                instructions: tuple[str, ...] = INSTRUCTIONS) -> None:
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.worksheet.datavalidation import DataValidation
@@ -154,7 +183,7 @@ def write_sheet(path: Path, title: str, columns: list[str], rows: list[list], de
     intro = wb.active
     intro.title = "Instructions"
     intro.column_dimensions["A"].width = 115
-    for line in INSTRUCTIONS:
+    for line in instructions:
         intro.append([line])
     intro["A1"].font = Font(bold=True, size=14, color="1B2A4A")
 
@@ -237,12 +266,20 @@ def cmd_export(args: argparse.Namespace) -> int:
         where.append("EXISTS (SELECT 1 FROM dictionary_issues i WHERE i.sense_id = s.id AND i.status = 'open' "
                      "AND i.code = :issue)")
         params["issue"] = args.issue
+    term = None
+    if args.term:
+        terms = dictionary_terms.load_terms(args.terms_file)
+        if args.term not in terms:
+            sys.exit(f"No term {args.term!r} in {args.terms_file}; terms: {', '.join(sorted(terms)) or 'none'}")
+        term = terms[args.term]
+        where.append("e.headword ILIKE ANY(:term_like)")
+        params["term_like"] = [f"%{word}%" for word in term.english]
     order = f"sources DESC, {TIER_ORDER.replace('usage_tier', 's.usage_tier')}, e.headword, s.id"
     with session() as db:
         candidates = db.execute(text(f"{SENSE_SQL} WHERE {' AND '.join(where)} ORDER BY {order}"), params)
         chosen = []
         for row in candidates:
-            if row.id in taken or row.id in reviewed:
+            if row.id in taken or row.id in reviewed or (term and not term.matches(row.headword)):
                 continue
             chosen.append(row)
             if len(chosen) >= args.size:
@@ -250,16 +287,22 @@ def cmd_export(args: argparse.Namespace) -> int:
         rows = []
         for row in chosen:
             zomi = zomi_of(row)
+            about_term = [term.suggestion(row.headword, zomi), term.choices()] if term else []
             rows.append([row.id, row.headword, row.part_of_speech or "", row.definition_en or "", zomi,
                          row.my or "", row.example or "", other_sources(db, row.entry_id, row.id),
-                         row.source_id, row.flags or "", None, "", "", dr.shown_digest(zomi)])
+                         row.source_id, row.flags or "", *about_term, None, "", "", dr.shown_digest(zomi)])
     if not rows:
         print("Nothing left to export with these filters.")
         return 0
     name = args.batch or next_batch_name(batches, f"dict-{args.reviewer}")
     about = {"kind": "dictionary-review", "batch": name, "reviewer": args.reviewer, "exported_at": now_utc()}
-    write_sheet(args.out, "Review", REVIEW_COLUMNS, rows, dr.REVIEW_DECISIONS, about,
-                "Decision", ("Decision", "Corrected Zomi", "Notes"), hidden=("Shown",))
+    if term:
+        about["term"] = term.key
+    at = REVIEW_COLUMNS.index("Decision")
+    columns = REVIEW_COLUMNS[:at] + (TERM_COLUMNS if term else []) + REVIEW_COLUMNS[at:]
+    write_sheet(args.out, "Review", columns, rows, dr.REVIEW_DECISIONS, about,
+                "Decision", ("Decision", "Corrected Zomi", "Notes"), hidden=("Shown",),
+                instructions=INSTRUCTIONS + (TERM_INSTRUCTIONS if term else ()))
     dr.append(reviews_dir / "dictionary-batches.jsonl", [{
         "kind": "batch", "batch": name, "reviewer": args.reviewer, "exported_at": about["exported_at"],
         "sense_ids": [row[0] for row in rows]}])
@@ -373,11 +416,149 @@ def cmd_approve(args: argparse.Namespace) -> int:
     return 0
 
 
+def revisions_path(reviews_dir: Path) -> Path:
+    return reviews_dir / "dictionary-revisions.jsonl"
+
+
+def cmd_corrections_sheet(args: argparse.Namespace) -> int:
+    from sqlalchemy import text
+
+    records = dr.load(args.reviews_dir / "dictionary-reviews.jsonl")
+    declined = {(r["sense_id"], " ".join(r["after"].split())) for r in dr.load(revisions_path(args.reviews_dir))
+                if dr.kind_of(r) == "declined"}
+    with session() as db:
+        records, stale = usable_records(db, records)
+        decisions = dr.decide(records, args.min_reviewers)
+        wanted = sorted(sense for sense, d in decisions.items() if d.status == dr.NEEDS_CORRECTION and d.corrections)
+        found = {row.id: row for row in db.execute(text(SENSE_SQL + " WHERE s.id = ANY(:ids)"), {"ids": wanted})}
+        rows = []
+        for sense in wanted:
+            row = found.get(sense)
+            if row is None:
+                continue
+            by_text: dict[str, list[str]] = {}
+            for code, fix in sorted(decisions[sense].corrections.items()):
+                by_text.setdefault(" ".join(fix.split()), []).append(code)
+            zomi = zomi_of(row)
+            for fix, codes in by_text.items():
+                if (sense, fix) in declined or dr.same_text(fix, zomi):
+                    continue
+                rows.append([sense, row.headword, row.part_of_speech or "", row.definition_en or "", zomi, fix,
+                             ", ".join(codes), None, "", dr.shown_digest(zomi)])
+    if not rows:
+        print("No corrections are waiting for a lead editor.")
+        return 0
+    batches = load_batches(args.reviews_dir / "dictionary-batches.jsonl")
+    name = args.batch or next_batch_name(batches, "dict-corrections")
+    about = {"kind": "dictionary-corrections", "batch": name, "exported_at": now_utc()}
+    write_sheet(args.out, "Corrections", CORRECTION_COLUMNS, rows, CORRECTION_DECISIONS, about, "Decision",
+                ("Decision", "Notes"), hidden=("Shown",), instructions=CORRECTION_INSTRUCTIONS)
+    dr.append(args.reviews_dir / "dictionary-batches.jsonl", [{
+        "kind": "corrections-batch", "batch": name, "exported_at": about["exported_at"],
+        "sense_ids": sorted({r[0] for r in rows})}])
+    print(f"Wrote {len(rows)} corrections to {args.out} (batch {name}); {stale} stale reviews ignored")
+    return 0
+
+
+def cmd_revise(args: argparse.Namespace) -> int:
+    rows, about = read_sheet(args.sheet, "Corrections")
+    if about.get("kind") != "dictionary-corrections":
+        sys.exit(f"{args.sheet} is not a dictionary corrections sheet")
+    roster = dr.load_roster(args.reviews_dir / "roster.csv")
+    chosen = [(number, row) for number, row in enumerate(rows, start=2) if row.get("Decision", "").strip()]
+    with session() as db:
+        current = current_digests(db, sorted({row.get("Sense ID", "") for _, row in chosen}))
+    records, problems, approved = [], [], set()
+    for number, row in chosen:
+        decision = row["Decision"].strip().lower()
+        sense = row.get("Sense ID", "")
+        if decision not in CORRECTION_DECISIONS:
+            problems.append(f"row {number}: decision must be approve or decline")
+            continue
+        if current.get(sense) != row.get("Shown"):
+            problems.append(f"row {number}: the Zomi of {sense} changed after this sheet was made")
+            continue
+        base = {"sense_id": sense, "after": row.get("Corrected Zomi", ""), "approver": args.approver,
+                "approved_on": args.date, "recorded_at": now_utc(), "batch": about.get("batch", ""),
+                "notes": row.get("Notes", "")}
+        if decision == "decline":
+            records.append({"kind": "declined", **base})
+            continue
+        if sense in approved:
+            problems.append(f"row {number}: only one correction of {sense} can be approved")
+        approved.add(sense)
+        proposers = [code.strip() for code in row.get("Proposed by", "").split(",") if code.strip()]
+        record = {"kind": "revision", **base, "before": row.get("Zomi now", ""), "proposed_by": proposers}
+        errors = dr.validate(record)
+        if errors:
+            problems.append(f"row {number}: {'; '.join(errors)}")
+        records.append(record)
+    problems += dr.roster_problems(records, roster)
+    if problems:
+        sys.exit("Nothing was saved:\n  " + "\n  ".join(problems))
+    if not args.dry_run:
+        dr.append(revisions_path(args.reviews_dir), records)
+    kept = sum(dr.kind_of(r) == "revision" for r in records)
+    print(f"{'Would save' if args.dry_run else 'Saved'} {kept} approved and {len(records) - kept} declined "
+          f"corrections from {args.sheet}; run apply to write them into the dictionary")
+    return 0
+
+
+def write_revision(db, sense: str, after: str) -> None:
+    """Replace a sense's Zomi with the approved correction: equivalents, then any Zomi explanation after ' | '."""
+    from sqlalchemy import text
+
+    equivalents, _, explanation = after.partition(" | ")
+    kind = db.execute(text("SELECT kind FROM dictionary_equivalents WHERE sense_id = :id AND language = 'ctd' "
+                           "ORDER BY position LIMIT 1"), {"id": sense}).scalar() or "equivalent"
+    db.execute(text("DELETE FROM dictionary_equivalents WHERE sense_id = :id AND language = 'ctd'"), {"id": sense})
+    for position, part in enumerate((p.strip() for p in equivalents.split(";")), start=1):
+        if part:
+            db.execute(text("INSERT INTO dictionary_equivalents (sense_id, language, kind, position, text) "
+                            "VALUES (:id, 'ctd', :kind, :position, :text)"),
+                       {"id": sense, "kind": kind, "position": position, "text": part})
+    if explanation.strip():
+        db.execute(text("UPDATE dictionary_senses SET explanation_ctd = :text WHERE id = :id"),
+                   {"text": explanation.strip(), "id": sense})
+
+
+def apply_revisions(db, revisions: dict[str, dict]) -> dict[str, int]:
+    """Approved corrections, where the sense still holds the text the reviewer corrected."""
+    from sqlalchemy import text
+
+    counts = {"written": 0, "already": 0, "changed_since": 0}
+    if not revisions:
+        return counts
+    found = {row.id: row for row in db.execute(text(SENSE_SQL + " WHERE s.id = ANY(:ids)"), {"ids": list(revisions)})}
+    for sense, revision in revisions.items():
+        row = found.get(sense)
+        if row is None:
+            counts["changed_since"] += 1
+            continue
+        zomi = zomi_of(row)
+        if dr.same_text(zomi, revision["after"]) or dr.same_text(row.ctd or "", revision["after"]):
+            counts["already"] += 1
+        elif dr.same_text(zomi, revision["before"]):
+            write_revision(db, sense, revision["after"])
+            counts["written"] += 1
+        else:
+            counts["changed_since"] += 1
+            continue
+        # A reviewer wrote the correction and a different lead editor approved it: two people.
+        db.execute(text("UPDATE dictionary_senses SET review_status = 'approved', status = 'approved' WHERE id = :id"),
+                   {"id": sense})
+    db.flush()
+    return counts
+
+
 def cmd_apply(args: argparse.Namespace) -> int:
     from sqlalchemy import text
 
     records = dr.load(args.reviews_dir / "dictionary-reviews.jsonl")
+    revisions = dr.latest_revisions(dr.load(revisions_path(args.reviews_dir)))
     with session() as db:
+        revised = apply_revisions(db, revisions)
+        # Reviews of text a correction replaced no longer match, so they drop out here.
         records, stale = usable_records(db, records)
         decisions = dr.decide(records, args.min_reviewers)
         counts: dict[str, int] = {}
@@ -392,6 +573,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
         else:
             db.commit()
     summary = ", ".join(f"{status} {counts.get(status, 0)}" for status in dr.STATUSES)
+    print(f"{'Would write' if args.dry_run else 'Wrote'} {revised['written']} approved corrections "
+          f"({revised['already']} already in place, {revised['changed_since']} skipped because the Zomi changed since)")
     print(f"{'Would set' if args.dry_run else 'Set'} {sum(counts.values())} senses: {summary}; "
           f"{stale} reviews of since-changed Zomi ignored")
     return 0
@@ -422,6 +605,8 @@ def main(argv: list[str] | None = None) -> int:
     export.add_argument("--issue", help="only senses with this open issue code, e.g. VARIETY_CHECK")
     export.add_argument("--batch", help="batch name (default: dict-<reviewer>-NNNN)")
     export.add_argument("--again", action="store_true", help="include senses already sent in earlier batches")
+    export.add_argument("--term", help="only senses whose headword uses this term in data/dictionary_terms.json")
+    export.add_argument("--terms-file", type=Path, default=dictionary_terms.TERMS_PATH)
 
     record = commands.add_parser("record", help="save a completed review sheet")
     record.add_argument("--sheet", type=Path, required=True)
@@ -440,7 +625,18 @@ def main(argv: list[str] | None = None) -> int:
     approve.add_argument("--date", default=date.today().isoformat())
     approve.add_argument("--dry-run", action="store_true")
 
-    apply = commands.add_parser("apply", help="set review statuses in the database")
+    corrections = commands.add_parser("corrections-sheet", help="reviewers' corrections, for a lead editor")
+    corrections.add_argument("--out", type=Path, required=True)
+    corrections.add_argument("--batch")
+    corrections.add_argument("--min-reviewers", type=int, default=1)
+
+    revise = commands.add_parser("revise", help="save a lead editor's decisions on corrections")
+    revise.add_argument("--sheet", type=Path, required=True)
+    revise.add_argument("--approver", required=True, help="roster code, e.g. E01")
+    revise.add_argument("--date", default=date.today().isoformat())
+    revise.add_argument("--dry-run", action="store_true")
+
+    apply = commands.add_parser("apply", help="write approved corrections, then set review statuses")
     apply.add_argument("--min-reviewers", type=int, default=1)
     apply.add_argument("--dry-run", action="store_true")
 
@@ -449,7 +645,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     args.reviews_dir = args.reviews_dir or default_reviews_dir()
     handlers = {"export": cmd_export, "record": cmd_record, "approval-sheet": cmd_approval_sheet,
-                "approve": cmd_approve, "apply": cmd_apply, "status": cmd_status}
+                "approve": cmd_approve, "corrections-sheet": cmd_corrections_sheet, "revise": cmd_revise,
+                "apply": cmd_apply, "status": cmd_status}
     try:
         return handlers[args.command](args)
     except ValueError as error:

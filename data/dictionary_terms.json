@@ -1,0 +1,26 @@
+{
+  "_comment": "Term decisions for dictionary reviews (docs/DICTIONARY.md, Terms). A term lists the Zomi words a Zomi speaker gave for an English word, so reviewers see them beside every sense that uses it. 'suggest' rewrites the Zomi mechanically into a draft for reviewers, never into the dictionary: a reviewer confirms or changes each row, then a lead editor approves it. Record only what a Zomi speaker said; a term counts as confirmed only when a second person has checked it.",
+  "terms": {
+    "refugee": {
+      "english": ["refugee", "refugees"],
+      "zomi": [
+        {"word": "galtaimi", "meaning": "refugee"},
+        {"word": "cimawh", "meaning": "refugee; someone helpless"},
+        {"word": "dongtuak", "meaning": "refugee; someone helpless"},
+        {"word": "liangvai", "meaning": "someone helpless"},
+        {"word": "genthei", "meaning": "someone helpless"}
+      ],
+      "note": "Project owner, 2026-10-31: refugee is galtaimi; cimawh, dongtuak and galtaimi all mean refugee, chosen by context. Cimawh is someone helpless, and dongtuak, liangvai and genthei mean the same.",
+      "headword": "galtaimi",
+      "suggest": [
+        {"from": "gamtaik mi", "to": "galtaimi"},
+        {"from": "gamtai mi", "to": "galtaimi"},
+        {"from": "gamtaimi", "to": "galtaimi"},
+        {"from": "gamtaite", "to": "galtaimite"}
+      ],
+      "decided_by": "project owner",
+      "decided_on": "2026-10-31",
+      "confirmed_by": null
+    }
+  }
+}
