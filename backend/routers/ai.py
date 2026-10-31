@@ -7,7 +7,8 @@ from pydantic import BaseModel, Field
 
 from api_schemas import AskResponse
 from rate_limit import rate_limited
-from services.data_loader import get_store
+from services.bible_lookup import BibleLookup
+from services.bible_versions import get_bible_versions
 from services.language_engine import entry_zomi, get_engine
 
 router = APIRouter(prefix="/ai", tags=["ai"], dependencies=[Depends(rate_limited("assistant"))])
@@ -43,12 +44,14 @@ def ask(request: AskRequest):
     if not engine.available:
         raise HTTPException(status_code=503, detail="Language database is not built yet.")
 
-    store = get_store()
     intent = _intent(request.message)
     lookup = lookup_query(request.message)
-    dictionary = engine.search_dictionary(lookup, limit=5)
-    corpus = engine.search_parallel(lookup, limit=5)
-    bible = store.search_bible(lookup if intent == "bible" else request.message, limit=3) if intent == "bible" else []
+    found, verses = BibleLookup(get_bible_versions()).passage(request.message, search=intent == "bible")
+    if found == "reference":
+        intent = "bible"
+    # A named passage is answered from the Bible alone; a word or phrase also gets the dictionary and corpus.
+    dictionary = [] if found == "reference" else engine.search_dictionary(lookup, limit=5)
+    corpus = [] if intent == "bible" else engine.search_parallel(lookup, limit=5)
 
     sources: list[dict] = []
     if dictionary:
@@ -74,14 +77,15 @@ def ask(request: AskRequest):
                 "label": pair["label"],
             }
         )
-    for verse in bible[:2]:
+    for verse in verses:
         sources.append(
             {
                 "type": "bible",
-                "reference": verse.get("reference"),
-                "english": verse.get("english"),
-                "zomi": verse.get("zomi_iso"),
-                "verified": True,
+                "reference": verse["reference"],
+                "english": verse["english"],
+                "zomi": verse["zomi"],
+                "source": verse["source"],
+                "label": "Bible",
             }
         )
 
@@ -91,6 +95,10 @@ def ask(request: AskRequest):
             "I will not invent a Zomi translation."
         )
         confidence = "none"
+    elif verses and (found == "reference" or not dictionary):
+        how = "" if found == "reference" else "Verses containing those words: "
+        answer = f"{how}{', '.join(v['reference'] for v in verses)}, from the {verses[0]['source']}."
+        confidence = "high"
     elif dictionary:
         top = dictionary[0]
         status = "verified dictionary entry" if top["verified"] else "dictionary entry that still needs review"

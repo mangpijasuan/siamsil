@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
-import { askSiamsil } from "@/lib/api";
+import { askSiamsil, type AskResponse } from "@/lib/api";
 import { IconArrow, IconChat } from "@/components/Icons";
 
 type Message = {
@@ -10,7 +10,18 @@ type Message = {
   text: string;
   confidence?: string;
   note?: string;
+  sources?: AskResponse["sources"];
 };
+
+// What each answer was taken from, so the Zomi is always shown with where it came from.
+function sourceLabel(source: AskResponse["sources"][number]): string {
+  if (source.type === "bible") return [source.reference, source.source].filter(Boolean).join(" · ");
+  if (source.type === "dictionary") {
+    const status = source.verified ? "reviewed" : "unreviewed";
+    return [source.source ?? "Dictionary", status].join(" · ");
+  }
+  return source.label ?? "Machine-translated example (unverified)";
+}
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -38,6 +49,7 @@ export default function ChatPage() {
           text: data.answer,
           confidence: data.confidence,
           note: data.note,
+          sources: data.sources,
         },
       ]);
     } catch {
@@ -101,6 +113,21 @@ export default function ChatPage() {
                   </div>
                 )}
                 {msg.text}
+                {msg.sources && msg.sources.length > 0 && (
+                  <ul style={{ listStyle: "none", margin: "10px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+                    {msg.sources.map((source, index) => (
+                      <li key={index} style={{ borderTop: "1px solid var(--border)", paddingTop: 8 }}>
+                        {source.zomi && (
+                          <div lang="ctd" style={{ fontWeight: 700, color: "var(--navy)" }}>{source.zomi}</div>
+                        )}
+                        {source.english && (
+                          <div lang="en" style={{ color: "var(--text-soft)", fontSize: 14 }}>{source.english}</div>
+                        )}
+                        <div style={{ fontSize: 12, color: "var(--gray)", marginTop: 2 }}>{sourceLabel(source)}</div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {msg.note && (
                   <div style={{ marginTop: 8, fontSize: 12, color: "var(--gray)" }}>{msg.note}</div>
                 )}

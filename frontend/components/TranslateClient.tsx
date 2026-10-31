@@ -56,8 +56,10 @@ function IconClose() {
   );
 }
 
-function StatusChip({ verified }: { verified?: boolean }) {
-  return verified
+function StatusChip({ match }: { match: TranslateMatch }) {
+  // A Bible verse is published text, not a reviewed or unreviewed Siamsil translation.
+  if (match.source === "bible") return null;
+  return match.verified
     ? <span className="tr-chip tr-chip-verified">Verified</span>
     : <span className="tr-chip tr-chip-unverified">Unverified</span>;
 }
@@ -216,7 +218,7 @@ export default function TranslateClient({
             </div>
             <div className="tr-result-meta">
               <span className="tr-chip">{sourceLabel(primary)}</span>
-              <StatusChip verified={primary.verified} />
+              <StatusChip match={primary} />
               <div className="tr-actions">
                 <button type="button" className="tr-action" onClick={() => copy(primarySides.target)}>
                   <IconCopy /> {copied ? "Copied" : `Copy ${shown.target.name}`}
@@ -255,7 +257,7 @@ export default function TranslateClient({
                 <li key={`${match.source}-${match.id ?? index}`} className="tr-alt">
                   <div className="tr-alt-chips">
                     <span className="tr-chip">{sourceLabel(match)}</span>
-                    <StatusChip verified={match.verified} />
+                    <StatusChip match={match} />
                   </div>
                   <p className="tr-alt-en" lang={LANG_ATTR[shown.source.code]}>{sides.source}</p>
                   <p className="tr-alt-zomi" lang={LANG_ATTR[shown.target.code]}>{sides.target}</p>
