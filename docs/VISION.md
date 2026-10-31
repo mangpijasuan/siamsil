@@ -1,6 +1,6 @@
 # Siamsil vision
 
-Updated: 2026-10-05
+Updated: 2026-10-27
 Source: "Siamsil Universal Literacy Platform — Master Architecture v2.0" (project owner), reviewed and adopted in part.
 
 This document is the long-term direction. It is **not** the engineering plan: current work follows [ROADMAP.md](ROADMAP.md) and the release order in [PRODUCTION_MASTER_BUILD_PROMPT.md](PRODUCTION_MASTER_BUILD_PROMPT.md). Where they differ, the roadmap wins until this document is promoted into it.
@@ -34,6 +34,29 @@ Siamsil grows from the digital home for the Zomi language into a literacy platfo
 - **Restructure the repository gradually**, toward the workspace in [MOBILE_AI_ARCHITECTURE.md](MOBILE_AI_ARCHITECTURE.md); [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md) tracks it under later work.
 - **Add infrastructure when measurements require it**: Redis, vector search, analytics stores, additional subdomains.
 
+## Siamsil products
+
+Siamsil is one platform with several products, all on one Siamsil account (principle 11). Products are named "Siamsil" and a plain word, written as two words: Siamsil AI, Siamsil Library, Siamsil Docs. Each serves the language or the people who write and learn in it.
+
+| Product | What it is | Status |
+|---|---|---|
+| Siamsil Dictionary, Translate, AI | The language core | Release 1 |
+| Siamsil Library | Books, scripture, and cultural archives | Live; grows with Siamsil Docs |
+| Siamsil Learn | Learning in Zomi | Release 2 |
+| Siamsil Sign | Signatures for Siamsil's own agreements: recording consent, author agreements, permission letters | Planned; internal first |
+| Siamsil Docs | Writers submit articles and books; after review they are published, free first and later for sale | Planned |
+| Siamsil Keyboard | Zomi word completion and next-word suggestions on the phone | Planned; grows from predictive text |
+| Siamsil Voice | Zomi speech to text and text to speech | Planned; grows from the Speech Data Lab |
+
+Rules every product follows:
+
+- **Rights first.** Each work or recording records who owns it and what Siamsil may do with it, as `data/rights.json` does for language data.
+- **Training is a separate, opt-in choice.** Publishing, selling, or signing never makes anything training data by default. An author or speaker who agrees adds data Siamsil may learn from.
+- **Reviewed before published**, as with lessons and language data (principle 4).
+- **The language comes first.** A product starts only after the release before it ships; [ROADMAP.md](ROADMAP.md) sets the order and what each needs first.
+
+Siamsil Sign is built for Siamsil's own needs. A public signature service is a different business, with legal rules on valid signatures, tamper-evident records, and established competitors; it is revisited only if the community asks for it.
+
 ## Deferred, not rejected
 
 These stay in the vision and are revisited once the first pathway works:
@@ -48,7 +71,8 @@ These stay in the vision and are revisited once the first pathway works:
 | Literacy profile, readiness index, passport | Assessments are calibrated (principle 3) |
 | Learners under 18 and parent dashboards | Child-privacy obligations (such as COPPA) are designed and reviewed |
 | Institutional platform beyond simple cohorts | Partner organizations need it |
-| Premium tiers, enterprise, billing | Free core learning is established |
+| Siamsil Sign as a public service | The community asks for it, and valid-signature rules and tamper-evident records are designed and reviewed |
+| Premium tiers, enterprise, billing | Free core learning is established. Sales of authors' work in Siamsil Docs are a separate decision, made at its second step (see ROADMAP.md) |
 
 ## The cost to plan around
 

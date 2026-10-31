@@ -1,6 +1,6 @@
 # Siamsil phase roadmap
 
-Updated: 2026-10-01
+Updated: 2026-10-27
 
 This is the phase-level view: what each phase delivers, what must be true before the next one starts, and how phases map to the releases in [`PRODUCTION_MASTER_BUILD_PROMPT.md`](PRODUCTION_MASTER_BUILD_PROMPT.md). Item-level status lives in [`IMPLEMENTATION_ROADMAP.md`](IMPLEMENTATION_ROADMAP.md); do not duplicate checklists here.
 
@@ -152,6 +152,21 @@ Build order:
 
 Exit gate: learners complete the pathway on a phone, mastery is backed by recorded evidence, and every published lesson and question passed human review. More domains, GED preparation, credentials, and Studio follow the "Deferred" table in `VISION.md`.
 
+## Siamsil products track
+
+Direction and rules: *Siamsil products* in [`VISION.md`](VISION.md). Nothing here starts before Release 1 ships. Order:
+
+1. **Siamsil Sign, internal.** Siamsil's own agreements signed online: speech recording consent (with the Speech Data Lab and [`AUDIO_CONSENT.md`](AUDIO_CONSENT.md)), author agreements for Siamsil Docs, and source permission letters. Each signature records the signer's account, the exact document version (a hash), the time, and a withdrawal path where the agreement allows one. Signed documents stay private and out of git.
+   Needs first: the agreement texts reviewed by the project owner (and a lawyer for the author agreement).
+2. **Siamsil Docs, step 1: free publishing.** Authors submit articles and books; a reviewer approves them before they appear in Siamsil Library. Each work records its author, license, and the author's separate yes or no to AI training.
+   Needs first: Siamsil Sign for the author agreement, moderation roles, and a takedown process.
+3. **Siamsil Docs, step 2: sales.** Readers buy works, and authors are paid their share through a payment provider that handles payouts, tax forms, and refunds (such as Stripe Connect). Siamsil never stores card numbers.
+   Needs first: the project owner's decision on billing (VISION.md *Deferred*), the author share and refund policy, terms of sale, and the provider's account and tax setup.
+4. **Siamsil Keyboard.** Predictive text grown into a phone keyboard: word completion, next-word suggestions, and spelling hints from the approved Siamsil Zomi Standard Form.
+   Needs first: predictive text steps 2 and 3, and Release 5 (native apps).
+5. **Siamsil Voice.** Speech to text and text to speech.
+   Needs first: consented recordings from the Speech Data Lab and a model tested on Zomi; no voice is used for synthesis without its speaker's permission for that purpose.
+
 ## Mapping to releases
 
 | Release (master prompt) | Phases |
@@ -162,4 +177,4 @@ Exit gate: learners complete the pathway on a phone, mastery is backed by record
 | Release 4 — Intelligence | Phase 2 model in production, Phase 6 |
 | Release 5 — Native iOS / Android | mobile app from Phase 4 |
 
-The Phase 5 developer platform is not in the master prompt's release list; schedule it only after its licensing and governance gates are met.
+Siamsil Sign and Siamsil Docs follow Release 1 alongside the releases above, Siamsil Keyboard needs Release 5, and Siamsil Voice belongs to Release 4. The Phase 5 developer platform is not in the master prompt's release list; schedule it only after its licensing and governance gates are met.
