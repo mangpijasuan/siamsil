@@ -540,6 +540,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/words/suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Suggest Words
+         * @description Zomi words starting with `prefix`, most frequent first. English completion is /dictionary/suggest.
+         */
+        get: operations["suggest_words_api_v1_words_suggest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -1517,6 +1537,28 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** WordSuggestion */
+        WordSuggestion: {
+            /** Count */
+            count: number;
+            /** Word */
+            word: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** WordSuggestionsResponse */
+        WordSuggestionsResponse: {
+            /** Language */
+            language: string;
+            /** Prefix */
+            prefix: string;
+            /** Sources */
+            sources: string[];
+            /** Words */
+            words: components["schemas"]["WordSuggestion"][];
+        } & {
+            [key: string]: unknown;
         };
     };
     responses: never;
@@ -2600,6 +2642,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TranslationSearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    suggest_words_api_v1_words_suggest_get: {
+        parameters: {
+            query: {
+                /** @description The start of a Zomi word */
+                prefix: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WordSuggestionsResponse"];
                 };
             };
             /** @description Validation Error */

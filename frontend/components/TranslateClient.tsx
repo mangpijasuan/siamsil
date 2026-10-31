@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { TranslateMatch } from "@/lib/api";
+import { suggestZomiWords } from "@/lib/api";
+import { useWordCompletions } from "@/lib/useWordCompletions";
+import { completeTrailingWord, completionPrefix, usefulCompletions } from "@/lib/wordComplete";
 import { pushHistory, useRecentSearches } from "@/lib/localData";
 import { IconSwap } from "@/components/Icons";
 import ExperimentalTranslation from "@/components/ExperimentalTranslation";
@@ -21,6 +24,8 @@ const VISIBLE_ALTERNATES = 5;
 // English starters only: Siamsil never shows Zomi it does not hold, so Zomi → English has none.
 const EXAMPLES = ["water", "thank you", "good morning", "family", "school"];
 const LANG_ATTR = { en: "en", ctd: "ctd" } as const;
+// Zomi input only: phones already complete English, and nothing completes Zomi.
+const completeZomi = (prefix: string) => suggestZomiWords(prefix).then((data) => data.words.map((item) => item.word));
 
 const SOURCE_LABEL: Record<string, string> = {
   dictionary: "Dictionary",
@@ -83,6 +88,10 @@ export default function TranslateClient({
   const [showAll, setShowAll] = useState(false);
   const [pending, startTransition] = useTransition();
   const recent = useRecentSearches("translate");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const zomiInput = selected === "ctd-en";
+  const typedPrefix = zomiInput ? completionPrefix(text) : null;
+  const completions = usefulCompletions(useWordCompletions(typedPrefix, completeZomi), typedPrefix ?? "");
 
   useEffect(() => {
     if (query) pushHistory("translate", query);
@@ -146,6 +155,7 @@ export default function TranslateClient({
           }}
         >
           <textarea
+            ref={inputRef}
             className="tr-input"
             value={text}
             maxLength={MAX_LENGTH}
@@ -162,6 +172,24 @@ export default function TranslateClient({
             lang={LANG_ATTR[chosen.source.code]}
             autoFocus={!query}
           />
+          {completions.length > 0 && (
+            <div className="tr-completions" role="group" aria-label="Complete the Zomi word">
+              {completions.map((word) => (
+                <button
+                  key={word}
+                  type="button"
+                  className="tr-completion"
+                  lang="ctd"
+                  onClick={() => {
+                    setText(completeTrailingWord(text, word).slice(0, MAX_LENGTH));
+                    inputRef.current?.focus();
+                  }}
+                >
+                  {word}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="tr-input-bar">
             <span className="tr-count">{text.length}/{MAX_LENGTH}</span>
             {text && (
