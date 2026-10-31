@@ -10,6 +10,8 @@ from api_schemas import (
     TranslationSearchResponse,
 )
 from rate_limit import rate_limited
+from services.bible_lookup import BibleLookup
+from services.bible_versions import get_bible_versions
 from services.data_loader import get_store
 from services import experimental_mt
 from services.language_engine import DIRECTION_PATTERN, canonical_direction, entry_zomi, get_engine
@@ -82,17 +84,32 @@ def search_matches(
 
     for item in overlay:
         source = item.get("source")
-        if source == "dictionary":
+        # The workbook's Bible column is an edited text of unknown authorship (data/rights.json,
+        # bible_iso_improved); Bible matches come from the cleared versions below instead.
+        if source in ("dictionary", "bible"):
             continue
         label = {
             "daily_use": "Teacher-verified phrase",
             "translation_pair": "Workbook translation pair",
-            "bible": "Bible (ISO text)",
         }.get(source, source)
-        results.append({**item, "label": label, "verified": bool(item.get("verified")) or source == "bible"})
+        results.append({**item, "label": label, "verified": bool(item.get("verified"))})
 
-    for pair in corpus:
-        results.append(pair)
+    side = "ctd" if direction == "ctd-en" else "eng"
+    verses = [
+        {
+            "source": "bible",
+            "english": verse["english"],
+            "zomi": verse["zomi"],
+            "reference": verse["reference"],
+            "label": f"Bible: {verse['source']}",
+            "verified": False,
+        }
+        for verse in BibleLookup(get_bible_versions()).search_side(q, side, limit=3)
+        if verse["english"] and verse["zomi"]
+    ]
+    # Sentences and verses together, closest first: exact matches, then the shortest text searched.
+    searched = "zomi" if direction == "ctd-en" else "english"
+    results.extend(sorted([*corpus, *verses], key=lambda item: (not item.get("exact"), len(item[searched] or ""))))
 
     return {
         "query": q,
