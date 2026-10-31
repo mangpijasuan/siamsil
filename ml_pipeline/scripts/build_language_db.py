@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""Build the Siamsil language database from immutable raw files.
+"""Build the Siamsil language database from the originals in siamsil-data.
 
-Reads:
-  data/raw/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx
-  data/raw/parallel/zomi_english_sentences.csv
+Reads, directly from the private siamsil-data repository (beside this one, or $SIAMSIL_DATA_REPO),
+each file checked against data/source_files.json:
+  dictionary/sources/translation-master-v1.0.1/50K-...-Review-v1.0.xlsx  (the live dictionary;
+      --dictionary standard builds from dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx instead)
+  parallel/zomi_english_sentences.part-*.csv.gz (joined; the original CSV's checksum is confirmed)
+
+With --raw FOLDER it reads the older layout instead, unpinned:
+  FOLDER/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx
+  FOLDER/parallel/zomi_english_sentences.csv
 
 Optionally reads human evaluation sets (--eval) so matching pairs are held out.
 
@@ -18,6 +24,7 @@ Writes (never touches raw files):
 from __future__ import annotations
 
 import argparse
+import contextlib
 import csv
 import hashlib
 import json
@@ -31,12 +38,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import corpus_reviews
+from data_repo import DataRepo, ParallelParts, SourceError, default_data_repo
+from data_repo import fingerprint as repo_fingerprint
 
 SCRIPT_VERSION = "1.4.0"
 DATASET_VERSION = "v2"
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_RAW = ROOT / "data" / "raw"
 DEFAULT_OUT_DB = ROOT / "data" / "processed" / "language" / "siamsil_language.sqlite"
 DEFAULT_REPORT = ROOT / "data" / "processed" / "language" / "quality_report.json"
 DEFAULT_MANIFEST = ROOT / "data" / "processed" / "language" / "manifest.json"
@@ -266,7 +274,12 @@ def create_schema(con: sqlite3.Connection) -> None:
             suggested_correction TEXT,
             letter TEXT,
             version TEXT NOT NULL,
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            zomi TEXT,
+            definition_en TEXT,
+            burmese TEXT,
+            domain TEXT,
+            usage_tier TEXT
         );
 
         CREATE INDEX idx_dict_normalized ON dictionary_entries(normalized_word);
@@ -397,8 +410,57 @@ def ingest_master_dictionary(con: sqlite3.Connection, path: Path, created_at: st
     return dict(stats)
 
 
-def ingest_parallel(con: sqlite3.Connection, path: Path, created_at: str) -> dict:
-    if not path.exists():
+TRANSLATION_MASTER = "English–Zomi–Burmese Translation Master"
+
+
+def ingest_translation_master(con: sqlite3.Connection, path: Path, created_at: str) -> dict:
+    """The 50K Translation Master as the live dictionary: one row per sense, text as written.
+
+    `definition` holds the Zomi equivalents (the searchable Zomi side, as for the Zomi Standard
+    Dictionary), `zomi` the same text for display, `definition_en` the simple English definition.
+    Burmese is kept but marked reference-only in the source. Every row is unreviewed.
+    """
+    from dictionary_sources import read_master_workbook
+
+    read = read_master_workbook(path)
+    stats: Counter[str] = Counter({"source_rows": len(read.records) + sum(read.skipped.values())})
+    rows_out: list[tuple] = []
+    fts_out: list[tuple] = []
+    for next_id, record in enumerate(read.records, start=1):
+        zomi = " ; ".join(text for language, _, text in record.equivalents if language == "ctd") or None
+        burmese = " ; ".join(text for language, _, text in record.equivalents if language == "my") or None
+        if not zomi:
+            stats["empty_definition"] += 1
+        stats["with_open_issues"] += bool(record.issues)
+        word = normalize_text(record.headword)
+        rows_out.append((
+            next_id, word, normalize_word(word), "en", None, record.part_of_speech, None, zomi, None, None,
+            TRANSLATION_MASTER, record.record_id, 0.6, "unreviewed", 0, None, word[:1].upper(), DATASET_VERSION,
+            created_at, zomi, record.definition_en, burmese, record.domain, record.usage_tier,
+        ))
+        fts_out.append((word, zomi or "", record.part_of_speech or ""))
+    stats["empty_headword"] = read.skipped.get("no_id_or_headword", 0)
+    con.executemany(
+        """
+        INSERT INTO dictionary_entries (
+            id, source_word, normalized_word, language, dialect, part_of_speech,
+            part_of_speech_full, definition, pronunciation, usage_notes, source,
+            source_reference, confidence, verification_status, flagged,
+            suggested_correction, letter, version, created_at,
+            zomi, definition_en, burmese, domain, usage_tier
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """,
+        rows_out,
+    )
+    con.executemany("INSERT INTO dictionary_fts (source_word, definition, part_of_speech) VALUES (?,?,?)", fts_out)
+    con.commit()
+    stats["ingested"] = len(rows_out)
+    return dict(stats)
+
+
+def ingest_parallel(con: sqlite3.Connection, path: Path | ParallelParts, created_at: str) -> dict:
+    """Ingest the corpus from a CSV file, or from siamsil-data's parts (ParallelParts)."""
+    if isinstance(path, Path) and not path.exists():
         sys.exit(f"Parallel corpus not found: {path}")
 
     csv.field_size_limit(min(sys.maxsize, 8_000_000))
@@ -431,7 +493,12 @@ def ingest_parallel(con: sqlite3.Connection, path: Path, created_at: str) -> dic
         batch_rows.clear()
         batch_fts.clear()
 
-    with path.open(encoding="utf-8", errors="replace", newline="") as handle:
+    source = (
+        path.open(encoding="utf-8", errors="replace", newline="")
+        if isinstance(path, Path)
+        else contextlib.nullcontext(path.lines())
+    )
+    with source as handle:
         reader = csv.DictReader(handle)
         expected = {"en", "zomi"}
         if not reader.fieldnames or not expected.issubset(set(reader.fieldnames)):
@@ -670,7 +737,7 @@ def apply_reviews(con: sqlite3.Connection, decisions: dict) -> dict:
 
 def release_manifest(
     database: Path,
-    source_files: dict[str, Path],
+    source_files: dict[str, Path | dict],
     eval_files: list[Path],
     counts: dict,
     created_at: str,
@@ -686,7 +753,9 @@ def release_manifest(
         "script_version": SCRIPT_VERSION,
         "database": file_fingerprint(database),
         "counts": counts,
-        "source_files": {key: file_fingerprint(path) for key, path in source_files.items()},
+        "source_files": {
+            key: value if isinstance(value, dict) else file_fingerprint(value) for key, value in source_files.items()
+        },
         "evaluation_sets": [
             {"file": path.name, "sha256": file_fingerprint(path)["sha256"]} for path in eval_files
         ],
@@ -805,7 +874,24 @@ def export_evaluation_samples(con: sqlite3.Connection) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--raw", type=Path, default=DEFAULT_RAW)
+    parser.add_argument(
+        "--data-repo",
+        type=Path,
+        default=None,
+        help="siamsil-data clone to read originals from (default: $SIAMSIL_DATA_REPO, else ../siamsil-data)",
+    )
+    parser.add_argument(
+        "--dictionary",
+        choices=("50k", "standard"),
+        default="50k",
+        help="which dictionary the app shows: the 50K Translation Master (default) or the Zomi Standard Dictionary",
+    )
+    parser.add_argument(
+        "--raw",
+        type=Path,
+        default=None,
+        help="read the older unpinned layout from this folder instead of siamsil-data (e.g. data/raw)",
+    )
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT_DB)
     parser.add_argument("--limit-parallel", type=int, default=0, help="Optional cap for tests")
     parser.add_argument(
@@ -844,8 +930,22 @@ def main() -> None:
     eval_items = load_eval_items(args.eval)
     print(f"Keeping {len(eval_items):,} evaluation items out of training ({len(args.eval)} files)")
 
-    dictionary_xlsx = args.raw / "dictionary" / "Zomi_Standard_Dictionary_AI_Cleaned.xlsx"
-    parallel_csv = args.raw / "parallel" / "zomi_english_sentences.csv"
+    repo: DataRepo | None = None
+    dictionary_key = "dictionary_master"
+    if args.raw is not None:
+        args.dictionary = "standard"
+        dictionary_xlsx = args.raw / "dictionary" / "Zomi_Standard_Dictionary_AI_Cleaned.xlsx"
+        parallel: Path | ParallelParts = args.raw / "parallel" / "zomi_english_sentences.csv"
+        print(f"Reading the older layout in {args.raw} (unpinned)")
+    else:
+        try:
+            repo = DataRepo(args.data_repo or default_data_repo())
+            print(f"Checking originals in {repo.root}…")
+            dictionary_key = "dictionary_50k" if args.dictionary == "50k" else "dictionary_master"
+            dictionary_xlsx = repo.verified(dictionary_key)
+            parallel = repo.parallel()
+        except SourceError as error:
+            sys.exit(f"Nothing was built: {error}")
 
     if not dictionary_xlsx.exists():
         sys.exit(f"Dictionary workbook not found: {dictionary_xlsx}")
@@ -855,12 +955,22 @@ def main() -> None:
     con = connect(args.out)
     create_schema(con)
 
-    print("Ingesting dictionary master…")
-    dict_stats = ingest_master_dictionary(con, dictionary_xlsx, created_at)
+    if args.dictionary == "50k":
+        print("Ingesting the 50K Translation Master…")
+        dict_stats = ingest_translation_master(con, dictionary_xlsx, created_at)
+    else:
+        print("Ingesting the Zomi Standard Dictionary…")
+        dict_stats = ingest_master_dictionary(con, dictionary_xlsx, created_at)
     print(f"  master entries: {dict_stats.get('ingested', 0):,}")
 
     print("Ingesting parallel corpus (this can take a few minutes)…")
-    parallel_stats = ingest_parallel(con, parallel_csv, created_at)
+    parallel_stats = ingest_parallel(con, parallel, created_at)
+    parallel_record: Path | dict = parallel
+    if isinstance(parallel, ParallelParts):
+        try:
+            parallel_record = parallel.finish()
+        except SourceError as error:
+            sys.exit(f"Not released: {error}")
     print(f"  unique pairs kept: {parallel_stats['counts'].get('ingested', 0):,}")
 
     print("Running whole-corpus checks (template families, alignment, evaluation holdout)…")
@@ -875,9 +985,12 @@ def main() -> None:
         print("  " + "  ".join(f"{status}: {count:,}" for status, count in review_counts.items()))
     verified_pairs = con.execute("SELECT COUNT(*) FROM parallel_sentences WHERE verified = 1").fetchone()[0]
 
+    dictionary_record: Path | dict = (
+        repo_fingerprint(repo.root, dictionary_xlsx, repo.sources[dictionary_key]["sha256"]) if repo else dictionary_xlsx
+    )
     source_files = {
-        "dictionary_master": display_path(dictionary_xlsx),
-        "parallel_csv": display_path(parallel_csv),
+        "dictionary_master": dictionary_record["path"] if isinstance(dictionary_record, dict) else display_path(dictionary_record),
+        "parallel_csv": parallel_record["path"] if isinstance(parallel_record, dict) else display_path(parallel_record),
     }
     con.execute(
         """
@@ -905,7 +1018,8 @@ def main() -> None:
             "verified": verified_dict,
             "empty_headword": dict_stats.get("empty_headword", 0),
             "empty_definition": dict_stats.get("empty_definition", 0),
-            "note": "Zomi Standard Dictionary is the sole dictionary source.",
+            "source": TRANSLATION_MASTER if args.dictionary == "50k" else "Zomi Standard Dictionary",
+            "note": "Sole dictionary source shown in the app; every entry unreviewed until approved in the editorial dictionary.",
         },
         "parallel": {
             "source_rows": parallel_stats["counts"].get("source_rows"),
@@ -944,8 +1058,8 @@ def main() -> None:
     manifest = release_manifest(
         database=args.out,
         source_files={
-            "dictionary_master": dictionary_xlsx,
-            "parallel_csv": parallel_csv,
+            "dictionary_master": dictionary_record,
+            "parallel_csv": parallel_record,
             **({"corpus_reviews": args.reviews} if review_records else {}),
         },
         eval_files=args.eval,

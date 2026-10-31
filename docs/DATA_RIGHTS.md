@@ -39,10 +39,12 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 | English–Zomi–Burmese Translation Master v1.0.1 (private `siamsil-data`) | 50,032 headwords, 50,282 senses; 0 human-reviewed | — | — | — | — | `needs_review` |
 | Essential 3000 English–Zomi Learner's Dictionary, beta (private `siamsil-data`) | 3,000 headwords, 5,342 senses, examples and phrases; 0 human-reviewed | — | — | — | — | `needs_review` |
 | Zomi Ordbog, dansk-[engelsk]-zomi (Johs. Lind, Zomi Innkuan Denmark, 2011), based on Dr. Dal Lian Haokip's English-Zomi Dictionary (private `siamsil-data`) | 15,105 entries: Danish, English, Zomi | reported | reported | **no** | **no** | `needs_review` (written permission reported, awaiting confirmation) |
+| TongDot Zomi–English dictionary (tongdot.com) (private `siamsil-data`, `dictionary/sources/tongdot/`) | About 75,931 English–Zomi entries with Burmese; siamsil-data holds only partial copies until TongDot sends the full file | reported | reported | reported | **no** | `needs_review` (verbal permission reported, awaiting written confirmation) |
 | *Paunam Khenna Leh Kampau Luanzia*, Zomi grammar primer by Lia Cingsen (private `siamsil-data`), and the review sheets made from it | About 184 printed pages; 732 numbered sentences, 258 word pairs, 28 bilingual examples extracted | reported | reported | **no** | **no** | `needs_review` (permission reported, awaiting confirmation) |
 | *Zokam le Zolai* (Rev. Khoi Lam Thang, Zomi Christian Literature Society, 2013) (private `siamsil-data`) | About 23,600 words of Zomi prose: the language, writing history, spelling | reported, with credit | reported | **no** | **no** | `needs_review` (permission reported, awaiting confirmation) |
-| Owner sheets: two short Zomi word and sentence lists (private `siamsil-data`) | 51 lines of Zomi, no English | — | — | **no** | **no** | `needs_review` (author not recorded) |
-| Zomi Bethel Church website: church bylaw and a sermon note (private `siamsil-data`) | About 3,250 words of Zomi | **no** | **no** | **no** | **no** | `not_permitted` (no permission) |
+| Paumkim dataset sheets: two short Zomi word and sentence lists (private `siamsil-data`, `zomi-data/`) | 51 lines of Zomi, no English | — | — | **no** | **no** | `needs_review` (author not recorded) |
+| Zomi Bethel Church website capture, in the Paumkim dataset (private `siamsil-data`, `zomi-data/`) | About 3,250 words of Zomi | **no** | **no** | **no** | **no** | `not_permitted` (no permission) |
+| *Zolai Standard Format* (Lian Than Tuang, 2018) (private `siamsil-data`) | 31-page Zolai spelling guide | — | — | — | — | `needs_review` (no permission yet; private reference for the spelling review) |
 | Community audio (planned) | Consent-based recordings; per-speaker choices in [AUDIO_CONSENT.md](AUDIO_CONSENT.md), recorded per source and speaker in the Speech Data Lab ([SPEECH_DATA_LAB.md](SPEECH_DATA_LAB.md)) | — | — | — | — | draft form, needs legal review |
 
 "—" means not yet permitted.
@@ -110,21 +112,28 @@ To clear it for training, record in this file: (1) the dataset card as published
 - Burmese in the Translation Master is marked "reference only" in its review workbook.
 - Imported read-only by `import_reference_dictionaries.py` into a separate database, every sense `unreviewed`. Reviewer decisions live in the two `*-Native-Expert-Review*.xlsx` workbooks; none were recorded as of 2026-10-25.
 
+**TongDot Zomi–English dictionary (tongdot.com)**
+- **2026-10-30, project owner:** TongDot gave permission, by message or in conversation (not yet in writing), for display in the app, model training, and redistribution. Commercial use was not granted.
+- Display, training, and redistribution stay `needs_review` until both steps are done (see Closing an item):
+  1. Get the permission **in writing** from TongDot and record here who gave it and on whose behalf, the date, its exact wording for each use, any required credit line, and where the written copy is kept (private storage, not this repository).
+  2. A second person reads the written permission and confirms it comes from TongDot and covers those uses.
+- Only then set `display`, `train`, and `redistribute` to `cleared` for `tongdot` in `data/rights.json`.
+- **The data.** The project owner is asking TongDot for the complete dictionary file. Until it arrives, siamsil-data holds partial copies taken from a public third-party dataset (`dictionary/sources/tongdot/`): the first 5,000 of 75,931 entries, a list of 27,784 headwords without definitions, and a few phrases. They passed through a Kaggle upload by another person, so the file from TongDot replaces them as the source of record.
+
 **Zomi Ordbog / Haokip English-Zomi Dictionary (Haokip-Lind 2011)**
 - **2026-10-27, project owner:** both rights holders, Dr. Dal Lian Haokip and Johs. Lind / Zomi Innkuan Denmark, gave written permission for display and training. Redistribution and commercial use were not granted.
 - Display and training stay `needs_review` until a second person confirms this entry (see Closing an item). On confirmation, set `display` and `train` to `cleared` for `haokip_lind_2011` in `data/rights.json`.
 - Still to record: the date of each permission, its exact wording on display and training, any required credit line, and where the written copies are kept (private storage, not this repository).
-- The PDF in `siamsil-data` (`Dictionary Sources/Haokip-Lind 2011/`) was obtained from kupdf.net, a third-party upload, not from the rights holders. The permission covers the work; ask whether they can supply an authoritative copy.
+- The PDF in `siamsil-data` (`dictionary/sources/haokip-lind-2011/`) was obtained from kupdf.net, a third-party upload, not from the rights holders. The permission covers the work; ask whether they can supply an authoritative copy.
 - The original lists each entry as `Danish [English] (part of speech): Zomi`, so the English is the authors'. A ChatGPT-made English-alphabetical draft is kept beside it as a reading copy only; three English labels it supplied (bathtub, shoot, shower) are not from the source.
+- **2026-10-29:** the Paumkim dataset in `siamsil-data` holds a plain-text extraction of the Ordbog (`zomi-data/zomi-data/zomi_ordbog_raw.txt`). Its two page columns run together, so entries cannot be read from it reliably; extract them column by column from the PDF.
 
-- **2026-10-29:** a plain-text extraction of the Ordbog was added to `siamsil-data` (`dictionary/haokip-lind-2011/`). Its two page columns run together, so entries cannot be read from it reliably; extract them column by column from the PDF.
-
-**Owner sheets (`owner_sheets_2026`)**
-- **2026-10-29:** the project owner uploaded two short lists of Zomi words and sentences. Still to record: who wrote them, and whether they may be shown and trained on. If the owner wrote them, record that as for the daily-use phrases; a second person confirms before anything is cleared.
+**Paumkim dataset sheets (`paumkim_zomi_sheets`)**
+- **2026-10-29:** two short lists of Zomi words and sentences, files of the Paumkim dataset (`zomi-data/zomi-data/zomi_phrases_sheet3_raw.txt`, `zomi_sheet_raw.txt`). The collection's CC0 label does not say who wrote them. Still to record: the author, and whether they may be shown and trained on; a second person confirms before anything is cleared.
 
 **Zomi Bethel Church website (`zomi_bethel_church_web`)**
-- **2026-10-29:** a capture of the church's public website was uploaded. Only the Zomi bylaw and a Zomi sermon note are kept in `siamsil-data`; pages with members' names, biographies, a phone number and a visitor's prayer request were not kept.
-- A public website is not permission. Nothing is permitted until the church gives written permission for display and training (ask its lead pastor, Rev. Muana Khuptong), recorded here with its date and wording.
+- **2026-10-29:** the Paumkim dataset holds a capture of the church's public website (`zomi-data/zomi-data/zomibethelchurch_raw.txt`). Only its Zomi bylaw and sermon note are useful language data. It also holds members' names, staff biographies, a phone number and a visitor's prayer request about health and immigration: never use or show those.
+- A public website, or a CC0 label on a collection that copied it, is not permission. Nothing is permitted until the church gives written permission for display and training (ask its lead pastor, Rev. Muana Khuptong), recorded here with its date and wording.
 
 **Zomi grammar primer (*Paunam Khenna Leh Kampau Luanzia*, Lia Cingsen)**
 - **2026-10-27, project owner:** the primer's owner gave permission for display in the app and for model training. Redistribution and commercial use were not granted.
@@ -142,6 +151,12 @@ To clear it for training, record in this file: (1) the dataset card as published
   2. A second person reads the written permission and confirms it comes from the rights holder and covers display and training.
 - Only then set `display` and `train` to `cleared` for `zokam_le_zolai_2013` in `data/rights.json`.
 - The extracted text in `siamsil-data/books/derived/` is the PDF's own text layer, not OCR or machine output.
+
+**Zolai Standard Format (Lian Than Tuang, 2018)**
+- No permission yet. It is a private reference for the Zolai Standard review ([ZOLAI_STANDARD.md](ZOLAI_STANDARD.md)): the evidence script counts its spellings, and `data/zolai_standard/rule_checks.json` cites its sections with page numbers and quotes only the short example words it gives.
+- Keep the PDF in `siamsil-data/standard/`, never in this repository. Do not show its text in the app or train on it.
+- A full copy is published at github.com/peterlianpi/zolai-ai (`wiki/Zolai_Standard_Format.md`) under that repository's MIT license. That license is the uploader's and does not show the author's permission, so it gives Siamsil no rights.
+- To use it beyond reference, ask Lian Than Tuang for written permission and record who granted it, the date, the uses covered, any credit line, and where it is kept. The 2018 PDF names no publisher.
 
 **Daily-use phrases**
 - Confirm the teacher who reviewed them agrees to their use in training and redistribution, and how they want to be credited.

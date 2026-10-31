@@ -1419,6 +1419,117 @@
         "title": "EligibilityOut",
         "type": "object"
       },
+      "ExperimentalTranslateRequest": {
+        "properties": {
+          "direction": {
+            "default": "en-ctd",
+            "pattern": "^(en-ctd|ctd-en|en-zom|zom-en)$",
+            "title": "Direction",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "ExperimentalTranslateRequest",
+        "type": "object"
+      },
+      "ExperimentalTranslationResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "direction": {
+            "title": "Direction",
+            "type": "string"
+          },
+          "experimental": {
+            "default": true,
+            "title": "Experimental",
+            "type": "boolean"
+          },
+          "input": {
+            "title": "Input",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "system": {
+            "title": "System",
+            "type": "string"
+          },
+          "system_version": {
+            "title": "System Version",
+            "type": "string"
+          },
+          "translation": {
+            "title": "Translation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "input",
+          "direction",
+          "translation",
+          "label",
+          "note",
+          "system",
+          "system_version"
+        ],
+        "title": "ExperimentalTranslationResponse",
+        "type": "object"
+      },
+      "ExperimentalTranslationStatus": {
+        "additionalProperties": true,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System"
+          },
+          "system_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Version"
+          }
+        },
+        "required": [
+          "available",
+          "note"
+        ],
+        "title": "ExperimentalTranslationStatus",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -4249,6 +4360,68 @@
           }
         },
         "summary": "Translate",
+        "tags": [
+          "translate"
+        ]
+      }
+    },
+    "/api/v1/translate/experimental": {
+      "get": {
+        "description": "Whether the opt-in experimental model is available, so the page can offer it.",
+        "operationId": "experimental_status_api_v1_translate_experimental_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentalTranslationStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Experimental Status",
+        "tags": [
+          "translate"
+        ]
+      },
+      "post": {
+        "description": "Opt-in machine translation, always labelled experimental (docs/ROADMAP.md, Phase 2).",
+        "operationId": "translate_experimental_api_v1_translate_experimental_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperimentalTranslateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentalTranslationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Translate Experimental",
         "tags": [
           "translate"
         ]

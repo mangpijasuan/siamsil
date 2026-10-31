@@ -59,6 +59,15 @@ def split_zomi_definition(text: str | None) -> tuple[str | None, str | None]:
     return value, value
 
 
+def entry_zomi(entry: dict[str, Any]) -> str | None:
+    """The Zomi to show for a presented dictionary entry in Translate and Siamsil AI.
+
+    50K Translation Master rows carry their Zomi in `zomi` (`definition` is English);
+    Zomi Standard Dictionary rows keep their Zomi definition in `definition`, as before.
+    """
+    return entry["zomi"] if entry.get("definition_language") == "en" else entry["definition"]
+
+
 def row_to_dict(row: sqlite3.Row | None) -> dict[str, Any] | None:
     if row is None:
         return None
@@ -212,6 +221,24 @@ class LanguageEngine:
                         ).fetchall()
                     )
 
+            if direction == "ctd-en" and len(found) < limit:
+                # Entries whose Zomi is exactly the word searched, or one of its ' ; '-separated
+                # alternatives (50K Translation Master), before looser full-text matches.
+                has_tier = "usage_tier" in {row[1] for row in con.execute("PRAGMA table_info(dictionary_entries)")}
+                tier = ("CASE usage_tier WHEN 'A1' THEN 1 WHEN 'A2' THEN 2 WHEN 'B1' THEN 3 WHEN 'B2' THEN 4 "
+                        "WHEN 'C1' THEN 5 WHEN 'C2' THEN 6 ELSE 7 END, ") if has_tier else ""
+                add_rows(
+                    con.execute(
+                        f"""
+                        SELECT * FROM dictionary_entries
+                        WHERE (lower(definition) = ? OR ' ; ' || lower(definition) || ' ; ' LIKE ?){letter_sql}
+                        ORDER BY flagged ASC, lower(definition) = ? DESC, {tier}length(source_word), id
+                        LIMIT ?
+                        """,
+                        [needle, f"% ; {needle} ; %", *letter_params, needle, limit],
+                    ).fetchall()
+                )
+
             remaining = limit - len(found)
             match = fts_match(query)
             if remaining > 0 and match:
@@ -312,7 +339,12 @@ class LanguageEngine:
         data = row_to_dict(row)
         if not data:
             return None
-        zomi, definition = split_zomi_definition(data["definition"])
+        if data.get("zomi") is not None or data.get("definition_en") is not None:
+            # 50K Translation Master: Zomi equivalents kept whole, plus an English definition.
+            zomi, definition, definition_language = data.get("zomi"), data.get("definition_en"), "en"
+        else:
+            zomi, definition = split_zomi_definition(data["definition"])
+            definition_language = "ctd"
         return {
             "id": data["id"],
             "english": data["source_word"],
@@ -326,7 +358,8 @@ class LanguageEngine:
             "definition": definition,
             "pronunciation": data["pronunciation"],
             "usage_notes": data["usage_notes"],
-            "domain": None,
+            "domain": data.get("domain"),
+            "definition_language": definition_language,
             "source": data["source"],
             "source_reference": data["source_reference"],
             "confidence": data["confidence"],

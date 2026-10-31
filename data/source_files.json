@@ -1,0 +1,33 @@
+{
+  "_comment": "Originals the build reads directly from the private siamsil-data repository (the primary source; data/README.md). Paths are relative to that repository. sha256 pins the exact file: a changed or missing file stops the build until this entry is updated on purpose. The parallel corpus is pinned through its parts manifest, which pins each part and the original CSV.",
+  "sources": {
+    "dictionary_50k": {
+      "path": "dictionary/sources/translation-master-v1.0.1/50K-English-Zomi-Burmese-Native-Expert-Review-v1.0.xlsx",
+      "sha256": "640fea5182467a5ab1741240b8c64c255581410a36f0b619639933bd9252c77f",
+      "note": "The live dictionary since 2026-10-30 (project owner's decision): the 50K Translation Master, native-review workbook."
+    },
+    "dictionary_master": {
+      "path": "dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx",
+      "sha256": "e8563a0f1cdde0647611fb073a86fabde0b0ae9678ca1347f36ea25de96f0610",
+      "note": "Zomi Standard Dictionary; the live dictionary until 2026-10-30. Build it with build_language_db.py --dictionary standard."
+    },
+    "parallel_manifest": {
+      "path": "parallel/manifest.json",
+      "sha256": "1dc1a165215168ae5583065d6ac342f91e09084f0945573ff3be57e1ba117c32"
+    },
+    "bible_chin_usx": {
+      "path": "bible/Chin-Bible.zip",
+      "sha256": "6f821fde3c0ff91cd8cf1262510cbfb1ba5ca459f51800506d8df542bfd8a4df",
+      "unzip_to": "chin"
+    },
+    "bible_web_usfm": {
+      "path": "bible/engwebu_usfm.zip",
+      "sha256": "2edd9bf3a0e2a9e18773a7995692312e2afda21839780f6ea47f98fa854b5945",
+      "unzip_to": "web"
+    },
+    "bible_workbook": {
+      "path": "bible/Zomi_Bible_Final_v14.xlsx",
+      "sha256": "2f46fbd647ae8bcf6aa357f89a16348f4e238ae746276373f0a0de62ddb9c989"
+    }
+  }
+}

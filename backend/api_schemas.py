@@ -228,6 +228,24 @@ class TranslationResponse(ApiModel):
     matches: list[TranslateMatch]
 
 
+class ExperimentalTranslationStatus(ApiModel):
+    available: bool
+    note: str
+    system: str | None = None
+    system_version: str | None = None
+
+
+class ExperimentalTranslationResponse(ApiModel):
+    input: str
+    direction: str
+    translation: str
+    experimental: bool = True
+    label: str
+    note: str
+    system: str
+    system_version: str
+
+
 class LearningEntry(ApiModel):
     id: int
     category: str

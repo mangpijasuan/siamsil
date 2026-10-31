@@ -67,7 +67,16 @@ Checklist: *Language data foundation → Needed*.
 - Train gold-weighted, then gold + silver experiments; record dataset, code, seed, and hyperparameters per run.
 - Human evaluation is a recurring gate: a reviewer panel scores a fixed blinded sample for every candidate, not a one-time step at the end.
 
-Exit gate: a candidate beats retrieval and the untuned LLM on the Phase 0 human evaluation sets and passes the safety/robustness suites. Until then, production stays retrieval-only and generated Zomi is not shown as a translation.
+Exit gate: a candidate beats retrieval and the untuned LLM on the Phase 0 human evaluation sets and passes the safety/robustness suites. Until then, retrieval stays the default and generated Zomi is never presented as a verified translation.
+
+**Decision (2026-10-28, project owner): experimental machine translation.** Before the gate is passed, the Translate page may offer a fine-tuned model as an opt-in experimental mode, to gather corrections from Zomi speakers. Conditions:
+
+- Off by default. Retrieval matches stay the main result; the model appears only after the user turns on "Try machine translation (experimental)".
+- Every result is labelled experimental, says it may contain errors, and offers 👍, 👎 and a suggested correction. Corrections are stored for review, never used as approved data automatically.
+- Not used in the Bible reader, the citizenship test, or as fact in Chat.
+- API responses name the system and model version that produced the text.
+- The served model must be trained only on sources whose `train` status in `data/rights.json` is `cleared`, and its base-model license must allow the use (NLLB-200 is acceptable for the non-profit app; see DATA_RIGHTS.md).
+- Passing the exit gate is what makes a model the default; the human evaluation sets are built in parallel.
 
 *Started:* evaluation harness with chrF++/BLEU, bootstrap intervals, paired comparisons, the automatic gate, and the retrieval baseline; see [`MODEL_EVALUATION.md`](MODEL_EVALUATION.md). Scoring needs the human evaluation sets.
 

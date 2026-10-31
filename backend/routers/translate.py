@@ -3,10 +3,16 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, field_validator
 
-from api_schemas import TranslationResponse, TranslationSearchResponse
+from api_schemas import (
+    ExperimentalTranslationResponse,
+    ExperimentalTranslationStatus,
+    TranslationResponse,
+    TranslationSearchResponse,
+)
 from rate_limit import rate_limited
 from services.data_loader import get_store
-from services.language_engine import DIRECTION_PATTERN, canonical_direction, get_engine
+from services import experimental_mt
+from services.language_engine import DIRECTION_PATTERN, canonical_direction, entry_zomi, get_engine
 from services.translation import active_system
 
 router = APIRouter(prefix="/translate", tags=["translate"], dependencies=[Depends(rate_limited("translate"))])
@@ -14,6 +20,16 @@ router = APIRouter(prefix="/translate", tags=["translate"], dependencies=[Depend
 
 class TranslateRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=2000)
+    direction: str = Field(default="en-ctd", pattern=DIRECTION_PATTERN)
+
+    @field_validator("direction")
+    @classmethod
+    def _canonical(cls, value: str) -> str:
+        return canonical_direction(value)
+
+
+class ExperimentalTranslateRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=500)
     direction: str = Field(default="en-ctd", pattern=DIRECTION_PATTERN)
 
     @field_validator("direction")
@@ -54,7 +70,7 @@ def search_matches(
             {
                 "source": "dictionary",
                 "english": entry["english"],
-                "zomi": entry["definition"],
+                "zomi": entry_zomi(entry),
                 "verified": entry["verified"],
                 "verification_status": entry["verification_status"],
                 "flagged": entry["flagged"],
@@ -101,4 +117,29 @@ def translate(request: TranslateRequest):
         "language_release": get_engine().release(),
         "primary": exact or (payload["results"][0] if payload["results"] else None),
         "matches": payload["results"],
+    }
+
+
+@router.get("/experimental", response_model=ExperimentalTranslationStatus)
+def experimental_status():
+    """Whether the opt-in experimental model is available, so the page can offer it."""
+    current = experimental_mt.status()
+    return {"available": current.available, "note": current.reason,
+            "system": current.name, "system_version": current.version}
+
+
+@router.post("/experimental", response_model=ExperimentalTranslationResponse)
+def translate_experimental(request: ExperimentalTranslateRequest):
+    """Opt-in machine translation, always labelled experimental (docs/ROADMAP.md, Phase 2)."""
+    translator = experimental_mt.get_translator()
+    if translator is None:
+        raise HTTPException(status_code=503, detail=experimental_mt.status().reason)
+    return {
+        "input": request.text,
+        "direction": request.direction,
+        "translation": translator.translate(request.text, request.direction),
+        "label": experimental_mt.LABEL,
+        "note": experimental_mt.NOTE,
+        "system": translator.name,
+        "system_version": translator.version,
     }

@@ -1,7 +1,7 @@
 # Siamsil Zolai Standard
 
 Updated: 2026-10-27
-Status: **evidence and suggestions** (steps 1–3). No spelling rule has been decided.
+Status: **evidence and suggestions** (steps 1–3); the tool that applies adopted rules (step 5) is built. No spelling rule has been decided.
 
 Siamsil's dictionary, Translate, and Siamsil AI need one consistent way to write Zolai, so that spellings match, search finds every form, and models learn one form. Zomi writers do not all spell alike: for example, the *Zolai Standard Format* writes `uhhi` where ZCLS's guide and the Bibles write `uh hi`. Siamsil does not choose between them on its own. It gathers the evidence, Zomi language reviewers decide, and Siamsil applies their decisions.
 
@@ -21,8 +21,12 @@ Siamsil's dictionary, Translate, and Siamsil AI need one consistent way to write
    - **No suggestion:** where a source that uses a word 20 or more times writes it two ways at least 20% of the time, the row says "check meaning" (`tu` / `tuu`, `thugen` / `thu gen`). They may be different words, and only a Zomi speaker can tell.
 
    Reviewers confirm or overrule each suggestion; a suggestion is never applied on its own.
+
+   **Tie-break (project owner, 2026-10-27).** Where the sources disagree, the suggestions follow the Bibles and common published usage, the spelling most readers already see. The *Zolai Standard Format* decides only where that usage is itself split. A spelling the owner proposed for a specific point (as for `le-leh`) is weighed as that proposal. This is recorded as `owner_policy` in `rule_checks.json`. It shapes the drafts only: reviewers still decide every rule.
+
+   One check, `locative-ah-noun` (`gam ah` / `gamah` / `khua-ah`), was added from counts in public copies of the 1932 Tedim Bible and two Zomi news sites. The 1932 Bible joins or hyphenates `ah` after a noun, while the news sites are mixed, so the draft follows the *Zolai Standard Format* until the TDB and TB77 counts are in. Position words (`tungah`, `kiangah`) are the separate `locative-ah` check, and all those sources join them.
 4. **Decisions (next).** Zomi language reviewers fill in the review workbook. Where the guides agree, a rule is quick to confirm; where they differ, the counts show what writers actually do. A rule is adopted only when two reviewers agree, like corpus reviews (SOP-07). Each adopted rule gets an ID, the chosen spelling, the reason, and examples, and becomes part of a versioned "Siamsil Zolai Standard".
-5. **Applying it.** Original texts are never edited. A standard form is stored beside each original, with the rules that changed it. The dictionary lists one standard headword with its variant spellings, so a search for any spelling finds it. Translate and Siamsil AI read any spelling and write the standard one; training uses the standard form.
+5. **Applying it (tool built, no rules yet).** Original texts are never edited. A standard form is stored beside each original, with the rules that changed it. The dictionary lists one standard headword with its variant spellings, so a search for any spelling finds it. Translate and Siamsil AI read any spelling and write the standard one; training uses the standard form.
 6. **One dataset.** Every sentence and entry carries its source, rights, review status, and standard form. Only sources cleared for training reach a model.
 
 ## Running the evidence report
@@ -36,10 +40,36 @@ python3 ml_pipeline/scripts/spelling_variants.py --out ../siamsil-data/standard/
   --text zokam=../siamsil-data/books/derived/zokam-le-zolai.txt \
   --text primer=../siamsil-data/grammar/Paunam_Khenna_Leh_Kampau_Luanzia.pdf \
   --text zsf=../siamsil-data/standard/Zolai_Standard_Format_2018.pdf \
-  --xlsx "dictionary=../siamsil-data/dictionary/Zomi_Dictionary_Master_Data.xlsx:Definition (Zomi)"
+  --xlsx "dictionary=../siamsil-data/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx:Definition (Zomi)"
 ```
 
 It writes `forms.csv`, `variant_families.csv`, `joins.csv`, `rule_checks.csv`, `summary.md`, and `Siamsil_Zolai_Standard_Review.xlsx`. The workbook has a sheet for the guide points, for joined and split words, and for spelling families, each with yellow decision columns. Reviewers sign with their codes (R01, E01), never their names.
+
+## Applying adopted rules
+
+Adopted rules go in `data/zolai_standard/standard.json`, which starts empty (version `0.0.0`). Each rule records:
+
+| Field | Meaning |
+|---|---|
+| `id` | `ZS-001`, `ZS-002`, … never reused |
+| `standard` | the adopted spelling |
+| `variants` | the other spellings it replaces or flags |
+| `mode` | `replace` (the standard form uses the adopted spelling) or `flag` (text unchanged, match listed; for spellings whose meaning depends on context, such as the "check meaning" rows) |
+| `check` | the `rule_checks.json` point it settles, if any |
+| `approved_by` | at least two different reviewer codes (`R01`, `E01`) |
+| `approved_on`, `reason` | the date and why |
+
+`ml_pipeline/scripts/zolai_standard.py` refuses a file that breaks these rules. It rejects a rule with fewer than two reviewers, an unknown check, a variant listed in two rules, or a variant that is another rule's standard spelling.
+
+```text
+python3 ml_pipeline/scripts/zolai_standard.py validate
+python3 ml_pipeline/scripts/zolai_standard.py apply --input pairs.jsonl --field zomi --out pairs.standard.jsonl
+python3 ml_pipeline/scripts/zolai_standard.py variants
+```
+
+`apply` copies every record and adds `zomi_standard`, `zomi_standard_rules` (the rules that changed it), `zomi_standard_flags`, and `standard_version`. The original field is untouched, and the output cannot overwrite the input. Matching ignores case and apostrophe style (`'` or `’`) and only matches whole words, so a variant inside a longer word is never changed. For dictionary search, `search_forms()` returns a word's standard spelling and all its variants, so a search for any spelling finds the entry.
+
+Bump the version when rules change: minor for added rules, major for a changed or removed rule. The language database, dictionary search, and dataset exports should record the standard version they used. Wiring them to this tool is the next step, once the first rules are adopted.
 
 ## What the evidence covers
 
@@ -53,4 +83,4 @@ It writes `forms.csv`, `variant_families.csv`, `joins.csv`, `rule_checks.csv`, `
 
 ## Rights
 
-The *Zolai Standard Format*'s author has not yet given permission, so it is private reference only. The other sources' rights are in [DATA_RIGHTS.md](DATA_RIGHTS.md). Counting spellings in a private source does not publish it; the review workbook quotes only the short example words the guides themselves give.
+The *Zolai Standard Format*'s author has not yet given permission, so it is private reference only (`zolai_standard_format_2018` in `data/rights.json`: every use `not_permitted`). The other sources' rights are in [DATA_RIGHTS.md](DATA_RIGHTS.md). Counting spellings in a private source does not publish it; the review workbook quotes only the short example words the guides themselves give.
