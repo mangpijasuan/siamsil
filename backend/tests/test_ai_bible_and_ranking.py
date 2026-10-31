@@ -109,6 +109,29 @@ class BibleLookupTests(unittest.TestCase):
         self.assertEqual(self.refs("bible verse range text", search=True), ("search", ["Fixture Jhn 1:2 (John 1:2)"]))
         self.assertEqual(self.refs("bible verse range text"), ("none", []))
 
+    def test_daily_verse_and_site_search_use_the_cleared_versions(self) -> None:
+        from services.bible_lookup import as_bible_verse  # type: ignore
+
+        day = self.lookup.daily(seed=1)
+        self.assertEqual((day["book_id"], day["chapter"], day["verse"]), (43, 1, 2))  # second verse, in order
+        self.assertEqual(self.lookup.daily(seed=1), day)
+        shaped = as_bible_verse(day)
+        self.assertEqual((shaped["book_english"], shaped["book_zomi"], shaped["zomi_iso"], shaped["english"]),
+                         ("John", "Fixture Jhn", "range text", "Second verse."))
+        legacy = Mock()
+        with patch("routers.bible.get_bible_versions", return_value=self.versions), \
+                patch("routers.search.get_bible_versions", return_value=self.versions), \
+                patch("routers.bible.get_store", return_value=legacy), \
+                patch("routers.search.get_store", return_value=legacy), \
+                patch("routers.search.get_engine", return_value=Mock(available=False)):
+            client = TestClient(app)
+            verse = client.get("/api/v1/bible/random").json()
+            found = client.get("/api/v1/search", params={"q": "range"}).json()
+        self.assertTrue(verse["reference"].startswith("Fixture Jhn"))
+        self.assertEqual([v["zomi_iso"] for v in found["bible"]], ["range text"])
+        legacy.random_verse.assert_not_called()
+        legacy.search_bible.assert_not_called()
+
     def test_siamsil_ai_answers_a_reference_from_the_bible(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             db = Path(folder) / "language.sqlite"

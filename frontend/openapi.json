@@ -2938,6 +2938,7 @@
     },
     "/api/v1/bible/random": {
       "get": {
+        "description": "The day's verse from the cleared Zomi Bible, or the workbook Bible where no versions database is loaded.",
         "operationId": "random_verse_api_v1_bible_random_get",
         "responses": {
           "200": {

@@ -62,7 +62,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Random Verse */
+        /**
+         * Random Verse
+         * @description The day's verse from the cleared Zomi Bible, or the workbook Bible where no versions database is loaded.
+         */
         get: operations["random_verse_api_v1_bible_random_get"];
         put?: never;
         post?: never;

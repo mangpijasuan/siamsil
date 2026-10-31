@@ -7,6 +7,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Where fetch_data.py unpacks the data bundle; mount a persistent volume here (docs/DEPLOY.md).
+# docker-compose.yml sets its own paths for local runs.
+ENV SIAMSIL_DATA_ROOT=/data \
+    SIAMSIL_LANGUAGE_DB=/data/siamsil_language.sqlite \
+    SIAMSIL_BIBLE_VERSIONS_DB=/data/bible_versions.sqlite \
+    SIAMSIL_DATA_DIR=/data/json
+
 EXPOSE 8000
-# First boot downloads the ~1.3 GB data bundle into the volume, hence the long healthcheck timeout.
+# First boot downloads the data bundle (about 600 MB) into the volume, hence the long healthcheck timeout.
 CMD ["sh", "-c", "python scripts/fetch_data.py && alembic upgrade head && exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --no-access-log"]
