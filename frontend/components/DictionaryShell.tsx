@@ -2,11 +2,17 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import type { DictionaryEntry, TranslateMatch } from "@/lib/api";
-import { getDictionaryEntry } from "@/lib/api";
+import { getDictionaryEntry, suggestDictionaryWords, suggestZomiWords } from "@/lib/api";
 import { pushHistory, useRecentSearches, useSavedWords } from "@/lib/localData";
 import { IconSwap } from "@/components/Icons";
+import { useWordCompletions } from "@/lib/useWordCompletions";
+import { completeTrailingWord, completionPrefix, usefulCompletions } from "@/lib/wordComplete";
 
 const EXAMPLE_WORDS = ["water", "house", "mother", "eat", "love"];
+// Completion follows the search direction: English headwords, or Zomi words as Zomi writers use them.
+const completeEnglish = (prefix: string) =>
+  suggestDictionaryWords(prefix).then((data) => data.results.map((item) => item.source_word));
+const completeZomi = (prefix: string) => suggestZomiWords(prefix).then((data) => data.words.map((item) => item.word));
 const LETTERS = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
 
 function IconSearch() {
@@ -57,6 +63,12 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
   const letterSet = new Set(letters.map((item) => item.letter));
   const selectedId = selected?.id;
   const examples = exampleState && exampleState.entryId === selectedId ? exampleState.items : [];
+  const [typed, setTyped] = useState(query);
+  const typedPrefix = completionPrefix(typed);
+  const completions = usefulCompletions(
+    useWordCompletions(typedPrefix, direction === "ctd-en" ? completeZomi : completeEnglish),
+    typedPrefix ?? "",
+  );
 
   useEffect(() => {
     if (!selectedId) return;
@@ -131,7 +143,16 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
               defaultValue={query}
               placeholder="Search English or Zomi…"
               className="dict-search-input"
+              list="dict-word-completions"
+              autoComplete="off"
+              lang={direction === "ctd-en" ? "ctd" : "en"}
+              onChange={(event) => setTyped(event.target.value)}
             />
+            <datalist id="dict-word-completions">
+              {completions.map((word) => (
+                <option key={word} value={completeTrailingWord(typed, word).trimEnd()} />
+              ))}
+            </datalist>
             {direction === "ctd-en" && <input type="hidden" name="dir" value="ctd-en" />}
             {activeLetter !== "All" && <input type="hidden" name="letter" value={activeLetter} />}
             {query && (

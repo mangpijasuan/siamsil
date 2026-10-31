@@ -141,6 +141,8 @@ export type BibleVersionSearch = components["schemas"]["BibleVersionSearchRespon
 export type TranslateMatch = components["schemas"]["TranslateMatch"];
 export type LearningEntry = components["schemas"]["LearningEntry"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
+export type WordSuggestionsResponse = components["schemas"]["WordSuggestionsResponse"];
+export type DictionarySuggestionsResponse = components["schemas"]["DictionarySuggestionsResponse"];
 export type AskResponse = components["schemas"]["AskResponse"];
 export type IdentityResponse = components["schemas"]["IdentityResponse"];
 export type RoleName = components["schemas"]["RoleName"];
@@ -190,6 +192,22 @@ export function getDictionaryEntry(id: number): Promise<DictionaryEntry> {
 
 export function getDictionaryLetters(): Promise<DictionaryLettersResponse> {
   return expectData(apiClient().GET("/api/v1/dictionary/letters"), "/api/v1/dictionary/letters");
+}
+
+/** Zomi words starting with `prefix`, most used first (word completion). */
+export function suggestZomiWords(prefix: string, limit = 6): Promise<WordSuggestionsResponse> {
+  return expectData(
+    apiClient().GET("/api/v1/words/suggest", { params: { query: { prefix, limit } } }),
+    "/api/v1/words/suggest",
+  );
+}
+
+/** English dictionary headwords starting with `query` (word completion). */
+export function suggestDictionaryWords(query: string, limit = 6): Promise<DictionarySuggestionsResponse> {
+  return expectData(
+    apiClient().GET("/api/v1/dictionary/suggest", { params: { query: { q: query, limit } } }),
+    "/api/v1/dictionary/suggest",
+  );
 }
 
 /** Stored English–Zomi matches. With a direction, only the side translated from is searched. */
