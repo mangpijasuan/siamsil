@@ -24,3 +24,31 @@ This feature belongs to the **Siamsil** brand and targets **Zomi Standard Form (
 5. Support offline/mobile local rule caching with versioned updates and documented safeguards.
 
 **There are intentionally no invented Zomi spelling corrections shipped in this milestone.**
+
+## Bible-first spelling evidence and human-review queue
+
+Bible texts are a **primary observation source**, not automatically correct Standard Zomi and not a guarantee that a phrase makes sense outside its scriptural context. Never describe a Bible variant or an archaic/figurative expression as an error solely because another spelling is common.
+
+The repository now provides `backend/scripts/bible_spelling_review.py`, a bounded **reference-only review exporter**:
+
+```bash
+python3 backend/scripts/bible_spelling_review.py \
+  --db data/processed/bible/bible_versions.sqlite \
+  --out ../siamsil-data/standard/derived/bible-spelling-review.csv \
+  --limit 500
+```
+
+It scans only Zomi Bible editions marked `display_status=cleared` in the existing read-only versions database, and compares tokens/phrases against *known variant families* from `data/zolai_standard/rule_checks.json`. The resulting CSV contains Bible version, book/chapter/verse IDs, style-check ID, observed spelling, alternatives, and blank reviewer fields. **No Bible verse text is exported**, no approved spelling is manufactured, and no original verse is changed. Place the file in the **private `siamsil-data` workspace**, never inside the public application repository. Existing review exports are not overwritten.
+
+For unclear or seemingly unnatural Bible wording that variant matching cannot identify, a native speaker may create a UTF-8 CSV of references and explanations (not Bible passages):
+
+```csv
+version,book_id,chapter,verse,reason
+tdb,1,1,1,Needs contextual meaning review
+```
+
+Then run the exporter with `--manual-reports ../siamsil-data/standard/manual-verse-flags.csv`. These reference IDs must exist in a display-cleared Zomi edition; each is added as `check_id=manual`. Reports are **review leads, not automatic findings or corrections**. The sample reference above is a format illustration, not a claim about that verse.
+
+A reviewer should open the verse in its original displayed context, examine the full paragraph and translation date, compare any other permitted Bible editions, check the Zolai standard references, and distinguish (a) a genuine spelling variant, (b) biblical/archaic vocabulary, (c) a translation/semantic concern, and (d) insufficient evidence. If unresolved, **flag** rather than replace. Two separate authorized Zomi reviewers must approve any adopted *standard spelling*; a proposed alteration of Bible scripture requires a separate, rights-respecting editorial procedure and is never performed by this feature.
+
+**Known limitations:** Automatic candidate generation does not determine if Bible wording “makes sense” and may include many legitimate variants or miss contextual problems. It is intentionally limited to known review-check alternatives; prioritization and a reviewer-facing UI are later milestones. Bible display permission is not automatically training, redistribution or commercial permission.
