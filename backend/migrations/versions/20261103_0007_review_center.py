@@ -55,6 +55,20 @@ def upgrade():
     )
     op.create_index("ix_review_center_submissions_case_id", "review_center_submissions", ["case_id"])
     op.create_table(
+        "review_center_assignments",
+        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
+        sa.Column("case_id", postgresql.UUID(as_uuid=True),
+                  sa.ForeignKey("review_center_cases.id", ondelete="RESTRICT"), nullable=False),
+        sa.Column("revision", sa.Integer(), nullable=False),
+        sa.Column("reviewer_id", postgresql.UUID(as_uuid=True),
+                  sa.ForeignKey("users.id", ondelete="RESTRICT"), nullable=False),
+        sa.Column("assigned_by", postgresql.UUID(as_uuid=True),
+                  sa.ForeignKey("users.id", ondelete="RESTRICT"), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.UniqueConstraint("case_id", "revision", "reviewer_id", name="uq_review_center_assignment"),
+    )
+    op.create_index("ix_review_center_assignments_case_id", "review_center_assignments", ["case_id"])
+    op.create_table(
         "review_center_events",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
         sa.Column("case_id", postgresql.UUID(as_uuid=True),
@@ -70,6 +84,8 @@ def upgrade():
 
 
 def downgrade():
+    op.drop_index("ix_review_center_assignments_case_id", table_name="review_center_assignments")
+    op.drop_table("review_center_assignments")
     op.drop_index("ix_review_center_events_case_id", table_name="review_center_events")
     op.drop_table("review_center_events")
     op.drop_index("ix_review_center_submissions_case_id", table_name="review_center_submissions")
