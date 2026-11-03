@@ -242,6 +242,10 @@ It includes deterministic source checks, contextual terminology QA, Chat applica
 
 This capability is a **proposal**. Implement first as a bounded, read-only application-QA pilot with a disabled-by-default provider adapter, synthetic fixtures and human-controlled approval.
 
+## 9B. Zomi Standard Form spelling suggestions (experimental)
+
+See [ZOMI_SPELLING_CORRECTION.md](ZOMI_SPELLING_CORRECTION.md) for the proposed suggestion-only spelling service, two-reviewer rule gate, safe text preservation, and Chat/Translate UI milestones. Spelling suggestions are distinct from prefix completion and are never permitted to silently mutate private source data or training corpora. The current versioned rule set has no adopted rules, so production-quality correction suggestions are not yet available.
+
 ## 10. Identity, authorization, and privacy
 
 Initial roles:
