@@ -34,7 +34,7 @@ export default function SpellingSuggestions({
 }) {
   const [result, setResult] = useState<SpellingResult | null>(null);
   const [ignored, setIgnored] = useState(false);
-  const [undoValue, setUndoValue] = useState<string | null>(null);
+  const [undoValue, setUndoValue] = useState<{ before: string; after: string } | null>(null);
   const [error, setError] = useState(false);
   const lastRequest = useRef(0);
 
@@ -92,7 +92,7 @@ export default function SpellingSuggestions({
           <span>{changes.length} reviewed spelling suggestion{changes.length === 1 ? "" : "s"}: </span>
           <span lang="ctd" style={{ fontWeight: 600 }}>{result.suggested}</span>
           <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-            <button type="button" onClick={() => { setUndoValue(value); onChange(result.suggested); }}
+            <button type="button" onClick={() => { setUndoValue({ before: value, after: result.suggested }); onChange(result.suggested); }}
               style={{ border: "1px solid var(--border)", padding: "4px 10px", borderRadius: 8, cursor: "pointer" }}>
               Accept
             </button>
@@ -106,8 +106,8 @@ export default function SpellingSuggestions({
       {!error && flags.length > 0 && !ignored && (
         <p style={{ margin: "5px 0 0" }}>Needs context review: {flags.map((f) => f.original).join(", ")}. No change suggested.</p>
       )}
-      {undoValue !== null && (
-        <button type="button" onClick={() => { onChange(undoValue); setUndoValue(null); }}
+      {undoValue !== null && value === undoValue.after && (
+        <button type="button" onClick={() => { onChange(undoValue.before); setUndoValue(null); }}
           style={{ marginTop: 6, border: "1px solid var(--border)", padding: "4px 10px", borderRadius: 8, cursor: "pointer" }}>
           Undo last accepted correction
         </button>
