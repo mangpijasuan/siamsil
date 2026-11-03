@@ -16,6 +16,10 @@ Model evaluation: [`docs/MODEL_EVALUATION.md`](docs/MODEL_EVALUATION.md)
 Implementation status and prioritized to-do list: [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md)
 Identity and authorization setup: [`docs/IDENTITY_AND_AUTHORIZATION.md`](docs/IDENTITY_AND_AUTHORIZATION.md)
 
+## Quality Operator design (planned)
+
+See [Siamsil Quality Operator Architecture](docs/QUALITY_OPERATOR_ARCHITECTURE.md) for the proposed OpenAI-assisted Chat QA, terminology checks, reviewer workflow, strict provider-data boundaries, and the human-controlled implementation phases. This is design documentation only, not a deployed service.
+
 ## What is live (Release 1)
 
 - Dictionary over the ~20k English–Zomi master
