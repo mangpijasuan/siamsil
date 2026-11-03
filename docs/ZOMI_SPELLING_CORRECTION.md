@@ -7,7 +7,7 @@ This feature belongs to the **Siamsil** brand and targets **Zomi Standard Form (
 ## Design and boundaries
 
 - The approved rules in `data/zolai_standard/standard.json` are the only v1 authority; the existing `ml_pipeline/scripts/zolai_standard.py` remains the offline standardization tool and records provenance.
-- `backend/services/zomi_spelling.py` provides deterministic spelling proposals. `POST /api/v1/words/spelling/suggest` accepts `{"text":"..."}` and returns `original`, `suggested`, `standard_version`, `status`, and suggestion ranges with rule IDs, rationale and `replace`/`flag` modes.
+- `backend/services/zomi_spelling.py` provides deterministic spelling proposals. `POST /api/v1/words/spelling/suggest` accepts `{"text":"..."}` (experimental internal route, intentionally omitted from the stable OpenAPI schema until review) and returns `original`, `suggested`, `standard_version`, `status`, and suggestion ranges with rule IDs, rationale and `replace`/`flag` modes.
 - `replace` means the user may accept a proposed approved-rule change; the API still **never edits submitted input, source data, model training, or the database**. UI should show underlines and an opt-in Accept/Undo button. A product-level auto-apply setting may be added later only for explicitly approved context-safe rules and with undo.
 - `flag` means a context-dependent spelling is displayed for review **without changing** the proposed full text.
 - Empty standard returns `no_approved_rules`; a missing standard returns `not_configured`; corrupted/unapproved rules fail closed.
@@ -17,7 +17,7 @@ This feature belongs to the **Siamsil** brand and targets **Zomi Standard Form (
 
 ## Follow-up milestones
 
-1. Generate the OpenAPI contract and TypeScript client types after adding the endpoint; verify CI.
+1. Review and harden the experimental endpoint, then explicitly include it in the OpenAPI contract and regenerate TypeScript client types; verify CI before external clients adopt it.
 2. Wire the frontend Chat / Translate editor to call the endpoint on a debounce after typing (not on every keystroke), preserving user input and allowing Accept / Ignore / Undo.
 3. Obtain two independent native-speaker approvals for real spelling rules, including examples and context exceptions, and increase the standard version.
 4. Add phrase-level and morphological suggestions, contextual disambiguation and quality measurement against a sealed independently authored human benchmark.
