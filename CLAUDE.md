@@ -30,3 +30,7 @@ Treat Zomi Bible spelling and usage as important *evidence*, **not** infallible 
 ## Review Center governance and rewards (owner decision)
 
 Read `docs/REVIEW_CENTER_GOVERNANCE.md` before implementing contributor reviews, editorial approvals, rewards or release exports. **Every editor-submitted final proposal requires explicit independent admin finalization**; editors cannot publish and admins cannot bypass the existing two-reviewer spelling rule gate. The reward system is a **future proposal**; no cash, debt, future conversion entitlement or $ZOMI token currently exists by virtue of this plan. Track provisional contribution metrics separately from earnings and never mint/payout without funded, legally reviewed policy and explicit authorization.
+
+## Review Center implementation status
+
+Read `docs/REVIEW_CENTER_MVP.md` and `docs/REVIEW_CENTER_GOVERNANCE.md` before changes to reviewer/admin features. RC-1 adds an experimental, role-protected backend and PostgreSQL migration but **not** a complete authenticated frontend. Do not create a fake login, accept pasted bearer tokens in the browser, or expose private Bible text. Build secure Siamsil ID frontend sessions before connecting dashboard UI. Reviewers require assignment; two independent accepting reviews precede an editor proposal for spelling, and every editor proposal requires separate admin finalization. Admin approval does not trigger training, publication, payouts or $ZOMI minting.
