@@ -18,7 +18,7 @@ This feature belongs to the **Siamsil** brand and targets **Zomi Standard Form (
 ## Follow-up milestones
 
 1. Review and harden the experimental endpoint, then explicitly include it in the OpenAPI contract and regenerate TypeScript client types; verify CI before external clients adopt it.
-2. Wire the frontend Chat / Translate editor to call the endpoint on a debounce after typing (not on every keystroke), preserving user input and allowing Accept / Ignore / Undo.
+2. **Implemented in this draft PR:** the Chat composer and Zomi-to-English Translate textarea use a 450 ms debounced suggestion panel with Accept / Ignore / Undo. Requests are only made from the browser when input is present; the API uses only reviewer-approved rules and no external LLM. A later UI iteration may add nonintrusive inline underlining and keyboard navigation, with mobile accessibility testing.
 3. Obtain two independent native-speaker approvals for real spelling rules, including examples and context exceptions, and increase the standard version.
 4. Add phrase-level and morphological suggestions, contextual disambiguation and quality measurement against a sealed independently authored human benchmark.
 5. Support offline/mobile local rule caching with versioned updates and documented safeguards.
