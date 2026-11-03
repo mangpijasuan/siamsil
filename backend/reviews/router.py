@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from uuid import UUID
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -29,7 +30,7 @@ class NewCase(BaseModel):
     case_type: str = Field(pattern=r"^(spelling|sentence|term|bible_context)$")
     source_ref: str = Field(min_length=1, max_length=255)
     source_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
-    rights_status: str = Field(min_length=1, max_length=32)
+    rights_status: Literal["needs_review"] = "needs_review"
 
 
 class Assignment(BaseModel):
