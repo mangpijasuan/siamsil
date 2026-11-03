@@ -8,7 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from identity.schemas import AuthenticatedUser
-from models.review_center import ReviewCase, ReviewCenterEvent, ReviewCenterSubmission
+from models.review_center import ReviewCase, ReviewCenterEvent, ReviewCenterSubmission, ReviewCenterAssignment
+from models.identity import UserRole
 
 REVIEWER = "reviewer"
 EDITOR = "editor"
@@ -45,6 +46,34 @@ def create_case(db: Session, actor: AuthenticatedUser, *, case_type: str,
     return case
 
 
+def assign_reviewer(db: Session, actor: AuthenticatedUser, *, case_id: UUID,
+                    revision: int, reviewer_id: UUID) -> ReviewCase:
+    if ADMIN not in actor.roles:
+        raise HTTPException(status_code=403, detail="Administrator role required")
+    case = locked_case(db, case_id, revision)
+    if case.status not in ("queued", "reviewing"):
+        raise HTTPException(status_code=409, detail="Reviewer assignments are closed")
+    is_reviewer = db.scalar(select(UserRole).where(
+        UserRole.user_id == reviewer_id, UserRole.role == REVIEWER
+    ))
+    if is_reviewer is None:
+        raise HTTPException(status_code=422, detail="Assignee must have reviewer role")
+    existing = db.scalar(select(ReviewCenterAssignment.id).where(
+        ReviewCenterAssignment.case_id == case.id,
+        ReviewCenterAssignment.revision == case.revision,
+        ReviewCenterAssignment.reviewer_id == reviewer_id
+    ))
+    if existing is not None:
+        raise HTTPException(status_code=409, detail="Already assigned")
+    db.add(ReviewCenterAssignment(
+        case_id=case.id, revision=case.revision,
+        reviewer_id=reviewer_id, assigned_by=actor.user_id,
+    ))
+    record_event(db, case, actor, "reviewer_assigned", {"reviewer_id": str(reviewer_id)})
+    db.commit()
+    return case
+
+
 def submit_review(db: Session, actor: AuthenticatedUser, *, case_id: UUID, revision: int,
                   decision: str, reason: str) -> ReviewCase:
     if REVIEWER not in actor.roles:
@@ -52,6 +81,13 @@ def submit_review(db: Session, actor: AuthenticatedUser, *, case_id: UUID, revis
     case = locked_case(db, case_id, revision)
     if case.status not in ("queued", "reviewing"):
         raise HTTPException(status_code=409, detail="This case is not accepting reviewer decisions")
+    assigned = db.scalar(select(ReviewCenterAssignment.id).where(
+        ReviewCenterAssignment.case_id == case.id,
+        ReviewCenterAssignment.revision == case.revision,
+        ReviewCenterAssignment.reviewer_id == actor.user_id,
+    ))
+    if assigned is None:
+        raise HTTPException(status_code=403, detail="Reviewer is not assigned to this case")
     already = db.scalar(select(ReviewCenterSubmission.id).where(
         ReviewCenterSubmission.case_id == case.id,
         ReviewCenterSubmission.revision == case.revision,
