@@ -246,6 +246,10 @@ This capability is a **proposal**. Implement first as a bounded, read-only appli
 
 See [ZOMI_SPELLING_CORRECTION.md](ZOMI_SPELLING_CORRECTION.md) for the proposed suggestion-only spelling service, two-reviewer rule gate, safe text preservation, and Chat/Translate UI milestones. Spelling suggestions are distinct from prefix completion and are never permitted to silently mutate private source data or training corpora. The current versioned rule set has no adopted rules, so production-quality correction suggestions are not yet available.
 
+## 9C. Review Center governance and conditional contributor rewards (proposed)
+
+See [REVIEW_CENTER_GOVERNANCE.md](REVIEW_CENTER_GOVERNANCE.md). Every editor-submitted language decision requires separate authorized **admin finalization**, in addition to any required two-reviewer gate for spelling. Rewards may eventually be configurable per distinct approved term, sentence or specialist task if a funded and legally reviewed program is activated; neither cash nor proposed $ZOMI tokens are a current entitlement. PostgreSQL stores auditable review and provisional reward events; private language data exports must continue to satisfy all rights and release gates.
+
 ## 10. Identity, authorization, and privacy
 
 Initial roles:
