@@ -65,6 +65,54 @@ def scan(db: Path, checks_path: Path, limit: int):
         con.close()
 
 
+def add_manual_reports(rows, reports_path: Path | None, db: Path, limit: int):
+    """Allow humans to flag confusing Bible wording; validate references against visible verses."""
+    if reports_path is None or len(rows) >= limit:
+        return rows
+    con = sqlite3.connect(f"file:{db.resolve()}?mode=ro", uri=True)
+    try:
+        with reports_path.open(encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            required = {"version", "book_id", "chapter", "verse", "reason"}
+            if not reader.fieldnames or not required.issubset(reader.fieldnames):
+                raise ValueError("Manual reports require version, book_id, chapter, verse, reason")
+            seen = {(str(row["version"]), int(row["book_id"]), int(row["chapter"]),
+                     int(row["verse"]), str(row["check_id"])) for row in rows}
+            for report in reader:
+                version = report["version"].strip()
+                book = int(report["book_id"])
+                chapter = int(report["chapter"])
+                verse = int(report["verse"])
+                reason = report["reason"].strip()
+                if not reason or len(reason) > 200:
+                    raise ValueError("Manual reason must be 1..200 characters")
+                found = con.execute(
+                    """SELECT 1 FROM verses x JOIN versions v ON v.id = x.version_id
+                       WHERE x.version_id = ? AND x.book_id = ? AND x.chapter = ?
+                       AND x.verse = ? AND v.display_status = 'cleared'
+                       AND v.language_iso IN ('ctd','zom') LIMIT 1""",
+                    (version, book, chapter, verse),
+                ).fetchone()
+                if not found:
+                    raise ValueError("Manual report refers to an unavailable Bible verse")
+                key = (version, book, chapter, verse, "manual")
+                if key in seen:
+                    continue
+                seen.add(key)
+                rows.append({
+                    "version": version, "book_id": book, "chapter": chapter,
+                    "verse": verse, "check_id": "manual", "observed": "",
+                    "alternatives": "", "reason": reason,
+                    "status": "needs_human_review", "reviewer_1": "",
+                    "reviewer_2": "", "decision": "",
+                })
+                if len(rows) >= limit:
+                    break
+        return rows
+    finally:
+        con.close()
+
+
 def write_csv(rows, destination: Path):
     resolved = destination.resolve()
     if resolved == ROOT or ROOT in resolved.parents:
@@ -81,11 +129,15 @@ def main():
     parser.add_argument("--db", type=Path, required=True)
     parser.add_argument("--checks", type=Path, default=ROOT / "data/zolai_standard/rule_checks.json")
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--manual-reports", type=Path, help="CSV of manually flagged verse references")
     parser.add_argument("--limit", type=int, default=500)
     args = parser.parse_args()
     if not 1 <= args.limit <= 5000:
         parser.error("--limit must be 1..5000")
-    rows = scan(args.db, args.checks, args.limit)
+    # Reserve room for manually submitted unclear/contextual Bible cases.
+    automatic_limit = args.limit if args.manual_reports is None else max(1, args.limit // 2)
+    rows = scan(args.db, args.checks, automatic_limit)
+    rows = add_manual_reports(rows, args.manual_reports, args.db, args.limit)
     write_csv(rows, args.out)
     print(f"{len(rows)} reference-only Bible cases sent to human review; no changes approved")
 
