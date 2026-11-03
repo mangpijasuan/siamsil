@@ -92,6 +92,7 @@ class AdminGateTests(unittest.TestCase):
         admin = actor("administrator")
         case = SimpleNamespace(id=uuid4(), revision=1, case_type="spelling",
                                editor_id=uuid4(), status="admin_pending",
+                               source_ref="synthetic", rights_status="needs_review",
                                finalized_by=None)
         db = MagicMock()
         db.scalars.return_value.all.return_value = [
