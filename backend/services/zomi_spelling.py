@@ -72,7 +72,8 @@ def read_standard(path: Path) -> tuple[str, list[dict]]:
             raise ValueError("Invalid variants")
         if rule.get("mode") not in ("replace", "flag"):
             raise ValueError("Invalid spelling mode")
-        if (not isinstance(approved, list) or not all(isinstance(v, str) and REVIEWER.fullmatch(v) for v in approved)\n                or len(set(approved)) < 2):
+        if (not isinstance(approved, list) or not all(isinstance(v, str) and REVIEWER.fullmatch(v) for v in approved)
+                or len(set(approved)) < 2):
             raise ValueError("Two distinct human reviewer codes are required")
         if not isinstance(rule.get("approved_on"), str) or not DATE.fullmatch(rule["approved_on"]):
             raise ValueError("Missing approval date")
