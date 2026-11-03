@@ -101,6 +101,10 @@ class DatabaseTests(unittest.TestCase):
                 "dictionary_equivalents",
                 "dictionary_examples",
                 "dictionary_issues",
+                "review_center_cases",
+                "review_center_assignments",
+                "review_center_submissions",
+                "review_center_events",
             },
             set(Base.metadata.tables),
         )
