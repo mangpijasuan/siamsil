@@ -10,6 +10,7 @@ import { completeTrailingWord, completionPrefix, usefulCompletions } from "@/lib
 import { pushHistory, useRecentSearches } from "@/lib/localData";
 import { IconSwap } from "@/components/Icons";
 import ExperimentalTranslation from "@/components/ExperimentalTranslation";
+import SpellingSuggestions from "@/components/SpellingSuggestions";
 import {
   type Direction,
   languages,
@@ -192,6 +193,7 @@ export default function TranslateClient({
               ))}
             </div>
           )}
+          {zomiInput && <SpellingSuggestions value={text} onChange={setText} />}
           <div className="tr-input-bar">
             <span className="tr-count">{text.length}/{MAX_LENGTH}</span>
             {text && (
