@@ -1,84 +1,23 @@
-name: Build and validate Siamsil data release
+name: Siamsil data release - safety hold
 
-# Controlled release, not a production auto-deploy. Data changes in a separate
-# private repository cannot safely be assumed to be licensed or approved.
+# SAFETY HOLD: PR #64 exposed restricted source-derived data through public
+# workflow artifacts and omitted required rights/review/holdout release gates.
+# Do not checkout private data, build bundles or use R2 credentials here until
+# the release workflow has been redesigned and independently reviewed.
 on:
   workflow_dispatch:
-    inputs:
-      publish_to_r2:
-        description: "Publish immutable bundle to private R2 after owner approval"
-        required: true
-        default: false
-        type: boolean
 
 permissions:
   contents: read
 
-concurrency:
-  group: siamsil-data-release
-  cancel-in-progress: false
-
 jobs:
-  release:
+  release_safety_hold:
+    name: Release paused pending data protection checks
     runs-on: ubuntu-latest
-    timeout-minutes: 90
-    environment: siamsil-data-release
     steps:
-      - name: Check out application
-        uses: actions/checkout@v4
-
-      - name: Check out private source archive
-        uses: actions/checkout@v4
-        with:
-          repository: mangpijasuan/siamsil-data
-          path: siamsil-data
-          token: ${{ secrets.SIAMSIL_DATA_READ_TOKEN }}
-          persist-credentials: false
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install processing dependencies
-        run: python -m pip install -r ml_pipeline/requirements.txt
-
-      - name: Verify pinned source assets and build immutable databases
-        env:
-          SIAMSIL_DATA_REPO: ${{ github.workspace }}/siamsil-data
+      - name: Explain mandatory release gates
         run: |
-          python ml_pipeline/scripts/build_language_db.py
-          python ml_pipeline/scripts/import_usx_bibles.py
-          python backend/scripts/package_data.py dist/
-          python backend/scripts/release_manifest.py dist/siamsil-data.tar.gz --output dist/release.json
-          python -m json.tool dist/release.json > /dev/null
-
-      - name: Save release manifest and bundle for review
-        uses: actions/upload-artifact@v4
-        with:
-          name: siamsil-release-${{ github.run_id }}
-          path: |
-            dist/release.json
-            dist/siamsil-data.tar.gz
-          retention-days: 7
-
-      - name: Publish immutable object to private R2
-        if: ${{ inputs.publish_to_r2 }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SIAMSIL_R2_WRITE_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SIAMSIL_R2_WRITE_SECRET }}
-          AWS_DEFAULT_REGION: auto
-          R2_ENDPOINT: ${{ secrets.SIAMSIL_R2_ENDPOINT }}
-          R2_BUCKET: ${{ vars.SIAMSIL_R2_BUCKET }}
-        run: |
-          set -euo pipefail
-          test -n "$AWS_ACCESS_KEY_ID" && test -n "$AWS_SECRET_ACCESS_KEY"
-          test -n "$R2_ENDPOINT" && test -n "$R2_BUCKET"
-          python -m pip install awscli
-          KEY="$(python -c 'import json;print(json.load(open("dist/release.json"))["object_key"])')"
-          # Object keys include the full digest, so publishing a new version never
-          # overwrites a previous version. Production promotion happens separately.
-          aws s3 cp dist/siamsil-data.tar.gz "s3://$R2_BUCKET/$KEY" --endpoint-url "$R2_ENDPOINT"
-          aws s3 cp dist/release.json "s3://$R2_BUCKET/${KEY%/*}/release.json" --endpoint-url "$R2_ENDPOINT"
-          echo "Uploaded immutable object: $KEY"
-          echo "To deploy, set SIAMSIL_DATA_BUNDLE_S3_KEY and SIAMSIL_DATA_BUNDLE_SHA256 in Railway."
+          echo "::error::Production data releases are paused pending security and data-rights hardening."
+          echo "::error::Never upload private Siamsil bundles to artifacts in the public application repository."
+          echo "::error::Implement rights-approved-only packaging, private evaluation and review inclusion, and secure R2 publishing in a protected private workflow."
+          exit 1
