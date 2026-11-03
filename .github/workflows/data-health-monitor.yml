@@ -1,0 +1,29 @@
+name: Monitor Siamsil production data readiness
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Verify production API readiness
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check configured production endpoint
+        env:
+          API_URL: ${{ vars.SIAMSIL_API_HEALTH_URL }}
+        run: |
+          if [ -z "$API_URL" ]; then
+            echo "::notice::Set SIAMSIL_API_HEALTH_URL to activate production monitoring."
+            exit 0
+          fi
+          python backend/scripts/check_release.py --url "$API_URL"
