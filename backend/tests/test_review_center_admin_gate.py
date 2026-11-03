@@ -35,7 +35,7 @@ class AdminGateTests(unittest.TestCase):
         ]
         for method, url in endpoints:
             with self.subTest(url=url):
-                response = getattr(client, method)(url)
+                response = getattr(client, method)(url, **({"json": {}} if method == "post" else {}))
                 self.assertEqual(response.status_code, 401)
 
     def test_admin_cannot_approve_own_editor_proposal(self):
