@@ -85,11 +85,11 @@ def upgrade():
 
     # Audit records are immutable even to ordinary application SQL.
     op.execute("""
-        CREATE FUNCTION review_center_events_immutable() RETURNS trigger AS $
+        CREATE FUNCTION review_center_events_immutable() RETURNS trigger AS '
         BEGIN
-          RAISE EXCEPTION 'review_center_events is append-only';
+          RAISE EXCEPTION ''review_center_events is append-only'';
         END;
-        $ LANGUAGE plpgsql;
+        ' LANGUAGE plpgsql;
     """)
     op.execute("""
         CREATE TRIGGER trg_review_center_events_immutable
