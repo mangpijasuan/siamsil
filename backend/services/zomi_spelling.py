@@ -14,10 +14,10 @@ from functools import lru_cache
 from pathlib import Path
 
 APOSTROPHES = "'’‘ʼ"
-VERSION = re.compile(r"^\\d+\\.\\d+\\.\\d+$")
-RULE_ID = re.compile(r"^ZS-\\d{3}$")
-REVIEWER = re.compile(r"^[A-Z]\\d{2}$")
-DATE = re.compile(r"^\\d{4}-\\d{2}-\\d{2}$")
+VERSION = re.compile(r"^\d+\.\d+\.\d+$")
+RULE_ID = re.compile(r"^ZS-\d{3}$")
+REVIEWER = re.compile(r"^[A-Z]\d{2}$")
+DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 BASE_PATH = Path(__file__).resolve().parents[2] / "data" / "zolai_standard" / "standard.json"
 MAX_LENGTH = 4000
 
@@ -41,7 +41,7 @@ def form_pattern(value: str) -> str:
         if char == "'":
             parts.append("[" + re.escape(APOSTROPHES) + "]")
         elif char == " ":
-            parts.append(r"[ \\t]+")
+            parts.append(r"[ \t]+")
         else:
             parts.append(re.escape(char))
     return "".join(parts)
@@ -117,9 +117,9 @@ def suggest_spelling(text: str, path: Path | None = None) -> dict:
             indexed.append((value, rule))
     indexed.sort(key=lambda row: len(row[0]), reverse=True)
     pattern = re.compile(
-        r"(?<![^\\W\\d_])(?<!['’‘ʼ-])(?:" +
+        r"(?<![^\W\d_])(?<!['’‘ʼ-])(?:" +
         "|".join(f"(?P<v{i}>" + form_pattern(value) + ")" for i, (value, _) in enumerate(indexed)) +
-        r")(?![^\\W\\d_])(?!['’‘ʼ-])", re.IGNORECASE
+        r")(?![^\W\d_])(?!['’‘ʼ-])", re.IGNORECASE
     )
     suggestions = []
     pieces = []
