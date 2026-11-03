@@ -21,7 +21,7 @@ ENGLISH_ORDER = ("web", "kjv")
 MAX_VERSES = 3
 
 REFERENCE = re.compile(
-    r"(?P<book>(?:[1-3]\s*)?[^\W\d_][\w' .]*?)\s*(?P<chapter>\d{1,3})"
+    r"(?P<book>(?:[1-3]\s*)?[^\W\d_][\w' .]{0,80}?)\s*(?P<chapter>\d{1,3})"
     r"(?:\s*[:.]\s*(?P<verse>\d{1,3})(?:\s*[-–]\s*(?P<end>\d{1,3}))?)?(?!\d)",
 )
 
