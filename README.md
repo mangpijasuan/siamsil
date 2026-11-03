@@ -85,6 +85,10 @@ npm run dev
 
 Open [http://127.0.0.1:3002](http://127.0.0.1:3002)
 
+## Deploying
+
+The website runs on Vercel, the API on Railway, and the data bundle sits in a private Cloudflare R2 bucket. Step by step: [docs/DEPLOY.md](docs/DEPLOY.md).
+
 ## Tests
 
 ```bash

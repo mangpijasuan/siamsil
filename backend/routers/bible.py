@@ -18,6 +18,7 @@ from api_schemas import (
     BibleVersionSearchResponse,
     BibleVersionsResponse,
 )
+from services.bible_lookup import BibleLookup, as_bible_verse
 from services.bible_versions import BibleVersions, get_bible_versions
 from services.data_loader import get_store
 
@@ -41,8 +42,10 @@ def search_bible(q: str = Query(..., min_length=1, max_length=200), limit: int =
 
 @router.get("/random", response_model=BibleVerse)
 def random_verse():
-    store = get_store()
-    verse = store.random_verse(seed=date.today().toordinal())
+    """The day's verse from the cleared Zomi Bible, or the workbook Bible where no versions database is loaded."""
+    seed = date.today().toordinal()
+    found = BibleLookup(get_bible_versions()).daily(seed)
+    verse = as_bible_verse(found) if found else get_store().random_verse(seed=seed)
     if not verse:
         raise HTTPException(status_code=404, detail="No verses available")
     return verse

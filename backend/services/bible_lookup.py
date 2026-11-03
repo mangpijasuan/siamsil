@@ -127,4 +127,44 @@ class BibleLookup:
         place = f"{chapter}:{verse}"
         reference = f"{local} {place} ({name} {place})" if local and local != name else f"{name} {place}"
         source = zomi["name"] + (f" · {english['name']}" if english else "")
-        return {"reference": reference, "zomi": text(zomi), "english": text(english), "source": source}
+        return {"reference": reference, "zomi": text(zomi), "english": text(english), "source": source,
+                "book_id": book_id, "book_name": name, "book_local": local, "testament": book.get("testament", ""),
+                "chapter": chapter, "verse": verse}
+
+    def daily(self, seed: int) -> dict[str, Any] | None:
+        """One verse of the Zomi version, the same all day for the same seed."""
+        if not self.versions.available:
+            return None
+        zomi, english = self._chosen()
+        if zomi is None:
+            return None
+        con = self.versions.connect()
+        count = con.execute("SELECT COUNT(*) FROM verses WHERE version_id = ?", (zomi["id"],)).fetchone()[0]
+        if not count:
+            return None
+        row = con.execute(
+            "SELECT book_id, chapter, verse FROM verses WHERE version_id = ? ORDER BY book_id, chapter, verse "
+            "LIMIT 1 OFFSET ?", (zomi["id"], seed % count)).fetchone()
+        return self._verse(zomi, english, row["book_id"], row["chapter"], row["verse"])
+
+    def search_words(self, query: str, limit: int = MAX_VERSES) -> list[dict[str, Any]]:
+        """Verses holding the query, in the Zomi text first, else in the English."""
+        for language in ("ctd", "eng"):
+            verses = [verse for verse in self.search_side(query, language, limit) if verse["zomi"]]
+            if verses:
+                return verses
+        return []
+
+
+def as_bible_verse(verse: dict[str, Any]) -> dict[str, Any]:
+    """A verse in the older BibleVerse shape that /bible/random and /search return.
+
+    zomi_original and zomi_iso both carry the cleared Zomi version's text (TDB 2011); the names
+    come from the workbook Bible this shape was made for, which is no longer served.
+    """
+    return {
+        "testament": verse["testament"], "book_id": verse["book_id"], "book_english": verse["book_name"],
+        "book_zomi": verse["book_local"] or verse["book_name"], "chapter": verse["chapter"],
+        "verse": verse["verse"], "reference": verse["reference"], "english": verse["english"],
+        "zomi_original": verse["zomi"], "zomi_iso": verse["zomi"], "changes_applied": None,
+    }
