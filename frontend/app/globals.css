@@ -377,10 +377,9 @@ body {
 .side-panel-foot {
   padding: 12px 14px 16px;
   border-top: 1px solid rgba(27,42,74,0.08);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--gray);
   background: transparent;
 }
@@ -2243,10 +2242,9 @@ a.library-card:hover {
 }
 .dict-detail-section { margin-bottom: 18px; }
 .dict-detail-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--gray);
   margin-bottom: 6px;
 }
@@ -2841,6 +2839,21 @@ a.library-card:hover {
   padding-top: 10px;
 }
 .tr-count { font-size: 12px; color: var(--gray); margin-right: auto; font-variant-numeric: tabular-nums; }
+/* Zomi word completion under the Translate input */
+.tr-completions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 0 10px; }
+.tr-completion {
+  border: 1px solid var(--border);
+  background: var(--gold-dim);
+  color: var(--navy);
+  border-radius: 16px;
+  padding: 5px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.tr-completion:hover { border-color: var(--gold); }
+.tr-completion:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .tr-clear {
   display: flex;
   align-items: center;
@@ -2907,10 +2920,9 @@ a.library-card:hover {
 .tr-result-side { padding: 16px 18px; }
 .tr-result-zomi-side { background: rgba(201,168,76,0.07); border-top: 1px solid var(--gray3); }
 .tr-side-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--gray);
   margin-bottom: 4px;
 }
@@ -3705,6 +3717,22 @@ body::before {
 .dict-langs svg { transition: transform 0.25s ease; }
 .dict-langs:hover svg { transform: rotate(180deg); }
 .dict-langs:focus-visible { outline: 2px solid var(--gold2); outline-offset: 2px; }
+
+/* Dictionary and Translate headers are centered: the title and the language switch sit over
+   the centered search or input box, and under the centered logo on phones. Results stay
+   left-aligned for reading. */
+.dict-header,
+.tr-header { text-align: center; }
+.dict-langs { margin-left: auto; margin-right: auto; padding: 4px 8px; }
+.tr-langs { justify-content: center; }
+/* Equal widths keep the swap button in the middle whichever language comes first. */
+.tr-langs-switch .tr-lang { min-width: 64px; }
+.tr-langs-switch .tr-lang:last-child { text-align: left; }
+.dict-langs span { min-width: 56px; text-align: left; }
+.dict-langs span:first-child { text-align: right; }
+.dict-search-form,
+.tr-input,
+.tr-input-card { text-align: left; }
 
 /* Side menu: desktop uses the same layout as the phone menu
    (bigger icons, a short description under each item, blue highlight). */
@@ -4763,3 +4791,59 @@ body { padding-bottom: 84px; }
   }
   .desktop-sidebar .side-panel-group-end { display: none; }
 }
+
+/* Translate: opt-in experimental machine translation, kept apart from stored matches */
+.tr-exp { margin-top: 16px; }
+.tr-exp-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: none;
+  padding: 4px 0;
+  color: var(--navy);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tr-exp-track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--gray2);
+  transition: background 0.2s;
+}
+.tr-exp-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s;
+}
+.tr-exp-switch.is-on .tr-exp-track { background: var(--navy); }
+.tr-exp-switch.is-on .tr-exp-thumb { transform: translateX(16px); }
+.tr-exp-switch:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 6px; }
+.tr-exp-card {
+  margin-top: 10px;
+  padding: 14px 16px;
+  background: var(--white);
+  border: 1px dashed rgba(180,83,9,0.45);
+  border-radius: var(--radius-lg);
+  transition: opacity 0.2s;
+}
+.tr-exp-card.is-pending { opacity: 0.6; }
+.tr-exp-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.tr-exp-title { margin-bottom: 0; }
+.tr-chip-experimental { background: rgba(180,83,9,0.08); color: #b45309; border-color: rgba(180,83,9,0.3); }
+.tr-exp-text { font-size: 20px; color: var(--navy); line-height: 1.4; font-weight: 600; }
+.tr-exp-note { margin-top: 8px; font-size: 13px; color: #92400e; line-height: 1.5; }
+.tr-exp-model { margin-top: 4px; font-size: 12px; color: var(--gray); }
+.tr-exp-loading, .tr-exp-error { font-size: 14px; color: var(--gray); }
+.tr-exp-error { color: #b91c1c; }

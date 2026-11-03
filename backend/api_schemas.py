@@ -75,6 +75,19 @@ class DictionarySuggestionsResponse(ApiModel):
     results: list[DictionarySuggestion]
 
 
+class WordSuggestion(ApiModel):
+    word: str
+    count: int
+
+
+class WordSuggestionsResponse(ApiModel):
+    prefix: str
+    language: str
+    # Where the words come from (Zomi Bible version IDs today); see services/word_suggest.py.
+    sources: list[str]
+    words: list[WordSuggestion]
+
+
 class DictionaryLetter(ApiModel):
     letter: str
     count: int
@@ -226,6 +239,24 @@ class TranslationResponse(ApiModel):
     language_release: str | None = None
     primary: TranslateMatch | None = None
     matches: list[TranslateMatch]
+
+
+class ExperimentalTranslationStatus(ApiModel):
+    available: bool
+    note: str
+    system: str | None = None
+    system_version: str | None = None
+
+
+class ExperimentalTranslationResponse(ApiModel):
+    input: str
+    direction: str
+    translation: str
+    experimental: bool = True
+    label: str
+    note: str
+    system: str
+    system_version: str
 
 
 class LearningEntry(ApiModel):

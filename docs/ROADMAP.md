@@ -1,6 +1,6 @@
 # Siamsil phase roadmap
 
-Updated: 2026-10-01
+Updated: 2026-10-27
 
 This is the phase-level view: what each phase delivers, what must be true before the next one starts, and how phases map to the releases in [`PRODUCTION_MASTER_BUILD_PROMPT.md`](PRODUCTION_MASTER_BUILD_PROMPT.md). Item-level status lives in [`IMPLEMENTATION_ROADMAP.md`](IMPLEMENTATION_ROADMAP.md); do not duplicate checklists here.
 
@@ -67,7 +67,16 @@ Checklist: *Language data foundation → Needed*.
 - Train gold-weighted, then gold + silver experiments; record dataset, code, seed, and hyperparameters per run.
 - Human evaluation is a recurring gate: a reviewer panel scores a fixed blinded sample for every candidate, not a one-time step at the end.
 
-Exit gate: a candidate beats retrieval and the untuned LLM on the Phase 0 human evaluation sets and passes the safety/robustness suites. Until then, production stays retrieval-only and generated Zomi is not shown as a translation.
+Exit gate: a candidate beats retrieval and the untuned LLM on the Phase 0 human evaluation sets and passes the safety/robustness suites. Until then, retrieval stays the default and generated Zomi is never presented as a verified translation.
+
+**Decision (2026-10-28, project owner): experimental machine translation.** Before the gate is passed, the Translate page may offer a fine-tuned model as an opt-in experimental mode, to gather corrections from Zomi speakers. Conditions:
+
+- Off by default. Retrieval matches stay the main result; the model appears only after the user turns on "Try machine translation (experimental)".
+- Every result is labelled experimental, says it may contain errors, and offers 👍, 👎 and a suggested correction. Corrections are stored for review, never used as approved data automatically.
+- Not used in the Bible reader, the citizenship test, or as fact in Chat.
+- API responses name the system and model version that produced the text.
+- The served model must be trained only on sources whose `train` status in `data/rights.json` is `cleared`, and its base-model license must allow the use (NLLB-200 is acceptable for the non-profit app; see DATA_RIGHTS.md).
+- Passing the exit gate is what makes a model the default; the human evaluation sets are built in parallel.
 
 *Started:* evaluation harness with chrF++/BLEU, bootstrap intervals, paired comparisons, the automatic gate, and the retrieval baseline; see [`MODEL_EVALUATION.md`](MODEL_EVALUATION.md). Scoring needs the human evaluation sets.
 
@@ -143,6 +152,21 @@ Build order:
 
 Exit gate: learners complete the pathway on a phone, mastery is backed by recorded evidence, and every published lesson and question passed human review. More domains, GED preparation, credentials, and Studio follow the "Deferred" table in `VISION.md`.
 
+## Siamsil products track
+
+Direction and rules: *Siamsil products* in [`VISION.md`](VISION.md). Nothing here starts before Release 1 ships. Order:
+
+1. **Siamsil Sign, internal.** Siamsil's own agreements signed online: speech recording consent (with the Speech Data Lab and [`AUDIO_CONSENT.md`](AUDIO_CONSENT.md)), author agreements for Siamsil Docs, and source permission letters. Each signature records the signer's account, the exact document version (a hash), the time, and a withdrawal path where the agreement allows one. Signed documents stay private and out of git.
+   Needs first: the agreement texts reviewed by the project owner (and a lawyer for the author agreement).
+2. **Siamsil Docs, step 1: free publishing.** Authors submit articles and books; a reviewer approves them before they appear in Siamsil Library. Each work records its author, license, and the author's separate yes or no to AI training.
+   Needs first: Siamsil Sign for the author agreement, moderation roles, and a takedown process.
+3. **Siamsil Docs, step 2: sales.** Readers buy works, and authors are paid their share through a payment provider that handles payouts, tax forms, and refunds (such as Stripe Connect). Siamsil never stores card numbers.
+   Needs first: the project owner's decision on billing (VISION.md *Deferred*), the author share and refund policy, terms of sale, and the provider's account and tax setup.
+4. **Siamsil Keyboard.** Predictive text grown into a phone keyboard: word completion, next-word suggestions, and spelling hints from the approved Siamsil Zomi Standard Form.
+   Needs first: predictive text steps 2 and 3, and Release 5 (native apps).
+5. **Siamsil Voice.** Speech to text and text to speech.
+   Needs first: consented recordings from the Speech Data Lab and a model tested on Zomi; no voice is used for synthesis without its speaker's permission for that purpose.
+
 ## Mapping to releases
 
 | Release (master prompt) | Phases |
@@ -153,4 +177,4 @@ Exit gate: learners complete the pathway on a phone, mastery is backed by record
 | Release 4 — Intelligence | Phase 2 model in production, Phase 6 |
 | Release 5 — Native iOS / Android | mobile app from Phase 4 |
 
-The Phase 5 developer platform is not in the master prompt's release list; schedule it only after its licensing and governance gates are met.
+Siamsil Sign and Siamsil Docs follow Release 1 alongside the releases above, Siamsil Keyboard needs Release 5, and Siamsil Voice belongs to Release 4. The Phase 5 developer platform is not in the master prompt's release list; schedule it only after its licensing and governance gates are met.

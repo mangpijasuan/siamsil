@@ -1,24 +1,21 @@
 # Siamsil language data
 
-Raw files in this tree are **immutable**. Never edit them in place.
-
 ```text
+../siamsil-data/   the originals: primary source, versioned, never edited (private repository)
 data/
-├── raw/           acquired originals (do not modify)
-├── processed/     cleaned, indexed, reproducible outputs
-├── datasets/      train / validation / test splits
-├── evaluation/    permanent evaluation slices
-├── exports/
-└── versions/      named dataset releases
+├── *.json         settings the code depends on (rights, Bible names, pinned sources)
+├── processed/     databases built from siamsil-data (rebuildable)
+├── datasets/      train / validation / test splits (rebuildable)
+├── evaluation/    evaluation slices
+├── exports/       review sheets and bundles (rebuildable)
+└── versions/      release manifests: which originals and checksums each build used
 ```
 
-Large raw files are gitignored. On a new computer, copy them from a clone of the private `siamsil-data` repository (Windows, macOS and Linux; existing files are never overwritten):
+**siamsil-data is the primary source.** Every original (dictionaries, Bibles, the corpus, books) lives in the private `siamsil-data` repository; keep its clone **beside** this one (`../siamsil-data`), or set `SIAMSIL_DATA_REPO` to where it is. The build scripts read the originals there directly, after checking each against the checksum pinned in [`source_files.json`](source_files.json). A changed or missing file stops the build. Its README lists every file with its source, checksum, and rights.
 
-```bash
-python3 ml_pipeline/scripts/restore_private_data.py --data-repo ../siamsil-data
-```
+This folder holds only settings the code depends on (`rights.json`, `bible_versions.json`, `source_files.json`, …) and what the scripts build from siamsil-data (`processed/`, `datasets/`, `exports/`, `evaluation/`). You can delete the built folders at any time and rebuild them. `raw/` is no longer needed; `restore_private_data.py` still unpacks it for tools that expect the older layout, and `build_language_db.py --raw data/raw` builds from it.
 
-Then build the language database:
+The language database's dictionary is the 50K Translation Master (`--dictionary standard` for the Zomi Standard Dictionary; [DICTIONARY.md](../docs/DICTIONARY.md)). Build the language database:
 
 ```bash
 python3 -m pip install -r ml_pipeline/requirements.txt
@@ -30,7 +27,7 @@ python3 ml_pipeline/scripts/build_language_db.py --eval data/evaluation/human/en
 Export tiered train / validation / test files (gold, silver, bronze) to `data/datasets/`. Only sources whose training rights are `cleared` in `data/rights.json` are exported; `--allow-uncleared` admits `needs_review` sources for internal experiments and records that in the export manifest.
 
 ```bash
-python3 ml_pipeline/scripts/export_datasets.py --workbook ml_pipeline/raw_data/Zomi_Bible_Final_v14.xlsx \
+python3 ml_pipeline/scripts/export_datasets.py --workbook ../siamsil-data/bible/Zomi_Bible_Final_v14.xlsx \
   --eval data/evaluation/human/en-zomi-v1.jsonl \
   --generator-summary data/exports/generator-review-v1/summary.json
 ```

@@ -1419,6 +1419,117 @@
         "title": "EligibilityOut",
         "type": "object"
       },
+      "ExperimentalTranslateRequest": {
+        "properties": {
+          "direction": {
+            "default": "en-ctd",
+            "pattern": "^(en-ctd|ctd-en|en-zom|zom-en)$",
+            "title": "Direction",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "ExperimentalTranslateRequest",
+        "type": "object"
+      },
+      "ExperimentalTranslationResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "direction": {
+            "title": "Direction",
+            "type": "string"
+          },
+          "experimental": {
+            "default": true,
+            "title": "Experimental",
+            "type": "boolean"
+          },
+          "input": {
+            "title": "Input",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "system": {
+            "title": "System",
+            "type": "string"
+          },
+          "system_version": {
+            "title": "System Version",
+            "type": "string"
+          },
+          "translation": {
+            "title": "Translation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "input",
+          "direction",
+          "translation",
+          "label",
+          "note",
+          "system",
+          "system_version"
+        ],
+        "title": "ExperimentalTranslationResponse",
+        "type": "object"
+      },
+      "ExperimentalTranslationStatus": {
+        "additionalProperties": true,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System"
+          },
+          "system_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Version"
+          }
+        },
+        "required": [
+          "available",
+          "note"
+        ],
+        "title": "ExperimentalTranslationStatus",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2640,6 +2751,60 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "WordSuggestion": {
+        "additionalProperties": true,
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "word": {
+            "title": "Word",
+            "type": "string"
+          }
+        },
+        "required": [
+          "word",
+          "count"
+        ],
+        "title": "WordSuggestion",
+        "type": "object"
+      },
+      "WordSuggestionsResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "prefix": {
+            "title": "Prefix",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "words": {
+            "items": {
+              "$ref": "#/components/schemas/WordSuggestion"
+            },
+            "title": "Words",
+            "type": "array"
+          }
+        },
+        "required": [
+          "prefix",
+          "language",
+          "sources",
+          "words"
+        ],
+        "title": "WordSuggestionsResponse",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -2773,6 +2938,7 @@
     },
     "/api/v1/bible/random": {
       "get": {
+        "description": "The day's verse from the cleared Zomi Bible, or the workbook Bible where no versions database is loaded.",
         "operationId": "random_verse_api_v1_bible_random_get",
         "responses": {
           "200": {
@@ -4254,6 +4420,68 @@
         ]
       }
     },
+    "/api/v1/translate/experimental": {
+      "get": {
+        "description": "Whether the opt-in experimental model is available, so the page can offer it.",
+        "operationId": "experimental_status_api_v1_translate_experimental_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentalTranslationStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Experimental Status",
+        "tags": [
+          "translate"
+        ]
+      },
+      "post": {
+        "description": "Opt-in machine translation, always labelled experimental (docs/ROADMAP.md, Phase 2).",
+        "operationId": "translate_experimental_api_v1_translate_experimental_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperimentalTranslateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentalTranslationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Translate Experimental",
+        "tags": [
+          "translate"
+        ]
+      }
+    },
     "/api/v1/translate/search": {
       "get": {
         "operationId": "search_matches_api_v1_translate_search_get",
@@ -4326,6 +4554,65 @@
         "summary": "Search Matches",
         "tags": [
           "translate"
+        ]
+      }
+    },
+    "/api/v1/words/suggest": {
+      "get": {
+        "description": "Zomi words starting with `prefix`, most frequent first. English completion is /dictionary/suggest.",
+        "operationId": "suggest_words_api_v1_words_suggest_get",
+        "parameters": [
+          {
+            "description": "The start of a Zomi word",
+            "in": "query",
+            "name": "prefix",
+            "required": true,
+            "schema": {
+              "description": "The start of a Zomi word",
+              "maxLength": 40,
+              "minLength": 1,
+              "title": "Prefix",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 8,
+              "maximum": 20,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WordSuggestionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Suggest Words",
+        "tags": [
+          "words"
         ]
       }
     },

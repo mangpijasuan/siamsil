@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""Set up data/raw on a new computer from a clone of the private siamsil-data repository.
+"""Optional: unpack siamsil-data's originals into data/raw (the older layout).
+
+The build scripts now read siamsil-data directly (data/source_files.json), so this is only
+needed for tools that still expect data/raw. Pass --raw data/raw to build_language_db.py to
+build from it.
 
   python ml_pipeline/scripts/restore_private_data.py --data-repo ../siamsil-data
 
 Copies, without changing their content:
-  dictionary/Zomi_Dictionary_Master_Data.xlsx
+  dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx (the master)
       -> data/raw/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx
   parallel/zomi_english_sentences.part-*.csv.gz (joined in order, one header)
       -> data/raw/parallel/zomi_english_sentences.csv
@@ -30,7 +34,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RAW = ROOT / "data" / "raw"
 
-DICTIONARY = ("dictionary/Zomi_Dictionary_Master_Data.xlsx", "dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx")
+DICTIONARY = ("dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx", "dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx")
 BIBLE_ZIPS = (("bible/Chin-Bible.zip", "bible/usx/chin"), ("bible/engwebu_usfm.zip", "bible/usx/web"))
 PARALLEL_OUT = "parallel/zomi_english_sentences.csv"
 

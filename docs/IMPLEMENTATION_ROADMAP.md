@@ -102,6 +102,8 @@ Agreed order, 2026-10-25. Each step lists what must be true before it counts as 
 - [-] Entries are unreviewed: none is verified yet. Rights are `needs_review` and the compiler and copyright holder are unknown (`DATA_RIGHTS.md`).
 - [ ] Dictionary entry in `data/rights.json`. It is listed in `DATA_RIGHTS.md` but has no machine-readable record.
 - [~] Candidate generation (#25) and lexicographer approval tools come after the Review Center.
+- [x] Word completion (step 1 of predictive text): Zomi words in the dictionary search (Zomi → English) and the Translate input (Zomi source), from the Zomi Bible text the app shows (`GET /api/v1/words/suggest`, `backend/services/word_suggest.py`); English headwords in the dictionary search. Single words only, chosen by the user; never from the machine-translated corpus. More sources join as their display rights clear.
+- [ ] Predictive text step 2: next-word suggestions for Zomi in Translate and Siamsil AI. Step 3: spelling hints from approved Siamsil Zomi Standard Form rules (`ZOMI_STANDARD_FORM.md`).
 
 ### Search
 
@@ -142,7 +144,7 @@ Agreed order, 2026-10-25. Each step lists what must be true before it counts as 
 - [x] SOP-07/08 quality gates (`sop_quality_gate.py`).
 - [x] Training export enforces `data/rights.json`; nothing marked `needs_review` exports for training.
 - [x] Language code decision (2026-10-27, replacing 2026-10-04): Siamsil labels Zomi `ctd` (ISO 639-3, Tedim) in code, data, and APIs (`DATA_RIGHTS.md`).
-- [-] Siamsil Zomi Standard Form: spelling evidence across the Bibles, books, and dictionary, and the three style guides compared, are built ([`ZOMI_STANDARD_FORM.md`](ZOMI_STANDARD_FORM.md)). Zomi reviewers' decisions are next; nothing is standardized until two agree.
+- [-] Siamsil Zomi Standard Form: spelling evidence across the Bibles, books, and dictionary, and the three style guides compared, are built ([`ZOMI_STANDARD_FORM.md`](ZOMI_STANDARD_FORM.md)). The owner's tie-break (common usage first, the *Zolai Standard Format* where usage is split) is recorded. The tool that applies adopted rules, keeping originals and storing a standard form beside them, is built (`zolai_standard.py`, empty `standard.json`). Zomi reviewers' decisions are next; nothing is standardized until two agree. Then wire the standard form into the language database, dictionary variant search, and dataset exports.
 - [ ] Every external dataset card and model card declares `language: [ctd]` and names the language "Zomi (Zolai), Tedim-based".
 - [!] Verify the Hugging Face dataset card for `ZomiLearner/English-Zomi-OPUS_Tatoeba_v20230412`: the declared CC0 1.0 label, plus Tatoeba attribution. Needs a screenshot or saved copy in `siamsil-data`, or huggingface.co allowed by the network policy.
 - [ ] Settle training rights for the parallel corpus, Gemini output terms, the dictionary, and the daily-use phrases.

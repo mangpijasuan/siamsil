@@ -62,7 +62,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Random Verse */
+        /**
+         * Random Verse
+         * @description The day's verse from the cleared Zomi Bible, or the workbook Bible where no versions database is loaded.
+         */
         get: operations["random_verse_api_v1_bible_random_get"];
         put?: never;
         post?: never;
@@ -499,6 +502,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/translate/experimental": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Experimental Status
+         * @description Whether the opt-in experimental model is available, so the page can offer it.
+         */
+        get: operations["experimental_status_api_v1_translate_experimental_get"];
+        put?: never;
+        /**
+         * Translate Experimental
+         * @description Opt-in machine translation, always labelled experimental (docs/ROADMAP.md, Phase 2).
+         */
+        post: operations["translate_experimental_api_v1_translate_experimental_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/translate/search": {
         parameters: {
             query?: never;
@@ -508,6 +535,26 @@ export interface paths {
         };
         /** Search Matches */
         get: operations["search_matches_api_v1_translate_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/words/suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Suggest Words
+         * @description Zomi words starting with `prefix`, most frequent first. English completion is /dictionary/suggest.
+         */
+        get: operations["suggest_words_api_v1_words_suggest_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1070,6 +1117,53 @@ export interface components {
             /** Uses */
             uses: components["schemas"]["UseEligibility"][];
         };
+        /** ExperimentalTranslateRequest */
+        ExperimentalTranslateRequest: {
+            /**
+             * Direction
+             * @default en-ctd
+             */
+            direction: string;
+            /** Text */
+            text: string;
+        };
+        /** ExperimentalTranslationResponse */
+        ExperimentalTranslationResponse: {
+            /** Direction */
+            direction: string;
+            /**
+             * Experimental
+             * @default true
+             */
+            experimental: boolean;
+            /** Input */
+            input: string;
+            /** Label */
+            label: string;
+            /** Note */
+            note: string;
+            /** System */
+            system: string;
+            /** System Version */
+            system_version: string;
+            /** Translation */
+            translation: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ExperimentalTranslationStatus */
+        ExperimentalTranslationStatus: {
+            /** Available */
+            available: boolean;
+            /** Note */
+            note: string;
+            /** System */
+            system?: string | null;
+            /** System Version */
+            system_version?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1446,6 +1540,28 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** WordSuggestion */
+        WordSuggestion: {
+            /** Count */
+            count: number;
+            /** Word */
+            word: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** WordSuggestionsResponse */
+        WordSuggestionsResponse: {
+            /** Language */
+            language: string;
+            /** Prefix */
+            prefix: string;
+            /** Sources */
+            sources: string[];
+            /** Words */
+            words: components["schemas"]["WordSuggestion"][];
+        } & {
+            [key: string]: unknown;
         };
     };
     responses: never;
@@ -2455,6 +2571,59 @@ export interface operations {
             };
         };
     };
+    experimental_status_api_v1_translate_experimental_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentalTranslationStatus"];
+                };
+            };
+        };
+    };
+    translate_experimental_api_v1_translate_experimental_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExperimentalTranslateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentalTranslationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     search_matches_api_v1_translate_search_get: {
         parameters: {
             query: {
@@ -2476,6 +2645,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TranslationSearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    suggest_words_api_v1_words_suggest_get: {
+        parameters: {
+            query: {
+                /** @description The start of a Zomi word */
+                prefix: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WordSuggestionsResponse"];
                 };
             };
             /** @description Validation Error */

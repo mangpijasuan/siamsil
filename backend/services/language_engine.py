@@ -36,14 +36,25 @@ def canonical_direction(direction: str | None) -> str | None:
 # Translation direction -> the corpus side that holds the text being translated.
 # English is stored in normalized_source_text and Zomi in normalized_target_text.
 PARALLEL_FTS_COLUMN = {"en-ctd": "normalized_source_text", "ctd-en": "normalized_target_text"}
+PARALLEL_LENGTH_COLUMN = {None: "normalized_source_text", **PARALLEL_FTS_COLUMN}
 # Pairs Zomi reviewers rejected (build_language_db.py --reviews) are never shown, even on an exact match.
 _EXACT_ORDER = " AND quality_flags NOT LIKE '%reviewer_rejected%' ORDER BY quality_score DESC, id LIMIT ?"
+# An exact match ignores case and closing punctuation: "Thank you" finds "Thank you." and "Thank you!".
+EXACT_FORMS = 4
+_EXACT_IN = "(" + ", ".join("?" * EXACT_FORMS) + ")"
 PARALLEL_EXACT_SQL = {
-    None: "SELECT * FROM parallel_sentences WHERE (lower(normalized_source_text) = lower(?)"
-    " OR lower(normalized_target_text) = lower(?))" + _EXACT_ORDER,
-    "en-ctd": "SELECT * FROM parallel_sentences WHERE lower(normalized_source_text) = lower(?)" + _EXACT_ORDER,
-    "ctd-en": "SELECT * FROM parallel_sentences WHERE lower(normalized_target_text) = lower(?)" + _EXACT_ORDER,
+    None: f"SELECT * FROM parallel_sentences WHERE (lower(normalized_source_text) IN {_EXACT_IN}"
+    f" OR lower(normalized_target_text) IN {_EXACT_IN})" + _EXACT_ORDER,
+    "en-ctd": f"SELECT * FROM parallel_sentences WHERE lower(normalized_source_text) IN {_EXACT_IN}" + _EXACT_ORDER,
+    "ctd-en": f"SELECT * FROM parallel_sentences WHERE lower(normalized_target_text) IN {_EXACT_IN}" + _EXACT_ORDER,
 }
+
+
+def exact_forms(text: str) -> list[str]:
+    """The query in lower case, bare and with each closing mark, for PARALLEL_EXACT_SQL."""
+    bare = text.strip().lower().rstrip(".!?").rstrip()
+    return [bare, f"{bare}.", f"{bare}!", f"{bare}?"]
+
 
 def split_zomi_definition(text: str | None) -> tuple[str | None, str | None]:
     """Split 'gloss; longer Zomi definition' without inventing English text."""
@@ -57,6 +68,15 @@ def split_zomi_definition(text: str | None) -> tuple[str | None, str | None]:
         if gloss and rest:
             return gloss, rest
     return value, value
+
+
+def entry_zomi(entry: dict[str, Any]) -> str | None:
+    """The Zomi to show for a presented dictionary entry in Translate and Siamsil AI.
+
+    50K Translation Master rows carry their Zomi in `zomi` (`definition` is English);
+    Zomi Standard Dictionary rows keep their Zomi definition in `definition`, as before.
+    """
+    return entry["zomi"] if entry.get("definition_language") == "en" else entry["definition"]
 
 
 def row_to_dict(row: sqlite3.Row | None) -> dict[str, Any] | None:
@@ -212,6 +232,24 @@ class LanguageEngine:
                         ).fetchall()
                     )
 
+            if direction == "ctd-en" and len(found) < limit:
+                # Entries whose Zomi is exactly the word searched, or one of its ' ; '-separated
+                # alternatives (50K Translation Master), before looser full-text matches.
+                has_tier = "usage_tier" in {row[1] for row in con.execute("PRAGMA table_info(dictionary_entries)")}
+                tier = ("CASE usage_tier WHEN 'A1' THEN 1 WHEN 'A2' THEN 2 WHEN 'B1' THEN 3 WHEN 'B2' THEN 4 "
+                        "WHEN 'C1' THEN 5 WHEN 'C2' THEN 6 ELSE 7 END, ") if has_tier else ""
+                add_rows(
+                    con.execute(
+                        f"""
+                        SELECT * FROM dictionary_entries
+                        WHERE (lower(definition) = ? OR ' ; ' || lower(definition) || ' ; ' LIKE ?){letter_sql}
+                        ORDER BY flagged ASC, lower(definition) = ? DESC, {tier}length(source_word), id
+                        LIMIT ?
+                        """,
+                        [needle, f"% ; {needle} ; %", *letter_params, needle, limit],
+                    ).fetchall()
+                )
+
             remaining = limit - len(found)
             match = fts_match(query)
             if remaining > 0 and match:
@@ -284,8 +322,8 @@ class LanguageEngine:
             return []
         con = self.connect()
         limit = min(max(limit, 1), 50)
-        text = query.strip()
-        exact_params = (text, text, limit) if direction is None else (text, limit)
+        forms = exact_forms(query)
+        exact_params = (*forms, *forms, limit) if direction is None else (*forms, limit)
         exact = con.execute(PARALLEL_EXACT_SQL[direction], exact_params).fetchall()
         remaining = limit - len(exact)
         fts_rows: list[sqlite3.Row] = []
@@ -303,7 +341,8 @@ class LanguageEngine:
             if exact_ids:
                 sql += f" AND p.id NOT IN ({placeholders})"
                 params.extend(exact_ids)
-            sql += " ORDER BY p.quality_score DESC, p.id LIMIT ?"
+            # Closest first: the shortest sentence on the searched side, then the best text match.
+            sql += f" ORDER BY length(p.{PARALLEL_LENGTH_COLUMN[direction]}), bm25(parallel_fts), p.id LIMIT ?"
             params.append(remaining)
             fts_rows = con.execute(sql, params).fetchall()
         return [self._present_pair(row, exact=row["id"] in {r["id"] for r in exact}) for row in [*exact, *fts_rows]]
@@ -312,7 +351,12 @@ class LanguageEngine:
         data = row_to_dict(row)
         if not data:
             return None
-        zomi, definition = split_zomi_definition(data["definition"])
+        if data.get("zomi") is not None or data.get("definition_en") is not None:
+            # 50K Translation Master: Zomi equivalents kept whole, plus an English definition.
+            zomi, definition, definition_language = data.get("zomi"), data.get("definition_en"), "en"
+        else:
+            zomi, definition = split_zomi_definition(data["definition"])
+            definition_language = "ctd"
         return {
             "id": data["id"],
             "english": data["source_word"],
@@ -326,7 +370,8 @@ class LanguageEngine:
             "definition": definition,
             "pronunciation": data["pronunciation"],
             "usage_notes": data["usage_notes"],
-            "domain": None,
+            "domain": data.get("domain"),
+            "definition_language": definition_language,
             "source": data["source"],
             "source_reference": data["source_reference"],
             "confidence": data["confidence"],

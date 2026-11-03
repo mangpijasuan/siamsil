@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { TranslateMatch } from "@/lib/api";
+import { suggestZomiWords } from "@/lib/api";
+import { useWordCompletions } from "@/lib/useWordCompletions";
+import { completeTrailingWord, completionPrefix, usefulCompletions } from "@/lib/wordComplete";
 import { pushHistory, useRecentSearches } from "@/lib/localData";
 import { IconSwap } from "@/components/Icons";
+import ExperimentalTranslation from "@/components/ExperimentalTranslation";
 import {
   type Direction,
   languages,
@@ -20,6 +24,8 @@ const VISIBLE_ALTERNATES = 5;
 // English starters only: Siamsil never shows Zomi it does not hold, so Zomi → English has none.
 const EXAMPLES = ["water", "thank you", "good morning", "family", "school"];
 const LANG_ATTR = { en: "en", ctd: "ctd" } as const;
+// Zomi input only: phones already complete English, and nothing completes Zomi.
+const completeZomi = (prefix: string) => suggestZomiWords(prefix).then((data) => data.words.map((item) => item.word));
 
 const SOURCE_LABEL: Record<string, string> = {
   dictionary: "Dictionary",
@@ -55,8 +61,10 @@ function IconClose() {
   );
 }
 
-function StatusChip({ verified }: { verified?: boolean }) {
-  return verified
+function StatusChip({ match }: { match: TranslateMatch }) {
+  // A Bible verse is published text, not a reviewed or unreviewed Siamsil translation.
+  if (match.source === "bible") return null;
+  return match.verified
     ? <span className="tr-chip tr-chip-verified">Verified</span>
     : <span className="tr-chip tr-chip-unverified">Unverified</span>;
 }
@@ -82,6 +90,10 @@ export default function TranslateClient({
   const [showAll, setShowAll] = useState(false);
   const [pending, startTransition] = useTransition();
   const recent = useRecentSearches("translate");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const zomiInput = selected === "ctd-en";
+  const typedPrefix = zomiInput ? completionPrefix(text) : null;
+  const completions = usefulCompletions(useWordCompletions(typedPrefix, completeZomi), typedPrefix ?? "");
 
   useEffect(() => {
     if (query) pushHistory("translate", query);
@@ -145,6 +157,7 @@ export default function TranslateClient({
           }}
         >
           <textarea
+            ref={inputRef}
             className="tr-input"
             value={text}
             maxLength={MAX_LENGTH}
@@ -161,6 +174,24 @@ export default function TranslateClient({
             lang={LANG_ATTR[chosen.source.code]}
             autoFocus={!query}
           />
+          {completions.length > 0 && (
+            <div className="tr-completions" role="group" aria-label="Complete the Zomi word">
+              {completions.map((word) => (
+                <button
+                  key={word}
+                  type="button"
+                  className="tr-completion"
+                  lang="ctd"
+                  onClick={() => {
+                    setText(completeTrailingWord(text, word).slice(0, MAX_LENGTH));
+                    inputRef.current?.focus();
+                  }}
+                >
+                  {word}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="tr-input-bar">
             <span className="tr-count">{text.length}/{MAX_LENGTH}</span>
             {text && (
@@ -179,8 +210,9 @@ export default function TranslateClient({
         <div className="tr-notice">
           <IconInfo />
           <p>
-            Siamsil shows translations it already has. It never makes one up.
+            The matches below are translations Siamsil already has; it never makes one up.
             Corpus examples are machine-translated; only those marked Verified were approved by Zomi reviewers.
+            Machine translation, when you turn it on, is labelled experimental and kept separate.
           </p>
         </div>
 
@@ -214,7 +246,7 @@ export default function TranslateClient({
             </div>
             <div className="tr-result-meta">
               <span className="tr-chip">{sourceLabel(primary)}</span>
-              <StatusChip verified={primary.verified} />
+              <StatusChip match={primary} />
               <div className="tr-actions">
                 <button type="button" className="tr-action" onClick={() => copy(primarySides.target)}>
                   <IconCopy /> {copied ? "Copied" : `Copy ${shown.target.name}`}
@@ -241,6 +273,8 @@ export default function TranslateClient({
           </div>
         )}
 
+        {query && <ExperimentalTranslation query={query} direction={direction} />}
+
         {alternates.length > 0 && (
           <section aria-label="Other matches">
             <div className="word-section-label">Other matches ({alternates.length})</div>
@@ -251,7 +285,7 @@ export default function TranslateClient({
                 <li key={`${match.source}-${match.id ?? index}`} className="tr-alt">
                   <div className="tr-alt-chips">
                     <span className="tr-chip">{sourceLabel(match)}</span>
-                    <StatusChip verified={match.verified} />
+                    <StatusChip match={match} />
                   </div>
                   <p className="tr-alt-en" lang={LANG_ATTR[shown.source.code]}>{sides.source}</p>
                   <p className="tr-alt-zomi" lang={LANG_ATTR[shown.target.code]}>{sides.target}</p>

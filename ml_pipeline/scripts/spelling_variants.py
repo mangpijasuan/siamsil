@@ -18,7 +18,7 @@ write the output to the private siamsil-data repository, not this one.
       --bible tdb=data/processed/bible/bible_versions.sqlite:tdb \\
       --text zokam=../siamsil-data/books/derived/zokam-le-zolai.txt \\
       --text primer=../siamsil-data/grammar/Paunam_Khenna_Leh_Kampau_Luanzia.pdf \\
-      --xlsx dictionary="../siamsil-data/dictionary/Zomi_Dictionary_Master_Data.xlsx:Definition (Zomi)"
+      --xlsx dictionary="../siamsil-data/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx:Definition (Zomi)"
 
 PDF text is read with Poppler's pdftotext. Order the sources as they should appear in the reports.
 """
