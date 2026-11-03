@@ -162,7 +162,7 @@ Keep **training split, product QA set, and protected final holdout** distinct. D
 
 **Milestone QO-3 — Chat quality and paid usage**
 - Add versioned evaluation harness for application prompts and provider adapters; record anonymized success, errors, latency, cost and grounded-source presence.
-- Introduce Community / Starter $4.99 / Pro $9.99 / Max $19.99 plans only when billing, quotas and relevant commercial rights are ready. Suggested quotas are **proposals**, not guarantees; do not implement unlimited usage.
+- Introduce a free Community tier and configurable paid Starter / Pro / Max tiers only when billing, quotas and relevant commercial rights are ready. **Illustrative initial prices** are Starter $4.99, Pro $9.99 and Max $19.99 per month, but all prices, allowances and offerings may be changed by authorized administrators as business costs and community needs evolve. These are **proposals**, not fixed architectural values or guarantees; do not implement unlimited usage. Store prices, currency, effective dates and plan versions in controlled billing configuration (not hard-coded in application logic), show them transparently to customers, and handle existing subscriptions, applicable notice/consent requirements and billing-provider changes before a new price takes effect.
 - Keep developer Language API subscriptions independently metered.
 
 **Milestone QO-4 — release / training interoperability**
