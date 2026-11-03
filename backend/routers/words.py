@@ -29,7 +29,7 @@ def suggest_words(
     return {"prefix": prefix, "language": ZOMI, "sources": list(sources), "words": results}
 
 
-@router.post("/spelling/suggest")
+@router.post("/spelling/suggest", include_in_schema=False)
 def suggest_standard_spelling(request: SpellingRequest):
     """Return approved Standard Zomi spelling proposals without modifying user text."""
     try:
