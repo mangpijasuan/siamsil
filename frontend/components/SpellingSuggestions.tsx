@@ -74,7 +74,7 @@ export default function SpellingSuggestions({
   const error = errorValue === value;
   const changes = current?.suggestions.filter((item) => item.mode === "replace") ?? [];
   const flags = current?.suggestions.filter((item) => item.mode === "flag") ?? [];
-  const actionable = changes.length > 0 && current && current.suggested !== value && !ignored;
+  const actionable = current !== null && changes.length > 0 && current.suggested !== value && !ignored;
 
   return (
     <div role="region" aria-label="Zomi Standard Form spelling assistance" style={{
@@ -86,13 +86,13 @@ export default function SpellingSuggestions({
       {current?.standard_version && <span style={{ color: "var(--gray)", marginLeft: 6 }}>v{current.standard_version}</span>}
       {error && <p role="status" style={{ margin: "5px 0 0" }}>Spelling suggestions are temporarily unavailable. Your text is unchanged.</p>}
       {!error && current?.status === "no_approved_rules" && <p style={{ margin: "5px 0 0", color: "var(--gray)" }}>No spelling rules have been approved yet. Your text is unchanged.</p>}
-      {!error && result?.status === "not_configured" && <p style={{ margin: "5px 0 0", color: "var(--gray)" }}>Standard spelling rules are not configured.</p>}
+      {!error && current?.status === "not_configured" && <p style={{ margin: "5px 0 0", color: "var(--gray)" }}>Standard spelling rules are not configured.</p>}
       {!error && actionable && (
         <div style={{ marginTop: 5 }}>
           <span>{changes.length} reviewed spelling suggestion{changes.length === 1 ? "" : "s"}: </span>
-          <span lang="ctd" style={{ fontWeight: 600 }}>{current.suggested}</span>
+          <span lang="ctd" style={{ fontWeight: 600 }}>{current?.suggested}</span>
           <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-            <button type="button" onClick={() => { setUndoValue({ before: value, after: result.suggested }); onChange(result.suggested); }}
+            <button type="button" onClick={() => { if (!current) return; setUndoValue({ before: value, after: current.suggested }); onChange(current.suggested); }}
               style={{ border: "1px solid var(--border)", padding: "4px 10px", borderRadius: 8, cursor: "pointer" }}>
               Accept
             </button>
