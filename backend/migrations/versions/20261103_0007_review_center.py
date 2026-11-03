@@ -83,7 +83,24 @@ def upgrade():
     op.create_index("ix_review_center_events_case_id", "review_center_events", ["case_id"])
 
 
+    # Audit records are immutable even to ordinary application SQL.
+    op.execute("""
+        CREATE FUNCTION review_center_events_immutable() RETURNS trigger AS $
+        BEGIN
+          RAISE EXCEPTION 'review_center_events is append-only';
+        END;
+        $ LANGUAGE plpgsql;
+    """)
+    op.execute("""
+        CREATE TRIGGER trg_review_center_events_immutable
+        BEFORE UPDATE OR DELETE OR TRUNCATE ON review_center_events
+        FOR EACH STATEMENT EXECUTE FUNCTION review_center_events_immutable();
+    """)
+
+
 def downgrade():
+    op.execute('DROP TRIGGER IF EXISTS trg_review_center_events_immutable ON review_center_events')
+    op.execute('DROP FUNCTION IF EXISTS review_center_events_immutable()')
     op.drop_index("ix_review_center_assignments_case_id", table_name="review_center_assignments")
     op.drop_table("review_center_assignments")
     op.drop_index("ix_review_center_events_case_id", table_name="review_center_events")
