@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Apply the adopted Siamsil Zolai Standard: step 5 of docs/ZOLAI_STANDARD.md.
+"""Apply the adopted Siamsil Zomi Standard Form: step 5 of docs/ZOMI_STANDARD_FORM.md.
 
-The standard is data/zolai_standard/standard.json. It holds only rules Zomi reviewers
+The standard is data/zomi_standard_form/standard.json. It holds only rules Zomi reviewers
 adopted (two reviewer codes each); AI suggestions and evidence live elsewhere
 (rule_checks.json, the review workbook) and are never read here.
 
@@ -29,8 +29,8 @@ from pathlib import Path
 from typing import Iterable
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_STANDARD = ROOT / "data" / "zolai_standard" / "standard.json"
-DEFAULT_CHECKS = ROOT / "data" / "zolai_standard" / "rule_checks.json"
+DEFAULT_STANDARD = ROOT / "data" / "zomi_standard_form" / "standard.json"
+DEFAULT_CHECKS = ROOT / "data" / "zomi_standard_form" / "rule_checks.json"
 
 RULE_ID = re.compile(r"^ZS-\d{3}$")
 REVIEWER = re.compile(r"^[A-Z]\d{2}$")
@@ -259,7 +259,7 @@ def _read_jsonl(path: Path) -> Iterable[dict]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Apply the adopted Siamsil Zolai Standard.")
+    parser = argparse.ArgumentParser(description="Apply the adopted Siamsil Zomi Standard Form.")
     parser.add_argument("--standard", type=Path, default=DEFAULT_STANDARD)
     parser.add_argument("--checks", type=Path, default=DEFAULT_CHECKS)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -278,7 +278,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if args.command == "validate":
-        print(f"Siamsil Zolai Standard {standard.version}: {len(standard.rules)} adopted rule(s), valid")
+        print(f"Siamsil Zomi Standard Form {standard.version}: {len(standard.rules)} adopted rule(s), valid")
     elif args.command == "variants":
         for rule in standard.rules:
             print("\t".join([rule.id, rule.standard, ", ".join(rule.variants), rule.mode]))
