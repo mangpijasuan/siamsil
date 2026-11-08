@@ -40,7 +40,7 @@ class RecordTests(unittest.TestCase):
     def test_a_good_record_and_a_good_dictionary_sense_pass(self) -> None:
         self.assertEqual(szsf.check_record(good()), [])
         sense = good(id="ZD-000123", kind="dictionary_sense", english="headword", source="translation_master_50k",
-                     reference="ZD-000123", quality_score=0.6, quality_flags=["identical"], model=None)
+                     reference="ZD-000123", quality_score=0.6, quality_flags=["identical"], model="unknown")
         self.assertEqual(szsf.check_record(sense), [])
         self.assertIn("looks like ZD-000123", self.problems(good(kind="dictionary_sense", id="sense-1")))
 
