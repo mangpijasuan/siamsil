@@ -21,8 +21,10 @@ import csv
 import gzip
 import hashlib
 import json
+import os
 import re
 import sys
+import tempfile
 from pathlib import Path
 from typing import Iterable, Iterator
 
@@ -36,6 +38,10 @@ TITLES = ("Mr", "Mrs", "Miss", "Ms", "Dr", "Professor", "Prof", "Uncle", "Aunt",
 SHEET_COLUMNS = ["Name", "Pairs", "Alone with he", "Alone with she", "Pronoun hint", "Person?", "Gender", "Notes"]
 HINT_MIN_SENTENCES = 20
 HINT_MIN_SHARE = 0.8
+# Labels that vouch for a pair's text. Changed text no longer earns them, so they move under `labels_before_localization`.
+TRUSTED_LABELS = ("review", "human_reviewed", "reviewed", "reviewed_by", "approved", "approved_by", "status", "tier", "split",
+                  "quality_score", "quality_flags")
+HYPHENS = "\\-\u2010\u2011"
 csv.field_size_limit(8_000_000)
 
 
@@ -78,7 +84,10 @@ def load_names(path: Path = DEFAULT_NAMES) -> Names:
 def read_pairs(path: Path) -> Iterator[dict]:
     """Records with `id`, `english` and `zomi` from a .jsonl, .csv or .csv.gz file, or a folder of .csv.gz parts."""
     if path.is_dir():
-        for part in sorted(path.glob("*.csv.gz")):
+        parts = sorted(path.glob("*.csv.gz"))
+        if not parts:
+            raise ValueError(f"{path} has no .csv.gz parts to read")
+        for part in parts:
             yield from read_pairs(part)
         return
     if path.suffix == ".jsonl":
@@ -92,7 +101,9 @@ def read_pairs(path: Path) -> Iterator[dict]:
     opener = gzip.open(path, "rt", encoding="utf-8", newline="") if path.suffix == ".gz" else path.open(encoding="utf-8", newline="")
     with opener as handle:
         for row in csv.DictReader(handle):
-            yield {"id": f"corpus-{row['index']}", "english": row["en"], "zomi": row["zomi"]}
+            # Keep every other column (model, worker, timestamp...) so provider provenance reaches the output.
+            extra = {key: value for key, value in row.items() if key not in ("en", "zomi") and key is not None}
+            yield {"id": f"corpus-{row['index']}", "english": row["en"], "zomi": row["zomi"], **extra}
 
 
 def load_people(path: Path) -> dict[str, str]:
@@ -117,6 +128,8 @@ def load_people(path: Path) -> dict[str, str]:
         if len(cells) <= max(at.values()):
             continue
         if cells[at["Person?"]].lower() == "yes" and cells[at["Gender"]].lower() in GENDERS:
+            if not cells[at["Name"]]:
+                raise ValueError(f"{path.name}: a row is marked Person? yes with a gender but has no Name")
             people[cells[at["Name"]]] = cells[at["Gender"]].lower()
     return people
 
@@ -131,9 +144,13 @@ class Localizer:
     def __init__(self, names: Names, people: dict[str, str], seed: str = "szsf-names-1", share: float = 1.0) -> None:
         self.names, self.people, self.seed, self.share = names, people, seed, share
         ordered = sorted(people, key=len, reverse=True)
-        self.pattern = re.compile(r"(?<!\w)(" + "|".join(re.escape(n) for n in ordered) + r")(?!\w)") if ordered else None
+        # A name inside a hyphenated word (Tom-and-Jerry) is not matched, so the pair keeps it on both sides.
+        edge_before, edge_after = rf"(?<![\w{HYPHENS}])", rf"(?![\w{HYPHENS}])"
+        alternatives = "|".join(re.escape(n) for n in ordered)
+        self.pattern = re.compile(edge_before + "(" + alternatives + ")" + edge_after) if ordered else None
         title = "|".join(TITLES)
-        self.title_pattern = re.compile(rf"(?<!\w)(?:{title})\.?\s+(" + "|".join(re.escape(n) for n in ordered) + r")(?!\w)") if ordered else None
+        self.title_pattern = (re.compile(rf"(?<!\w)(?i:{title})\.?\s+(?:" + alternatives + ")" + edge_after)
+                              if ordered else None)
         self.with_name = 0
         self.skipped: collections.Counter[str] = collections.Counter()
         self.swapped: collections.Counter[str] = collections.Counter()
@@ -161,7 +178,7 @@ class Localizer:
         if self.share < 1 and _digest(f"share:{self.seed}:{record_id}") / 2**64 >= self.share:
             self.skipped["not chosen (share)"] += 1
             return None
-        if self.title_pattern and self.title_pattern.search(english):
+        if self.title_pattern and (self.title_pattern.search(english) or self.title_pattern.search(zomi)):
             self.skipped["name after a title"] += 1
             return None
         if collections.Counter(in_english) != collections.Counter(self.pattern.findall(zomi)):
@@ -178,6 +195,9 @@ class Localizer:
             taken.add(picked)
         swap = lambda text: self.pattern.sub(lambda m: chosen[m.group(1)], text)  # noqa: E731
         out = dict(record)
+        before = {key: out.pop(key) for key in TRUSTED_LABELS if key in out}
+        if before:
+            out["labels_before_localization"] = before
         out.update({"english": swap(english), "zomi": swap(zomi), "english_original": english, "zomi_original": zomi,
                     "names_localized": chosen, "names_version": self.names.version})
         self.swapped.update(chosen.keys())
@@ -186,15 +206,29 @@ class Localizer:
 
 def apply(pairs: Iterable[dict], localizer: Localizer, out: Path, limit: int | None = None) -> tuple[int, int]:
     """Write every pair to `out`, swapped where possible. Returns (pairs written, pairs swapped)."""
+    import fcntl
+
     written = swapped = 0
-    with out.open("w", encoding="utf-8") as handle:
-        for record in pairs:
-            changed = localizer.localize(record)
-            handle.write(json.dumps(changed or record, ensure_ascii=False) + "\n")
-            written += 1
-            swapped += changed is not None
-            if limit and written >= limit:
-                break
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with out.with_name(out.name + ".lock").open("w") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            raise RuntimeError(f"another run is writing {out}") from None
+        handle_fd, temp_name = tempfile.mkstemp(prefix=out.name + ".", suffix=".part", dir=out.parent)
+        try:
+            with os.fdopen(handle_fd, "w", encoding="utf-8") as handle:
+                for record in pairs:
+                    changed = localizer.localize(record)
+                    handle.write(json.dumps(changed or record, ensure_ascii=False) + "\n")
+                    written += 1
+                    swapped += changed is not None
+                    if limit and written >= limit:
+                        break
+            os.replace(temp_name, out)  # the old output stays whole until the new one is complete
+        except BaseException:
+            Path(temp_name).unlink(missing_ok=True)
+            raise
     return written, swapped
 
 
@@ -279,6 +313,19 @@ def write_sheet(rows: list[dict], out: Path) -> None:
     book.save(out)
 
 
+def _inputs_of(path: Path) -> list[Path]:
+    return sorted(path.glob("*.csv.gz")) + [path] if path.is_dir() else [path]
+
+
+def aliases(out: Path, *inputs: Path) -> Path | None:
+    """The input file that `out` is, or links to (same path, symlink or hard link), if any."""
+    for given in inputs:
+        for candidate in _inputs_of(given):
+            if out.resolve() == candidate.resolve() or (out.exists() and candidate.exists() and os.path.samefile(out, candidate)):
+                return candidate
+    return None
+
+
 # Command line -----------------------------------------------------------------------------------------------------
 
 def main(argv: list[str] | None = None) -> int:
@@ -301,13 +348,26 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command == "sheet":
-        rows = candidate_names(read_pairs(args.pairs), args.min_pairs)
+        clash = aliases(args.out, args.pairs)
+        if clash:
+            print(f"The output must be a new file, not {clash}.", file=sys.stderr)
+            return 2
+        try:
+            rows = candidate_names(read_pairs(args.pairs), args.min_pairs)
+        except ValueError as problem:
+            print(str(problem), file=sys.stderr)
+            return 2
         write_sheet(rows, args.out)
         print(f"Wrote {len(rows)} candidate names to {args.out}")
         return 0
 
-    if args.out.resolve() == args.pairs.resolve():
-        print("The output must be a new file: the pairs file is never changed in place.", file=sys.stderr)
+    clash = aliases(args.out, args.pairs, args.people, args.names)
+    if clash:
+        print(f"The output must be a new file: {clash} is an input and is never changed in place.", file=sys.stderr)
+        return 2
+    if args.min_pool < 10 and not args.limit:
+        print("--min-pool below 10 is for a sample only: also give --limit, so one name cannot stand for every "
+              "person in a full file.", file=sys.stderr)
         return 2
     if not 0 < args.share <= 1:
         print("--share must be above 0 and at most 1.", file=sys.stderr)
@@ -322,13 +382,19 @@ def main(argv: list[str] | None = None) -> int:
               file=sys.stderr)
         return 2
     localizer = Localizer(names, people, args.seed, args.share)
-    written, swapped = apply(read_pairs(args.pairs), localizer, args.out, args.limit)
+    try:
+        written, swapped = apply(read_pairs(args.pairs), localizer, args.out, args.limit)
+    except (RuntimeError, ValueError) as problem:
+        print(str(problem), file=sys.stderr)
+        return 2
     print(f"Wrote {written:,} pairs to {args.out}; swapped names in {swapped:,}.")
     print(f"  pairs with a marked name: {localizer.with_name:,}")
     for reason, count in sorted(localizer.skipped.items(), key=lambda item: -item[1]):
         print(f"  left as they were: {count:,} ({reason})")
     for name, count in localizer.swapped.most_common(10):
         print(f"  {name}: {count:,}")
+    print("Note: this file is derived from the parallel corpus and has its rights status ('train' in data/rights.json, "
+          "'parallel_corpus'). It is not cleared for training until that entry is.", file=sys.stderr)
     if not names.confirmed:
         print("Note: the names list is not yet confirmed by a second person.", file=sys.stderr)
     return 0

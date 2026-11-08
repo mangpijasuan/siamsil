@@ -145,7 +145,7 @@ class FileTests(unittest.TestCase):
     def test_apply_writes_a_new_file_with_every_pair(self) -> None:
         out = self.root / "out.jsonl"
         code, shown, _ = self.run_main("apply", "--pairs", str(self.pairs), "--people", str(self.people),
-                                       "--out", str(out), "--names", str(self.names), "--min-pool", "4")
+                                       "--out", str(out), "--names", str(self.names), "--min-pool", "4", "--limit", "100")
         self.assertEqual(code, 0)
         rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
         self.assertEqual([r["id"] for r in rows], ["a", "b", "c"])
@@ -180,7 +180,59 @@ class FileTests(unittest.TestCase):
         folder.mkdir()
         with gzip.open(folder / "zomi_english_sentences.part-0001.csv.gz", "wt", encoding="utf-8", newline="") as handle:
             handle.write("index,en,zomi,timestamp,model\n7,Zorbo ran.,Zorbo.,1,m\n")
-        self.assertEqual(list(ln.read_pairs(folder)), [{"id": "corpus-7", "english": "Zorbo ran.", "zomi": "Zorbo."}])
+        rows = list(ln.read_pairs(folder))
+        self.assertEqual(rows, [{"id": "corpus-7", "index": "7", "english": "Zorbo ran.", "zomi": "Zorbo.", "timestamp": "1", "model": "m"}])
+        empty = self.root / "empty"
+        empty.mkdir()
+        with self.assertRaisesRegex(ValueError, "no .csv.gz parts"):
+            list(ln.read_pairs(empty))
+
+    def test_safeguards_from_review(self) -> None:
+        loc = localizer()
+        # lowercase title, and a title only on the Zomi side
+        self.assertIsNone(loc.localize(pair("uncle Zorbo came.", "uncle Zorbo.")))
+        self.assertIsNone(loc.localize(pair("Zorbo came.", "Mr Zorbo.")))
+        # a name inside a hyphenated word is not touched
+        self.assertIsNone(loc.localize(pair("Zorbo-and-Mirla ran.", "Zorbo-and-Mirla.")))
+        # trusted labels leave a changed pair and are kept aside; other columns stay
+        out = loc.localize({"id": "x", "english": "Zorbo ran.", "zomi": "Zorbo.", "tier": "gold", "split": "test",
+                            "review": {"status": "HUMAN_APPROVED"}, "model": "m"})
+        for key in ("tier", "split", "review"):
+            self.assertNotIn(key, out)
+        self.assertEqual(out["labels_before_localization"]["tier"], "gold")
+        self.assertEqual(out["model"], "m")
+
+    def test_blank_person_names_are_refused(self) -> None:
+        sheet = self.root / "blank.csv"
+        sheet.write_text("Name,Person?,Gender\n,yes,male\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "no Name"):
+            ln.load_people(sheet)
+
+    def test_output_may_not_alias_an_input_and_a_failed_run_keeps_the_old_output(self) -> None:
+        import os
+
+        link = self.root / "link.jsonl"
+        os.link(self.pairs, link)
+        self.assertEqual(self.run_main("apply", "--pairs", str(self.pairs), "--people", str(self.people), "--out", str(link))[0], 2)
+        self.assertEqual(self.run_main("apply", "--pairs", str(self.pairs), "--people", str(self.people), "--out", str(self.people))[0], 2)
+        self.assertEqual(self.run_main("sheet", "--pairs", str(self.pairs), "--out", str(self.pairs))[0], 2)
+        # a low --min-pool without --limit is refused
+        code, _, error = self.run_main("apply", "--pairs", str(self.pairs), "--people", str(self.people),
+                                       "--out", str(self.root / "o.jsonl"), "--names", str(self.names), "--min-pool", "1")
+        self.assertEqual(code, 2)
+        self.assertIn("--limit", error)
+        # a failure part-way leaves the previous output whole and no temporary file behind
+        out = self.root / "keep.jsonl"
+        out.write_text("old\n", encoding="utf-8")
+
+        def broken():
+            yield pair("Zorbo ran.", "Zorbo.")
+            raise OSError("disk")
+
+        with self.assertRaises(OSError):
+            ln.apply(broken(), localizer(), out)
+        self.assertEqual(out.read_text(encoding="utf-8"), "old\n")
+        self.assertEqual([p.name for p in self.root.glob("keep.jsonl.*.part")], [])
 
 
 class SheetTests(unittest.TestCase):

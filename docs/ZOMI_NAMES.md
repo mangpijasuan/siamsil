@@ -49,7 +49,15 @@ A pair is **left exactly as it was** when:
 - the name is unmarked, or marked "either";
 - the list has run out of names for that pair.
 
-A swapped pair keeps `english_original`, `zomi_original`, `names_localized` (which name became which) and `names_version`.
+A swapped pair keeps `english_original`, `zomi_original`, `names_localized` (which name became which) and `names_version`. Every
+other column of the input (`model`, `worker`, `timestamp`, ...) is kept, so provider-made pairs can still be told apart. Labels
+that vouch for the text (`review`, `tier`, `split`, `status`, `quality_score`, ...) are removed from a changed pair and kept
+under `labels_before_localization`: changed text is not reviewed, gold or test data.
+
+Safeguards on files: the output must be a new file (not the pairs, names or people file, nor a link to one); it is written to a
+temporary file and put in place only when complete, under a lock so two runs cannot mix; a titled name is skipped whether the
+title is on the English or the Zomi side, in any letter case; a name inside a hyphenated word is left alone; a sheet row marked
+as a person without a name is refused; an input folder with no `.csv.gz` parts is refused; and `--min-pool` below 10 needs `--limit`.
 
 **A run is refused unless the list has at least 10 names per gender** (`--min-pool`). With one name per group, every Tom in a quarter
 of the corpus would become the same man, and a model would learn that one Zomi name is every man. `--min-pool 1` is for reading
@@ -68,7 +76,10 @@ a small sample only.
 1. The owner marks the names sheet and sends more Zomi names for every group they want used.
 2. A second person confirms the names list.
 3. Run `apply` on a sample; the owner reads it.
-4. Only after the owner agrees, the swapped file joins training, as a labelled addition next to the original pairs, not instead of them.
+4. The swapped file may join training only when **both** hold: the owner agrees, and the source's training rights are cleared and
+   recorded (`train` for `parallel_corpus` in `data/rights.json`, with the record in `docs/DATA_RIGHTS.md`). The corpus is
+   `needs_review` today, so the swapped file is **not** cleared for training. When cleared, it joins as a labelled addition next
+   to the original pairs, not instead of them. `apply` prints a reminder of this on every run.
 
 ## Not built yet
 
