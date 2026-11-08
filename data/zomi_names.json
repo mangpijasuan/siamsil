@@ -1,0 +1,22 @@
+{
+  "_comment": "The Zomi names that replace English personal names in training pairs (docs/ZOMI_NAMES.md). Only names the project owner gave belong here; never add one that a Zomi speaker did not supply. A name counts as confirmed only when a second person has checked it.",
+  "version": "0.1.0",
+  "decided_by": "project owner",
+  "decided_on": "2026-11-08",
+  "confirmed_by": null,
+  "applies_to": "training data first (owner's decision of 2026-11-08); translation time later",
+  "default_stage": "young_adult",
+  "owner_words": "for young adult girls and boys name Cing Khup and Ngam Bawm, and also Cingno for girls and Thangno for boys, for married men Pa Pa Thang and women Nu Cing, for older men Pu Ngam Bawm and women Pi Cing Khup, etc",
+  "to_confirm": [
+    "The owner listed 'Cing Khup and Ngam Bawm' for young adult girls and boys. Read in that order: Cing Khup for girls, Ngam Bawm for boys.",
+    "The owner did not say the age for Cingno and Thangno. Read as younger than young adults (child).",
+    "The owner wrote 'Pa Pa Thang' for married men. It may be 'Pa Thang', like 'Nu Cing'. Recorded as written.",
+    "The owner ended with 'etc': more names are to come. Until then each group has one name, so a full run is refused (a run needs 10 per gender)."
+  ],
+  "pools": {
+    "child": {"female": ["Cingno"], "male": ["Thangno"]},
+    "young_adult": {"female": ["Cing Khup"], "male": ["Ngam Bawm"]},
+    "married": {"female": ["Nu Cing"], "male": ["Pa Pa Thang"]},
+    "older": {"female": ["Pi Cing Khup"], "male": ["Pu Ngam Bawm"]}
+  }
+}
