@@ -31,7 +31,7 @@ third party's guide.
 
 - **Encoding:** UTF-8, Unicode NFC, no byte-order mark. Zomi is `ctd` (ISO 639-3, Tedim); English is `en`.
 - **Layout:** JSON Lines, one record per line, one JSON object per record. Blank lines are allowed and ignored.
-- **Name:** `szsf-master-v<MAJOR.MINOR.PATCH>.jsonl`, with `szsf-master-v<MAJOR.MINOR.PATCH>.manifest.json` beside it.
+- **Name:** `szsf-master-v<MAJOR.MINOR.PATCH>.jsonl`, with `szsf-master-v<MAJOR.MINOR.PATCH>.manifest.json` beside it. `validate` refuses other file names.
 - **Immutable:** a released file is never edited. A change is a new version, and the old one is kept for rollback.
 - **Where:** the private siamsil-data repository, in `szsf/` (created with the first file; none exists yet).
 
@@ -52,6 +52,7 @@ Placeholder text only; the example is checked by the tests.
   "source": "parallel_corpus",
   "origin": "machine_generated",
   "model": "model-name",
+  "provider_derived": false,
   "tier": "silver",
   "split": "train",
   "quality_score": 1.0,
@@ -80,13 +81,16 @@ Placeholder text only; the example is checked by the tests.
 | `zomi_standard_flags` | no | Matches of "flag" rules, left unchanged for a reviewer |
 | `standard_version` | yes | The version of the adopted rule set used (`data/zomi_standard_form/standard.json`) |
 | `source` | yes | The key of the source in `data/rights.json`. Its rights decide how the record may be used |
+| `english_source` | no | The rights key of the English text, when it comes from a different source than the Zomi. Both keys are checked against the rights file |
 | `origin` | yes | `human_written`, `machine_generated` or `unknown` |
-| `model` | no | The machine that wrote the Zomi, when `origin` is `machine_generated` |
+| `model` | when `machine_generated` | The machine that wrote the Zomi. `unknown` says it was not recorded |
+| `provider_derived` | when `machine_generated` | `true` when the Zomi or its labels come from an outside provider's output. Such records are left out of training by default (`docs/QUALITY_OPERATOR_ARCHITECTURE.md`); `--allow-provider-derived` keeps them only when the provider's terms allow it |
 | `tier` | yes | `gold`, `silver` or `bronze`, as in `export_datasets.py` |
 | `split` | yes | `train`, `validation`, `test` or `excluded`. Human evaluation items are never in the file |
 | `quality_score` | no | A number from 0 to 1 from the automatic checks. Ranks review work; says nothing about correctness |
 | `quality_flags` | no | The automatic checks that fired (`identical`, `number_mismatch`, …) |
 | `reference` | no | Where in the source it came from (a corpus index, a verse, a dictionary ID) |
+| `license_status`, `verified_at`, `prompt_version`, `release_version` | no | The lineage a published record needs (`docs/ARCHITECTURE.md`): license status, when it was verified (UTC, `2026-11-08T12:00:00Z`), the prompt version when generated, and the dataset release. Checked for form here; the release builder will require them |
 | `review` | yes | The review result, below |
 
 Any other field is refused. A local addition belongs in a separate file that points at `id`.
@@ -101,19 +105,19 @@ Any other field is refused. A local addition belongs in a separate file that poi
 | `HUMAN_APPROVED` | Reviewed, then approved by a **different** lead editor (SOP-07). Needs `approver`, who is not in `reviewers` |
 | `REJECTED` | A reviewer or the lead editor rejected it. Its `split` must be `excluded` |
 
-`reviewers` and `approver` are roster codes (`R01`, `E01`), never names. A `gold` record that came from a machine must be
+`reviewers` and `approver` are roster codes (`R01`, `E01`; the form `corpus_reviews.py` accepts), never names, and nobody is both. With `--roster` (the private roster CSV) every reviewer must be listed as a reviewer and the approver as a lead editor; without it the codes are checked for form only. A `gold` record that came from a machine must be
 `HUMAN_APPROVED`.
 
 ## Rules every record must meet
 
-1. Text has no spaces at its ends, no line breaks or control characters, and is Unicode NFC.
+1. Text has no spaces at its ends, no line breaks (including U+2028 and U+2029) or control characters, and is Unicode NFC. The character rules apply to every text value in the record, not only the three main fields.
 2. **No damaged characters.** Text like `caf√©` or `Ama‚Äô` is what UTF-8 looks like after an export read it as Mac Roman; the Excel
    exports of the parallel corpus have it in about 1% of rows (`siamsil-data/parallel/workbooks/FINDINGS.md`). A record that has it is
    refused.
 3. `zomi` is the source's text. The standard form is a separate field, never a replacement.
-4. A changed standard form names the adopted rules that changed it. Rules are adopted only by two Zomi reviewers.
+4. A changed standard form names the adopted rules that changed it, and each must be in the adopted rule set (`data/zomi_standard_form/standard.json`) under the `standard_version` the record states. Rules are adopted only by two Zomi reviewers.
 5. Every `source` is in `data/rights.json`. For a file meant for training, every source of a record not `excluded` must be `cleared`
-   for training; for display, for display. `--purpose training|display` checks this.
+   for training; for display, for display. `--purpose training|display` checks this, and cannot be combined with `--no-rights`.
 6. The review rules above, including that nobody approves their own review.
 
 ## The manifest
@@ -126,12 +130,12 @@ Any other field is refused. A local addition belongs in a separate file that poi
 - a **snapshot** of each source's rights from `data/rights.json` when the manifest was made. The snapshot records what the rights
   were; it clears nothing.
 
-`szsf.py validate --manifest` checks the file still matches its manifest.
+`szsf.py validate --manifest` checks the file still matches its manifest: hash, count, and every derived field (counts, size, versions, rights snapshot). A manifest is written whole or not at all, and must be named for its file.
 
 ## Using it
 
 ```bash
-python3 ml_pipeline/scripts/szsf.py validate szsf-master-v1.0.0.jsonl --purpose training
+python3 ml_pipeline/scripts/szsf.py validate szsf-master-v1.0.0.jsonl --purpose training --roster roster.csv
 python3 ml_pipeline/scripts/szsf.py manifest szsf-master-v1.0.0.jsonl --out szsf-master-v1.0.0.manifest.json
 python3 ml_pipeline/scripts/szsf.py validate szsf-master-v1.0.0.jsonl --manifest szsf-master-v1.0.0.manifest.json
 ```

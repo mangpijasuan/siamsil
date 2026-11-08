@@ -21,6 +21,7 @@ def good(**changes) -> dict:
         "szsf_version": "1.0", "id": "corpus-1", "kind": "translation_pair",
         "english": "English sentence one.", "zomi": "ZOMI_PLACEHOLDER_ONE", "zomi_standard": "ZOMI_PLACEHOLDER_ONE",
         "standard_version": "0.0.0", "source": "parallel_corpus", "origin": "machine_generated",
+        "model": "model-name", "provider_derived": False,
         "tier": "bronze", "split": "train",
         "review": {"status": "UNREVIEWED", "reviewers": [], "approver": None},
     }
@@ -162,7 +163,7 @@ class FileTests(unittest.TestCase):
         path = self.write(good(), approved(id="corpus-2"))
         rights_file = self.root / "rights.json"
         rights_file.write_text(json.dumps({"sources": self.rights}), encoding="utf-8")
-        out = self.root / "manifest.json"
+        out = self.root / "szsf-master-v1.0.0.manifest.json"
         with contextlib.redirect_stdout(io.StringIO()) as shown:
             self.assertEqual(szsf.main(["validate", str(path), "--rights", str(rights_file)]), 0)
             self.assertEqual(szsf.main(["manifest", str(path), "--out", str(out), "--rights", str(rights_file)]), 0)
@@ -170,13 +171,74 @@ class FileTests(unittest.TestCase):
         self.assertIn("follows the Siamsil Zomi Standard Format 1.0", shown.getvalue())
         self.assertEqual(json.loads(out.read_text(encoding="utf-8"))["records"], 2)
         # A purpose the sources are not cleared for fails, and a failing file gets no manifest.
-        bad = self.write(good(english=""), name="bad.jsonl")
-        unwritten = self.root / "unwritten.json"
+        bad = self.write(good(english=""), name="szsf-master-v2.0.0.jsonl")
+        unwritten = self.root / "szsf-master-v2.0.0.manifest.json"
         with contextlib.redirect_stderr(io.StringIO()) as errors:
             self.assertEqual(szsf.main(["validate", str(path), "--rights", str(rights_file), "--purpose", "training"]), 1)
             self.assertEqual(szsf.main(["manifest", str(bad), "--out", str(unwritten), "--rights", str(rights_file)]), 1)
         self.assertIn("does not follow the Siamsil Zomi Standard Format", errors.getvalue())
         self.assertFalse(unwritten.exists())
+
+    def test_review_findings(self) -> None:
+        # --no-rights cannot be used to pass a purpose
+        path = self.write(good())
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            szsf.main(["validate", str(path), "--no-rights", "--purpose", "training"])
+        self.assertEqual(szsf.validate(path, None, "training"), ["a purpose can only be checked against the rights file: do not skip it"])
+        # the file name, invalid UTF-8, and JSON values that are not objects give diagnostics, not crashes
+        self.assertIn("file name", szsf.validate(self.write(good(), name="data.jsonl"))[0])
+        raw = self.root / "szsf-master-v3.0.0.jsonl"
+        raw.write_bytes(b"\xff\xfe\n42\nnull\n")
+        found = szsf.validate(raw)
+        self.assertTrue(any("line 1: not valid UTF-8" in p for p in found))
+        self.assertTrue(any("line 2: a record must be a JSON object" in p for p in found))
+        # both sides' sources are checked
+        pair = self.write(good(english_source="unlisted_source"))
+        self.assertEqual(szsf.validate(pair, self.rights), ["line 1: english_source 'unlisted_source' is not in the rights file"])
+        # roster: a stranger or the wrong role is not an approval
+        roster = {"R01": "reviewer", "E01": "lead_editor"}
+        self.assertEqual(szsf.validate(self.write(approved()), roster=roster), [])
+        strange = self.write(good(review={"status": "HUMAN_APPROVED", "reviewers": ["R09"], "approver": "R01"}))
+        self.assertEqual(len(szsf.validate(strange, roster=roster)), 2)
+        # provider-derived records stay out of training by default
+        derived = self.write(good(provider_derived=True, source="daily_use_phrases"))
+        self.assertIn("provider-derived", szsf.validate(derived, self.rights, "training")[0])
+        self.assertEqual(szsf.validate(derived, self.rights, "training", allow_provider_derived=True), [])
+        # a manifest whose summary was edited is refused even when the hash and count still match
+        manifest = szsf.build_manifest(pair if False else self.write(good()), self.rights)
+        manifest["counts"]["split"] = {"test": 1}
+        self.assertEqual(szsf.validate(self.write(good()), self.rights, manifest=manifest), ["the manifest's counts does not match the file"])
+
+    def test_record_review_findings(self) -> None:
+        self.assertIn("model", "; ".join(szsf.check_record({k: v for k, v in good().items() if k != "model"})))
+        self.assertIn("provider_derived", "; ".join(szsf.check_record({k: v for k, v in good().items() if k != "provider_derived"})))
+        self.assertTrue(szsf.check_record(good(zomi="A\u2028B", zomi_standard="A\u2028B")))     # line separator
+        self.assertTrue(szsf.check_record(good(reference="a\nb")))                               # metadata is checked too
+        self.assertTrue(szsf.check_record(good(review={"status": "REJECTED", "reviewers": ["R01"], "approver": "R01"}, split="excluded")))
+        self.assertEqual(szsf.check_record(good(review={"status": "UNREVIEWED", "reviewers": [], "approver": None},
+                                                license_status="needs_review", verified_at="2026-11-08T12:00:00Z",
+                                                prompt_version="p1", release_version="r1")), [])
+        self.assertTrue(szsf.check_record(good(verified_at="yesterday")))
+        self.assertEqual(szsf.check_record(good(review={"status": "READY_FOR_APPROVAL", "reviewers": ["RA0123"], "approver": None})), [])
+        # cited rules must be in the adopted set, under its version
+        standard = {"version": "1.0.0", "rules": {"ZS-001"}}
+        base = {"zomi_standard": "CHANGED", "zomi_standard_rules": ["ZS-001"], "standard_version": "1.0.0"}
+        self.assertEqual(szsf.check_record(good(**base), standard), [])
+        self.assertIn("not an adopted rule", "; ".join(szsf.check_record(good(**{**base, "zomi_standard_rules": ["ZS-009"]}), standard)))
+        self.assertIn("standard_version", "; ".join(szsf.check_record(good(**{**base, "standard_version": "0.0.0"}), standard)))
+
+    def test_a_manifest_is_written_whole(self) -> None:
+        path = self.write(good())
+        out = self.root / "szsf-master-v1.0.0.manifest.json"
+        out.write_text("old", encoding="utf-8")
+        rights_file = self.root / "rights.json"
+        rights_file.write_text(json.dumps({"sources": self.rights}), encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(szsf.main(["manifest", str(path), "--out", str(out), "--rights", str(rights_file)]), 0)
+        self.assertEqual(json.loads(out.read_text(encoding="utf-8"))["records"], 1)
+        self.assertEqual(list(self.root.glob("*.part")), [])
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):  # the name must match the file
+            szsf.main(["manifest", str(path), "--out", str(self.root / "other.json"), "--rights", str(rights_file)])
 
 
 class SpecTests(unittest.TestCase):
