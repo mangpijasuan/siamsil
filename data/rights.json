@@ -134,7 +134,7 @@
       "train": "not_permitted",
       "redistribute": "not_permitted",
       "commercial": "not_permitted",
-      "evidence": "No permission from the author yet, so every use is not_permitted until written permission is recorded. Used only as a private reference for the Zolai Standard review: its spellings are counted and its sections cited with short examples (docs/ZOLAI_STANDARD.md). A copy published under MIT in github.com/peterlianpi/zolai-ai does not show the author's permission. See docs/DATA_RIGHTS.md."
+      "evidence": "No permission from the author yet, so every use is not_permitted until written permission is recorded. Used only as a private reference for the Siamsil Zomi Standard Form review: its spellings are counted and its sections cited with short examples (docs/ZOMI_STANDARD_FORM.md). A copy published under MIT in github.com/peterlianpi/zolai-ai does not show the author's permission. See docs/DATA_RIGHTS.md."
     },
     "zomi_standard_dictionary": {
       "description": "Zomi Standard Dictionary (Zomi_Standard_Dictionary_AI_Cleaned.xlsx, Master Data sheet), 20,826 English headwords with Zomi definitions; Siamsil's live dictionary",

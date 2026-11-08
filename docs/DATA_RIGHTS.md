@@ -153,7 +153,7 @@ To clear it for training, record in this file: (1) the dataset card as published
 - The extracted text in `siamsil-data/books/derived/` is the PDF's own text layer, not OCR or machine output.
 
 **Zolai Standard Format (Lian Than Tuang, 2018)**
-- No permission yet. It is a private reference for the Zolai Standard review ([ZOLAI_STANDARD.md](ZOLAI_STANDARD.md)): the evidence script counts its spellings, and `data/zolai_standard/rule_checks.json` cites its sections with page numbers and quotes only the short example words it gives.
+- No permission yet. It is a private reference for the Siamsil Zomi Standard Form review ([ZOMI_STANDARD_FORM.md](ZOMI_STANDARD_FORM.md)): the evidence script counts its spellings, and `data/zomi_standard_form/rule_checks.json` cites its sections with page numbers and quotes only the short example words it gives.
 - Keep the PDF in `siamsil-data/standard/`, never in this repository. Do not show its text in the app or train on it.
 - A full copy is published at github.com/peterlianpi/zolai-ai (`wiki/Zolai_Standard_Format.md`) under that repository's MIT license. That license is the uploader's and does not show the author's permission, so it gives Siamsil no rights.
 - To use it beyond reference, ask Lian Than Tuang for written permission and record who granted it, the date, the uses covered, any credit line, and where it is kept. The 2018 PDF names no publisher.
