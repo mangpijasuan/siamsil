@@ -10,6 +10,7 @@ Long-term vision: [`docs/VISION.md`](docs/VISION.md)
 Phase roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md)
 Data rights register: [`docs/DATA_RIGHTS.md`](docs/DATA_RIGHTS.md)
 Human evaluation sets: [`docs/EVALUATION_SET.md`](docs/EVALUATION_SET.md)
+Master data format (trained and reviewed Zomi data): [`docs/SZSF.md`](docs/SZSF.md), the Siamsil Zomi Standard Format
 Audio recording consent (draft): [`docs/AUDIO_CONSENT.md`](docs/AUDIO_CONSENT.md)
 Generator spot-check: [`docs/GENERATOR_REVIEW.md`](docs/GENERATOR_REVIEW.md)
 Model evaluation: [`docs/MODEL_EVALUATION.md`](docs/MODEL_EVALUATION.md)
