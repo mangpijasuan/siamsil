@@ -127,6 +127,26 @@ python3 ml_pipeline/scripts/worksheets.py review-merge data/evaluation/human/en-
 
 A `zomi-en` set uses the same commands with a Zomi sources list (`zomi-en-v1.sources.csv`). The sheets then show the Zomi and ask for an English translation, and the second reader corrects the English.
 
+### Collecting original Zomi for the `zomi-en` set
+
+The Zomi sources must be written by native speakers, so Siamsil prepares situations (prompts such as "Ask a shopkeeper for a price and bargain politely"), never sentences to translate. `data/evaluation_prompts/zomi-en-writing-prompts-v1.csv` holds 140 of them, 20 per domain (5 short, 10 medium, 5 long). They are not secret and are committed; what speakers write is hidden like any other source.
+
+```bash
+# The speaker's "Write" sheet
+python3 ml_pipeline/scripts/worksheets.py writing-sheet data/evaluation_prompts/zomi-en-writing-prompts-v1.csv \
+  --out Siamsil_ZomiWriting_zomi-en_batch1.xlsx
+# Their filled sheet -> the Zomi sources list (add --append for a second writer's rows)
+python3 ml_pipeline/scripts/worksheets.py writing-import Siamsil_ZomiWriting_zomi-en_batch1.xlsx \
+  --writer W01 --out data/evaluation/human/zomi-en-v1.sources.csv
+```
+
+The import refuses unknown topics, an answer that only repeats the situation, repeated sentences, and any overwrite of an existing sources list. The list records each writer's contributor ID. Run `check-sources` on it, then `testset-sheet` for the English translators, as for any `zomi-en` set.
+
+### Batches and sizes
+
+A set is built in batches and frozen when it reaches its target size. Batch 1 is 210 English sentences (30 per domain: 9 short, 17 medium, 4 long) and 140 situations for Zomi writers; the first frozen version may be smaller than the 1,000–2,000 target if the owner decides so, and grows in a later version. Generated workbooks (`data/evaluation/**/*.xlsx`) are hidden like the JSONL and CSV files.
+
+
 Leakage matching uses the same normalization as the corpus build (`normalize_word` in `build_language_db.py`), on both the English and the Zomi side.
 
 ## Exit gate (Phase 0)

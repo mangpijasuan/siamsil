@@ -8,6 +8,13 @@ Human evaluation set (docs/EVALUATION_SET.md), English -> Zomi or Zomi -> Englis
   testset-import SHEET.xlsx --translator T01 --origin TEXT --out DRAFT.jsonl
       Read the translator's "Translate" sheet. Translated rows become draft
       items (review_outcome "pending"); blank rows are counted and skipped.
+  writing-sheet PROMPTS.csv --out SHEET.xlsx
+      For a Zomi -> English set, which must start from Zomi written by native
+      speakers: make the "Write" sheet. Each row gives a situation (a prompt, never a
+      sentence to translate) and a cell for an original Zomi sentence.
+  writing-import SHEET.xlsx --writer W01 --out zomi-en-v1.sources.csv [--append]
+      Read the "Write" sheet into a Zomi sources list (id, domain, zomi, writer) for
+      check-sources and testset-sheet. Blank rows are skipped.
   review-sheet DRAFT.jsonl --out REVIEW.xlsx
       Make the second reader's sheet: accept each translation or correct it.
   review-merge DRAFT.jsonl REVIEW.xlsx --reviewer R01 --out SET.jsonl
@@ -28,6 +35,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -189,6 +197,133 @@ def cmd_testset_import(args: argparse.Namespace) -> int:
         sys.exit(f"unknown topic in rows: {', '.join(bad_topic[:10])}; topics must be one of {', '.join(DOMAINS)}")
     write_jsonl(args.out, items)
     print(f"{len(items)} translated, {blank} not yet translated; wrote draft {args.out}")
+    return 0
+
+
+WRITING_LENGTHS = ("short", "medium", "long")
+WRITING_COLUMN = "Zomi sentence(s) you wrote"
+WRITING_ID = re.compile(r"^zomi-en-\d{4,}$")
+
+
+def _norm(text: str) -> str:
+    return " ".join(text.split()).casefold()
+
+
+def cmd_writing_sheet(args: argparse.Namespace) -> int:
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    with args.prompts.open(encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        missing = [c for c in ("id", "domain", "length", "situation") if c not in (reader.fieldnames or [])]
+        if missing:
+            sys.exit(f"{args.prompts.name}: missing columns {', '.join(missing)}")
+        prompts = list(reader)
+    errors, seen = [], set()
+    for line, row in enumerate(prompts, start=2):
+        item_id = (row.get("id") or "").strip()
+        if not WRITING_ID.match(item_id):
+            errors.append(f"line {line}: id must look like zomi-en-0001")
+        elif item_id in seen:
+            errors.append(f"line {line}: duplicate id {item_id}")
+        seen.add(item_id)
+        if row.get("domain") not in DOMAINS:
+            errors.append(f"line {line}: domain must be one of {', '.join(DOMAINS)}")
+        if row.get("length") not in WRITING_LENGTHS:
+            errors.append(f"line {line}: length must be one of {', '.join(WRITING_LENGTHS)}")
+        if not (row.get("situation") or "").strip():
+            errors.append(f"line {line}: situation is required")
+    if errors or not prompts:
+        for error in errors[:20]:
+            print(f"error: {error}")
+        sys.exit(f"{args.prompts} is not a valid prompts list")
+
+    wb = Workbook()
+    intro = wb.active
+    intro.title = "Instructions"
+    intro.column_dimensions["A"].width = 110
+    for line in (
+        "Siamsil test set: write original Zomi",
+        "",
+        "This set measures how well Siamsil translates real Zomi into English, so it must be real Zomi: written by you, the way you would naturally say or write it.",
+        "• Each row gives a situation. Write one to three Zomi sentences that fit it. The situation is only a prompt: do not translate it.",
+        "• If a situation does not fit Zomi life, write a different sentence on the same topic and say so in Notes.",
+        "• Length: short is up to 8 words, medium is 9 to 24 words, long is 25 words or more. Roughly is fine.",
+        "• Use the agreed spelling standard.",
+        "• Write it yourself. Do not use Google Translate, ChatGPT, Gemini or any other machine translation, and do not copy from the Bible, songs, books, dictionaries or social media.",
+        "• Use made-up names and no real phone numbers or addresses.",
+        "• Do not change the ID, Topic, Length or Situation columns.",
+        "Your sentences become part of a private test set. They are never used to train models and are not shared publicly. You are credited by the name you choose, if you wish; tell the project lead if you do not agree.",
+        "Keep this file private.",
+    ):
+        intro.append([line])
+    intro["A1"].font = Font(bold=True, size=14, color="1B2A4A")
+
+    sheet = wb.create_sheet("Write")
+    header = ["ID", "Topic", "Length", "Situation", WRITING_COLUMN, "Notes"]
+    for index, width in enumerate([14, 14, 10, 60, 70, 35], 1):
+        cell = sheet.cell(1, index, header[index - 1])
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="1B2A4A")
+        sheet.column_dimensions[cell.column_letter].width = width
+    sheet.freeze_panes = "A2"
+    for row in prompts:
+        append_text(sheet, [row["id"].strip(), row["domain"], row["length"], row["situation"].strip(), "", ""])
+        for col in (4, 5, 6):
+            sheet.cell(sheet.max_row, col).alignment = Alignment(wrap_text=True, vertical="top")
+        for col in (5, 6):
+            sheet.cell(sheet.max_row, col).fill = PatternFill("solid", fgColor="F8F6F0")
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    wb.save(args.out)
+    print(f"wrote writing sheet with {len(prompts)} situations to {args.out}")
+    return 0
+
+
+def cmd_writing_import(args: argparse.Namespace) -> int:
+    rows = read_sheet(args.sheet, "Write")
+    kept, blank, errors, seen_text = [], 0, [], {}
+    for row in rows:
+        text = row.get(WRITING_COLUMN, "")
+        if not text:
+            blank += 1
+            continue
+        item_id, topic = row.get("ID", ""), row.get("Topic", "")
+        if not WRITING_ID.match(item_id):
+            errors.append(f"{item_id or '(no id)'}: id must look like zomi-en-0001")
+        if topic not in DOMAINS:
+            errors.append(f"{item_id}: topic must be one of {', '.join(DOMAINS)}")
+        if _norm(text) == _norm(row.get("Situation", "")):
+            errors.append(f"{item_id}: the answer repeats the situation; write a Zomi sentence")
+        if _norm(text) in seen_text:
+            errors.append(f"{item_id}: same sentence as {seen_text[_norm(text)]}")
+        seen_text[_norm(text)] = item_id
+        kept.append({"id": item_id, "domain": topic, "zomi": text, "writer": args.writer})
+
+    existing: list[dict[str, str]] = []
+    if args.out.exists():
+        if not args.append:
+            sys.exit(f"{args.out} already exists; use --append to add to it, or choose another file")
+        with args.out.open(encoding="utf-8-sig", newline="") as handle:
+            existing = list(csv.DictReader(handle))
+        have = {r["id"] for r in existing}
+        taken = {_norm(r["zomi"]): r["id"] for r in existing}
+        for item in kept:
+            if item["id"] in have:
+                errors.append(f"{item['id']}: already in {args.out.name}")
+            elif _norm(item["zomi"]) in taken:
+                errors.append(f"{item['id']}: same sentence as {taken[_norm(item['zomi'])]} in {args.out.name}")
+    if errors:
+        for error in errors[:20]:
+            print(f"error: {error}")
+        sys.exit("nothing written; fix the sheet and import again")
+
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    with args.out.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["id", "domain", "zomi", "writer"])
+        writer.writeheader()
+        for item in [{**r, "writer": r.get("writer", "")} for r in existing] + kept:
+            writer.writerow({k: item.get(k, "") for k in ("id", "domain", "zomi", "writer")})
+    print(f"{len(kept)} written, {blank} not yet written; sources list {args.out} now has {len(existing) + len(kept)} sentences")
     return 0
 
 
@@ -381,6 +516,18 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--origin", required=True, help="where the source sentences came from")
     p.add_argument("--out", type=Path, required=True)
     p.set_defaults(func=cmd_testset_import)
+
+    p = commands.add_parser("writing-sheet")
+    p.add_argument("prompts", type=Path, help="CSV with columns id, domain, length, situation")
+    p.add_argument("--out", type=Path, required=True)
+    p.set_defaults(func=cmd_writing_sheet)
+
+    p = commands.add_parser("writing-import")
+    p.add_argument("sheet", type=Path)
+    p.add_argument("--writer", required=True, help="contributor ID, e.g. W01")
+    p.add_argument("--out", type=Path, required=True, help="the Zomi sources list, e.g. zomi-en-v1.sources.csv")
+    p.add_argument("--append", action="store_true", help="add to an existing sources list")
+    p.set_defaults(func=cmd_writing_import)
 
     p = commands.add_parser("review-sheet")
     p.add_argument("draft", type=Path)

@@ -82,3 +82,6 @@ data/processed/bible/
 *.opus
 *.webm
 data/speech/
+
+# Hidden evaluation sheets (docs/EVALUATION_SET.md)
+data/evaluation/**/*.xlsx
