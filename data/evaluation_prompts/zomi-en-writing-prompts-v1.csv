@@ -1,0 +1,141 @@
+id,domain,length,situation
+zomi-en-0001,conversation,short,Greet a neighbour you meet on the road in the morning.
+zomi-en-0002,conversation,short,Ask someone where the market is.
+zomi-en-0003,conversation,short,Say goodbye to a guest who is leaving your house.
+zomi-en-0004,conversation,short,Thank someone for a gift.
+zomi-en-0005,conversation,short,Apologise for being late.
+zomi-en-0006,conversation,medium,Invite a friend to your house for dinner on Saturday and say what time to come.
+zomi-en-0007,conversation,medium,Explain to a stranger how to get from the church to the school.
+zomi-en-0008,conversation,medium,Tell a relative about a long bus journey you made last week.
+zomi-en-0009,conversation,medium,Ask a shopkeeper for the price of something and bargain politely.
+zomi-en-0010,conversation,medium,Welcome a visitor and offer them tea and something to eat.
+zomi-en-0011,conversation,medium,Tell your friend that you met someone you have not seen for many years.
+zomi-en-0012,conversation,medium,Ask a friend to help you carry something heavy.
+zomi-en-0013,conversation,medium,Tell someone about your plans for the weekend.
+zomi-en-0014,conversation,medium,Say what you usually do on a rainy day.
+zomi-en-0015,conversation,medium,Ask someone a question about their family.
+zomi-en-0016,conversation,long,Describe the last time your whole family sat together for a meal and what you talked about.
+zomi-en-0017,conversation,long,Tell a story about a time you got lost and how you found your way.
+zomi-en-0018,conversation,long,Explain to a visitor what is special about your village or neighbourhood.
+zomi-en-0019,conversation,long,Tell someone how you met your best friend.
+zomi-en-0020,conversation,long,Describe how you spent your last birthday.
+zomi-en-0021,education,short,Tell a child to open the book.
+zomi-en-0022,education,short,Ask a classmate to lend you a pen.
+zomi-en-0023,education,short,Tell the class that the exam is tomorrow.
+zomi-en-0024,education,short,Praise a student who answered correctly.
+zomi-en-0025,education,short,Say that you do not understand the question.
+zomi-en-0026,education,medium,Explain to a parent why their child needs to study more.
+zomi-en-0027,education,medium,Tell a friend which subject you enjoy most and why.
+zomi-en-0028,education,medium,Describe how you get to school each day.
+zomi-en-0029,education,medium,Ask your teacher for more time to finish your homework.
+zomi-en-0030,education,medium,Give three instructions for a simple school science experiment.
+zomi-en-0031,education,medium,Tell a younger student how to prepare for an exam.
+zomi-en-0032,education,medium,Announce that the school will close early on Friday.
+zomi-en-0033,education,medium,Explain why reading books is important.
+zomi-en-0034,education,medium,Describe your favourite teacher.
+zomi-en-0035,education,medium,Say what you want to study after you finish school.
+zomi-en-0036,education,long,Tell the story of your first day at school.
+zomi-en-0037,education,long,Explain to parents how they can help their children learn at home.
+zomi-en-0038,education,long,Describe a school lesson you remember well and what you learned.
+zomi-en-0039,education,long,Explain why education matters for your community.
+zomi-en-0040,education,long,Describe how students and teachers prepare for the school's yearly festival.
+zomi-en-0041,government,short,Ask which office issues identity cards.
+zomi-en-0042,government,short,Tell someone to bring their documents.
+zomi-en-0043,government,short,Say that the office is closed today.
+zomi-en-0044,government,short,Ask what the registration fee is.
+zomi-en-0045,government,short,Say that you are going to vote.
+zomi-en-0046,government,medium,Explain how to apply for a birth certificate.
+zomi-en-0047,government,medium,Tell a neighbour about a village meeting to be held next week.
+zomi-en-0048,government,medium,Explain to someone how and when to pay their taxes.
+zomi-en-0049,government,medium,Ask an official how long a visa takes to process.
+zomi-en-0050,government,medium,Describe a problem with the road and ask the council to repair it.
+zomi-en-0051,government,medium,Tell a friend how you registered to vote.
+zomi-en-0052,government,medium,Explain why people should respect the law.
+zomi-en-0053,government,medium,Tell an official that you have lost your identity card.
+zomi-en-0054,government,medium,Explain the steps to renew a passport.
+zomi-en-0055,government,medium,Tell someone how to find the local government office.
+zomi-en-0056,government,long,Describe what happened at a recent meeting between the villagers and the local leaders.
+zomi-en-0057,government,long,Explain the rights and duties of a citizen to a young person.
+zomi-en-0058,government,long,Tell a story about a time you had to deal with a government office.
+zomi-en-0059,government,long,Explain how a new law might change life in your community.
+zomi-en-0060,government,long,Describe how the community prepared for an election.
+zomi-en-0061,health,short,Tell the doctor where it hurts.
+zomi-en-0062,health,short,Tell a child to wash their hands.
+zomi-en-0063,health,short,Say that you feel dizzy.
+zomi-en-0064,health,short,Ask whether the clinic is open.
+zomi-en-0065,health,short,Tell someone to rest.
+zomi-en-0066,health,medium,Describe your symptoms to a nurse.
+zomi-en-0067,health,medium,Explain how to take a medicine twice a day.
+zomi-en-0068,health,medium,Advise a friend on how to stay healthy.
+zomi-en-0069,health,medium,Tell a mother how to care for a child with a fever.
+zomi-en-0070,health,medium,Explain why clean water is important.
+zomi-en-0071,health,medium,Ask a pharmacist for medicine for a cough.
+zomi-en-0072,health,medium,Tell a relative about a check-up and what the doctor said.
+zomi-en-0073,health,medium,Explain how to prevent malaria.
+zomi-en-0074,health,medium,Describe how you recovered from an illness.
+zomi-en-0075,health,medium,Tell someone to see a doctor if the pain continues.
+zomi-en-0076,health,long,Tell the story of a time when you or a family member was seriously ill and how you found help.
+zomi-en-0077,health,long,Explain how pregnant women should take care of themselves.
+zomi-en-0078,health,long,Describe what a health worker does when visiting a village.
+zomi-en-0079,health,long,Explain why vaccines are important for children.
+zomi-en-0080,health,long,Describe a healthy daily routine for an elderly person.
+zomi-en-0081,religion,short,Invite someone to church.
+zomi-en-0082,religion,short,Say a short prayer before a meal.
+zomi-en-0083,religion,short,Greet someone after the service.
+zomi-en-0084,religion,short,Say that you will pray for someone.
+zomi-en-0085,religion,short,Ask when the service starts.
+zomi-en-0086,religion,medium,Explain what happens during a Sunday service in your church.
+zomi-en-0087,religion,medium,Tell a friend about a hymn that you love.
+zomi-en-0088,religion,medium,Describe how your family celebrates Christmas.
+zomi-en-0089,religion,medium,"Encourage someone who is sad, using your faith."
+zomi-en-0090,religion,medium,Announce a prayer meeting for the youth.
+zomi-en-0091,religion,medium,Explain why people give offerings.
+zomi-en-0092,religion,medium,Describe a wedding in the church.
+zomi-en-0093,religion,medium,Tell what you do to prepare for Easter.
+zomi-en-0094,religion,medium,Explain what forgiveness means to you.
+zomi-en-0095,religion,medium,Thank the church members for helping a sick person.
+zomi-en-0096,religion,long,Tell the story of how your church community began.
+zomi-en-0097,religion,long,Describe how the community comforts a family at a funeral.
+zomi-en-0098,religion,long,"Explain how faith helps people during hard times, with an example."
+zomi-en-0099,religion,long,Describe a time when you saw someone helping others because of their faith.
+zomi-en-0100,religion,long,Explain what you learned from a sermon that you remember.
+zomi-en-0101,news,short,Report that it rained heavily today.
+zomi-en-0102,news,short,Announce that schools are closed tomorrow.
+zomi-en-0103,news,short,Report that prices have risen.
+zomi-en-0104,news,short,Say that a team won the match.
+zomi-en-0105,news,short,Say that the road is blocked.
+zomi-en-0106,news,medium,Report that a flood has damaged houses in a village.
+zomi-en-0107,news,medium,Report the opening of a new bridge or road.
+zomi-en-0108,news,medium,Announce a community meeting about the harvest.
+zomi-en-0109,news,medium,Report the result of a local football match.
+zomi-en-0110,news,medium,Report that the price of fuel has changed.
+zomi-en-0111,news,medium,Announce a vaccination campaign.
+zomi-en-0112,news,medium,Report a fire in the market and say that no one was hurt.
+zomi-en-0113,news,medium,Report that an important guest is visiting your town.
+zomi-en-0114,news,medium,Announce the opening of a new school or clinic.
+zomi-en-0115,news,medium,Report on a festival and how many people came.
+zomi-en-0116,news,long,Write a short news report about a landslide and the rescue effort.
+zomi-en-0117,news,long,Write a short news report about farmers affected by drought.
+zomi-en-0118,news,long,Write a short news report about a community project completed this year.
+zomi-en-0119,news,long,Write a short news report about students marching peacefully.
+zomi-en-0120,news,long,Write a short news report about rising prices and how families cope.
+zomi-en-0121,informal,short,Greet a friend casually.
+zomi-en-0122,informal,short,Say that you are hungry.
+zomi-en-0123,informal,short,Say that something is really funny.
+zomi-en-0124,informal,short,Tell a friend to text you.
+zomi-en-0125,informal,short,Tell a friend 'no problem' in a casual way.
+zomi-en-0126,informal,medium,Invite a friend to hang out tonight.
+zomi-en-0127,informal,medium,Complain jokingly that the bus is always late.
+zomi-en-0128,informal,medium,Tell a friend about a funny thing that happened today.
+zomi-en-0129,informal,medium,Ask a friend to send you a photo.
+zomi-en-0130,informal,medium,Say that you are tired because you stayed up late.
+zomi-en-0131,informal,medium,Tease a friend about their new haircut.
+zomi-en-0132,informal,medium,Tell a friend what you are eating right now.
+zomi-en-0133,informal,medium,Tell a friend that you will be there in ten minutes.
+zomi-en-0134,informal,medium,React with surprise to a friend's news.
+zomi-en-0135,informal,medium,Say sorry for forgetting something.
+zomi-en-0136,informal,long,Tell a friend a story about something embarrassing that happened to you.
+zomi-en-0137,informal,long,Describe a trip you took with friends and what you did.
+zomi-en-0138,informal,long,Tell a friend about a new hobby you started and why you like it.
+zomi-en-0139,informal,long,Describe how you and your friends celebrated a victory.
+zomi-en-0140,informal,long,Tell a friend about your plans for the next holiday.
