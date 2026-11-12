@@ -76,6 +76,7 @@ export default async function Home() {
         <WordPanel word={word} />
         <section className="sr-panel" aria-labelledby="sr-resources-heading">
           <div className="sr-panel-head"><h2 id="sr-resources-heading">Featured Resources</h2><Link href="/library">View all →</Link></div>
+          <Link href="/zomi-language" className="sr-resource"><span className="sr-resource-icon"><IconBook size={21}/></span><span><strong>About the Zomi language</strong><small>Zopau, Zolai and Tedim Chin</small></span></Link>
           <Link href="/bible" className="sr-resource"><span className="sr-resource-icon"><IconCross size={21}/></span><span><strong>Zomi Bible</strong><small>Read and study</small></span></Link>
           <Link href="/library" className="sr-resource"><span className="sr-resource-icon"><IconLibrary size={21}/></span><span><strong>Library</strong><small>Explore books and archives</small></span></Link>
           <Link href="/learning" className="sr-resource"><span className="sr-resource-icon"><IconAcademic size={21}/></span><span><strong>Learning</strong><small>Practice reviewed lessons</small></span></Link>
