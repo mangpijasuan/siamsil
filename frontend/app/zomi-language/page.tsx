@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SITE_URL } from "@/lib/site";
 
 const title = "Zomi Language (Zopau and Tedim Chin)";
-const description = "A reference guide to Zomi as used on Siamsil, including the names Zopau, Zolai, and Tedim Chin, where the language is spoken, and how it is written.";
+const description = "A reference guide to Zomi as used on Siamsil, covering spoken Zopau, the Zolai literary tradition, and the language known as Tedim Chin.";
 
 export const metadata: Metadata = {
   title,
@@ -31,10 +31,13 @@ export default function ZomiLanguagePage() {
         <section className="space-y-3">
           <h2 className="font-playfair text-2xl font-semibold">Names and usage</h2>
           <p>
-            Linguist Kosei Otsuka records <i lang="ctd">Zopau</i> and <i lang="ctd">Zolai</i> as local names
-            in Tedim and Tonzang. The Digital Bible Society also lists <i>Zomi</i> as an alternate name for
-            Tedim Chin. In broader contexts, <i>Zomi</i> can refer to a community identity. The language
-            code helps readers identify the variety described here. <a className="underline" href="#source-otsuka">[1]</a>{" "}
+            <strong lang="ctd">Zopau</strong> is the spoken language. <strong lang="ctd">Zolai</strong> refers
+            to its literature and written tradition.
+          </p>
+          <p>
+            Linguist Kosei Otsuka records both terms in Tedim and Tonzang. The Digital Bible Society
+            lists <i>Zomi</i> as an alternate name for Tedim Chin. In broader contexts, <i>Zomi</i> can
+            also refer to a community identity. <a className="underline" href="#source-otsuka">[1]</a>{" "}
             <a className="underline" href="#source-dbs">[3]</a>
           </p>
         </section>
