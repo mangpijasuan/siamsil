@@ -5,6 +5,7 @@ import SidebarNav from "@/components/SidebarNav";
 import { PREFERENCES_BOOT_SCRIPT } from "@/lib/bible/preferences";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
+import "./siamsil-theme.css";
 
 const inter = Inter({
   subsets: ["latin"],
