@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { IconAcademic, IconAI, IconArrow, IconBook, IconCross, IconLibrary, IconSearch } from "@/components/Icons";
+import { IconArrow, IconBook, IconSearch } from "@/components/Icons";
 import { getDailyVerse, getHealth, getWordOfDay } from "@/lib/api";
 import type { DictionaryEntry } from "@/lib/api";
 import { SITE_URL, websiteJsonLd } from "@/lib/site";
@@ -20,6 +20,12 @@ function StatIcon({ kind }: { kind: "words" | "sentences" | "verses" | "global" 
   return <svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v16M8 8h8" /><rect x="4" y="3" width="16" height="18" rx="2" /></svg>;
 }
 const STAT_KINDS: Record<string, "words" | "sentences" | "verses"> = { "Dictionary entries": "words", "Example sentences": "sentences", "Bible verses": "verses" };
+const RESOURCES = [
+  { href: "/bible", title: "Zomi Bible", note: "Read and study", photo: "bible" },
+  { href: "/library", title: "Library", note: "Explore books and archives", photo: "books" },
+  { href: "/learning", title: "Learning", note: "Practice reviewed lessons", photo: "learn" },
+  { href: "/resources", title: "Resources", note: "What Siamsil holds", photo: "culture" },
+];
 const SUGGESTIONS = ["water", "family", "thank you", "school", "love", "God"];
 function compact(value: number) {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
@@ -82,10 +88,12 @@ export default async function Home() {
         <WordPanel word={word} />
         <section className="sr-panel" aria-labelledby="sr-resources-heading">
           <div className="sr-panel-head"><h2 id="sr-resources-heading">Featured Resources</h2><Link href="/library">View all →</Link></div>
-          <div className="sr-resources-grid"><Link href="/bible" className="sr-resource"><span className="sr-resource-icon"><IconCross size={21}/></span><span><strong>Zomi Bible</strong><small>Read and study</small></span></Link>
-          <Link href="/library" className="sr-resource"><span className="sr-resource-icon"><IconLibrary size={21}/></span><span><strong>Library</strong><small>Explore books and archives</small></span></Link>
-          <Link href="/learning" className="sr-resource"><span className="sr-resource-icon"><IconAcademic size={21}/></span><span><strong>Learning</strong><small>Practice reviewed lessons</small></span></Link>
-          <Link href="/chat" className="sr-resource"><span className="sr-resource-icon"><IconAI size={21}/></span><span><strong>Siamsil AI</strong><small>Answers grounded in available sources</small></span></Link></div>
+          <div className="sr-resources-grid">
+            {RESOURCES.map(({ href, title, note, photo }) => <Link href={href} className="sr-resource sr-resource-photo" key={href}>
+              <Image src={`/theme/photo-${photo}.webp`} alt="" width={120} height={120} unoptimized />
+              <span><strong>{title}</strong><small>{note}</small></span>
+            </Link>)}
+          </div>
         </section>
       </div>
       <p className="sr-note">Siamsil identifies sources and labels unreviewed machine translations. Dictionary, verse and word-of-day data are loaded from the existing API.</p>

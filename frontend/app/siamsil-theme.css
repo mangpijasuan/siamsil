@@ -135,7 +135,9 @@ body .mobile-drawer .side-panel-foot, body .desktop-sidebar .side-panel-foot { c
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 62px;
   background: url("/theme/mist-mountains.webp") bottom center / 100% 100% no-repeat; pointer-events: none;
 }
-.sr-home .sr-resources-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sr-home .sr-resources-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.sr-home .sr-panel { container-type: inline-size; }
+@container (min-width: 520px) { .sr-resources-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
 .sr-home .sr-resources-grid .sr-resource {
   flex-direction: column; align-items: flex-start; gap: 10px; border: 1px solid #dbe5f5; border-radius: 12px; padding: 14px; background: var(--st-card);
 }
@@ -219,3 +221,19 @@ body .mobile-drawer {
     url("/theme/rail-mountain.webp") center calc(100% + 170px) / 100% auto no-repeat,
     linear-gradient(180deg, #0b1f3b 0%, #0a1d3d 60%, #08172f 100%) !important;
 }
+
+/* Featured Resources: photo cards (default, and gold on hover or keyboard focus, as in the design sheet). */
+.sr-home .sr-resources-grid .sr-resource-photo {
+  flex-direction: row; align-items: center; gap: 14px; padding: 8px; min-height: 80px;
+  background: linear-gradient(180deg, #ffffff 0%, var(--st-card) 100%); border: 1px solid #dbe5f5; border-radius: 16px;
+  transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.sr-home .sr-resources-grid .sr-resource-photo img { width: 64px; height: 64px; border-radius: 14px; flex: none; object-fit: cover; }
+.sr-home .sr-resources-grid .sr-resource-photo strong { font-family: var(--font-playfair), Georgia, serif; font-size: 17px; color: var(--st-navy-1); }
+.sr-home .sr-resources-grid .sr-resource-photo small { display: block; margin-top: 4px; font-size: 13.5px; color: #4a6288; }
+.sr-home .sr-resources-grid .sr-resource-photo:hover,
+.sr-home .sr-resources-grid .sr-resource-photo:focus-visible {
+  border-color: var(--st-gold-1); background: linear-gradient(180deg, #fffdf6 0%, #fdf1cf 100%);
+  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.5), 0 8px 18px rgba(212, 175, 55, 0.2); outline: none;
+}
+@media (prefers-reduced-motion: reduce) { .sr-home .sr-resources-grid .sr-resource-photo { transition: none; } }

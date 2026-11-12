@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cut the pieces out of the owner's design sheet (design/siamsil-design-sheet.png) into public/theme/.
+"""Cut the pieces out of the owner's design sheets (design/*.png) into public/theme/.
 
   python3 frontend/scripts/slice-design-sheet.py
 
@@ -83,4 +83,19 @@ for key, box in STATS.items():
 # Tall mountain for the foot of the rail; white mist mountains for the foot of the verse panel.
 faded((1551, 324, 1658, 485), "rail-mountain", (320, 482), fade=0.45)
 faded((1265, 354, 1531, 471), "mist-mountains", (798, 351), fade=0.5)
+# Featured Resources photos, from design/siamsil-resources-sheet.png: square, rounded, without the sheet's white frame.
+RES = Image.open(HERE / "design" / "siamsil-resources-sheet.png").convert("RGB")
+PHOTOS = {"bible": (907, 209, 1198, 438), "books": (1208, 209, 1486, 438),
+          "learn": (907, 450, 1198, 680), "culture": (1208, 450, 1486, 680)}
+for key, (x0, y0, x1, y1) in PHOTOS.items():
+    inset = 8
+    x0, y0, x1, y1 = x0 + inset, y0 + inset, x1 - inset, y1 - inset
+    side = min(x1 - x0, y1 - y0)
+    cx, cy = (x0 + x1) // 2, (y0 + y1) // 2
+    photo = RES.crop((cx - side // 2, cy - side // 2, cx - side // 2 + side, cy - side // 2 + side)).resize((240, 240), Image.LANCZOS)
+    mask = Image.new("L", (960, 960), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, 959, 959), radius=170, fill=255)
+    photo = photo.convert("RGBA")
+    photo.putalpha(mask.resize((240, 240), Image.LANCZOS))
+    photo.save(OUT / f"photo-{key}.webp", quality=90, method=6)
 print("wrote", len(list(OUT.iterdir())), "files to", OUT)
