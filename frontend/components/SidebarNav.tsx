@@ -5,12 +5,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  IconAI,
   IconAcademic,
   IconBook,
-  IconChat,
   IconCross,
+  IconHelp,
   IconHome,
+  IconInfo,
   IconLibrary,
+  IconResources,
   IconSearch,
   IconTranslate,
   IconUser,
@@ -44,9 +47,14 @@ const NAV_GROUPS: Array<{ title: string; tabs: NavTab[] }> = [
     title: "Learn",
     tabs: [
       { href: "/learning", Icon: IconAcademic, label: "Learn", short: "Learn", hint: "Grammar & phrases" },
-      { href: "/chat", Icon: IconChat, label: "Siamsil AI", short: "AI", hint: "Retrieval assistant" },
+      { href: "/chat", Icon: IconAI, label: "Siamsil AI", short: "AI", hint: "Retrieval assistant" },
     ],
   },
+];
+const ABOUT_TABS: NavTab[] = [
+  { href: "/resources", Icon: IconResources, label: "Resources", short: "Resources", hint: "Where our data comes from" },
+  { href: "/about", Icon: IconInfo, label: "About", short: "About", hint: "What Siamsil is" },
+  { href: "/help", Icon: IconHelp, label: "Help", short: "Help", hint: "Using Siamsil" },
 ];
 const PROFILE_TAB: NavTab = { href: "/profile", Icon: IconUser, label: "Profile", short: "Profile", hint: "Progress & settings" };
 
@@ -120,6 +128,11 @@ function Navigation({ pathname, onNavigate }: { pathname: string; onNavigate?: (
           ))}
         </div>
       ))}
+      <div className="side-panel-group side-panel-group-more">
+        {ABOUT_TABS.map((tab) => (
+          <NavLink key={tab.href} tab={tab} pathname={pathname} onNavigate={onNavigate} />
+        ))}
+      </div>
       <div className="side-panel-group side-panel-group-end">
         <NavLink tab={PROFILE_TAB} pathname={pathname} onNavigate={onNavigate} />
       </div>

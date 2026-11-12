@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ComponentType } from "react";
-import { IconAcademic, IconArrow, IconBook, IconChat, IconCross, IconLibrary, IconSearch, IconTranslate } from "@/components/Icons";
+import { IconAcademic, IconArrow, IconBook, IconAI, IconCross, IconLibrary, IconSearch, IconTranslate } from "@/components/Icons";
 import { getDailyVerse, getHealth, getWordOfDay } from "@/lib/api";
 import type { DictionaryEntry } from "@/lib/api";
 import { SITE_URL, websiteJsonLd } from "@/lib/site";
@@ -13,7 +13,7 @@ const FEATURES: Array<{ href: string; title: string; subtitle: string; Icon: Ico
   { href: "/bible", title: "Bible", subtitle: "Read, search and study", Icon: IconCross },
   { href: "/library", title: "Library", subtitle: "Books and cultural archives", Icon: IconLibrary },
   { href: "/learning", title: "Learn", subtitle: "Lessons and reviewed phrases", Icon: IconAcademic },
-  { href: "/chat", title: "AI Tools", subtitle: "Source-grounded language help", Icon: IconChat },
+  { href: "/chat", title: "AI Tools", subtitle: "Source-grounded language help", Icon: IconAI },
 ];
 function StatIcon({ kind }: { kind: "words" | "sentences" | "verses" | "global" }) {
   const common = { width: 40, height: 40, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.4, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
@@ -88,7 +88,7 @@ export default async function Home() {
           <div className="sr-resources-grid"><Link href="/bible" className="sr-resource"><span className="sr-resource-icon"><IconCross size={21}/></span><span><strong>Zomi Bible</strong><small>Read and study</small></span></Link>
           <Link href="/library" className="sr-resource"><span className="sr-resource-icon"><IconLibrary size={21}/></span><span><strong>Library</strong><small>Explore books and archives</small></span></Link>
           <Link href="/learning" className="sr-resource"><span className="sr-resource-icon"><IconAcademic size={21}/></span><span><strong>Learning</strong><small>Practice reviewed lessons</small></span></Link>
-          <Link href="/chat" className="sr-resource"><span className="sr-resource-icon"><IconChat size={21}/></span><span><strong>Siamsil AI</strong><small>Answers grounded in available sources</small></span></Link></div>
+          <Link href="/chat" className="sr-resource"><span className="sr-resource-icon"><IconAI size={21}/></span><span><strong>Siamsil AI</strong><small>Answers grounded in available sources</small></span></Link></div>
         </section>
       </div>
       <p className="sr-note">Siamsil identifies sources and labels unreviewed machine translations. Dictionary, verse and word-of-day data are loaded from the existing API.</p>
