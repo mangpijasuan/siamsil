@@ -3,6 +3,7 @@
 import { FormEvent, useRef, useState } from "react";
 import { askSiamsil, type AskResponse } from "@/lib/api";
 import { IconArrow, IconChat } from "@/components/Icons";
+import SpellingSuggestions from "@/components/SpellingSuggestions";
 
 type Message = {
   id: string;
@@ -138,6 +139,9 @@ export default function ChatPage() {
           <div ref={bottomRef} />
         </div>
 
+        <div style={{ padding: "0 14px 8px", background: "var(--surface)" }}>
+          <SpellingSuggestions value={input} onChange={setInput} />
+        </div>
         <form onSubmit={handleSend} style={{ borderTop: "1px solid var(--border)", background: "var(--surface)", padding: "10px 14px", display: "flex", gap: 10 }}>
           <input
             value={input}

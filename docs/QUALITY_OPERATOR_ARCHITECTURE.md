@@ -156,8 +156,8 @@ Keep **training split, product QA set, and protected final holdout** distinct. D
 6. Add a short runbook, config example with placeholder values only, and measured test results.
 
 **Milestone QO-2 — human Review Center integration**
-- Write only review *proposals* to PostgreSQL; use existing approval enums and migration conventions; export only explicitly approved human records, rights-filtered and lineage-tagged.
-- Build a reviewer UI to inspect full source/context, corrections and provenance, with audit events and editor override.
+- Write only review *proposals* to PostgreSQL; use existing approval enums and migration conventions. **All editor proposals must be finalized by a separately authorized admin** as specified in [REVIEW_CENTER_GOVERNANCE.md](REVIEW_CENTER_GOVERNANCE.md). Export only admin-finalized, appropriately reviewed human records, rights-filtered and lineage-tagged.
+- Build a reviewer/editor/admin UI to inspect authorized source context, corrections and provenance, with audit events, editor proposals, and admin approve/return/reject controls. Editors cannot finalize their own proposals.
 - For the starter sample, use the existing 800-pair offline pilot and do not import as gold automatically.
 
 **Milestone QO-3 — Chat quality and paid usage**
