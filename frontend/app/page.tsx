@@ -1,26 +1,23 @@
+import Image from "next/image";
 import Link from "next/link";
-import type { ComponentType } from "react";
-import { IconAcademic, IconArrow, IconBook, IconAI, IconCross, IconLibrary, IconSearch, IconTranslate } from "@/components/Icons";
+import { IconAcademic, IconAI, IconArrow, IconBook, IconCross, IconLibrary, IconSearch } from "@/components/Icons";
 import { getDailyVerse, getHealth, getWordOfDay } from "@/lib/api";
 import type { DictionaryEntry } from "@/lib/api";
 import { SITE_URL, websiteJsonLd } from "@/lib/site";
 import "./siamsil-home.css";
 
-type IconType = ComponentType<{ size?: number; className?: string }>;
-const FEATURES: Array<{ href: string; title: string; subtitle: string; Icon: IconType }> = [
-  { href: "/zomidictionary", title: "Dictionary", subtitle: "Look up English and Zomi words", Icon: IconBook },
-  { href: "/zomitranslate", title: "Translate", subtitle: "Find stored translations", Icon: IconTranslate },
-  { href: "/bible", title: "Bible", subtitle: "Read, search and study", Icon: IconCross },
-  { href: "/library", title: "Library", subtitle: "Books and cultural archives", Icon: IconLibrary },
-  { href: "/learning", title: "Learn", subtitle: "Lessons and reviewed phrases", Icon: IconAcademic },
-  { href: "/chat", title: "AI Tools", subtitle: "Source-grounded language help", Icon: IconAI },
+const FEATURES: Array<{ href: string; title: string; subtitle: string; tile: string }> = [
+  { href: "/zomidictionary", title: "Dictionary", subtitle: "Look up English and Zomi words", tile: "dictionary" },
+  { href: "/zomitranslate", title: "Translate", subtitle: "Find stored translations", tile: "translate" },
+  { href: "/bible", title: "Bible", subtitle: "Read, search and study", tile: "bible" },
+  { href: "/library", title: "Library", subtitle: "Books and cultural archives", tile: "library" },
+  { href: "/learning", title: "Learn", subtitle: "Lessons and reviewed phrases", tile: "learn" },
+  { href: "/chat", title: "AI Tools", subtitle: "Source-grounded language help", tile: "ai" },
 ];
 function StatIcon({ kind }: { kind: "words" | "sentences" | "verses" | "global" }) {
-  const common = { width: 40, height: 40, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.4, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
-  if (kind === "sentences") return <svg {...common}><path d="M6 3h8l4 4v14H6z" /><path d="M14 3v4h4M9 12h6M9 16h6" /></svg>;
-  if (kind === "verses") return <svg {...common}><path d="M12 4v16M8 8h8" /><rect x="4" y="3" width="16" height="18" rx="2" /></svg>;
-  if (kind === "global") return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></svg>;
-  return <svg {...common}><path d="M12 6c-2-1.4-5-1.8-8-1.2v13c3-.6 6-.2 8 1.2 2-1.4 5-1.8 8-1.2v-13c-3-.6-6-.2-8 1.2zM12 6v13" /></svg>;
+  const glyph = { words: "book", sentences: "document", global: "globe" }[kind as "words" | "sentences" | "global"];
+  if (glyph) return <span className="st-stat-glyph" style={{ ["--glyph" as string]: `url(/theme/stat-${glyph}.png)` }} aria-hidden="true" />;
+  return <svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v16M8 8h8" /><rect x="4" y="3" width="16" height="18" rx="2" /></svg>;
 }
 const STAT_KINDS: Record<string, "words" | "sentences" | "verses"> = { "Dictionary entries": "words", "Example sentences": "sentences", "Bible verses": "verses" };
 const SUGGESTIONS = ["water", "family", "thank you", "school", "love", "God"];
@@ -69,8 +66,8 @@ export default async function Home() {
     </section>
     <div className="sr-content">
       <nav className="sr-features" aria-label="Explore Siamsil">
-        {FEATURES.map(({href,title,subtitle,Icon}) => <Link className="sr-feature" href={href} key={href}>
-          <span className="sr-feature-icon"><Icon size={28}/></span>
+        {FEATURES.map(({href,title,subtitle,tile}) => <Link className="sr-feature" href={href} key={href}>
+          <Image className="sr-feature-tile" src={`/theme/tile-${tile}.png`} alt="" width={74} height={74} unoptimized />
           <span className="sr-feature-title">{title}</span>
           <span className="sr-feature-copy">{href === "/zomidictionary" && entries > 0 ? `${compact(entries)} words and growing` : subtitle}</span>
           <IconArrow className="sr-feature-arrow" size={17}/>

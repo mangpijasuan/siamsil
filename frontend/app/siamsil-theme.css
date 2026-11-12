@@ -1,12 +1,18 @@
 /* Siamsil theme — navy shell, gold accents, serif headings (the owner's design mock-up, 2026-11-12).
    Loaded after globals.css so it wins over the earlier shell rules; scoped to the shell and the home page. */
 :root {
-  --st-navy-0: #07162f;
-  --st-navy-1: #0b2246;
-  --st-navy-2: #12305a;
-  --st-gold-0: #f1d089;
-  --st-gold-1: #dcae5c;
-  --st-gold-2: #c8963f;
+  /* The palette on the owner's design sheet. */
+  --st-navy-0: #0b1f3b;   /* Navy (primary) */
+  --st-navy-1: #0b1f3b;
+  --st-navy-2: #123a6b;   /* Deep blue */
+  --st-blue: #1e4e8c;     /* Blue */
+  --st-accent: #2d6cb3;   /* Accent blue */
+  --st-gold-0: #f9d778;   /* Gold light */
+  --st-gold-1: #d4af37;   /* Gold (primary) */
+  --st-gold-2: #b8922a;
+  --st-bg: #f5f7fb;       /* Background */
+  --st-card: #e8effb;     /* Card background */
+  --st-ink: #0f172a;      /* Text / dark */
   --st-line: rgba(231, 196, 123, 0.28);
 }
 
@@ -43,7 +49,7 @@ body .shell-menu-btn:focus-visible, body .shell-user-link:focus-visible { outlin
 body .desktop-sidebar,
 body .mobile-drawer {
   background:
-    url("/siamsil-sidebar-hills.svg") bottom center / 100% auto no-repeat,
+    url("/theme/rail-mountain.webp") bottom center / 100% auto no-repeat,
     linear-gradient(180deg, var(--st-navy-1) 0%, #0a1d3d 60%, #08172f 100%);
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: none;
@@ -71,7 +77,7 @@ body .desktop-sidebar .side-panel-label,
 body .mobile-drawer .side-panel-label { font-size: 15px; font-weight: 500; color: inherit; }
 body .desktop-sidebar .side-panel-item.active,
 body .mobile-drawer .side-panel-item.active {
-  background: linear-gradient(135deg, var(--st-gold-0), var(--st-gold-1) 60%, var(--st-gold-2));
+  background: linear-gradient(135deg, var(--st-gold-0), var(--st-gold-1) 62%, var(--st-gold-2));
   color: #0b2246; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 }
 body .desktop-sidebar .side-panel-item.active .side-panel-icon,
@@ -94,7 +100,7 @@ body .mobile-drawer .side-panel-close { color: #fff; }
 body .mobile-drawer .side-panel-foot, body .desktop-sidebar .side-panel-foot { color: rgba(255, 255, 255, 0.55); }
 
 /* ── Home ───────────────────────────────────────────────── */
-.sr-home { background: #f4f6fa; padding-bottom: 36px; }
+.sr-home { background: var(--st-bg); color: var(--st-ink); padding-bottom: 36px; }
 .sr-home .sr-hero {
   margin: 0; border-radius: 0; min-height: 410px; border-bottom: 0; box-shadow: none; padding-top: 56px;
   background:
@@ -106,23 +112,18 @@ body .mobile-drawer .side-panel-foot, body .desktop-sidebar .side-panel-foot { c
 .sr-home .sr-title em { color: var(--st-gold-0); }
 .sr-home .sr-summary { font-size: 17px; line-height: 1.55; color: #dce5f3; }
 .sr-home .sr-search { max-width: 650px; padding: 7px; border-radius: 12px; }
-.sr-home .sr-search button { background: linear-gradient(135deg, var(--st-gold-0), var(--st-gold-1) 60%, var(--st-gold-2)); border-radius: 9px; padding: 0 28px; font-size: 16px; }
+.sr-home .sr-search button { background: linear-gradient(135deg, var(--st-gold-0), var(--st-gold-1) 62%, var(--st-gold-2)); border-radius: 9px; padding: 0 28px; font-size: 16px; }
 .sr-home .sr-chip { background: rgba(255, 255, 255, 0.05); }
 .sr-home .sr-content { padding-top: 14px; }
 .sr-home .sr-feature { border-radius: 14px; min-height: 126px; padding: 16px 16px 14px; flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 4px 14px; }
-.sr-home .sr-feature-icon { width: 52px; height: 52px; border-radius: 14px; }
+.sr-home .sr-feature-tile { width: 52px; height: 52px; border-radius: 14px; box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12); }
 .sr-home .sr-feature-title { font-size: 18px; align-self: center; flex: 1 1 0; min-width: 0; }
 .sr-home .sr-feature-copy { flex-basis: 100%; margin-left: 0; padding-right: 26px; }
 .sr-home .sr-feature-arrow { color: var(--st-gold-2); }
-.sr-home .sr-feature:nth-child(1) .sr-feature-icon { color: #c8872b; }
-.sr-home .sr-feature:nth-child(2) .sr-feature-icon { color: #2f73c9; }
-.sr-home .sr-feature:nth-child(3) .sr-feature-icon { color: #1f9a72; }
-.sr-home .sr-feature:nth-child(4) .sr-feature-icon { color: #6f55c9; }
-.sr-home .sr-feature:nth-child(5) .sr-feature-icon { color: #cc4a63; }
-.sr-home .sr-feature:nth-child(6) .sr-feature-icon { color: #3466c9; }
 .sr-home .sr-metrics { border-radius: 14px; padding: 14px 8px; background: linear-gradient(100deg, var(--st-navy-1), var(--st-navy-2)); }
 .sr-home .sr-metric { display: flex; align-items: center; gap: 16px; padding: 8px 26px; }
 .sr-home .sr-metric-icon { color: var(--st-gold-1); flex: none; display: grid; }
+.st-stat-glyph { width: 44px; height: 44px; display: block; background: var(--st-gold-1); -webkit-mask: var(--glyph) center / contain no-repeat; mask: var(--glyph) center / contain no-repeat; }
 .sr-home .sr-metric dd, .sr-home .sr-metric dt { margin: 0; }
 .sr-home .sr-metric strong { font-size: 26px; }
 .sr-home .sr-panel { border-radius: 14px; }
@@ -132,11 +133,11 @@ body .mobile-drawer .side-panel-foot, body .desktop-sidebar .side-panel-foot { c
 .sr-home .sr-verse-box::before { content: "\201C"; font-family: var(--font-playfair), Georgia, serif; font-size: 54px; line-height: .6; color: var(--st-gold-1); display: block; margin-bottom: 6px; }
 .sr-home .sr-verse-box::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 62px;
-  background: url("/siamsil-mist-hills.svg") bottom center / 100% 100% no-repeat; pointer-events: none;
+  background: url("/theme/mist-mountains.webp") bottom center / 100% 100% no-repeat; pointer-events: none;
 }
 .sr-home .sr-resources-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .sr-home .sr-resources-grid .sr-resource {
-  flex-direction: column; align-items: flex-start; gap: 10px; border: 1px solid #e5eaf1; border-radius: 12px; padding: 14px; background: #f8fafd;
+  flex-direction: column; align-items: flex-start; gap: 10px; border: 1px solid #dbe5f5; border-radius: 12px; padding: 14px; background: var(--st-card);
 }
 .sr-home .sr-resources-grid .sr-resource:last-child { border-bottom: 1px solid #e5eaf1; }
 .sr-home .sr-resources-grid .sr-resource-icon { width: 44px; height: 44px; background: #fff; color: #183e69; }
@@ -173,7 +174,7 @@ body .mobile-drawer .side-panel-foot, body .desktop-sidebar .side-panel-foot { c
 body .desktop-sidebar,
 body .mobile-drawer {
   background:
-    url("/siamsil-sidebar-hills.svg") bottom center / 100% auto no-repeat,
+    url("/theme/rail-mountain.webp") bottom center / 100% auto no-repeat,
     linear-gradient(180deg, #0b2246 0%, #0a1d3d 60%, #08172f 100%) !important;
   border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
@@ -207,4 +208,14 @@ body .mobile-drawer .side-panel-group-more > a:first-child { margin-top: 14px; p
 body .desktop-sidebar .side-panel-group-more > a:first-child::before,
 body .mobile-drawer .side-panel-group-more > a:first-child::before {
   content: ""; position: absolute; left: 4px; right: 4px; top: -8px; height: 1px; background: rgba(255, 255, 255, 0.14);
+}
+
+/* Glyphs cut from the sheet are masks, so one file takes any colour. */
+.st-nav-glyph { width: 26px; height: 26px; display: block; background: currentColor; -webkit-mask: var(--glyph) center / contain no-repeat; mask: var(--glyph) center / contain no-repeat; }
+body .desktop-sidebar .side-panel-icon, body .mobile-drawer .side-panel-icon { width: 26px; height: 26px; }
+/* The drawer is taller and wider than the rail: keep the peaks below the menu text. */
+body .mobile-drawer {
+  background:
+    url("/theme/rail-mountain.webp") center calc(100% + 170px) / 100% auto no-repeat,
+    linear-gradient(180deg, #0b1f3b 0%, #0a1d3d 60%, #08172f 100%) !important;
 }

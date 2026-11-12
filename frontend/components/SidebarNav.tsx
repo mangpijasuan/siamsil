@@ -22,6 +22,8 @@ import {
 type NavTab = {
   href: string;
   Icon: typeof IconHome;
+  /** The glyph cut from the design sheet (public/theme/nav-<glyph>.png). */
+  glyph: string;
   label: string;
   short: string;
   hint: string;
@@ -31,32 +33,32 @@ const NAV_GROUPS: Array<{ title: string; tabs: NavTab[] }> = [
   {
     title: "Language",
     tabs: [
-      { href: "/", Icon: IconHome, label: "Home", short: "Home", hint: "Your Zomi library" },
-      { href: "/zomidictionary", Icon: IconBook, label: "Dictionary", short: "Dictionary", hint: "Zomi–English" },
-      { href: "/zomitranslate", Icon: IconTranslate, label: "Translate", short: "Translate", hint: "Retrieve known pairs" },
+      { href: "/", Icon: IconHome, glyph: "home", label: "Home", short: "Home", hint: "Your Zomi library" },
+      { href: "/zomidictionary", Icon: IconBook, glyph: "dictionary", label: "Dictionary", short: "Dictionary", hint: "Zomi–English" },
+      { href: "/zomitranslate", Icon: IconTranslate, glyph: "translate", label: "Translate", short: "Translate", hint: "Retrieve known pairs" },
     ],
   },
   {
     title: "Read",
     tabs: [
-      { href: "/bible", Icon: IconCross, label: "Bible", short: "Bible", hint: "Laisiangtho" },
-      { href: "/library", Icon: IconLibrary, label: "Library", short: "Library", hint: "Books & archives" },
+      { href: "/bible", Icon: IconCross, glyph: "bible", label: "Bible", short: "Bible", hint: "Laisiangtho" },
+      { href: "/library", Icon: IconLibrary, glyph: "library", label: "Library", short: "Library", hint: "Books & archives" },
     ],
   },
   {
     title: "Learn",
     tabs: [
-      { href: "/learning", Icon: IconAcademic, label: "Learn", short: "Learn", hint: "Grammar & phrases" },
-      { href: "/chat", Icon: IconAI, label: "Siamsil AI", short: "AI", hint: "Retrieval assistant" },
+      { href: "/learning", Icon: IconAcademic, glyph: "learn", label: "Learn", short: "Learn", hint: "Grammar & phrases" },
+      { href: "/chat", Icon: IconAI, glyph: "ai", label: "Siamsil AI", short: "AI", hint: "Retrieval assistant" },
     ],
   },
 ];
 const ABOUT_TABS: NavTab[] = [
-  { href: "/resources", Icon: IconResources, label: "Resources", short: "Resources", hint: "Where our data comes from" },
-  { href: "/about", Icon: IconInfo, label: "About", short: "About", hint: "What Siamsil is" },
-  { href: "/help", Icon: IconHelp, label: "Help", short: "Help", hint: "Using Siamsil" },
+  { href: "/resources", Icon: IconResources, glyph: "resources", label: "Resources", short: "Resources", hint: "Where our data comes from" },
+  { href: "/about", Icon: IconInfo, glyph: "about", label: "About", short: "About", hint: "What Siamsil is" },
+  { href: "/help", Icon: IconHelp, glyph: "help", label: "Help", short: "Help", hint: "Using Siamsil" },
 ];
-const PROFILE_TAB: NavTab = { href: "/profile", Icon: IconUser, label: "Profile", short: "Profile", hint: "Progress & settings" };
+const PROFILE_TAB: NavTab = { href: "/profile", Icon: IconUser, glyph: "profile", label: "Profile", short: "Profile", hint: "Progress & settings" };
 
 const SIDEBAR_KEY = "siamsil-sidebar-collapsed";
 const DESKTOP_QUERY = "(min-width: 1024px)";
@@ -98,7 +100,6 @@ function isActive(pathname: string, href: string) {
 
 function NavLink({ tab, pathname, onNavigate }: { tab: NavTab; pathname: string; onNavigate?: () => void }) {
   const active = isActive(pathname, tab.href);
-  const { Icon } = tab;
   return (
     <Link
       href={tab.href}
@@ -107,7 +108,7 @@ function NavLink({ tab, pathname, onNavigate }: { tab: NavTab; pathname: string;
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
     >
-      <span className="side-panel-icon"><Icon size={19} filled={active} /></span>
+      <span className="side-panel-icon"><span className="st-nav-glyph" style={{ ["--glyph" as string]: `url(/theme/nav-${tab.glyph}.png)` }} aria-hidden="true" /></span>
       <span className="side-panel-copy">
         <span className="side-panel-label">{tab.label}</span>
         <span className="side-panel-hint">{tab.hint}</span>
