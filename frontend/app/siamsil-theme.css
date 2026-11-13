@@ -51,7 +51,7 @@ body .desktop-sidebar,
 body .mobile-drawer {
   background:
     linear-gradient(180deg, rgba(11, 31, 59, 0.80) 0%, rgba(11, 31, 59, 0.48) 42%, rgba(11, 31, 59, 0.2) 100%),
-    url("/theme/rail-zongam.webp") 85% 100% / cover no-repeat,
+    url("/theme/rail-zogam.webp") 85% 100% / cover no-repeat,
     linear-gradient(180deg, var(--st-navy-1) 0%, #0a1d3d 60%, #08172f 100%);
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: none;
@@ -179,7 +179,7 @@ body .desktop-sidebar,
 body .mobile-drawer {
   background:
     linear-gradient(180deg, rgba(11, 31, 59, 0.80) 0%, rgba(11, 31, 59, 0.48) 42%, rgba(11, 31, 59, 0.2) 100%),
-    url("/theme/rail-zongam.webp") 85% 100% / cover no-repeat,
+    url("/theme/rail-zogam.webp") 85% 100% / cover no-repeat,
     linear-gradient(180deg, #0b2246 0%, #0a1d3d 60%, #08172f 100%) !important;
   border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
 }

@@ -97,6 +97,6 @@ for key, (x0, y0, x1, y1) in PHOTOS.items():
     photo = photo.convert("RGBA")
     photo.putalpha(mask.resize((240, 240), Image.LANCZOS))
     photo.save(OUT / f"photo-{key}.webp", quality=90, method=6)
-# The Zongam mountain photo (design/zongam-mountain.jpg) is the background of the side panel.
-Image.open(HERE / "design" / "zongam-mountain.jpg").convert("RGB").save(OUT / "rail-zongam.webp", quality=82, method=6)
+# The Zogam (the land of Zomi) mountain photo, design/zogam-mountain.jpg, is the background of the side panel.
+Image.open(HERE / "design" / "zogam-mountain.jpg").convert("RGB").save(OUT / "rail-zogam.webp", quality=82, method=6)
 print("wrote", len(list(OUT.iterdir())), "files to", OUT)
