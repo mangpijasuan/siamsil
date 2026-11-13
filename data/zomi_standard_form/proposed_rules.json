@@ -2,16 +2,7 @@
   "_comment": "Spelling rules waiting for adoption. Empty now: P-001..P-011 were adopted by the creator on 2026-11-13 (see adopted_by_creator, and standard.json). New asks are listed here until adopted. NOT applied while here.",
   "version": "0.1.0",
   "proposals": [],
-  "suggested_not_decided": [
-    {
-      "standard": "nate",
-      "variants": [
-        "thilte"
-      ],
-      "note": "Follows from P-002 ('thil' + 'te' becomes 'na' + 'te'), and 'nate' is the Tedim Bible's word for 'things'. The owner has not decided it: 'thilte' appears 1,623 times in the corpus and in the Hakha Bible only.",
-      "needs": "the project owner's decision, then a second reviewer"
-    }
-  ],
+  "suggested_not_decided": [],
   "not_one_to_one": {
     "note": "Words the owner corrected differently in each sentence. No single replacement fits, so these are corrected sentence by sentence.",
     "words": [
@@ -426,6 +417,23 @@
             "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
           }
         ]
+      }
+    ],
+    "later": [
+      {
+        "adopted_as": "ZS-012",
+        "from": [
+          {
+            "standard": "nate",
+            "variants": [
+              "thilte"
+            ],
+            "note": "Follows from P-002 ('thil' + 'te' becomes 'na' + 'te'), and 'nate' is the Tedim Bible's word for 'things'. The owner has not decided it: 'thilte' appears 1,623 times in the corpus and in the Hakha Bible only.",
+            "needs": "the project owner's decision, then a second reviewer"
+          }
+        ],
+        "decided_on": "2026-11-13",
+        "owner_words": "thilte --> nate will be in the rule too"
       }
     ]
   }

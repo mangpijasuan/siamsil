@@ -1,6 +1,6 @@
 {
   "_comment": "The adopted Siamsil Zomi Standard Form (docs/ZOMI_STANDARD_FORM.md, steps 4-5). Rules belong here when two different reviewer codes are in approved_by, or when the creator adopted them alone under the governance block (adopted_by 'creator'). Each needs the date and the reason. AI suggestions in rule_checks.json and the review workbook are never copied here unreviewed. Applied by ml_pipeline/scripts/zolai_standard.py, which keeps every original text and stores the standard form beside it. mode 'replace' writes the standard spelling; mode 'flag' only lists the match, for spellings whose meaning depends on context. Bump the version when rules change: minor for new rules, major for a changed or removed rule.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "rules": [
     {
       "id": "ZS-001",
@@ -168,6 +168,21 @@
       "source_proposal": "P-011",
       "owner_words": "Yes, I want a rule for that.",
       "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 31 and 32 (the machine wrote ke', the owner keia), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections))."
+    },
+    {
+      "id": "ZS-012",
+      "standard": "nate",
+      "variants": [
+        "thilte"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-13",
+      "source_proposal": "suggested thilte -> nate",
+      "owner_words": "thilte --> nate will be in the rule too",
+      "reason": "Follows ZS-002 (thil -> na): the Tedim Bibles' word for 'things' is nate (na + the plural te). Adopted by the creator alone."
     }
   ],
   "governance": {

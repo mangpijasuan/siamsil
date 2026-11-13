@@ -35,17 +35,18 @@ class CreatorAdoptedRulesTests(unittest.TestCase):
 
     def test_the_eleven_rules_are_adopted_by_the_creator_and_say_so(self) -> None:
         standard = zs.load()
-        self.assertEqual(standard.version, "0.1.0")
-        self.assertEqual([r.id for r in standard.rules], [f"ZS-{n:03d}" for n in range(1, 12)])
+        self.assertEqual(standard.version, "0.2.0")
+        self.assertEqual([r.id for r in standard.rules], [f"ZS-{n:03d}" for n in range(1, 13)])
         self.assertTrue(all(r.adopted_by == "creator" and r.approved_by == () for r in standard.rules))
         got = {r.id: (list(r.variants), r.standard) for r in standard.rules}
         self.assertEqual(got["ZS-001"], (["uhi", "uhhi"], "uh hi"))
         self.assertEqual(got["ZS-002"], (["thil"], "na"))
         self.assertEqual(got["ZS-003"], (["uhiam", "uhhiam"], "uh hiam"))
         self.assertEqual(got["ZS-011"], (["ke'"], "keia"))
+        self.assertEqual(got["ZS-012"], (["thilte"], "nate"))
         data = json.loads(zs.DEFAULT_STANDARD.read_text(encoding="utf-8"))
         self.assertTrue(data["governance"]["creator_may_adopt_alone"])
-        self.assertEqual({r["source_proposal"] for r in data["rules"]}, {f"P-{n:03d}" for n in range(1, 12)})
+        self.assertEqual({r["source_proposal"] for r in data["rules"]} - {"suggested thilte -> nate"}, {f"P-{n:03d}" for n in range(1, 12)})
 
     def test_the_standard_is_applied_and_the_original_kept(self) -> None:
         standard = zs.load()
@@ -61,10 +62,8 @@ class CreatorAdoptedRulesTests(unittest.TestCase):
         records = data["adopted_by_creator"]["records"]
         self.assertEqual([p["id"] for p in records], [f"P-{n:03d}" for n in range(1, 12)])
         self.assertEqual(records[0]["owner_example"]["zomi"], "Amaute pai ding uh hi.")
-        suggested = data["suggested_not_decided"]
-        self.assertEqual([(s["standard"], s["variants"]) for s in suggested], [("nate", ["thilte"])])
-        self.assertTrue(all("owner's decision" in s["needs"] for s in suggested))  # thilte->nate is not decided
-        self.assertEqual(zs.standardize("ZOMI thilte ZOMI", zs.load()).text, "ZOMI thilte ZOMI")
+        self.assertEqual(data["suggested_not_decided"], [])  # thilte -> nate was adopted as ZS-012
+        self.assertEqual(zs.standardize("ZOMI thilte ZOMI", zs.load()).text, "ZOMI nate ZOMI")
         accepted = {w["word"]: w for w in data["accepted_in_owner_corrections"]["words"]}
         self.assertEqual(list(accepted), ["minit", "me"])
         self.assertEqual([w["word"] for w in data["not_one_to_one"]["words"]], ["chi", "ti", "tih", "poimawh", "tlawm", "sami", "lungleng", "thit", "tengteng", "hmel"])
