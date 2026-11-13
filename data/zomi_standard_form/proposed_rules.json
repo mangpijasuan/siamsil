@@ -110,6 +110,86 @@
       ],
       "note": "Follows from P-002 ('thil' + 'te' becomes 'na' + 'te'), and 'nate' is the Tedim Bible's word for 'things'. The owner has not decided it: 'thilte' appears 1,623 times in the corpus and in the Hakha Bible only.",
       "needs": "the project owner's decision, then a second reviewer"
+    },
+    {
+      "standard": "cih",
+      "variants": [
+        "chih"
+      ],
+      "corpus_pairs": 4595,
+      "seen_in": "corrections 1 and 2 (the machine wrote chih, the owner cih), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
+      "note": "The owner corrected these sentences this way but has not called it a rule.",
+      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
+    },
+    {
+      "standard": "haksa",
+      "variants": [
+        "harsa"
+      ],
+      "corpus_pairs": 418,
+      "seen_in": "corrections 19 and 20 (harsa became haksa, and haksatna), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
+      "note": "The owner corrected these sentences this way but has not called it a rule. Correction 20 also rewrote the sentence.",
+      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
+    },
+    {
+      "standard": "pen",
+      "variants": [
+        "cu"
+      ],
+      "corpus_pairs": 772,
+      "seen_in": "corrections 5 and 6 (cu after the subject became pen), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
+      "note": "The owner corrected these sentences this way but has not called it a rule. 'cu' is very common in the Falam and Hakha Bibles (25,608 and 30,966 times), so it may have other uses in Zomi text.",
+      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
+    },
+    {
+      "standard": "ziakai",
+      "variants": [
+        "tlai"
+      ],
+      "corpus_pairs": 470,
+      "seen_in": "corrections 17 and 18 (both English sentences say 'late'), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
+      "note": "The owner corrected these sentences this way but has not called it a rule. 'tlai' may have other meanings.",
+      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
+    },
+    {
+      "standard": "zingsang",
+      "variants": [
+        "zinglam"
+      ],
+      "corpus_pairs": 864,
+      "seen_in": "correction 13 (English: this morning), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
+      "note": "The owner corrected these sentences this way but has not called it a rule. Correction 14 was a different mistake, so only one case is clear.",
+      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
     }
-  ]
+  ],
+  "not_one_to_one": {
+    "note": "Words the owner corrected differently in each sentence. No single replacement fits, so these are corrected sentence by sentence.",
+    "words": [
+      {
+        "word": "chi",
+        "corpus_pairs": 6407,
+        "corrections": "3 (rewritten) and 4 (cih / cikhum)"
+      },
+      {
+        "word": "ti",
+        "corpus_pairs": 853,
+        "corrections": "7 (ci) and 8 (cih)"
+      },
+      {
+        "word": "tih",
+        "corpus_pairs": 1107,
+        "corrections": "15 and 16 (both rewritten)"
+      },
+      {
+        "word": "poimawh",
+        "corpus_pairs": 1248,
+        "corrections": "9 (thupi) and 10 (kisam): different words by meaning"
+      },
+      {
+        "word": "tlawm",
+        "corpus_pairs": 944,
+        "corrections": "11 (tawmmanzaw) and 12 (bek)"
+      }
+    ]
+  }
 }

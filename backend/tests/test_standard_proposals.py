@@ -59,7 +59,10 @@ class RealProposalsTests(unittest.TestCase):
         data = json.loads(zs.DEFAULT_PROPOSALS.read_text(encoding="utf-8"))
         self.assertEqual([p["id"] for p in data["proposals"]], ["P-001", "P-002", "P-003"])
         suggested = data["suggested_not_decided"]
-        self.assertEqual([(s["standard"], s["variants"]) for s in suggested], [("nate", ["thilte"])])
+        self.assertEqual([(s["standard"], s["variants"]) for s in suggested],
+                         [("nate", ["thilte"]), ("cih", ["chih"]), ("haksa", ["harsa"]), ("pen", ["cu"]),
+                          ("ziakai", ["tlai"]), ("zingsang", ["zinglam"])])
+        self.assertEqual([w["word"] for w in data["not_one_to_one"]["words"]], ["chi", "ti", "tih", "poimawh", "tlawm"])
         self.assertTrue(all("not decided" in s["note"] for s in suggested))
 
 
