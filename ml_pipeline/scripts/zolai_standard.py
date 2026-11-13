@@ -66,6 +66,7 @@ class Rule:
     approved_by: tuple[str, ...]
     approved_on: str
     reason: str
+    adopted_by: str = "reviewers"  # "creator" only under the governance decision in standard.json
 
 
 @dataclass
@@ -115,6 +116,10 @@ def parse(data: dict, check_ids: set[str] | None = None) -> Standard:
     raw_rules = data.get("rules")
     if not isinstance(raw_rules, list):
         raise StandardError("rules must be a list")
+    governance = data.get("governance")
+    creator_alone = (isinstance(governance, dict) and governance.get("creator_may_adopt_alone") is True
+                     and all(isinstance(governance.get(k), str) and governance[k].strip()
+                             for k in ("decided_by", "decided_on", "owner_words")))
 
     rules: list[Rule] = []
     seen_ids: set[str] = set()
@@ -144,7 +149,18 @@ def parse(data: dict, check_ids: set[str] | None = None) -> Standard:
         if mode not in MODES:
             problems.append(f"{where}: mode must be one of {', '.join(MODES)}")
         approved_by = raw.get("approved_by")
-        if (not isinstance(approved_by, list) or not all(isinstance(c, str) and REVIEWER.match(c) for c in approved_by)
+        adopted_by = raw.get("adopted_by", "reviewers")
+        if adopted_by == "creator":
+            # One person adopts the rule, and only because the file records that the owner decided this is allowed.
+            if not creator_alone:
+                problems.append(f"{where}: adopted_by creator needs a governance block recording the owner's decision")
+            if approved_by:
+                problems.append(f"{where}: a rule adopted by the creator has no reviewer codes in approved_by")
+            approved_by = []
+        elif adopted_by != "reviewers":
+            problems.append(f"{where}: adopted_by must be reviewers or creator")
+            approved_by = []
+        elif (not isinstance(approved_by, list) or not all(isinstance(c, str) and REVIEWER.match(c) for c in approved_by)
                 or len(set(approved_by)) < 2):
             problems.append(f"{where}: needs two different reviewer codes (like R01, E01) in approved_by")
             approved_by = []
@@ -160,6 +176,7 @@ def parse(data: dict, check_ids: set[str] | None = None) -> Standard:
         rules.append(Rule(
             id=str(rule_id), standard=standard, variants=tuple(variants), mode=str(mode), check=check,
             approved_by=tuple(approved_by), approved_on=str(approved_on), reason=str(reason),
+            adopted_by=str(adopted_by),
         ))
 
     owner: dict[str, str] = {}

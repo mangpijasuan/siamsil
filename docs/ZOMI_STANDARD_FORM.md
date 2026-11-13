@@ -1,7 +1,7 @@
 # Siamsil Zomi Standard Form
 
-Updated: 2026-10-27
-Status: **evidence and suggestions** (steps 1–3); the tool that applies adopted rules (step 5) is built. No spelling rule has been adopted. The project owner has asked for eleven (see [Proposed rules](#proposed-rules-waiting-for-a-second-reviewer)); each waits for a second reviewer.
+Updated: 2026-11-13
+Status: **evidence and suggestions** (steps 1–3); the tool that applies adopted rules (step 5) is built. Version 0.1.0 holds eleven rules (ZS-001 to ZS-011) **adopted by the creator alone** on 2026-11-13 (see [Rules adopted by the creator](#rules-adopted-by-the-creator-alone)). No rule has been confirmed by two reviewers yet.
 
 Siamsil's dictionary, Translate, and Siamsil AI need one consistent way to write Zomi (Zolai), so that spellings match, search finds every form, and models learn one form. Zomi writers do not all spell alike: for example, the *Zolai Standard Format* writes `uhhi` where ZCLS's guide and the Bibles write `uh hi`. Siamsil does not choose between them on its own. It gathers the evidence, Zomi language reviewers decide, and Siamsil applies their decisions.
 
@@ -74,31 +74,39 @@ python3 ml_pipeline/scripts/zolai_standard.py variants
 
 Bump the version when rules change: minor for added rules, major for a changed or removed rule. The language database, dictionary search, and dataset exports should record the standard version they used. Wiring them to this tool is the next step, once the first rules are adopted.
 
-## Proposed rules waiting for a second reviewer
+## Rules adopted by the creator alone
 
-A rule is adopted only when two reviewers agree. When the project owner asks for a spelling, it is recorded in `data/zomi_standard_form/proposed_rules.json` as a **proposal**, with the owner's words and the evidence. A proposal is not a rule: `apply`, the language build and the SZSF converter do not read it, so no master file carries it. `zolai_standard.py preview --db DATABASE` shows what the proposals would change in the corpus, with before and after examples, and writes nothing. Proposals that already list two reviewers, or clash with an adopted rule, are refused.
+**Decision (project owner, 2026-11-13).** The owner is the original creator of the Siamsil Zomi Standard Form and said: "use the rule, because this is my reviewed and my ownership even though it changed many and it will get better quality sentence paired." Until then every rule needed two reviewer codes. `standard.json` now carries a `governance` block recording this decision, and a rule may use `adopted_by: "creator"` (no reviewer codes) only while that block is there. The tool refuses a creator rule without it, and refuses one that also lists reviewer codes.
 
-| Proposal | Owner's words (2026-11-13) | Change | Evidence |
+What this does **not** do:
+
+- It is not a Language Review Team approval. Rules show `adopted_by: "creator"`, so anyone reading `standard.json` sees which rules one person adopted. A second reviewer can still confirm a rule later; the owner can change or remove a rule by the same kind of decision.
+- It does not review sentences. A pair changed by a rule keeps its own review status (SOP-07). The original Zomi stays in `zomi`; the standard form goes in `zomi_standard`, with `zomi_standard_rules` naming the rules.
+- It does not make the corpus cleared for training (`data/rights.json` is unchanged).
+
+The eleven rules came from these proposals (kept in full in `proposed_rules.json` under `adopted_by_creator`). `zolai_standard.py preview` still works on any new proposals.
+
+| Rule (was) | Owner's words (2026-11-13) | Change | Evidence |
 | --- | --- | --- | --- |
-| P-001 | "I want to use as the Bible uh hi"; reason: "uh is plural and hi is verb, for example: they will go. Amaute pai ding uh hi." | `uhi`, `uhhi` → `uh hi` | The Tedim Bibles write `uh hi` as two words 21,496 times and never `uhi` or `uhhi`. The corpus already writes `uh hi` 142,392 times, against about 32,500 for `uhi` and 473 for `uhhi` (the *Zolai Standard Format* spelling). |
-| P-002 | "if you see "thil", replace with "na", etc" | `thil` → `na` | `thil` is used about 14,000 times in the corpus, never in the Tedim Bibles, but in the Falam and Hakha Bibles. Aligned with the English Bible, the Tedim word most tied to "thing(s)" is `nate`, which is `na` with the plural `te`. |
-| P-003 | "yes, that is the correct one" (to the question whether `uh hiam` should be a second proposal) | `uhiam`, `uhhiam` → `uh hiam` | The question form, by the same reasoning as P-001. `uh hiam` as two words is already the main form in the corpus (10,911 times), against `uhiam` 947 and `uhhiam` 9. |
-| P-004 | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `chih` → `cih` | 4,753 words in 4,594 pairs (corrections 1, 2); counted by `preview` |
-| P-005 | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `harsa` → `haksa` | 415 words in 414 pairs (corrections 19, 20); counted by `preview` |
-| P-006 | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `cu` → `pen` | 814 words in 774 pairs (corrections 5, 6); counted by `preview` |
-| P-007 | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `tlai` → `ziakai` | 463 words in 462 pairs (corrections 17, 18); counted by `preview` |
-| P-008 | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `zinglam` → `zingsang` | 858 words in 852 pairs (correction 13); counted by `preview` |
-| P-009 | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `ii` → `i` | 1,042 words in 1,017 pairs (corrections 22, 26); counted by `preview` |
-| P-010 | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `ong` → `hong` | 829 words in 795 pairs (corrections 27, 28); counted by `preview` |
-| P-011 | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `ke'` → `keia` | 375 words in 374 pairs (corrections 31, 32); counted by `preview` |
+| ZS-001 (P-001) | "I want to use as the Bible uh hi"; reason: "uh is plural and hi is verb, for example: they will go. Amaute pai ding uh hi." | `uhi`, `uhhi` → `uh hi` | The Tedim Bibles write `uh hi` as two words 21,496 times and never `uhi` or `uhhi`. The corpus already writes `uh hi` 142,392 times, against about 32,500 for `uhi` and 473 for `uhhi` (the *Zolai Standard Format* spelling). |
+| ZS-002 (P-002) | "if you see "thil", replace with "na", etc" | `thil` → `na` | `thil` is used about 14,000 times in the corpus, never in the Tedim Bibles, but in the Falam and Hakha Bibles. Aligned with the English Bible, the Tedim word most tied to "thing(s)" is `nate`, which is `na` with the plural `te`. |
+| ZS-003 (P-003) | "yes, that is the correct one" (to the question whether `uh hiam` should be a second proposal) | `uhiam`, `uhhiam` → `uh hiam` | The question form, by the same reasoning as P-001. `uh hiam` as two words is already the main form in the corpus (10,911 times), against `uhiam` 947 and `uhhiam` 9. |
+| ZS-004 (P-004) | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `chih` → `cih` | 4,753 words in 4,594 pairs (corrections 1, 2); counted by `preview` |
+| ZS-005 (P-005) | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `harsa` → `haksa` | 415 words in 414 pairs (corrections 19, 20); counted by `preview` |
+| ZS-006 (P-006) | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `cu` → `pen` | 814 words in 774 pairs (corrections 5, 6); counted by `preview` |
+| ZS-007 (P-007) | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `tlai` → `ziakai` | 463 words in 462 pairs (corrections 17, 18); counted by `preview` |
+| ZS-008 (P-008) | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `zinglam` → `zingsang` | 858 words in 852 pairs (correction 13); counted by `preview` |
+| ZS-009 (P-009) | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `ii` → `i` | 1,042 words in 1,017 pairs (corrections 22, 26); counted by `preview` |
+| ZS-010 (P-010) | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `ong` → `hong` | 829 words in 795 pairs (corrections 27, 28); counted by `preview` |
+| ZS-011 (P-011) | "Yes, I want a rule for that." (the patterns in the owner's own corrections) | `ke'` → `keia` | 375 words in 374 pairs (corrections 31, 32); counted by `preview` |
 
-- **Caution for P-002.** `na` is also a very common word with other meanings in the Tedim Bibles, so a Zomi reviewer should check sentences in context. A reviewer may adopt it first as mode `flag`, which lists each match and changes nothing.
-- **Why P-001.** The owner's reason: `uh` is the plural and `hi` is the verb, as in *Amaute pai ding uh hi* ("They will go"). The two-word form is already the main spelling in the corpus, so this rule mostly tidies the joined forms.
-- **Marked as a Zomi speaker review.** The owner is a Zomi speaker, and each proposal records the owner's decision as a human review (`reviews`: reviewer, kind "Zomi speaker review", date). That is one reviewer. A rule needs two different reviewers, each with a roster code, so it stays a proposal until a second one confirms, and the owner's own roster code is added when the roster exists. The mark belongs to the **rule decision**, not to the sentences it would change: a spelling rule is not a review of a sentence, so the pairs a rule touches keep their own review status (`UNREVIEWED` unless reviewers and a lead editor approved that pair, SOP-07). Once a rule is adopted, an SZSF record shows `zomi_standard_rules: ["ZS-nnn"]`, and the rule in `standard.json` names the two reviewers who approved it.
+- **Caution for ZS-002.** `na` is also a very common word with other meanings in the Tedim Bibles, so a Zomi reviewer should check sentences in context. A reviewer may adopt it first as mode `flag`, which lists each match and changes nothing.
+- **Why ZS-001.** The owner's reason: `uh` is the plural and `hi` is the verb, as in *Amaute pai ding uh hi* ("They will go"). The two-word form is already the main spelling in the corpus, so this rule mostly tidies the joined forms.
+- **Marked as a Zomi speaker review.** The owner is a Zomi speaker, and each proposal records the owner's decision as a human review (`reviews`: reviewer, kind "Zomi speaker review", date). That is one reviewer, and the owner then adopted the rule as its creator. The mark belongs to the **rule decision**, not to the sentences it would change: a spelling rule is not a review of a sentence, so the pairs a rule touches keep their own review status (`UNREVIEWED` unless reviewers and a lead editor approved that pair, SOP-07). An SZSF record shows `zomi_standard_rules: ["ZS-nnn"]`, and the rule in `standard.json` says who adopted it.
 - **From the owner's corrections.** The owner corrected 40 corpus sentences by hand (2026-11-13, batches 1 and 2, kept in `siamsil-data`, `reviews/owner-corrections/`). Where both corrections of a word agree, the owner asked for a rule (P-004 to P-011). Words the owner corrected differently each time (`chi`, `ti`, `tih`, `poimawh`, `tlawm`, `sami`, `lungleng`, `thit`, `tengteng`, `hmel`) are listed as not one-to-one in the proposals file: they are corrected sentence by sentence. The owner **kept** `minit` and `me`, so they are accepted words, not errors, even though they are not in the Tedim Bibles or the dictionary: `minit` is "minute", borrowed from English, and may be written in English too; `me` is "vote" or "ballot", borrowed from Burmese, and "vote" or "ballot" may be used in Zomi text as well.
-- **Effect if all eleven were adopted.** 55,169 of the 1,775,043 corpus pairs (3.1%) would get a different standard form, by `zolai_standard.py preview`. The original Zomi stays as it is. `na`, `pen`, `ziakai`, `zingsang`, `i` and `hong` are short common words, so a reviewer should look at examples in context before adopting them.
+- **Effect.** 55,169 of the 1,775,043 corpus pairs (3.1%) get a different standard form, by `zolai_standard.py preview`. The original Zomi stays as it is. `na`, `pen`, `ziakai`, `zingsang`, `i` and `hong` are short common words, so a Zomi reviewer should look at examples in context; the owner's choice to adopt them alone does not remove that advice.
 - **Not decided.** `thilte` → `nate` would follow from P-002 and `nate` is the Tedim Bible's word for "things", but the owner has not decided it (`suggested_not_decided` in the file). The question form follows the same reasoning and is P-003.
-- **Adopting.** Two reviewers confirm a proposal in the review workbook. It then goes into `standard.json` with an ID (`ZS-nnn`), two reviewer codes, the date and the reason, the version goes up by a minor number, and the proposal leaves the proposals file. Only then can an SZSF record cite it in `zomi_standard_rules`.
+- **Adopting new rules.** Either two reviewers confirm a proposal in the review workbook (two reviewer codes), or the owner adopts it as creator under the governance block. It goes into `standard.json` with an ID, the date and the reason; the version goes up by a minor number; the proposal leaves the proposals file.
 - Counts in the table count words; `preview` counts matches by the tool's own rules, which skip a form joined to another word by an apostrophe or a hyphen, so the two differ slightly.
 
 ## What the evidence covers

@@ -30,60 +30,65 @@ def write(directory: Path, proposals: list[dict], name: str = "proposed.json") -
     return path
 
 
-class RealProposalsTests(unittest.TestCase):
-    def test_the_owners_two_proposals_are_recorded_and_not_adopted(self) -> None:
-        adopted = zs.load()
-        preview, records = zs.load_proposals(zs.DEFAULT_PROPOSALS, zs.DEFAULT_CHECKS, adopted)
-        self.assertEqual(sorted(records), [f"P-{n:03d}" for n in range(1, 12)])
-        one, two, three = records["P-001"], records["P-002"], records["P-003"]
-        self.assertEqual((one["standard"], one["variants"], one["mode"]), ("uh hi", ["uhi", "uhhi"], "replace"))
-        self.assertEqual((two["standard"], two["variants"], two["mode"]), ("na", ["thil"], "replace"))
-        for record in records.values():
-            self.assertEqual(record["approved_by"], [])  # a rule is adopted only by two reviewers
-            # The owner's decision is marked as a Zomi speaker review: one reviewer, no code yet, so not an adoption.
-            self.assertEqual([(r["reviewer"], r["kind"], r["code"]) for r in record["reviews"]],
-                             [("project owner", "Zomi speaker review", None)])
-            self.assertEqual(record["proposed_by"], "project owner")
-        self.assertEqual((three["standard"], three["variants"]), ("uh hiam", ["uhiam", "uhhiam"]))
-        self.assertIn("uh hi", one["owner_words"])
-        self.assertIn("plural", one["owner_reason"])  # the owner's reason: 'uh' is plural, 'hi' is the verb
-        self.assertEqual(one["owner_example"]["zomi"], "Amaute pai ding uh hi.")
-        self.assertIn("thil", two["owner_words"])
-        self.assertTrue(two["evidence"]["caution"])  # the reviewer is told 'na' has other meanings
-        # Nothing is applied: the adopted standard does not change a text that uses either spelling.
-        text = "ZOMI uhi ZOMI thil ZOMI"
-        self.assertEqual(zs.standardize(text, adopted).text, text)
-        self.assertEqual(zs.standardize(text, preview).text, "ZOMI uh hi ZOMI na ZOMI")
+class CreatorAdoptedRulesTests(unittest.TestCase):
+    """P-001..P-011 were adopted by the creator alone on 2026-11-13 (governance block in standard.json)."""
 
-    def test_the_suggestion_the_owner_has_not_decided_is_kept_apart(self) -> None:
+    def test_the_eleven_rules_are_adopted_by_the_creator_and_say_so(self) -> None:
+        standard = zs.load()
+        self.assertEqual(standard.version, "0.1.0")
+        self.assertEqual([r.id for r in standard.rules], [f"ZS-{n:03d}" for n in range(1, 12)])
+        self.assertTrue(all(r.adopted_by == "creator" and r.approved_by == () for r in standard.rules))
+        got = {r.id: (list(r.variants), r.standard) for r in standard.rules}
+        self.assertEqual(got["ZS-001"], (["uhi", "uhhi"], "uh hi"))
+        self.assertEqual(got["ZS-002"], (["thil"], "na"))
+        self.assertEqual(got["ZS-003"], (["uhiam", "uhhiam"], "uh hiam"))
+        self.assertEqual(got["ZS-011"], (["ke'"], "keia"))
+        data = json.loads(zs.DEFAULT_STANDARD.read_text(encoding="utf-8"))
+        self.assertTrue(data["governance"]["creator_may_adopt_alone"])
+        self.assertEqual({r["source_proposal"] for r in data["rules"]}, {f"P-{n:03d}" for n in range(1, 12)})
+
+    def test_the_standard_is_applied_and_the_original_kept(self) -> None:
+        standard = zs.load()
+        result = zs.standardize("ZOMI uhi ZOMI thil ZOMI chih harsa cu tlai ZOMI", standard)
+        self.assertEqual(result.text, "ZOMI uh hi ZOMI na ZOMI cih haksa pen ziakai ZOMI")
+        self.assertEqual(len(result.rules), 6)
+        # Whole words only, and the apostrophe form: nothing inside a longer word changes.
+        self.assertEqual(zs.standardize("ZOMI ke' ZOMI ke'n ZOMI cuting", standard).text, "ZOMI keia ZOMI ke'n ZOMI cuting")
+
+    def test_proposals_file_keeps_the_record_and_the_open_questions(self) -> None:
         data = json.loads(zs.DEFAULT_PROPOSALS.read_text(encoding="utf-8"))
-        self.assertEqual([p["id"] for p in data["proposals"]], [f"P-{n:03d}" for n in range(1, 12)])
+        self.assertEqual(data["proposals"], [])
+        records = data["adopted_by_creator"]["records"]
+        self.assertEqual([p["id"] for p in records], [f"P-{n:03d}" for n in range(1, 12)])
+        self.assertEqual(records[0]["owner_example"]["zomi"], "Amaute pai ding uh hi.")
         suggested = data["suggested_not_decided"]
         self.assertEqual([(s["standard"], s["variants"]) for s in suggested], [("nate", ["thilte"])])
-        self.assertTrue(all("owner's decision" in s["needs"] for s in suggested))  # none is decided or adopted
-        self.assertEqual([w["word"] for w in data["not_one_to_one"]["words"]], ["chi", "ti", "tih", "poimawh", "tlawm", "sami", "lungleng", "thit", "tengteng", "hmel"])
+        self.assertTrue(all("owner's decision" in s["needs"] for s in suggested))  # thilte->nate is not decided
+        self.assertEqual(zs.standardize("ZOMI thilte ZOMI", zs.load()).text, "ZOMI thilte ZOMI")
         accepted = {w["word"]: w for w in data["accepted_in_owner_corrections"]["words"]}
         self.assertEqual(list(accepted), ["minit", "me"])
-        self.assertEqual((accepted["minit"]["meaning"], accepted["minit"]["also_ok"]), ("minute", ["minute"]))
-        self.assertEqual((accepted["me"]["meaning"], accepted["me"]["origin"], accepted["me"]["also_ok"]),
-                         ("vote, ballot", "borrowed from Burmese", ["vote", "ballot"]))
-        self.assertTrue(all("owner's decision" in s["needs"] for s in suggested))  # none is decided or adopted
+        self.assertEqual([w["word"] for w in data["not_one_to_one"]["words"]], ["chi", "ti", "tih", "poimawh", "tlawm", "sami", "lungleng", "thit", "tengteng", "hmel"])
+        zs.load_proposals(zs.DEFAULT_PROPOSALS, zs.DEFAULT_CHECKS, zs.load())  # an empty list still loads
 
 
-class OwnersCorrectionsRulesTests(unittest.TestCase):
-    def test_the_eight_patterns_the_owner_asked_for_are_proposals(self) -> None:
-        _, records = zs.load_proposals(zs.DEFAULT_PROPOSALS, zs.DEFAULT_CHECKS, zs.load())
-        got = {r["id"]: (r["variants"], r["standard"]) for r in records.values() if r["id"] >= "P-004"}
-        self.assertEqual(got, {"P-004": (["chih"], "cih"), "P-005": (["harsa"], "haksa"), "P-006": (["cu"], "pen"),
-                               "P-007": (["tlai"], "ziakai"), "P-008": (["zinglam"], "zingsang"), "P-009": (["ii"], "i"),
-                               "P-010": (["ong"], "hong"), "P-011": (["ke'"], "keia")})
-        for name in got:
-            self.assertEqual(records[name]["owner_words"], "Yes, I want a rule for that.")
-            self.assertEqual(records[name]["approved_by"], [])
-        preview = zs.load_proposals(zs.DEFAULT_PROPOSALS, zs.DEFAULT_CHECKS, zs.load())[0]
-        # Whole words only, and the apostrophe form: nothing inside a longer word changes.
-        self.assertEqual(zs.standardize("ZOMI chih ZOMI harsa cu tlai ZOMI", preview).text, "ZOMI cih ZOMI haksa pen ziakai ZOMI")
-        self.assertEqual(zs.standardize("ZOMI ke' ZOMI ke'n ZOMI hong ZOMI cuting", preview).text, "ZOMI keia ZOMI ke'n ZOMI hong ZOMI cuting")
+class CreatorGovernanceTests(unittest.TestCase):
+    RULE = {"id": "ZS-001", "standard": "qa qo", "variants": ["qaqo"], "mode": "replace", "check": None,
+            "adopted_by": "creator", "approved_by": [], "approved_on": "2026-11-13", "reason": "test"}
+    GOVERNANCE = {"creator_may_adopt_alone": True, "decided_by": "owner", "decided_on": "2026-11-13", "owner_words": "my rule"}
+
+    def test_creator_adoption_needs_the_recorded_decision(self) -> None:
+        zs.parse({"version": "0.1.0", "governance": self.GOVERNANCE, "rules": [self.RULE]})
+        for governance in (None, {**self.GOVERNANCE, "creator_may_adopt_alone": False}, {**self.GOVERNANCE, "owner_words": ""}):
+            data = {"version": "0.1.0", "rules": [self.RULE]}
+            if governance is not None:
+                data["governance"] = governance
+            with self.assertRaises(zs.StandardError):
+                zs.parse(data)
+
+    def test_creator_rules_carry_no_reviewer_codes_and_other_values_are_refused(self) -> None:
+        for change in ({"approved_by": ["R01", "E01"]}, {"adopted_by": "anyone"}):
+            with self.assertRaises(zs.StandardError):
+                zs.parse({"version": "0.1.0", "governance": self.GOVERNANCE, "rules": [{**self.RULE, **change}]})
 
 
 class ProposalRuleTests(unittest.TestCase):

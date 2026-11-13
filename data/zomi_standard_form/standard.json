@@ -1,5 +1,180 @@
 {
-  "_comment": "The adopted Siamsil Zomi Standard Form (docs/ZOMI_STANDARD_FORM.md, steps 4-5). Only rules Zomi language reviewers adopted belong here: each needs two different reviewer codes in approved_by, the date, and the reason. AI suggestions in rule_checks.json and the review workbook are never copied here unreviewed. Applied by ml_pipeline/scripts/zolai_standard.py, which keeps every original text and stores the standard form beside it. mode 'replace' writes the standard spelling; mode 'flag' only lists the match, for spellings whose meaning depends on context. Bump the version when rules change: minor for new rules, major for a changed or removed rule.",
-  "version": "0.0.0",
-  "rules": []
+  "_comment": "The adopted Siamsil Zomi Standard Form (docs/ZOMI_STANDARD_FORM.md, steps 4-5). Rules belong here when two different reviewer codes are in approved_by, or when the creator adopted them alone under the governance block (adopted_by 'creator'). Each needs the date and the reason. AI suggestions in rule_checks.json and the review workbook are never copied here unreviewed. Applied by ml_pipeline/scripts/zolai_standard.py, which keeps every original text and stores the standard form beside it. mode 'replace' writes the standard spelling; mode 'flag' only lists the match, for spellings whose meaning depends on context. Bump the version when rules change: minor for new rules, major for a changed or removed rule.",
+  "version": "0.1.0",
+  "rules": [
+    {
+      "id": "ZS-001",
+      "standard": "uh hi",
+      "variants": [
+        "uhi",
+        "uhhi"
+      ],
+      "mode": "replace",
+      "check": "uh-hi",
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-13",
+      "source_proposal": "P-001",
+      "owner_words": "I want to use as the Bible uh hi",
+      "reason": "The project owner chose the Bibles' spelling, two words, because 'uh' marks the plural and 'hi' is the verb (owner_example). This also follows the Standard Form tie-break (common published usage first)."
+    },
+    {
+      "id": "ZS-002",
+      "standard": "na",
+      "variants": [
+        "thil"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-13",
+      "source_proposal": "P-002",
+      "owner_words": "if you see \"thil\", replace with \"na\", etc",
+      "reason": "The project owner asked for 'thil' to be written 'na'."
+    },
+    {
+      "id": "ZS-003",
+      "standard": "uh hiam",
+      "variants": [
+        "uhiam",
+        "uhhiam"
+      ],
+      "mode": "replace",
+      "check": "uh-hi",
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-13",
+      "source_proposal": "P-003",
+      "owner_words": "yes, that is the correct one",
+      "reason": "The question form of P-001: 'uh' marks the plural and 'hiam' is the question verb. The two-word form is already the main spelling in the corpus."
+    },
+    {
+      "id": "ZS-004",
+      "standard": "cih",
+      "variants": [
+        "chih"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-13",
+      "source_proposal": "P-004",
+      "owner_words": "Yes, I want a rule for that.",
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 1 and 2 (the machine wrote chih, the owner cih), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections))."
+    },
+    {
+      "id": "ZS-005",
+      "standard": "haksa",
+      "variants": [
+        "harsa"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-13",
+      "source_proposal": "P-005",
+      "owner_words": "Yes, I want a rule for that.",
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 19 and 20 (harsa became haksa, and haksatna), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections))."
+    },
+    {
+      "id": "ZS-006",
+      "standard": "pen",
+      "variants": [
+        "cu"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-13",
+      "source_proposal": "P-006",
+      "owner_words": "Yes, I want a rule for that.",
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 5 and 6 (cu after the subject became pen), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections))."
+    },
+    {
+      "id": "ZS-007",
+      "standard": "ziakai",
+      "variants": [
+        "tlai"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-13",
+      "source_proposal": "P-007",
+      "owner_words": "Yes, I want a rule for that.",
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 17 and 18 (both English sentences say 'late'), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections))."
+    },
+    {
+      "id": "ZS-008",
+      "standard": "zingsang",
+      "variants": [
+        "zinglam"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-13",
+      "source_proposal": "P-008",
+      "owner_words": "Yes, I want a rule for that.",
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (correction 13 (English: this morning), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections))."
+    },
+    {
+      "id": "ZS-009",
+      "standard": "i",
+      "variants": [
+        "ii"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-13",
+      "source_proposal": "P-009",
+      "owner_words": "Yes, I want a rule for that.",
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 22 and 26 (the machine wrote ii after a name, the owner i), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections))."
+    },
+    {
+      "id": "ZS-010",
+      "standard": "hong",
+      "variants": [
+        "ong"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-13",
+      "source_proposal": "P-010",
+      "owner_words": "Yes, I want a rule for that.",
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 27 and 28 (ong became hong), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections))."
+    },
+    {
+      "id": "ZS-011",
+      "standard": "keia",
+      "variants": [
+        "ke'"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-13",
+      "source_proposal": "P-011",
+      "owner_words": "Yes, I want a rule for that.",
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 31 and 32 (the machine wrote ke', the owner keia), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections))."
+    }
+  ],
+  "governance": {
+    "creator_may_adopt_alone": true,
+    "decided_by": "project owner (original creator of the Siamsil Zomi Standard Form)",
+    "decided_on": "2026-11-13",
+    "owner_words": "use the rule, because this is my reviewed and my ownership even though it changed many and it will get better quality sentence paired",
+    "note": "Recorded as the owner's own decision. A rule with adopted_by 'creator' was adopted by the creator alone, without two reviewer codes; it is not a Language Review Team approval and no pair is marked reviewed because of it. A rule can be changed or removed by the same owner decision."
+  }
 }
