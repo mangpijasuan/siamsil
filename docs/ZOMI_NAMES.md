@@ -1,6 +1,6 @@
 # Zomi names for training data
 
-Updated 2026-11-08 · Status: tool built, **names list incomplete and not yet confirmed**
+Updated 2026-11-13 · Status: tool built, **names list incomplete and not yet confirmed**
 
 The English side of the parallel corpus is full of English names, and the Zomi side keeps them. On 2026-11-08 the project owner
 decided that, **for training data first**, Siamsil swaps English personal names for Zomi names, in English and Zomi alike, with
