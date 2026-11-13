@@ -14,6 +14,7 @@
   --st-card: #e8effb;     /* Card background */
   --st-ink: #0f172a;      /* Text / dark */
   --st-line: rgba(231, 196, 123, 0.28);
+  --st-gutter: clamp(14px, 2.5vw, 38px); /* the body content's side padding; the header lines up with it */
 }
 
 /* ── Top bar ─────────────────────────────────────────────── */
@@ -115,7 +116,7 @@ body .mobile-drawer .side-panel-foot, body .desktop-sidebar .side-panel-foot { c
 .sr-home .sr-search { max-width: 650px; padding: 7px; border-radius: 12px; }
 .sr-home .sr-search button { background: linear-gradient(135deg, var(--st-gold-0), var(--st-gold-1) 62%, var(--st-gold-2)); border-radius: 9px; padding: 0 28px; font-size: 16px; }
 .sr-home .sr-chip { background: rgba(255, 255, 255, 0.05); }
-.sr-home .sr-content { padding-top: 14px; }
+.sr-home .sr-content { padding-top: 14px; padding-left: var(--st-gutter); padding-right: var(--st-gutter); }
 .sr-home .sr-feature { border-radius: 14px; min-height: 126px; padding: 16px 16px 14px; flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 4px 14px; }
 .sr-home .sr-feature-tile { width: 52px; height: 52px; border-radius: 14px; box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12); }
 .sr-home .sr-feature-title { font-size: 18px; align-self: center; flex: 1 1 0; min-width: 0; }
@@ -170,9 +171,9 @@ body .mobile-drawer .side-panel-foot, body .desktop-sidebar .side-panel-foot { c
   body .shell-topbar.nav-collapsed { --shell-rail-width: 84px; }
   body .desktop-sidebar { top: 80px !important; height: calc(100vh - 80px) !important; }
   body .desktop-sidebar:not(.collapsed) { width: 174px !important; min-width: 174px !important; }
-  body .shell-topbar .shell-brand-mobile { left: 88px; margin: 0; transform: translateY(-50%); }
-  body .shell-topbar-search { left: auto !important; right: 92px; transform: translateY(-50%) !important; width: 365px !important; }
-  body .shell-user-link { right: 24px; display: inline-flex; padding: 0; border: 0; background: transparent; }
+  body .shell-topbar .shell-brand-mobile { left: calc(var(--shell-rail-width) + var(--st-gutter)); margin: 0; transform: translateY(-50%); }
+  body .shell-topbar-search { left: auto !important; right: calc(var(--st-gutter) + 62px); transform: translateY(-50%) !important; width: 365px !important; }
+  body .shell-user-link { right: var(--st-gutter); display: inline-flex; padding: 0; border: 0; background: transparent; }
 }
 body .desktop-sidebar,
 body .mobile-drawer {
@@ -233,3 +234,8 @@ body .desktop-sidebar .side-panel-icon, body .mobile-drawer .side-panel-icon { w
   box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.5), 0 8px 18px rgba(212, 175, 55, 0.2); outline: none;
 }
 @media (prefers-reduced-motion: reduce) { .sr-home .sr-resources-grid .sr-resource-photo { transition: none; } }
+
+/* One left edge: the logo, the hero text and the cards all start at the body gutter. */
+@media (min-width: 768px) {
+  .sr-home .sr-hero { padding-left: var(--st-gutter); padding-right: var(--st-gutter); }
+}
