@@ -12,6 +12,9 @@ Commands:
                                         which build_language_db.py applies on every rebuild
   approval-sheet --database DB --out F  list pairs reviewers found acceptable, for the lead editor
   approve SHEET --approver E01          save the lead editor's approve/reject decisions
+  corrections-sheet --database DB --out F  reviewers' corrected Zomi, for the lead editor
+  revise SHEET --approver E01           save the lead editor's approve/decline decisions on corrections
+                                        (data/reviews/corpus-revisions.jsonl; build_language_db.py applies them)
 
 Reviewer and lead-editor codes must be in the private roster (data/reviews/roster.csv:
 columns code, role = reviewer or lead_editor, optional name). A pair is HUMAN_APPROVED
@@ -37,6 +40,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 import corpus_reviews
+import corpus_revisions
 from build_language_db import ROOT, pair_key
 
 DEFAULT_SEED = "siamsil-generator-review-v1"
@@ -48,6 +52,11 @@ APPROVAL_COLUMNS = [
 KEY_COLUMNS = ["sample_id", "parallel_id", "model", "pair_hash", "text_sha256"]
 DEFAULT_REVIEWS = ROOT / "data" / "reviews" / "corpus-reviews.jsonl"
 DEFAULT_ROSTER = ROOT / "data" / "reviews" / "roster.csv"
+DEFAULT_REVISIONS = ROOT / "data" / "reviews" / "corpus-revisions.jsonl"
+CORRECTION_COLUMNS = [
+    "item_id", "english", "zomi", "corrected_zomi", "proposed_by", "decision", "notes", "pair_hash", "text_sha256",
+]
+CORRECTION_DECISIONS = ("approve", "decline")
 SCORES = {"0", "1", "2"}
 
 
@@ -351,6 +360,126 @@ def approve(
     return records, errors
 
 
+def correction_sheet(
+    review_records: list[dict], revision_records: list[dict], con: sqlite3.Connection, min_reviewers: int = 1,
+) -> list[dict]:
+    """Rows for the lead editor: each fix a reviewer wrote for a pair that still needs correction.
+
+    A pair that is approved, rejected or already corrected is not offered; neither is a fix the lead
+    editors declined, or one that equals the Zomi the pair holds now. Reviewers who wrote the same fix
+    share one row.
+    """
+    decisions = corpus_reviews.decide(review_records, min_reviewers)
+    declined = corpus_revisions.declined(revision_records)
+    revised = corpus_revisions.latest_revisions(revision_records)
+    rows: list[dict] = []
+    for pair_hash, fixes in sorted(corpus_revisions.proposals(review_records).items()):
+        decision = decisions.get(pair_hash)
+        if decision is None or decision.status != corpus_reviews.NEEDS_CORRECTION:
+            continue
+        found = con.execute(
+            "SELECT normalized_source_text, normalized_target_text FROM parallel_sentences WHERE pair_hash = ?",
+            (pair_hash,),
+        ).fetchone()
+        if found is None:
+            continue
+        for fix, reviewers in sorted(fixes.items()):
+            if (pair_hash, fix) in declined or corpus_revisions.same_text(fix, found[1]):
+                continue
+            if pair_hash in revised and corpus_revisions.same_text(revised[pair_hash]["after"], fix):
+                continue
+            rows.append(
+                {
+                    "item_id": f"C{len(rows) + 1:05d}",
+                    "english": found[0],
+                    "zomi": found[1],
+                    "corrected_zomi": fix,
+                    "proposed_by": ", ".join(reviewers),
+                    "decision": "",
+                    "notes": "",
+                    "pair_hash": pair_hash,
+                    "text_sha256": exported_text_digest(found[0], found[1]),
+                }
+            )
+    return rows
+
+
+def revise(
+    rows: list[dict],
+    *,
+    approver: str,
+    roster: dict[str, str],
+    review_records: list[dict],
+    approved_on: str,
+    batch: str,
+    recorded_at: str = "",
+    min_reviewers: int = 1,
+) -> tuple[list[dict], list[str]]:
+    """Turn the lead editor's corrections sheet into revision and declined records. Returns (records, errors).
+
+    Blank decisions are skipped. The approver must be a roster lead editor and must not have proposed the fix.
+    The English and Zomi must be exactly what the sheet was made with, and the corrected Zomi must be one a
+    reviewer wrote: it is matched against the saved reviews, and the proposers come from them, never from the
+    sheet. The pair must still need correction, and only one fix of a pair can be approved.
+    """
+    if roster.get(approver) != "lead_editor":
+        return [], [f"{approver!r} is not listed as a lead_editor in the roster"]
+    decisions = corpus_reviews.decide(review_records, min_reviewers)
+    written = corpus_revisions.proposals(review_records)
+    records: list[dict] = []
+    errors: list[str] = []
+    approved: set[str] = set()
+    for row in rows:
+        item_id = (row.get("item_id") or "").strip() or "<blank>"
+        decision = (row.get("decision") or "").strip().lower()
+        if not decision:
+            continue
+        if decision not in CORRECTION_DECISIONS:
+            errors.append(f"{item_id}: decision must be approve or decline, not {decision!r}")
+            continue
+        pair_hash = (row.get("pair_hash") or "").strip()
+        english, zomi = row.get("english") or "", row.get("zomi") or ""
+        if exported_text_digest(english, zomi) != (row.get("text_sha256") or "").strip() or pair_key(english, zomi) != pair_hash:
+            errors.append(f"{item_id}: English or Zomi text differs from the sheet as made; decide on the original text")
+            continue
+        fix = " ".join((row.get("corrected_zomi") or "").split())
+        proposers = next((codes for text, codes in written.get(pair_hash, {}).items() if text == fix), None)
+        if not proposers:
+            errors.append(f"{item_id}: no reviewer wrote this corrected Zomi; a lead editor chooses between reviewers' fixes")
+            continue
+        current = decisions.get(pair_hash)
+        if current is None or current.status != corpus_reviews.NEEDS_CORRECTION:
+            status = current.status if current else "not reviewed"
+            errors.append(f"{item_id}: no longer needs correction (now {status}); make a new corrections sheet")
+            continue
+        base = {
+            "pair_hash": pair_hash,
+            "after": fix,
+            "approver": approver,
+            "approved_on": approved_on,
+            "recorded_at": recorded_at,
+            "batch": batch,
+            "notes": (row.get("notes") or "").strip(),
+        }
+        if decision == "decline":
+            records.append({"kind": "declined", **base})
+            continue
+        if approver in proposers:
+            errors.append(f"{item_id}: {approver} proposed this fix; a different lead editor must approve it")
+            continue
+        if pair_hash in approved:
+            errors.append(f"{item_id}: only one correction of a pair can be approved")
+            continue
+        approved.add(pair_hash)
+        record = {"kind": "revision", **base, "before": " ".join(zomi.split()), "proposed_by": list(proposers)}
+        problems = corpus_revisions.validate(record)
+        if problems:
+            errors.append(f"{item_id}: {'; '.join(problems)}")
+            continue
+        records.append(record)
+    return records, errors
+
+
 def utc_timestamp() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
@@ -477,6 +606,59 @@ def cmd_approve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_corrections_sheet(args: argparse.Namespace) -> int:
+    if not args.reviews.exists():
+        sys.exit(f"Reviews file not found: {args.reviews}")
+    try:
+        reviews = corpus_reviews.load(args.reviews)
+        revisions = corpus_revisions.load(args.revisions)
+    except ValueError as error:
+        sys.exit(str(error))
+    con = sqlite3.connect(f"file:{args.database}?mode=ro", uri=True)
+    try:
+        rows = correction_sheet(reviews, revisions, con, args.min_reviewers)
+    finally:
+        con.close()
+    write_csv(args.out, CORRECTION_COLUMNS, rows)
+    print(f"wrote {len(rows)} corrections to {args.out}")
+    print("lead editor: write approve or decline in the decision column; leave blank to decide later")
+    print("only one correction of a pair can be approved, and not one you proposed")
+    return 0
+
+
+def cmd_revise(args: argparse.Namespace) -> int:
+    existing, roster = load_inputs(args.reviews, args.roster)
+    try:
+        revisions = corpus_revisions.load(args.revisions)
+    except ValueError as error:
+        sys.exit(f"Nothing was saved: {error}")
+    records, errors = revise(
+        read_csv(args.sheet),
+        approver=args.approver,
+        roster=roster,
+        review_records=existing,
+        approved_on=args.date,
+        batch=args.batch or args.sheet.stem,
+        recorded_at=utc_timestamp(),
+        min_reviewers=args.min_reviewers,
+    )
+    problems = corpus_revisions.roster_problems(
+        [{"kind": "approval", **r} for r in records], roster)
+    for error in [*errors, *problems]:
+        print(f"error: {error}")
+    if errors or problems:
+        print("nothing saved; fix the rows above and run again")
+        return 1
+    kept = sum(1 for r in records if r["kind"] == "revision")
+    if args.dry_run:
+        print(f"would save {kept} approved and {len(records) - kept} declined corrections by {args.approver}")
+        return 0
+    corpus_revisions.append(args.revisions, records)
+    print(f"saved {kept} approved and {len(records) - kept} declined corrections by {args.approver} to {args.revisions}")
+    print(f"({len(revisions)} earlier records kept) they take effect on the next build_language_db.py run")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -521,6 +703,26 @@ def main(argv: list[str] | None = None) -> int:
     approve_parser.add_argument("--batch", help="name of this approval batch (default: the sheet's file name)")
     approve_parser.add_argument("--min-reviewers", type=int, default=1)
     approve_parser.set_defaults(run=cmd_approve)
+
+    corrections_parser = commands.add_parser("corrections-sheet", help="reviewers' corrected Zomi, for the lead editor")
+    corrections_parser.add_argument("--database", type=Path, required=True)
+    corrections_parser.add_argument("--reviews", type=Path, default=DEFAULT_REVIEWS)
+    corrections_parser.add_argument("--revisions", type=Path, default=DEFAULT_REVISIONS)
+    corrections_parser.add_argument("--out", type=Path, required=True)
+    corrections_parser.add_argument("--min-reviewers", type=int, default=1)
+    corrections_parser.set_defaults(run=cmd_corrections_sheet)
+
+    revise_parser = commands.add_parser("revise", help="save a lead editor's decisions on corrections")
+    revise_parser.add_argument("sheet", type=Path)
+    revise_parser.add_argument("--approver", required=True, help="roster code of the lead editor, e.g. E01")
+    revise_parser.add_argument("--reviews", type=Path, default=DEFAULT_REVIEWS)
+    revise_parser.add_argument("--revisions", type=Path, default=DEFAULT_REVISIONS)
+    revise_parser.add_argument("--roster", type=Path, default=DEFAULT_ROSTER)
+    revise_parser.add_argument("--date", default=date.today().isoformat())
+    revise_parser.add_argument("--batch", help="name of this corrections batch (default: the sheet's file name)")
+    revise_parser.add_argument("--min-reviewers", type=int, default=1)
+    revise_parser.add_argument("--dry-run", action="store_true", help="check the sheet and save nothing")
+    revise_parser.set_defaults(run=cmd_revise)
 
     args = parser.parse_args(argv)
     return args.run(args)
