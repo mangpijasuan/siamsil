@@ -159,10 +159,28 @@ python3 ml_pipeline/scripts/szsf_convert.py pairs \
 
 Tried on 2026-11-13 on a 913-pair sample of the local corpus: every record followed the format, and the training check refused all of them (rights `needs_review`; Gemini-made). No sample is kept.
 
+### Dictionary senses
+
+`szsf_convert.py senses` converts the live dictionary's senses from the language database:
+
+```bash
+python3 ml_pipeline/scripts/szsf_convert.py senses \
+  --db data/processed/language/siamsil_language.sqlite --reviews dictionary-reviews.jsonl \
+  --roster roster.csv --out szsf-master-v1.0.0.jsonl --rejects rejects.jsonl
+```
+
+- A sense is `kind: dictionary_sense`: `id` is its sense ID (`ZD-000123`), `english` the headword, `zomi` the Zomi equivalents exactly as the source gives them (separated by ` ; `), and `reference` the same ID. `source` is the rights key (`translation_master_50k`); its origin is `unknown`, because the source's author and method are not recorded.
+- Review results come from the saved dictionary reviews (`dictionary_reviews.py`). A reviewer's record counts only if they saw the Zomi the sense holds now; otherwise the sense is `UNREVIEWED` and the run says how many. Approved senses are `silver`, everything else `bronze`; rejected senses are kept with split `excluded`. Nothing is `gold`.
+- Senses of one headword share a split, and senses matching a human evaluation item (the private evaluation folder, or `--eval`) are left out.
+- **Left out and counted:** senses with no sense ID (the Zomi Standard Dictionary rows are `master_id:…`, so it is not converted), a source not mapped to a rights key, and senses whose Zomi was replaced by an approved correction. SZSF 1.0 has no field for a correction, so the owner decides how to carry one.
+- **Not carried:** part of speech, usage tier (A–D), domain, the English definition and Burmese. SZSF 1.0 has no fields for them; adding optional ones is a schema change for the owner to confirm.
+
+Tried on 2026-11-13 on the local dictionary: all 50,282 senses followed the format (no review records yet, so every sense is `UNREVIEWED`). No output is kept.
+
 ## Status and next steps
 
-SZSF 1.0 is the format, with a validator, a manifest writer and a converter for translation pairs. **No master file has been made yet**, and nothing in the app reads one.
+SZSF 1.0 is the format, with a validator, a manifest writer and a converter for translation pairs and dictionary senses. **No master file has been made yet**, and nothing in the app reads one.
 
 1. The project owner and the Zomi reviewers confirm the fields and the review statuses above.
-2. The converter handles translation pairs. Dictionary senses (`kind: dictionary_sense`) are not converted yet, and the converter has not been run on the full export or on the Bible and phrase sources.
+2. The converter handles translation pairs and the Translation Master's senses. It has not been run on the full export, on the Bible and phrase sources, or on real review records, and the Zomi Standard Dictionary and approved corrections are not converted (see above).
 3. The first master file is made in siamsil-data, checked, given its manifest, and used to train the first reviewed baseline, once the training rights of its sources are settled.
