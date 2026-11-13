@@ -1,6 +1,6 @@
 {
   "_comment": "The adopted Siamsil Zomi Standard Form (docs/ZOMI_STANDARD_FORM.md, steps 4-5). Rules belong here when two different reviewer codes are in approved_by, or when the creator adopted them alone under the governance block (adopted_by 'creator'). Each needs the date and the reason. AI suggestions in rule_checks.json and the review workbook are never copied here unreviewed. Applied by ml_pipeline/scripts/zolai_standard.py, which keeps every original text and stores the standard form beside it. mode 'replace' writes the standard spelling; mode 'flag' only lists the match, for spellings whose meaning depends on context. Bump the version when rules change: minor for new rules, major for a changed or removed rule.",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "rules": [
     {
       "id": "ZS-001",
@@ -24,14 +24,16 @@
       "variants": [
         "thil"
       ],
-      "mode": "replace",
+      "mode": "flag",
       "check": null,
       "adopted_by": "creator",
       "approved_by": [],
       "approved_on": "2026-11-13",
       "source_proposal": "P-002",
       "owner_words": "if you see \"thil\", replace with \"na\", etc",
-      "reason": "The project owner asked for 'thil' to be written 'na'."
+      "reason": "Changed 2026-11-13 from replace to flag. The owner: in 'something' (nakhat) and 'things' (nate) the word is written na, as ZS-012 and ZS-013 say; any other thil becomes na only by context, so it is listed for a person to decide and the text is not changed. The project owner asked for 'thil' to be written 'na'.",
+      "changed_on": "2026-11-13",
+      "owner_words_change": "the others na are based on the context"
     },
     {
       "id": "ZS-003",
@@ -173,7 +175,9 @@
       "id": "ZS-012",
       "standard": "nate",
       "variants": [
-        "thilte"
+        "thilte",
+        "thil te",
+        "na te"
       ],
       "mode": "replace",
       "check": null,
@@ -181,8 +185,25 @@
       "approved_by": [],
       "approved_on": "2026-11-13",
       "source_proposal": "suggested thilte -> nate",
-      "owner_words": "thilte --> nate will be in the rule too",
-      "reason": "Follows ZS-002 (thil -> na): the Tedim Bibles' word for 'things' is nate (na + the plural te). Adopted by the creator alone."
+      "owner_words": "na te to nate, that is a rule",
+      "reason": "Follows ZS-002 (thil -> na): the Tedim Bibles' word for 'things' is nate (na + the plural te). Adopted by the creator alone.",
+      "changed_on": "2026-11-13"
+    },
+    {
+      "id": "ZS-013",
+      "standard": "nakhat",
+      "variants": [
+        "thil khat",
+        "na khat"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-13",
+      "source_proposal": "owner, 2026-11-13",
+      "owner_words": "since something on word, I want it as nakhat",
+      "reason": "'Something' is one word, nakhat. thil khat and na khat become nakhat. Adopted by the creator alone."
     }
   ],
   "governance": {

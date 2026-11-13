@@ -35,24 +35,29 @@ class CreatorAdoptedRulesTests(unittest.TestCase):
 
     def test_the_eleven_rules_are_adopted_by_the_creator_and_say_so(self) -> None:
         standard = zs.load()
-        self.assertEqual(standard.version, "0.2.0")
-        self.assertEqual([r.id for r in standard.rules], [f"ZS-{n:03d}" for n in range(1, 13)])
+        self.assertEqual(standard.version, "1.0.0")
+        self.assertEqual([r.id for r in standard.rules], [f"ZS-{n:03d}" for n in range(1, 14)])
         self.assertTrue(all(r.adopted_by == "creator" and r.approved_by == () for r in standard.rules))
         got = {r.id: (list(r.variants), r.standard) for r in standard.rules}
         self.assertEqual(got["ZS-001"], (["uhi", "uhhi"], "uh hi"))
         self.assertEqual(got["ZS-002"], (["thil"], "na"))
+        self.assertEqual(standard.rules[1].mode, "flag")  # changed 2026-11-13: other thil depend on context
         self.assertEqual(got["ZS-003"], (["uhiam", "uhhiam"], "uh hiam"))
         self.assertEqual(got["ZS-011"], (["ke'"], "keia"))
-        self.assertEqual(got["ZS-012"], (["thilte"], "nate"))
+        self.assertEqual(got["ZS-012"], (["thilte", "thil te", "na te"], "nate"))
+        self.assertEqual(got["ZS-013"], (["thil khat", "na khat"], "nakhat"))
         data = json.loads(zs.DEFAULT_STANDARD.read_text(encoding="utf-8"))
         self.assertTrue(data["governance"]["creator_may_adopt_alone"])
-        self.assertEqual({r["source_proposal"] for r in data["rules"]} - {"suggested thilte -> nate"}, {f"P-{n:03d}" for n in range(1, 12)})
+        self.assertEqual({r["source_proposal"] for r in data["rules"]} - {"suggested thilte -> nate", "owner, 2026-11-13"}, {f"P-{n:03d}" for n in range(1, 12)})
 
     def test_the_standard_is_applied_and_the_original_kept(self) -> None:
         standard = zs.load()
         result = zs.standardize("ZOMI uhi ZOMI thil ZOMI chih harsa cu tlai ZOMI", standard)
-        self.assertEqual(result.text, "ZOMI uh hi ZOMI na ZOMI cih haksa pen ziakai ZOMI")
-        self.assertEqual(len(result.rules), 6)
+        self.assertEqual(result.text, "ZOMI uh hi ZOMI thil ZOMI cih haksa pen ziakai ZOMI")  # thil is only flagged
+        self.assertEqual([f["rule"] for f in result.flags], ["ZS-002"])
+        self.assertEqual(len(result.rules), 5)
+        # Something and things are one word each; the longer phrase wins over the flagged thil inside it.
+        self.assertEqual(zs.standardize("thil khat, na khat, thil te, na te, thilte", standard).text, "nakhat, nakhat, nate, nate, nate")
         # Whole words only, and the apostrophe form: nothing inside a longer word changes.
         self.assertEqual(zs.standardize("ZOMI ke' ZOMI ke'n ZOMI cuting", standard).text, "ZOMI keia ZOMI ke'n ZOMI cuting")
 
