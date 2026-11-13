@@ -5,7 +5,7 @@ Version 1.0 · Updated 2026-11-08
 > The Siamsil Zomi Standard Format (SZSF) is the authoritative data schema and linguistic file standard developed by Siamsil
 > for Zomi language preservation, improvement, and digital localization.
 
-The project owner chose this name and definition on 2026-11-08. SZSF is the format of Siamsil's **master file**: the one file
+The project owner, the original creator of the Siamsil Zomi Standard Form, chose this name and definition on 2026-11-08. SZSF is the format of Siamsil's **master file**: the one file
 that holds the trained and reviewed Zomi data, each record with its original text, its standard form, where it came from, who
 reviewed it, and what it may be used for. Training sets, test sets and the dictionary release are all drawn from it.
 
@@ -151,7 +151,7 @@ python3 ml_pipeline/scripts/szsf_convert.py pairs \
   --roster roster.csv --out szsf-master-v1.0.0.jsonl --rejects rejects.jsonl
 ```
 
-- `english` and `zomi` are copied as they are; `zomi_standard` comes from the adopted rules (`zolai_standard.py`), and equals `zomi` while none is adopted.
+- `english` and `zomi` are copied as they are; `zomi_standard` comes from the adopted rules (`zolai_standard.py`), and equals `zomi` while none is adopted. version 0.2.0 of the standard holds twelve rules (ZS-001 to ZS-012, for example `uh hi` as in the Bibles and `thil` → `na`) adopted by the creator alone on 2026-11-13 (`docs/ZOMI_STANDARD_FORM.md`), so `zomi_standard` carries them, with `zomi_standard_rules` naming the rules; they are not Language Review Team approvals and no pair becomes reviewed because of them.
 - A corpus pair's review result comes from the saved review records (SOP-07), found through its pair hash. An export record marked human-reviewed that has no `HUMAN_APPROVED` decision stops the run: the export and the reviews are from different runs.
 - Corpus Zomi is `machine_generated` with the generator's `model`, and `provider_derived: true` unless `--own-model` names a model Siamsil trained itself. Sources whose origin is not recorded are `unknown`. Bible and the reviewed daily-use phrases are `human_written`; their `review` stays `UNREVIEWED`, because SZSF's review block records the SOP-07 pipeline, not who wrote the text.
 - Records that fail `szsf.py` go to `--rejects` with their problems and are never corrected. The written file is checked as a whole (rights file, adopted rules, roster) before it is put in place, and an existing master file is never overwritten.

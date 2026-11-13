@@ -1,0 +1,440 @@
+{
+  "_comment": "Spelling rules waiting for adoption. Empty now: P-001..P-011 were adopted by the creator on 2026-11-13 (see adopted_by_creator, and standard.json). New asks are listed here until adopted. NOT applied while here.",
+  "version": "0.1.0",
+  "proposals": [],
+  "suggested_not_decided": [],
+  "not_one_to_one": {
+    "note": "Words the owner corrected differently in each sentence. No single replacement fits, so these are corrected sentence by sentence.",
+    "words": [
+      {
+        "word": "chi",
+        "corpus_pairs": 6407,
+        "corrections": "3 (rewritten) and 4 (cih / cikhum)"
+      },
+      {
+        "word": "ti",
+        "corpus_pairs": 853,
+        "corrections": "7 (ci) and 8 (cih)"
+      },
+      {
+        "word": "tih",
+        "corpus_pairs": 1107,
+        "corrections": "15 and 16 (both rewritten)"
+      },
+      {
+        "word": "poimawh",
+        "corpus_pairs": 1248,
+        "corrections": "9 (thupi) and 10 (kisam): different words by meaning"
+      },
+      {
+        "word": "tlawm",
+        "corpus_pairs": 944,
+        "corrections": "11 (tawmmanzaw) and 12 (bek)"
+      },
+      {
+        "word": "sami",
+        "corpus_pairs": 3023,
+        "corrections": "21 (sam: hair, sentence rewritten) and 22 (a person's name, changed to a Zomi name)"
+      },
+      {
+        "word": "lungleng",
+        "corpus_pairs": 635,
+        "corrections": "29 and 30 (both rewritten)"
+      },
+      {
+        "word": "thit",
+        "corpus_pairs": 613,
+        "corrections": "35 (rewritten) and 36 (thuk lua)"
+      },
+      {
+        "word": "tengteng",
+        "corpus_pairs": 604,
+        "corrections": "37 (Noteng/Note) and 38 (hih buainate or hih ninte, by meaning)"
+      },
+      {
+        "word": "hmel",
+        "corpus_pairs": 588,
+        "corrections": "39 and 40 (both rewritten, differently)"
+      }
+    ]
+  },
+  "accepted_in_owner_corrections": {
+    "note": "Words the owner kept in the corrected sentences. They are not in the Tedim Bibles or the dictionary, but they are not errors: they are borrowed words.",
+    "words": [
+      {
+        "word": "minit",
+        "corpus_pairs": 1369,
+        "meaning": "minute",
+        "origin": "borrowed from English",
+        "also_ok": [
+          "minute"
+        ],
+        "seen_in": "corrections 23 and 24 (Minit kept)",
+        "owner_words": "minit is minute, and you can write in English as well"
+      },
+      {
+        "word": "me",
+        "corpus_pairs": 614,
+        "meaning": "vote, ballot",
+        "origin": "borrowed from Burmese",
+        "also_ok": [
+          "vote",
+          "ballot"
+        ],
+        "seen_in": "correction 33 (Me kept)",
+        "owner_words": "Me or me is vote, and ballot also called me, but it is a borrowed word from Burmese, we can use vote or ballot in Zomi as well",
+        "note": "In correction 34 the owner wrote khutme (a different word, for 'finger' in the English) where the machine wrote khut-me."
+      }
+    ]
+  },
+  "adopted_by_creator": {
+    "decided_on": "2026-11-13",
+    "note": "Adopted as rules ZS-001..ZS-011 in standard.json by the creator alone. Full proposal records kept here for traceability.",
+    "records": [
+      {
+        "id": "P-001",
+        "standard": "uh hi",
+        "variants": [
+          "uhi",
+          "uhhi"
+        ],
+        "mode": "replace",
+        "check": "uh-hi",
+        "proposed_by": "project owner",
+        "proposed_on": "2026-11-13",
+        "owner_words": "I want to use as the Bible uh hi",
+        "approved_by": [],
+        "reason": "The project owner chose the Bibles' spelling, two words, because 'uh' marks the plural and 'hi' is the verb (owner_example). This also follows the Standard Form tie-break (common published usage first).",
+        "evidence": {
+          "corpus": "uhi: 32,520 words in 31,247 pairs; uhhi: 473 words in 464 pairs (language database v2, 2026-11-13)",
+          "tedim_bibles": "'uh hi' as two words 21,496 times; 'uhi' and 'uhhi' 0 times (TDB and TB77)",
+          "dictionary": "'uhi' and 'uhhi' 0 times in the 50K Translation Master",
+          "context": "In the corpus 'uhi' appears mostly in pairs about 'they', 'their', 'people', 'each', 'both' (plural subjects), the same use as 'uh hi'",
+          "related": "rule check uh-hi lists 'uh hi' and 'uhhi' (the Zolai Standard Format writes uhhi); 'uh hiam' / 'uhhiam' is the same question for the question form and is not part of this proposal",
+          "corpus_two_word_form": "'uh hi' as two words is already the main spelling in the corpus: 142,392 times, against 32,520 for 'uhi' and 473 for 'uhhi'"
+        },
+        "owner_reason": "uh is plural and hi is verb, for example: they will go. Amaute pai ding uh hi.",
+        "owner_example": {
+          "zomi": "Amaute pai ding uh hi.",
+          "english": "They will go.",
+          "given_by": "project owner, 2026-11-13"
+        },
+        "reviews": [
+          {
+            "reviewer": "project owner",
+            "kind": "Zomi speaker review",
+            "decided_on": "2026-11-13",
+            "code": null,
+            "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. One reviewer is not enough: a second, different reviewer must confirm before the rule is adopted."
+          }
+        ]
+      },
+      {
+        "id": "P-002",
+        "standard": "na",
+        "variants": [
+          "thil"
+        ],
+        "mode": "replace",
+        "check": null,
+        "proposed_by": "project owner",
+        "proposed_on": "2026-11-13",
+        "owner_words": "if you see \"thil\", replace with \"na\", etc",
+        "approved_by": [],
+        "reason": "The project owner asked for 'thil' to be written 'na'.",
+        "evidence": {
+          "corpus": "thil: 14,379 words in 14,140 pairs (language database v2, 2026-11-13)",
+          "tedim_bibles": "'thil' 0 times; 'na' 9,314 times (it also means other things, see caution)",
+          "other_chin_bibles": "'thil' appears in the Falam Bible (1,620) and the Hakha Bible (2,230), so it may be a word of another Chin language",
+          "context": "In the corpus 'thil' appears mostly in pairs about 'things', 'something', 'everything', 'happen'",
+          "tedim_bible_for_things": "Aligned with the English Bible, the Tedim word most tied to 'thing(s)' is 'nate' ('na' with the plural 'te'): 112 of 1,504 verses, 6.9 times the usual rate",
+          "caution": "'na' is also a very common word with other meanings in the Tedim Bibles, so the sentences need a Zomi reviewer's check in context. A reviewer may prefer mode 'flag' first, which lists each match and changes nothing."
+        },
+        "reviews": [
+          {
+            "reviewer": "project owner",
+            "kind": "Zomi speaker review",
+            "decided_on": "2026-11-13",
+            "code": null,
+            "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. One reviewer is not enough: a second, different reviewer must confirm before the rule is adopted."
+          }
+        ]
+      },
+      {
+        "id": "P-003",
+        "standard": "uh hiam",
+        "variants": [
+          "uhiam",
+          "uhhiam"
+        ],
+        "mode": "replace",
+        "check": "uh-hi",
+        "proposed_by": "project owner",
+        "proposed_on": "2026-11-13",
+        "owner_words": "yes, that is the correct one",
+        "owner_words_context": "The owner's answer to the question whether 'uh hiam' (replacing 'uhiam' and 'uhhiam') should be a second proposal, after giving the reason for P-001.",
+        "owner_reason": "uh is plural and hi is verb (P-001); the question form follows the same reasoning",
+        "approved_by": [],
+        "reason": "The question form of P-001: 'uh' marks the plural and 'hiam' is the question verb. The two-word form is already the main spelling in the corpus.",
+        "evidence": {
+          "corpus": "'uh hiam' as two words 10,911 times; 'uhiam' 947 times; 'uhhiam' 9 times (language database v2, 2026-11-13)",
+          "related": "rule check uh-hi lists 'uh hiam' and 'uhhiam' as a pair"
+        },
+        "reviews": [
+          {
+            "reviewer": "project owner",
+            "kind": "Zomi speaker review",
+            "decided_on": "2026-11-13",
+            "code": null,
+            "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. One reviewer is not enough: a second, different reviewer must confirm before the rule is adopted."
+          }
+        ]
+      },
+      {
+        "id": "P-004",
+        "standard": "cih",
+        "variants": [
+          "chih"
+        ],
+        "mode": "replace",
+        "check": null,
+        "proposed_by": "project owner",
+        "proposed_on": "2026-11-13",
+        "owner_words": "Yes, I want a rule for that.",
+        "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+        "approved_by": [],
+        "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 1 and 2 (the machine wrote chih, the owner cih), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)).",
+        "evidence": {
+          "corpus": "4,595 corpus pairs (language database v2, 2026-11-13)",
+          "seen_in": "corrections 1 and 2 (the machine wrote chih, the owner cih), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)"
+        },
+        "reviews": [
+          {
+            "reviewer": "project owner",
+            "kind": "Zomi speaker review",
+            "decided_on": "2026-11-13",
+            "code": null,
+            "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+          }
+        ]
+      },
+      {
+        "id": "P-005",
+        "standard": "haksa",
+        "variants": [
+          "harsa"
+        ],
+        "mode": "replace",
+        "check": null,
+        "proposed_by": "project owner",
+        "proposed_on": "2026-11-13",
+        "owner_words": "Yes, I want a rule for that.",
+        "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+        "approved_by": [],
+        "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 19 and 20 (harsa became haksa, and haksatna), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)).",
+        "evidence": {
+          "corpus": "418 corpus pairs (language database v2, 2026-11-13)",
+          "seen_in": "corrections 19 and 20 (harsa became haksa, and haksatna), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
+          "caution": "Correction 20 also rewrote the sentence."
+        },
+        "reviews": [
+          {
+            "reviewer": "project owner",
+            "kind": "Zomi speaker review",
+            "decided_on": "2026-11-13",
+            "code": null,
+            "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+          }
+        ]
+      },
+      {
+        "id": "P-006",
+        "standard": "pen",
+        "variants": [
+          "cu"
+        ],
+        "mode": "replace",
+        "check": null,
+        "proposed_by": "project owner",
+        "proposed_on": "2026-11-13",
+        "owner_words": "Yes, I want a rule for that.",
+        "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+        "approved_by": [],
+        "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 5 and 6 (cu after the subject became pen), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)).",
+        "evidence": {
+          "corpus": "772 corpus pairs (language database v2, 2026-11-13)",
+          "seen_in": "corrections 5 and 6 (cu after the subject became pen), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
+          "caution": "'cu' is very common in the Falam and Hakha Bibles, so it may have other uses in Zomi text; a reviewer may adopt it first as mode 'flag'."
+        },
+        "reviews": [
+          {
+            "reviewer": "project owner",
+            "kind": "Zomi speaker review",
+            "decided_on": "2026-11-13",
+            "code": null,
+            "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+          }
+        ]
+      },
+      {
+        "id": "P-007",
+        "standard": "ziakai",
+        "variants": [
+          "tlai"
+        ],
+        "mode": "replace",
+        "check": null,
+        "proposed_by": "project owner",
+        "proposed_on": "2026-11-13",
+        "owner_words": "Yes, I want a rule for that.",
+        "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+        "approved_by": [],
+        "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 17 and 18 (both English sentences say 'late'), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)).",
+        "evidence": {
+          "corpus": "470 corpus pairs (language database v2, 2026-11-13)",
+          "seen_in": "corrections 17 and 18 (both English sentences say 'late'), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
+          "caution": "'tlai' may have other meanings; a reviewer may adopt it first as mode 'flag'."
+        },
+        "reviews": [
+          {
+            "reviewer": "project owner",
+            "kind": "Zomi speaker review",
+            "decided_on": "2026-11-13",
+            "code": null,
+            "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+          }
+        ]
+      },
+      {
+        "id": "P-008",
+        "standard": "zingsang",
+        "variants": [
+          "zinglam"
+        ],
+        "mode": "replace",
+        "check": null,
+        "proposed_by": "project owner",
+        "proposed_on": "2026-11-13",
+        "owner_words": "Yes, I want a rule for that.",
+        "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+        "approved_by": [],
+        "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (correction 13 (English: this morning), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)).",
+        "evidence": {
+          "corpus": "864 corpus pairs (language database v2, 2026-11-13)",
+          "seen_in": "correction 13 (English: this morning), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
+          "caution": "Only one of the owner's corrections is a clear case (correction 13); a reviewer may adopt it first as mode 'flag'."
+        },
+        "reviews": [
+          {
+            "reviewer": "project owner",
+            "kind": "Zomi speaker review",
+            "decided_on": "2026-11-13",
+            "code": null,
+            "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+          }
+        ]
+      },
+      {
+        "id": "P-009",
+        "standard": "i",
+        "variants": [
+          "ii"
+        ],
+        "mode": "replace",
+        "check": null,
+        "proposed_by": "project owner",
+        "proposed_on": "2026-11-13",
+        "owner_words": "Yes, I want a rule for that.",
+        "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+        "approved_by": [],
+        "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 22 and 26 (the machine wrote ii after a name, the owner i), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)).",
+        "evidence": {
+          "corpus": "973 corpus pairs (language database v2, 2026-11-13)",
+          "seen_in": "corrections 22 and 26 (the machine wrote ii after a name, the owner i), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)"
+        },
+        "reviews": [
+          {
+            "reviewer": "project owner",
+            "kind": "Zomi speaker review",
+            "decided_on": "2026-11-13",
+            "code": null,
+            "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+          }
+        ]
+      },
+      {
+        "id": "P-010",
+        "standard": "hong",
+        "variants": [
+          "ong"
+        ],
+        "mode": "replace",
+        "check": null,
+        "proposed_by": "project owner",
+        "proposed_on": "2026-11-13",
+        "owner_words": "Yes, I want a rule for that.",
+        "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+        "approved_by": [],
+        "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 27 and 28 (ong became hong), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)).",
+        "evidence": {
+          "corpus": "828 corpus pairs (language database v2, 2026-11-13)",
+          "seen_in": "corrections 27 and 28 (ong became hong), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)"
+        },
+        "reviews": [
+          {
+            "reviewer": "project owner",
+            "kind": "Zomi speaker review",
+            "decided_on": "2026-11-13",
+            "code": null,
+            "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+          }
+        ]
+      },
+      {
+        "id": "P-011",
+        "standard": "keia",
+        "variants": [
+          "ke'"
+        ],
+        "mode": "replace",
+        "check": null,
+        "proposed_by": "project owner",
+        "proposed_on": "2026-11-13",
+        "owner_words": "Yes, I want a rule for that.",
+        "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+        "approved_by": [],
+        "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 31 and 32 (the machine wrote ke', the owner keia), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)).",
+        "evidence": {
+          "corpus": "617 corpus pairs (language database v2, 2026-11-13)",
+          "seen_in": "corrections 31 and 32 (the machine wrote ke', the owner keia), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)"
+        },
+        "reviews": [
+          {
+            "reviewer": "project owner",
+            "kind": "Zomi speaker review",
+            "decided_on": "2026-11-13",
+            "code": null,
+            "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+          }
+        ]
+      }
+    ],
+    "later": [
+      {
+        "adopted_as": "ZS-012",
+        "from": [
+          {
+            "standard": "nate",
+            "variants": [
+              "thilte"
+            ],
+            "note": "Follows from P-002 ('thil' + 'te' becomes 'na' + 'te'), and 'nate' is the Tedim Bible's word for 'things'. The owner has not decided it: 'thilte' appears 1,623 times in the corpus and in the Hakha Bible only.",
+            "needs": "the project owner's decision, then a second reviewer"
+          }
+        ],
+        "decided_on": "2026-11-13",
+        "owner_words": "thilte --> nate will be in the rule too"
+      }
+    ]
+  }
+}
