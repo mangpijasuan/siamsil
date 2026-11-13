@@ -42,10 +42,14 @@ class NamesTests(unittest.TestCase):
         self.assertEqual(names.pool("female"), ["Cing Khup"])
         self.assertEqual(names.pool("male"), ["Ngam Bawm"])
         self.assertEqual(names.pool("female", "child"), ["Cingno"])
-        self.assertEqual(names.pool("male", "married"), ["Pa Pa Thang"])  # recorded as the owner wrote it
+        self.assertEqual(names.pool("male", "married"), ["Pa Thang"])  # the owner corrected "Pa Pa Thang" on 2026-11-13
         self.assertEqual(names.pool("female", "older"), ["Pi Cing Khup"])
         self.assertFalse(names.confirmed)
-        self.assertTrue(json.loads(ln.DEFAULT_NAMES.read_text(encoding="utf-8"))["to_confirm"])
+        table = json.loads(ln.DEFAULT_NAMES.read_text(encoding="utf-8"))
+        self.assertTrue(table["to_confirm"])
+        # The address forms are recorded in the owner's words, and are not applied.
+        self.assertEqual(table["address_forms"]["unmarried_from_age_12"]["male"], {"marker": "Taang", "short_form": "Tg."})
+        self.assertEqual(table["address_forms"]["unmarried_from_age_12"]["position_relative_to_name"], "before")  # Lia and Tg come before the name
 
     def test_a_bad_table_is_refused(self) -> None:
         for change, message in (
