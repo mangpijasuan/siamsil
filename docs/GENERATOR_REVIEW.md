@@ -102,15 +102,21 @@ This measures the training corpus. It does not replace the human evaluation sets
 A reviewer's `correction` becomes the pair's Zomi only through a second human step, the same two-person rule as the dictionary's corrections. The approved corrections are kept in their own append-only file next to the reviews, `corpus-revisions.jsonl` (private, with the sentences' Zomi in it):
 
 ```bash
-# a lead editor gets the fixes reviewers wrote for pairs that still need correction
+# 1. the coordinator lists the fixes reviewers wrote for pairs that still need correction
 python3 ml_pipeline/scripts/review_sample.py corrections-sheet --database data/processed/language/siamsil_language.sqlite \
   --reviews ../siamsil-data/reviews/corpus-reviews.jsonl --revisions ../siamsil-data/reviews/corpus-revisions.jsonl --out corrections-1.csv
-# the lead editor writes approve or decline in the decision column (blank = later), then:
-python3 ml_pipeline/scripts/review_sample.py revise corrections-1.csv --approver E01 --dry-run   # check first
-python3 ml_pipeline/scripts/review_sample.py revise corrections-1.csv --approver E01 \
+# 2. and makes the lead editor's Excel sheet, with an approve/decline dropdown
+python3 ml_pipeline/scripts/worksheets.py corrections-sheet corrections-1.csv --out Siamsil_Corrections_E01.xlsx
+# 3. the lead editor chooses approve or decline for each row (blank = later) and returns the file; the coordinator reads it back
+python3 ml_pipeline/scripts/worksheets.py corrections-import Siamsil_Corrections_E01.xlsx --out corrections-1-decided.csv
+# 4. check, then save
+python3 ml_pipeline/scripts/review_sample.py revise corrections-1-decided.csv --approver E01 --dry-run
+python3 ml_pipeline/scripts/review_sample.py revise corrections-1-decided.csv --approver E01 \
   --reviews ../siamsil-data/reviews/corpus-reviews.jsonl --revisions ../siamsil-data/reviews/corpus-revisions.jsonl \
   --roster ../siamsil-data/reviews/roster.csv
 ```
+
+The Excel sheet has an Instructions sheet and a Corrections sheet. Only the Decision and Notes columns are for the lead editor. The last two columns (the pair's hash and a checksum of its text) are hidden: they let `revise` refuse a row whose English, Zomi or fix was edited. `corrections-import` stops on any decision that is not approve, decline or blank, and writes nothing. Text that begins with "=" is stored as text, so Excel never runs it as a formula. The sheets contain the sentences' Zomi: keep them private.
 
 - The sheet offers each fix a reviewer wrote (reviewers who wrote the same fix share a row), only for pairs that still need correction. A fix that equals the Zomi now, one already approved, and one a lead editor declined are not offered.
 - The lead editor chooses between reviewers' fixes; they do not type new Zomi. `revise` matches the corrected Zomi against the saved reviews and takes the proposers from them, never from the sheet.

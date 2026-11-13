@@ -234,6 +234,92 @@ class CommandLineTests(CorpusFixture):
         self.assertIn("wrote 0 corrections", shown.getvalue())
 
 
+class ExcelSheetTests(CorpusFixture):
+    def make_csv(self, reviews: list[dict]) -> Path:
+        path = self.dir / "reviews.jsonl"
+        path.write_text("".join(json.dumps(r) + "\n" for r in reviews), encoding="utf-8")
+        out = self.dir / "corrections.csv"
+        with contextlib.redirect_stdout(io.StringIO()):
+            review_main(["corrections-sheet", "--database", str(self.database), "--reviews", str(path),
+                         "--revisions", str(self.dir / "none.jsonl"), "--out", str(out)])
+        return out
+
+    def worksheets(self, *argv: str) -> str:
+        import worksheets  # type: ignore
+
+        shown = io.StringIO()
+        with contextlib.redirect_stdout(shown):
+            worksheets.main(list(argv))
+        return shown.getvalue()
+
+    def test_the_excel_sheet_has_a_dropdown_hidden_checks_and_safe_text(self) -> None:
+        import openpyxl
+
+        # A fix that starts with "=" must stay text: Excel would otherwise run it as a formula when the sheet is opened.
+        csv_path = self.make_csv([fix(self.hash_of(0), "ZOMI_FIXED_0"), fix(self.hash_of(1), "=ZOMI_LOOKS_LIKE_A_FORMULA")])
+        xlsx = self.dir / "Siamsil_Corrections_E01.xlsx"
+        self.assertIn("wrote corrections sheet for 2 fixes", self.worksheets("corrections-sheet", str(csv_path), "--out", str(xlsx)))
+        book = openpyxl.load_workbook(xlsx)
+        self.assertEqual(book.sheetnames, ["Instructions", "Corrections"])
+        sheet = book["Corrections"]
+        self.assertEqual([c.value for c in sheet[1]][:7], ["ID", "English", "Zomi now", "Corrected Zomi (a reviewer's fix)",
+                                                          "Proposed by", "Decision", "Notes"])
+        validation = sheet.data_validations.dataValidation[0]
+        self.assertEqual((validation.formula1, str(validation.sqref)), ('"approve,decline"', "F2:F3"))
+        self.assertTrue(sheet.column_dimensions["H"].hidden and sheet.column_dimensions["I"].hidden)
+        self.assertEqual(sheet["D3"].data_type, "s")
+        self.assertEqual(sheet["D3"].value, "=ZOMI_LOOKS_LIKE_A_FORMULA")
+
+    def test_decisions_in_excel_reach_revise_unchanged(self) -> None:
+        import openpyxl
+
+        reviews = [fix(self.hash_of(0), "ZOMI_FIXED_0"), fix(self.hash_of(1), "ZOMI_FIXED_1")]
+        csv_path = self.make_csv(reviews)
+        xlsx = self.dir / "sheet.xlsx"
+        self.worksheets("corrections-sheet", str(csv_path), "--out", str(xlsx))
+        book = openpyxl.load_workbook(xlsx)
+        book["Corrections"]["F2"], book["Corrections"]["F3"] = "Approve ", "decline"
+        book["Corrections"]["G2"] = "checked with a speaker"
+        book.save(xlsx)
+        imported = self.dir / "decided.csv"
+        self.assertIn("1 approved, 1 declined, 0 left for later", self.worksheets("corrections-import", str(xlsx), "--out", str(imported)))
+        rows = self.read(imported)
+        self.assertEqual([(r["decision"], r["notes"]) for r in rows], [("approve", "checked with a speaker"), ("decline", "")])
+        # Everything else in the rows is what review_sample.py wrote, so revise accepts them.
+        original = self.read(csv_path)
+        for row, before in zip(rows, original):
+            self.assertEqual({k: v for k, v in row.items() if k not in ("decision", "notes")},
+                             {k: v for k, v in before.items() if k not in ("decision", "notes")})
+        records, errors = revise(rows, approver="E01", roster=ROSTER, review_records=reviews, approved_on="2026-11-14", batch="b")
+        self.assertEqual(errors, [])
+        self.assertEqual([r["kind"] for r in records], ["revision", "declined"])
+        self.assertEqual(records[0]["notes"], "checked with a speaker")
+        # An edited row is still refused: the hidden checks no longer match.
+        book = openpyxl.load_workbook(xlsx)
+        book["Corrections"]["C2"], book["Corrections"]["F2"] = "ZOMI_PLACEHOLDER_0 edited", "approve"
+        book.save(xlsx)
+        self.worksheets("corrections-import", str(xlsx), "--out", str(imported))
+        _, errors = revise(self.read(imported), approver="E01", roster=ROSTER, review_records=reviews, approved_on="d", batch="b")
+        self.assertIn("differs from the sheet", "; ".join(errors))
+
+    def test_a_wrong_decision_or_file_is_refused(self) -> None:
+        import openpyxl
+
+        csv_path = self.make_csv([fix(self.hash_of(0), "ZOMI_FIXED_0")])
+        xlsx = self.dir / "sheet.xlsx"
+        self.worksheets("corrections-sheet", str(csv_path), "--out", str(xlsx))
+        book = openpyxl.load_workbook(xlsx)
+        book["Corrections"]["F2"] = "maybe"
+        book.save(xlsx)
+        with self.assertRaisesRegex(SystemExit, "approve or decline"):
+            self.worksheets("corrections-import", str(xlsx), "--out", str(self.dir / "o.csv"))
+        self.assertFalse((self.dir / "o.csv").exists())
+        other = self.dir / "other.csv"
+        other.write_text("sample_id,english,zomi\nS1,E,Z\n", encoding="utf-8")
+        with self.assertRaisesRegex(SystemExit, "not a corrections file"):
+            self.worksheets("corrections-sheet", str(other), "--out", str(self.dir / "x.xlsx"))
+
+
 class SzsfConverterTests(unittest.TestCase):
     def test_pairs_with_an_approved_correction_are_left_out_and_counted(self) -> None:
         import collections

@@ -27,6 +27,13 @@ Corpus spot-check (docs/GENERATOR_REVIEW.md):
   ratings-import SHEET.xlsx --out review.csv
       Read the "Rate" sheet into review.csv for `review_sample.py summarize` and `record`.
 
+Corpus corrections (docs/GENERATOR_REVIEW.md, Corrections to the Zomi):
+  corrections-sheet corrections.csv --out SHEET.xlsx
+      Make the lead editor's "Corrections" sheet from `review_sample.py corrections-sheet`, with an
+      approve/decline dropdown.
+  corrections-import SHEET.xlsx --out corrections.csv
+      Read the decisions back into corrections.csv for `review_sample.py revise`.
+
 Contributor IDs (T01, R01) map to names in a private roster, never in these files.
 """
 
@@ -40,7 +47,7 @@ import sys
 from pathlib import Path
 
 from eval_set import DOMAINS, validate_items
-from review_sample import REVIEW_COLUMNS
+from review_sample import CORRECTION_COLUMNS, REVIEW_COLUMNS
 
 # direction -> (source language, target language), as the sheets name them.
 LANGUAGES = {"en-zomi": ("English", "Zomi"), "zomi-en": ("Zomi", "English")}
@@ -501,6 +508,100 @@ def cmd_ratings_import(args: argparse.Namespace) -> int:
     return 0
 
 
+CORRECTION_HEADER = ["ID", "English", "Zomi now", "Corrected Zomi (a reviewer's fix)", "Proposed by", "Decision", "Notes",
+                     "Pair hash", "Text SHA-256"]
+
+
+def cmd_corrections_sheet(args: argparse.Namespace) -> int:
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.worksheet.datavalidation import DataValidation
+
+    with args.corrections.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    missing = [name for name in CORRECTION_COLUMNS if rows and name not in rows[0]]
+    if missing:
+        sys.exit(f"{args.corrections} is not a corrections file from review_sample.py (missing {', '.join(missing)})")
+    wb = Workbook()
+    intro = wb.active
+    intro.title = "Instructions"
+    intro.column_dimensions["A"].width = 110
+    for line in (
+        "Siamsil corpus corrections: choose between reviewers' fixes",
+        "",
+        "Each row has an English sentence, the Zomi it holds now, and a fix a reviewer wrote for it.",
+        "Decision: choose approve or decline from the list, or leave the row blank to decide later.",
+        "  approve  the reviewer's Zomi becomes the pair's text at the next build. The original is kept.",
+        "  decline  the fix is not used and is not offered again.",
+        "You choose between the reviewers' fixes. Do not edit the English, the Zomi or the corrected Zomi: a row that has been",
+        "changed is refused. You cannot approve a fix you proposed (see 'Proposed by'), and only one fix of a pair can be approved.",
+        "Do not use Google Translate, ChatGPT, Gemini or other machine translation. Keep this file private.",
+        "The last two columns are hidden. They check that the row is the one that was exported. Leave them as they are.",
+    ):
+        intro.append([line])
+    intro["A1"].font = Font(bold=True, size=14, color="1B2A4A")
+
+    sheet = wb.create_sheet("Corrections")
+    widths = [10, 50, 50, 50, 14, 14, 40, 44, 66]
+    sheet.append(CORRECTION_HEADER)
+    for index, width in enumerate(widths, 1):
+        cell = sheet.cell(1, index)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="1B2A4A")
+        sheet.column_dimensions[cell.column_letter].width = width
+    sheet.freeze_panes = "A2"
+    for row in rows:
+        append_text(sheet, [row["item_id"], row["english"], row["zomi"], row["corrected_zomi"], row["proposed_by"],
+                            row.get("decision") or None, row.get("notes") or "", row["pair_hash"], row["text_sha256"]])
+        for col in (2, 3, 4, 7):
+            sheet.cell(sheet.max_row, col).alignment = Alignment(wrap_text=True, vertical="top")
+        for col in (6, 7):
+            sheet.cell(sheet.max_row, col).fill = PatternFill("solid", fgColor="F8F6F0")
+    for letter in "HI":
+        sheet.column_dimensions[letter].hidden = True
+    decision = DataValidation(type="list", formula1='"approve,decline"', allow_blank=True, showErrorMessage=True,
+                              errorTitle="Decision", error="Choose approve or decline, or leave the cell blank to decide later.")
+    sheet.add_data_validation(decision)
+    if rows:
+        decision.add(f"F2:F{sheet.max_row}")
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    wb.save(args.out)
+    print(f"wrote corrections sheet for {len(rows)} fixes to {args.out}")
+    return 0
+
+
+def cmd_corrections_import(args: argparse.Namespace) -> int:
+    rows = read_sheet(args.sheet, "Corrections")
+    out_rows, counts = [], {"approve": 0, "decline": 0, "": 0}
+    problems = []
+    for number, row in enumerate(rows, start=2):
+        decision = row.get("Decision", "").lower()
+        if decision not in counts:
+            problems.append(f"row {number}: decision must be approve or decline, not {decision!r}")
+            continue
+        counts[decision] += 1
+        out_rows.append({
+            "item_id": row.get("ID", ""),
+            "english": row.get("English", ""),
+            "zomi": row.get("Zomi now", ""),
+            "corrected_zomi": row.get("Corrected Zomi (a reviewer's fix)", ""),
+            "proposed_by": row.get("Proposed by", ""),
+            "decision": decision,
+            "notes": row.get("Notes", ""),
+            "pair_hash": row.get("Pair hash", ""),
+            "text_sha256": row.get("Text SHA-256", ""),
+        })
+    if problems:
+        sys.exit("nothing written:\n  " + "\n  ".join(problems))
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    with args.out.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=CORRECTION_COLUMNS)
+        writer.writeheader()
+        writer.writerows(out_rows)
+    print(f"{counts['approve']} approved, {counts['decline']} declined, {counts['']} left for later; wrote {args.out}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -550,6 +651,16 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("sheet", type=Path)
     p.add_argument("--out", type=Path, required=True)
     p.set_defaults(func=cmd_ratings_import)
+
+    p = commands.add_parser("corrections-sheet")
+    p.add_argument("corrections", type=Path, help="the CSV from review_sample.py corrections-sheet")
+    p.add_argument("--out", type=Path, required=True)
+    p.set_defaults(func=cmd_corrections_sheet)
+
+    p = commands.add_parser("corrections-import")
+    p.add_argument("sheet", type=Path)
+    p.add_argument("--out", type=Path, required=True)
+    p.set_defaults(func=cmd_corrections_import)
 
     args = parser.parse_args(argv)
     return args.func(args)
