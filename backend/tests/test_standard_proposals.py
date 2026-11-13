@@ -64,7 +64,11 @@ class RealProposalsTests(unittest.TestCase):
                           ("ziakai", ["tlai"]), ("zingsang", ["zinglam"]), ("i", ["ii"]), ("hong", ["ong"]),
                           ("keia", ["ke'"])])
         self.assertEqual([w["word"] for w in data["not_one_to_one"]["words"]], ["chi", "ti", "tih", "poimawh", "tlawm", "sami", "lungleng", "thit", "tengteng", "hmel"])
-        self.assertEqual([w["word"] for w in data["accepted_in_owner_corrections"]["words"]], ["minit", "me"])
+        accepted = {w["word"]: w for w in data["accepted_in_owner_corrections"]["words"]}
+        self.assertEqual(list(accepted), ["minit", "me"])
+        self.assertEqual((accepted["minit"]["meaning"], accepted["minit"]["also_ok"]), ("minute", ["minute"]))
+        self.assertEqual((accepted["me"]["meaning"], accepted["me"]["origin"], accepted["me"]["also_ok"]),
+                         ("vote, ballot", "borrowed from Burmese", ["vote", "ballot"]))
         self.assertTrue(all("owner's decision" in s["needs"] for s in suggested))  # none is decided or adopted
 
 

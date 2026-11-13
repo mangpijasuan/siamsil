@@ -248,17 +248,31 @@
     ]
   },
   "accepted_in_owner_corrections": {
-    "note": "Words the owner kept in the corrected sentences. They are not in the Tedim Bibles or the dictionary, but are not errors.",
+    "note": "Words the owner kept in the corrected sentences. They are not in the Tedim Bibles or the dictionary, but they are not errors: they are borrowed words.",
     "words": [
       {
         "word": "minit",
         "corpus_pairs": 1369,
-        "seen_in": "corrections 23 and 24 (Minit kept)"
+        "meaning": "minute",
+        "origin": "borrowed from English",
+        "also_ok": [
+          "minute"
+        ],
+        "seen_in": "corrections 23 and 24 (Minit kept)",
+        "owner_words": "minit is minute, and you can write in English as well"
       },
       {
         "word": "me",
         "corpus_pairs": 614,
-        "seen_in": "corrections 33 and 34 (Me kept; khut-me became khutme)"
+        "meaning": "vote, ballot",
+        "origin": "borrowed from Burmese",
+        "also_ok": [
+          "vote",
+          "ballot"
+        ],
+        "seen_in": "correction 33 (Me kept)",
+        "owner_words": "Me or me is vote, and ballot also called me, but it is a borrowed word from Burmese, we can use vote or ballot in Zomi as well",
+        "note": "In correction 34 the owner wrote khutme (a different word, for 'finger' in the English) where the machine wrote khut-me."
       }
     ]
   }
