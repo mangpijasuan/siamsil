@@ -1,0 +1,60 @@
+{
+  "_comment": "Spelling rules the project owner has asked for, waiting for a second Zomi reviewer. NOT adopted and never applied: a rule is adopted only when two different reviewers agree (docs/ZOMI_STANDARD_FORM.md), and then moves to standard.json with an ID. `zolai_standard.py preview` shows what these would change. The SZSF converter and `apply` do not read this file, so no master file carries these changes until a rule is adopted.",
+  "version": "0.1.0",
+  "proposals": [
+    {
+      "id": "P-001",
+      "standard": "uh hi",
+      "variants": [
+        "uhi",
+        "uhhi"
+      ],
+      "mode": "replace",
+      "check": "uh-hi",
+      "proposed_by": "project owner",
+      "proposed_on": "2026-11-13",
+      "owner_words": "I want to use as the Bible uh hi",
+      "approved_by": [],
+      "reason": "The project owner chose the Bibles' spelling, two words. This follows the Standard Form tie-break (common published usage first).",
+      "evidence": {
+        "corpus": "uhi: 32,520 words in 31,247 pairs; uhhi: 473 words in 464 pairs (language database v2, 2026-11-13)",
+        "tedim_bibles": "'uh hi' as two words 21,496 times; 'uhi' and 'uhhi' 0 times (TDB and TB77)",
+        "dictionary": "'uhi' and 'uhhi' 0 times in the 50K Translation Master",
+        "context": "In the corpus 'uhi' appears mostly in pairs about 'they', 'their', 'people', 'each', 'both' (plural subjects), the same use as 'uh hi'",
+        "related": "rule check uh-hi lists 'uh hi' and 'uhhi' (the Zolai Standard Format writes uhhi); 'uh hiam' / 'uhhiam' is the same question for the question form and is not part of this proposal"
+      }
+    },
+    {
+      "id": "P-002",
+      "standard": "na",
+      "variants": [
+        "thil"
+      ],
+      "mode": "replace",
+      "check": null,
+      "proposed_by": "project owner",
+      "proposed_on": "2026-11-13",
+      "owner_words": "if you see \"thil\", replace with \"na\", etc",
+      "approved_by": [],
+      "reason": "The project owner asked for 'thil' to be written 'na'.",
+      "evidence": {
+        "corpus": "thil: 14,379 words in 14,140 pairs (language database v2, 2026-11-13)",
+        "tedim_bibles": "'thil' 0 times; 'na' 9,314 times (it also means other things, see caution)",
+        "other_chin_bibles": "'thil' appears in the Falam Bible (1,620) and the Hakha Bible (2,230), so it may be a word of another Chin language",
+        "context": "In the corpus 'thil' appears mostly in pairs about 'things', 'something', 'everything', 'happen'",
+        "tedim_bible_for_things": "Aligned with the English Bible, the Tedim word most tied to 'thing(s)' is 'nate' ('na' with the plural 'te'): 112 of 1,504 verses, 6.9 times the usual rate",
+        "caution": "'na' is also a very common word with other meanings in the Tedim Bibles, so the sentences need a Zomi reviewer's check in context. A reviewer may prefer mode 'flag' first, which lists each match and changes nothing."
+      }
+    }
+  ],
+  "suggested_not_decided": [
+    {
+      "standard": "nate",
+      "variants": [
+        "thilte"
+      ],
+      "note": "Follows from P-002 ('thil' + 'te' becomes 'na' + 'te'), and 'nate' is the Tedim Bible's word for 'things'. The owner has not decided it: 'thilte' appears 1,623 times in the corpus and in the Hakha Bible only.",
+      "needs": "the project owner's decision, then a second reviewer"
+    }
+  ]
+}

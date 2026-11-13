@@ -151,7 +151,7 @@ python3 ml_pipeline/scripts/szsf_convert.py pairs \
   --roster roster.csv --out szsf-master-v1.0.0.jsonl --rejects rejects.jsonl
 ```
 
-- `english` and `zomi` are copied as they are; `zomi_standard` comes from the adopted rules (`zolai_standard.py`), and equals `zomi` while none is adopted.
+- `english` and `zomi` are copied as they are; `zomi_standard` comes from the adopted rules (`zolai_standard.py`), and equals `zomi` while none is adopted. The owner's requests for `uh hi` (as in the Bibles) and `thil` → `na` are proposals waiting for a second reviewer (`docs/ZOMI_STANDARD_FORM.md`, Proposed rules): until they are adopted, `zomi_standard` does not carry them.
 - A corpus pair's review result comes from the saved review records (SOP-07), found through its pair hash. An export record marked human-reviewed that has no `HUMAN_APPROVED` decision stops the run: the export and the reviews are from different runs.
 - Corpus Zomi is `machine_generated` with the generator's `model`, and `provider_derived: true` unless `--own-model` names a model Siamsil trained itself. Sources whose origin is not recorded are `unknown`. Bible and the reviewed daily-use phrases are `human_written`; their `review` stays `UNREVIEWED`, because SZSF's review block records the SOP-07 pipeline, not who wrote the text.
 - Records that fail `szsf.py` go to `--rejects` with their problems and are never corrected. The written file is checked as a whole (rights file, adopted rules, roster) before it is put in place, and an existing master file is never overwritten.

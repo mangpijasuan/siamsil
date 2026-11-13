@@ -8,10 +8,13 @@ adopted (two reviewer codes each); AI suggestions and evidence live elsewhere
   validate   check standard.json: IDs, two reviewers, no variant in two rules, no chains
   apply      add a standard form beside a text field in a JSONL file; the original is kept
   variants   list each standard spelling with its variants (for dictionary search)
+  preview    what proposed rules (data/zomi_standard_form/proposed_rules.json) would change in the
+             corpus, with examples. Proposals are never applied: only two reviewers adopt a rule.
 
   python3 ml_pipeline/scripts/zolai_standard.py validate
   python3 ml_pipeline/scripts/zolai_standard.py apply --input pairs.jsonl --field zomi --out pairs.standard.jsonl
   python3 ml_pipeline/scripts/zolai_standard.py variants
+  python3 ml_pipeline/scripts/zolai_standard.py preview --db data/processed/language/siamsil_language.sqlite
 
 A rule's mode is "replace" (the standard form uses the standard spelling) or "flag"
 (the text is unchanged and the match is listed, for spellings whose meaning depends on
@@ -31,6 +34,8 @@ from typing import Iterable
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_STANDARD = ROOT / "data" / "zomi_standard_form" / "standard.json"
 DEFAULT_CHECKS = ROOT / "data" / "zomi_standard_form" / "rule_checks.json"
+DEFAULT_PROPOSALS = ROOT / "data" / "zomi_standard_form" / "proposed_rules.json"
+PROPOSAL_ID = re.compile(r"^P-\d{3}$")
 
 RULE_ID = re.compile(r"^ZS-\d{3}$")
 REVIEWER = re.compile(r"^[A-Z]\d{2}$")
@@ -214,6 +219,79 @@ def standardize(text: str, standard: Standard) -> Result:
     return Result(standard._pattern.sub(swap, text), applied, flags)
 
 
+def load_proposals(path: Path = DEFAULT_PROPOSALS, checks: Path | None = DEFAULT_CHECKS,
+                   adopted: Standard | None = None) -> tuple[Standard, dict[str, dict]]:
+    """Proposed rules (decisions waiting for a second reviewer) as a Standard to preview, and each one's record.
+
+    A proposal is not a rule: it has fewer than two reviewers, so `parse` would refuse it, and nothing here is read by
+    `apply` or by the SZSF converter. It gets a stand-in ID (ZS-9nn) only so the same checks run on it: no variant in two
+    rules, none that is another rule's standard spelling, a known check. A proposal that already lists two reviewers
+    belongs in standard.json, and a proposal that clashes with an adopted rule is refused.
+    """
+    data = json.loads(path.read_text(encoding="utf-8"))
+    raw = data.get("proposals")
+    if not isinstance(raw, list):
+        raise StandardError("proposals must be a list")
+    problems: list[str] = []
+    stand_in: list[dict] = []
+    records: dict[str, dict] = {}
+    for index, item in enumerate(raw, start=1):
+        if not isinstance(item, dict):
+            problems.append(f"proposal {index}: must be an object")
+            continue
+        name = str(item.get("id"))
+        if not PROPOSAL_ID.match(name):
+            problems.append(f"proposal {name}: id must look like P-001")
+        if name in records:
+            problems.append(f"proposal {name}: id used twice")
+        if len(set(item.get("approved_by") or [])) >= 2:
+            problems.append(f"proposal {name}: already has two reviewers; adopt it in standard.json instead")
+        if not item.get("proposed_by") or not item.get("proposed_on"):
+            problems.append(f"proposal {name}: needs proposed_by and proposed_on (who asked for it, and when)")
+        records[name] = item
+        stand_in.append({**{k: item.get(k) for k in ("standard", "variants", "mode", "check", "reason")},
+                         "id": f"ZS-9{index:02d}", "approved_by": ["P01", "P02"], "approved_on": str(item.get("proposed_on"))})
+    if problems:
+        raise StandardError("; ".join(problems))
+    preview = parse({"version": "0.0.0", "rules": stand_in}, load_check_ids(checks) if checks else None)
+    if adopted is not None:
+        taken = {norm(r.standard) for r in adopted.rules} | {norm(v) for r in adopted.rules for v in r.variants}
+        clash = sorted({v for r in preview.rules for v in (r.standard, *r.variants) if norm(v) in taken})
+        if clash:
+            raise StandardError(f"proposal spellings that an adopted rule already uses: {', '.join(clash)}")
+    by_stand_in = {f"ZS-9{index:02d}": str(item.get("id")) for index, item in enumerate(raw, start=1)}
+    for rule in preview.rules:
+        records[by_stand_in[rule.id]]["_stand_in"] = rule.id
+    return preview, records
+
+
+def preview_changes(rows: Iterable[tuple[str, str, str]], preview: Standard, records: dict[str, dict],
+                    examples: int = 3) -> dict[str, dict]:
+    """For each proposal: how many times its variants occur, in how many pairs, and a few before/after examples.
+
+    `rows` are (id, english, zomi). Nothing is written: this is only to see what a proposal would do.
+    """
+    names = {record["_stand_in"]: name for name, record in records.items() if "_stand_in" in record}
+    report = {name: {"occurrences": 0, "pairs": 0, "examples": [], "variants": {}} for name in names.values()}
+    if preview._pattern is None:
+        return report
+    for row_id, english, zomi in rows:
+        seen: set[str] = set()
+        for match in preview._pattern.finditer(zomi):
+            found = match.group(0)
+            name = names[preview._by_variant[norm(found)].id]
+            entry = report[name]
+            entry["occurrences"] += 1
+            entry["variants"][norm(found)] = entry["variants"].get(norm(found), 0) + 1
+            seen.add(name)
+        for name in seen:
+            report[name]["pairs"] += 1
+            if len(report[name]["examples"]) < examples:
+                after = standardize(zomi, preview).text
+                report[name]["examples"].append({"id": row_id, "english": english, "before": zomi, "after": after})
+    return report
+
+
 def variant_index(standard: Standard) -> dict[str, str]:
     """Every spelling (normalized) -> its standard spelling, including the standard itself."""
     index: dict[str, str] = {}
@@ -269,6 +347,10 @@ def main(argv: list[str] | None = None) -> int:
     apply.add_argument("--field", required=True, help="the text field to standardize, e.g. zomi")
     apply.add_argument("--out", type=Path, help="output JSONL (default: standard output)")
     commands.add_parser("variants", help="list standard spellings and their variants")
+    preview_parser = commands.add_parser("preview", help="what proposed rules would change in the corpus (nothing is applied)")
+    preview_parser.add_argument("--proposals", type=Path, default=DEFAULT_PROPOSALS)
+    preview_parser.add_argument("--db", type=Path, required=True, help="language database to read (read-only)")
+    preview_parser.add_argument("--examples", type=int, default=3, help="before/after examples per proposal")
     args = parser.parse_args(argv)
 
     try:
@@ -276,6 +358,31 @@ def main(argv: list[str] | None = None) -> int:
     except StandardError as error:
         print(f"{args.standard}: {error}", file=sys.stderr)
         return 1
+
+    if args.command == "preview":
+        import sqlite3
+
+        try:
+            preview, records = load_proposals(args.proposals, args.checks, standard)
+        except (StandardError, OSError, ValueError) as error:
+            print(f"{args.proposals}: {error}", file=sys.stderr)
+            return 1
+        con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
+        try:
+            rows = con.execute("SELECT id, normalized_source_text, normalized_target_text FROM parallel_sentences ORDER BY id")
+            report = preview_changes(((f"corpus-{i}", e, z) for i, e, z in rows), preview, records, args.examples)
+        finally:
+            con.close()
+        print("Proposed rules are NOT adopted and change nothing. Two reviewers must adopt a rule (docs/ZOMI_STANDARD_FORM.md).")
+        for name, result in report.items():
+            record = records[name]
+            print(f"\n{name}: {', '.join(record['variants'])} -> {record['standard']} ({record.get('mode', 'replace')}), "
+                  f"proposed by {record['proposed_by']} on {record['proposed_on']}")
+            print(f"  {result['occurrences']:,} occurrences in {result['pairs']:,} pairs; by spelling: "
+                  + ", ".join(f"{v} {c:,}" for v, c in sorted(result["variants"].items(), key=lambda x: -x[1])))
+            for example in result["examples"]:
+                print(f"  {example['id']}  {example['english']}\n    before: {example['before']}\n    after:  {example['after']}")
+        return 0
 
     if args.command == "validate":
         print(f"Siamsil Zomi Standard Form {standard.version}: {len(standard.rules)} adopted rule(s), valid")

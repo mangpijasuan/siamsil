@@ -1,7 +1,7 @@
 # Siamsil Zomi Standard Form
 
 Updated: 2026-10-27
-Status: **evidence and suggestions** (steps 1–3); the tool that applies adopted rules (step 5) is built. No spelling rule has been decided.
+Status: **evidence and suggestions** (steps 1–3); the tool that applies adopted rules (step 5) is built. No spelling rule has been adopted. The project owner has asked for two (see [Proposed rules](#proposed-rules-waiting-for-a-second-reviewer)); each waits for a second reviewer.
 
 Siamsil's dictionary, Translate, and Siamsil AI need one consistent way to write Zomi (Zolai), so that spellings match, search finds every form, and models learn one form. Zomi writers do not all spell alike: for example, the *Zolai Standard Format* writes `uhhi` where ZCLS's guide and the Bibles write `uh hi`. Siamsil does not choose between them on its own. It gathers the evidence, Zomi language reviewers decide, and Siamsil applies their decisions.
 
@@ -71,6 +71,20 @@ python3 ml_pipeline/scripts/zolai_standard.py variants
 `apply` copies every record and adds `zomi_standard`, `zomi_standard_rules` (the rules that changed it), `zomi_standard_flags`, and `standard_version`. The original field is untouched, and the output cannot overwrite the input. Matching ignores case and apostrophe style (`'` or `’`) and only matches whole words, so a variant inside a longer word is never changed. For dictionary search, `search_forms()` returns a word's standard spelling and all its variants, so a search for any spelling finds the entry.
 
 Bump the version when rules change: minor for added rules, major for a changed or removed rule. The language database, dictionary search, and dataset exports should record the standard version they used. Wiring them to this tool is the next step, once the first rules are adopted.
+
+## Proposed rules waiting for a second reviewer
+
+A rule is adopted only when two reviewers agree. When the project owner asks for a spelling, it is recorded in `data/zomi_standard_form/proposed_rules.json` as a **proposal**, with the owner's words and the evidence. A proposal is not a rule: `apply`, the language build and the SZSF converter do not read it, so no master file carries it. `zolai_standard.py preview --db DATABASE` shows what the proposals would change in the corpus, with before and after examples, and writes nothing. Proposals that already list two reviewers, or clash with an adopted rule, are refused.
+
+| Proposal | Owner's words (2026-11-13) | Change | Evidence |
+| --- | --- | --- | --- |
+| P-001 | "I want to use as the Bible uh hi" | `uhi`, `uhhi` → `uh hi` | The Tedim Bibles write `uh hi` as two words 21,496 times and never `uhi` or `uhhi`. In the corpus `uhi` is used about 32,500 times (`uhhi`, the *Zolai Standard Format* spelling, 473 times). |
+| P-002 | "if you see "thil", replace with "na", etc" | `thil` → `na` | `thil` is used about 14,000 times in the corpus, never in the Tedim Bibles, but in the Falam and Hakha Bibles. Aligned with the English Bible, the Tedim word most tied to "thing(s)" is `nate`, which is `na` with the plural `te`. |
+
+- **Caution for P-002.** `na` is also a very common word with other meanings in the Tedim Bibles, so a Zomi reviewer should check sentences in context. A reviewer may adopt it first as mode `flag`, which lists each match and changes nothing.
+- **Not decided.** `thilte` → `nate` would follow from P-002 and `nate` is the Tedim Bible's word for "things", but the owner has not decided it (`suggested_not_decided` in the file). The question form `uh hiam` / `uhhiam` is part of the existing `uh-hi` check, not of P-001.
+- **Adopting.** Two reviewers confirm a proposal in the review workbook. It then goes into `standard.json` with an ID (`ZS-nnn`), two reviewer codes, the date and the reason, the version goes up by a minor number, and the proposal leaves the proposals file. Only then can an SZSF record cite it in `zomi_standard_rules`.
+- Counts in the table count words; `preview` counts matches by the tool's own rules, which skip a form joined to another word by an apostrophe or a hyphen, so the two differ slightly.
 
 ## What the evidence covers
 
