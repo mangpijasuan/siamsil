@@ -61,8 +61,10 @@ class RealProposalsTests(unittest.TestCase):
         suggested = data["suggested_not_decided"]
         self.assertEqual([(s["standard"], s["variants"]) for s in suggested],
                          [("nate", ["thilte"]), ("cih", ["chih"]), ("haksa", ["harsa"]), ("pen", ["cu"]),
-                          ("ziakai", ["tlai"]), ("zingsang", ["zinglam"])])
-        self.assertEqual([w["word"] for w in data["not_one_to_one"]["words"]], ["chi", "ti", "tih", "poimawh", "tlawm"])
+                          ("ziakai", ["tlai"]), ("zingsang", ["zinglam"]), ("i", ["ii"]), ("hong", ["ong"]),
+                          ("keia", ["ke'"])])
+        self.assertEqual([w["word"] for w in data["not_one_to_one"]["words"]], ["chi", "ti", "tih", "poimawh", "tlawm", "sami", "lungleng", "thit", "tengteng", "hmel"])
+        self.assertEqual([w["word"] for w in data["accepted_in_owner_corrections"]["words"]], ["minit", "me"])
         self.assertTrue(all("owner's decision" in s["needs"] for s in suggested))  # none is decided or adopted
 
 

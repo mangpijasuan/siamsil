@@ -160,6 +160,36 @@
       "seen_in": "correction 13 (English: this morning), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
       "note": "The owner corrected these sentences this way but has not called it a rule. Correction 14 was a different mistake, so only one case is clear.",
       "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
+    },
+    {
+      "standard": "i",
+      "variants": [
+        "ii"
+      ],
+      "corpus_pairs": 973,
+      "seen_in": "corrections 22 and 26 (the machine wrote ii after a name, the owner i), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)",
+      "note": "The owner corrected these sentences this way but has not called it a rule. It is the possessive after a name.",
+      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
+    },
+    {
+      "standard": "hong",
+      "variants": [
+        "ong"
+      ],
+      "corpus_pairs": 828,
+      "seen_in": "corrections 27 and 28 (ong became hong), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)",
+      "note": "The owner corrected these sentences this way but has not called it a rule.",
+      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
+    },
+    {
+      "standard": "keia",
+      "variants": [
+        "ke'"
+      ],
+      "corpus_pairs": 617,
+      "seen_in": "corrections 31 and 32 (the machine wrote ke', the owner keia), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)",
+      "note": "The owner corrected these sentences this way but has not called it a rule. The spelling with the apostrophe is the variant.",
+      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
     }
   ],
   "not_one_to_one": {
@@ -189,6 +219,46 @@
         "word": "tlawm",
         "corpus_pairs": 944,
         "corrections": "11 (tawmmanzaw) and 12 (bek)"
+      },
+      {
+        "word": "sami",
+        "corpus_pairs": 3023,
+        "corrections": "21 (sam: hair, sentence rewritten) and 22 (a person's name, changed to a Zomi name)"
+      },
+      {
+        "word": "lungleng",
+        "corpus_pairs": 635,
+        "corrections": "29 and 30 (both rewritten)"
+      },
+      {
+        "word": "thit",
+        "corpus_pairs": 613,
+        "corrections": "35 (rewritten) and 36 (thuk lua)"
+      },
+      {
+        "word": "tengteng",
+        "corpus_pairs": 604,
+        "corrections": "37 (Noteng/Note) and 38 (hih buainate or hih ninte, by meaning)"
+      },
+      {
+        "word": "hmel",
+        "corpus_pairs": 588,
+        "corrections": "39 and 40 (both rewritten, differently)"
+      }
+    ]
+  },
+  "accepted_in_owner_corrections": {
+    "note": "Words the owner kept in the corrected sentences. They are not in the Tedim Bibles or the dictionary, but are not errors.",
+    "words": [
+      {
+        "word": "minit",
+        "corpus_pairs": 1369,
+        "seen_in": "corrections 23 and 24 (Minit kept)"
+      },
+      {
+        "word": "me",
+        "corpus_pairs": 614,
+        "seen_in": "corrections 33 and 34 (Me kept; khut-me became khutme)"
       }
     ]
   }
