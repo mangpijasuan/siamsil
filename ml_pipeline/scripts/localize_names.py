@@ -31,7 +31,7 @@ from typing import Iterable, Iterator
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_NAMES = ROOT / "data" / "zomi_names.json"
 
-STAGES = ("child", "young_adult", "married", "older")
+STAGES = ("any_age", "young_adult", "married", "older")
 GENDERS = ("female", "male")
 TITLES = ("Mr", "Mrs", "Miss", "Ms", "Dr", "Professor", "Prof", "Uncle", "Aunt", "Grandpa", "Grandma",
           "Grandfather", "Grandmother", "Sir", "Madam", "Father", "Mother", "Brother", "Sister")

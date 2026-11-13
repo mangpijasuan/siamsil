@@ -38,10 +38,11 @@ def pair(english: str, zomi: str, id: str = "p1") -> dict:
 class NamesTests(unittest.TestCase):
     def test_the_owners_table_loads_with_their_names(self) -> None:
         names = ln.load_names()
-        self.assertEqual(names.default_stage, "young_adult")
-        self.assertEqual(names.pool("female"), ["Cing Khup"])
-        self.assertEqual(names.pool("male"), ["Ngam Bawm"])
-        self.assertEqual(names.pool("female", "child"), ["Cingno"])
+        self.assertEqual(names.default_stage, "any_age")  # owner, 2026-11-13: Cingno and Thangno are the default
+        self.assertEqual(names.pool("female"), ["Cingno"])
+        self.assertEqual(names.pool("male"), ["Thangno"])
+        self.assertEqual(names.pool("female", "young_adult"), ["Cing Khup"])
+        self.assertEqual(names.pool("male", "young_adult"), ["Ngam Bawm"])
         self.assertEqual(names.pool("male", "married"), ["Pa Thang"])  # the owner corrected "Pa Pa Thang" on 2026-11-13
         self.assertEqual(names.pool("female", "older"), ["Pi Cing Khup"])
         self.assertFalse(names.confirmed)
