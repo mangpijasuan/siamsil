@@ -33,11 +33,11 @@ Recorded in `data/zomi_names.json`, in the owner's words (2026-11-08, corrected 
 
 | Stage | Girls and women | Boys and men |
 | --- | --- | --- |
-| Not married, from age 12 until marriage | **Lia** before the name | **Tg** (or **Taang**) before the name |
+| Not married, from age 12 until marriage | **Lia** before the name | **Taang** (short form **Tg.**) before the name |
 | Married | **Nu** | **Pa** |
 | From age 60 | **Pi** | **Pu** |
 
-The owner says **Lia and Tg always come before the name** (2026-11-13). The tool does **not** apply the address forms yet. Still to confirm with the owner: whether Taang is a second spelling of Tg, and how the markers combine with the young adult names Cing Khup and Ngam Bawm.
+The owner says **Lia and Tg. always come before the name**, and that Tg. is the short form of Taang (2026-11-13). The tool does **not** apply the address forms yet. Still to confirm with the owner: how the markers combine with the young adult names Cing Khup and Ngam Bawm.
 
 The owner ended with "etc.": more names are coming. **Nobody adds a name here unless a Zomi speaker supplied it.** A second
 person confirms the list, as for every adopted rule.
@@ -93,7 +93,7 @@ a small sample only.
 
 ## Not built yet
 
-- Stages other than the default, and the address forms (Lia, Taang or Tg, Nu, Pa, Pi, Pu). A name after a title is left alone, and
+- Stages other than the default, and the address forms (Lia, Taang or Tg., Nu, Pa, Pi, Pu). A name after a title is left alone, and
   the other stages are in the tables for when the owner says how the cues should work (for example what "Mr", "Uncle" or
   "old man" mean for the stage, and how the address forms attach to the name).
 - Names at translation time.

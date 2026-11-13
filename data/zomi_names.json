@@ -1,6 +1,6 @@
 {
   "_comment": "The Zomi names that replace English personal names in training pairs (docs/ZOMI_NAMES.md). Only names the project owner gave belong here; never add one that a Zomi speaker did not supply. A name counts as confirmed only when a second person has checked it.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "decided_by": "project owner",
   "decided_on": "2026-11-08",
   "confirmed_by": null,
@@ -10,7 +10,7 @@
   "to_confirm": [
     "The owner listed 'Cing Khup and Ngam Bawm' for young adult girls and boys. Read in that order: Cing Khup for girls, Ngam Bawm for boys.",
     "Cingno (girls) and Thangno (boys) can be used from toddler to adult (owner, 2026-11-13). They are stored under the stage key 'child', which is now only a label for that range.",
-    "Address forms (owner, 2026-11-13), recorded in address_forms and NOT applied by the tool yet: an unmarried person from age 12 until marriage is called by the name with 'Lia' (girls) or 'Taang' or 'Tg' (boys); after marriage 'Nu' (women) and 'Pa' (men); from age 60 'Pi' (women) and 'Pu' (men). The owner says Lia and Tg always come before the name. Open: whether 'Taang' is a second spelling of 'Tg' (it is recorded with Tg but the position rule names only Lia and Tg), and how this combines with the young adult names Cing Khup and Ngam Bawm.",
+    "Address forms (owner, 2026-11-13), recorded in address_forms and NOT applied by the tool yet: an unmarried person from age 12 until marriage is called 'Lia' (girls) or 'Taang' (boys; short form 'Tg.') before the name; after marriage 'Nu' (women) and 'Pa' (men); from age 60 'Pi' (women) and 'Pu' (men). Open: how these combine with the young adult names Cing Khup and Ngam Bawm (does 'Lia' stand before 'Cing Khup', or replace it?).",
     "The owner ended with 'etc': more names are to come. Until then each group has one name, so a full run is refused (a run needs 10 per gender)."
   ],
   "pools": {
@@ -52,18 +52,14 @@
   "address_forms": {
     "status": "recorded in the owner's words; not applied by localize_names.py; wording to be confirmed",
     "unmarried_from_age_12": {
-      "female": [
-        "Lia"
-      ],
-      "male": [
-        "Taang",
-        "Tg"
-      ],
-      "position_relative_to_name": "before",
-      "position_applies_to": [
-        "Lia",
-        "Tg"
-      ]
+      "female": {
+        "marker": "Lia"
+      },
+      "male": {
+        "marker": "Taang",
+        "short_form": "Tg."
+      },
+      "position_relative_to_name": "before"
     },
     "married": {
       "female": "Nu",
@@ -74,5 +70,6 @@
       "male": "Pu"
     }
   },
-  "owner_words_2026_11_13_b": "the Lia and Tg are always come before the name"
+  "owner_words_2026_11_13_b": "the Lia and Tg are always come before the name",
+  "owner_words_2026_11_13_c": "Tg. is the shortform of Taang"
 }
