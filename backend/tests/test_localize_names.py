@@ -47,9 +47,9 @@ class NamesTests(unittest.TestCase):
         self.assertFalse(names.confirmed)
         table = json.loads(ln.DEFAULT_NAMES.read_text(encoding="utf-8"))
         self.assertTrue(table["to_confirm"])
-        # The address forms are recorded in the owner's words, with the open point left open, and are not applied.
+        # The address forms are recorded in the owner's words, and are not applied.
         self.assertEqual(table["address_forms"]["unmarried_from_age_12"]["male"], ["Taang", "Tg"])
-        self.assertIsNone(table["address_forms"]["unmarried_from_age_12"]["position_relative_to_name"])
+        self.assertEqual(table["address_forms"]["unmarried_from_age_12"]["position_relative_to_name"], "before")  # Lia and Tg come before the name
 
     def test_a_bad_table_is_refused(self) -> None:
         for change, message in (

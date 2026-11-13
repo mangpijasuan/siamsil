@@ -33,11 +33,11 @@ Recorded in `data/zomi_names.json`, in the owner's words (2026-11-08, corrected 
 
 | Stage | Girls and women | Boys and men |
 | --- | --- | --- |
-| Not married, from age 12 until marriage | the name with **Lia** | the name with **Taang** or **Tg** |
+| Not married, from age 12 until marriage | **Lia** before the name | **Tg** (or **Taang**) before the name |
 | Married | **Nu** | **Pa** |
 | From age 60 | **Pi** | **Pu** |
 
-The tool does **not** apply the address forms yet. Still to confirm with the owner: where Lia, Taang and Tg stand relative to the name, whether Taang and Tg are two spellings of one marker, and how they combine with the young adult names Cing Khup and Ngam Bawm.
+The owner says **Lia and Tg always come before the name** (2026-11-13). The tool does **not** apply the address forms yet. Still to confirm with the owner: whether Taang is a second spelling of Tg, and how the markers combine with the young adult names Cing Khup and Ngam Bawm.
 
 The owner ended with "etc.": more names are coming. **Nobody adds a name here unless a Zomi speaker supplied it.** A second
 person confirms the list, as for every adopted rule.
