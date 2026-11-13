@@ -63,7 +63,7 @@ class RealProposalsTests(unittest.TestCase):
                          [("nate", ["thilte"]), ("cih", ["chih"]), ("haksa", ["harsa"]), ("pen", ["cu"]),
                           ("ziakai", ["tlai"]), ("zingsang", ["zinglam"])])
         self.assertEqual([w["word"] for w in data["not_one_to_one"]["words"]], ["chi", "ti", "tih", "poimawh", "tlawm"])
-        self.assertTrue(all("not decided" in s["note"] for s in suggested))
+        self.assertTrue(all("owner's decision" in s["needs"] for s in suggested))  # none is decided or adopted
 
 
 class ProposalRuleTests(unittest.TestCase):
