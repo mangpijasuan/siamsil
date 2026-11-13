@@ -100,6 +100,234 @@
           "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. One reviewer is not enough: a second, different reviewer must confirm before the rule is adopted."
         }
       ]
+    },
+    {
+      "id": "P-004",
+      "standard": "cih",
+      "variants": [
+        "chih"
+      ],
+      "mode": "replace",
+      "check": null,
+      "proposed_by": "project owner",
+      "proposed_on": "2026-11-13",
+      "owner_words": "Yes, I want a rule for that.",
+      "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+      "approved_by": [],
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 1 and 2 (the machine wrote chih, the owner cih), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)).",
+      "evidence": {
+        "corpus": "4,595 corpus pairs (language database v2, 2026-11-13)",
+        "seen_in": "corrections 1 and 2 (the machine wrote chih, the owner cih), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)"
+      },
+      "reviews": [
+        {
+          "reviewer": "project owner",
+          "kind": "Zomi speaker review",
+          "decided_on": "2026-11-13",
+          "code": null,
+          "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+        }
+      ]
+    },
+    {
+      "id": "P-005",
+      "standard": "haksa",
+      "variants": [
+        "harsa"
+      ],
+      "mode": "replace",
+      "check": null,
+      "proposed_by": "project owner",
+      "proposed_on": "2026-11-13",
+      "owner_words": "Yes, I want a rule for that.",
+      "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+      "approved_by": [],
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 19 and 20 (harsa became haksa, and haksatna), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)).",
+      "evidence": {
+        "corpus": "418 corpus pairs (language database v2, 2026-11-13)",
+        "seen_in": "corrections 19 and 20 (harsa became haksa, and haksatna), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
+        "caution": "Correction 20 also rewrote the sentence."
+      },
+      "reviews": [
+        {
+          "reviewer": "project owner",
+          "kind": "Zomi speaker review",
+          "decided_on": "2026-11-13",
+          "code": null,
+          "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+        }
+      ]
+    },
+    {
+      "id": "P-006",
+      "standard": "pen",
+      "variants": [
+        "cu"
+      ],
+      "mode": "replace",
+      "check": null,
+      "proposed_by": "project owner",
+      "proposed_on": "2026-11-13",
+      "owner_words": "Yes, I want a rule for that.",
+      "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+      "approved_by": [],
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 5 and 6 (cu after the subject became pen), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)).",
+      "evidence": {
+        "corpus": "772 corpus pairs (language database v2, 2026-11-13)",
+        "seen_in": "corrections 5 and 6 (cu after the subject became pen), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
+        "caution": "'cu' is very common in the Falam and Hakha Bibles, so it may have other uses in Zomi text; a reviewer may adopt it first as mode 'flag'."
+      },
+      "reviews": [
+        {
+          "reviewer": "project owner",
+          "kind": "Zomi speaker review",
+          "decided_on": "2026-11-13",
+          "code": null,
+          "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+        }
+      ]
+    },
+    {
+      "id": "P-007",
+      "standard": "ziakai",
+      "variants": [
+        "tlai"
+      ],
+      "mode": "replace",
+      "check": null,
+      "proposed_by": "project owner",
+      "proposed_on": "2026-11-13",
+      "owner_words": "Yes, I want a rule for that.",
+      "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+      "approved_by": [],
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 17 and 18 (both English sentences say 'late'), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)).",
+      "evidence": {
+        "corpus": "470 corpus pairs (language database v2, 2026-11-13)",
+        "seen_in": "corrections 17 and 18 (both English sentences say 'late'), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
+        "caution": "'tlai' may have other meanings; a reviewer may adopt it first as mode 'flag'."
+      },
+      "reviews": [
+        {
+          "reviewer": "project owner",
+          "kind": "Zomi speaker review",
+          "decided_on": "2026-11-13",
+          "code": null,
+          "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+        }
+      ]
+    },
+    {
+      "id": "P-008",
+      "standard": "zingsang",
+      "variants": [
+        "zinglam"
+      ],
+      "mode": "replace",
+      "check": null,
+      "proposed_by": "project owner",
+      "proposed_on": "2026-11-13",
+      "owner_words": "Yes, I want a rule for that.",
+      "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+      "approved_by": [],
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (correction 13 (English: this morning), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)).",
+      "evidence": {
+        "corpus": "864 corpus pairs (language database v2, 2026-11-13)",
+        "seen_in": "correction 13 (English: this morning), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
+        "caution": "Only one of the owner's corrections is a clear case (correction 13); a reviewer may adopt it first as mode 'flag'."
+      },
+      "reviews": [
+        {
+          "reviewer": "project owner",
+          "kind": "Zomi speaker review",
+          "decided_on": "2026-11-13",
+          "code": null,
+          "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+        }
+      ]
+    },
+    {
+      "id": "P-009",
+      "standard": "i",
+      "variants": [
+        "ii"
+      ],
+      "mode": "replace",
+      "check": null,
+      "proposed_by": "project owner",
+      "proposed_on": "2026-11-13",
+      "owner_words": "Yes, I want a rule for that.",
+      "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+      "approved_by": [],
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 22 and 26 (the machine wrote ii after a name, the owner i), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)).",
+      "evidence": {
+        "corpus": "973 corpus pairs (language database v2, 2026-11-13)",
+        "seen_in": "corrections 22 and 26 (the machine wrote ii after a name, the owner i), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)"
+      },
+      "reviews": [
+        {
+          "reviewer": "project owner",
+          "kind": "Zomi speaker review",
+          "decided_on": "2026-11-13",
+          "code": null,
+          "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+        }
+      ]
+    },
+    {
+      "id": "P-010",
+      "standard": "hong",
+      "variants": [
+        "ong"
+      ],
+      "mode": "replace",
+      "check": null,
+      "proposed_by": "project owner",
+      "proposed_on": "2026-11-13",
+      "owner_words": "Yes, I want a rule for that.",
+      "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+      "approved_by": [],
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 27 and 28 (ong became hong), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)).",
+      "evidence": {
+        "corpus": "828 corpus pairs (language database v2, 2026-11-13)",
+        "seen_in": "corrections 27 and 28 (ong became hong), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)"
+      },
+      "reviews": [
+        {
+          "reviewer": "project owner",
+          "kind": "Zomi speaker review",
+          "decided_on": "2026-11-13",
+          "code": null,
+          "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+        }
+      ]
+    },
+    {
+      "id": "P-011",
+      "standard": "keia",
+      "variants": [
+        "ke'"
+      ],
+      "mode": "replace",
+      "check": null,
+      "proposed_by": "project owner",
+      "proposed_on": "2026-11-13",
+      "owner_words": "Yes, I want a rule for that.",
+      "owner_words_context": "The owner's answer to the question which of the patterns from the two batches of corrections should be rules.",
+      "approved_by": [],
+      "reason": "The project owner wants a rule for the pattern seen in the owner's own corrections (corrections 31 and 32 (the machine wrote ke', the owner keia), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)).",
+      "evidence": {
+        "corpus": "617 corpus pairs (language database v2, 2026-11-13)",
+        "seen_in": "corrections 31 and 32 (the machine wrote ke', the owner keia), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)"
+      },
+      "reviews": [
+        {
+          "reviewer": "project owner",
+          "kind": "Zomi speaker review",
+          "decided_on": "2026-11-13",
+          "code": null,
+          "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. A second, different reviewer must confirm before the rule is adopted."
+        }
+      ]
     }
   ],
   "suggested_not_decided": [
@@ -110,86 +338,6 @@
       ],
       "note": "Follows from P-002 ('thil' + 'te' becomes 'na' + 'te'), and 'nate' is the Tedim Bible's word for 'things'. The owner has not decided it: 'thilte' appears 1,623 times in the corpus and in the Hakha Bible only.",
       "needs": "the project owner's decision, then a second reviewer"
-    },
-    {
-      "standard": "cih",
-      "variants": [
-        "chih"
-      ],
-      "corpus_pairs": 4595,
-      "seen_in": "corrections 1 and 2 (the machine wrote chih, the owner cih), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
-      "note": "The owner corrected these sentences this way but has not called it a rule.",
-      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
-    },
-    {
-      "standard": "haksa",
-      "variants": [
-        "harsa"
-      ],
-      "corpus_pairs": 418,
-      "seen_in": "corrections 19 and 20 (harsa became haksa, and haksatna), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
-      "note": "The owner corrected these sentences this way but has not called it a rule. Correction 20 also rewrote the sentence.",
-      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
-    },
-    {
-      "standard": "pen",
-      "variants": [
-        "cu"
-      ],
-      "corpus_pairs": 772,
-      "seen_in": "corrections 5 and 6 (cu after the subject became pen), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
-      "note": "The owner corrected these sentences this way but has not called it a rule. 'cu' is very common in the Falam and Hakha Bibles (25,608 and 30,966 times), so it may have other uses in Zomi text.",
-      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
-    },
-    {
-      "standard": "ziakai",
-      "variants": [
-        "tlai"
-      ],
-      "corpus_pairs": 470,
-      "seen_in": "corrections 17 and 18 (both English sentences say 'late'), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
-      "note": "The owner corrected these sentences this way but has not called it a rule. 'tlai' may have other meanings.",
-      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
-    },
-    {
-      "standard": "zingsang",
-      "variants": [
-        "zinglam"
-      ],
-      "corpus_pairs": 864,
-      "seen_in": "correction 13 (English: this morning), in the owner's corrections of 2026-11-13 (batch 1, siamsil-data reviews/owner-corrections)",
-      "note": "The owner corrected these sentences this way but has not called it a rule. Correction 14 was a different mistake, so only one case is clear.",
-      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
-    },
-    {
-      "standard": "i",
-      "variants": [
-        "ii"
-      ],
-      "corpus_pairs": 973,
-      "seen_in": "corrections 22 and 26 (the machine wrote ii after a name, the owner i), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)",
-      "note": "The owner corrected these sentences this way but has not called it a rule. It is the possessive after a name.",
-      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
-    },
-    {
-      "standard": "hong",
-      "variants": [
-        "ong"
-      ],
-      "corpus_pairs": 828,
-      "seen_in": "corrections 27 and 28 (ong became hong), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)",
-      "note": "The owner corrected these sentences this way but has not called it a rule.",
-      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
-    },
-    {
-      "standard": "keia",
-      "variants": [
-        "ke'"
-      ],
-      "corpus_pairs": 617,
-      "seen_in": "corrections 31 and 32 (the machine wrote ke', the owner keia), in the owner's corrections of 2026-11-13 (batch 2, siamsil-data reviews/owner-corrections)",
-      "note": "The owner corrected these sentences this way but has not called it a rule. The spelling with the apostrophe is the variant.",
-      "needs": "the project owner's decision, then a second reviewer; consider mode 'flag' first if the word has other uses"
     }
   ],
   "not_one_to_one": {

@@ -34,7 +34,7 @@ class RealProposalsTests(unittest.TestCase):
     def test_the_owners_two_proposals_are_recorded_and_not_adopted(self) -> None:
         adopted = zs.load()
         preview, records = zs.load_proposals(zs.DEFAULT_PROPOSALS, zs.DEFAULT_CHECKS, adopted)
-        self.assertEqual(sorted(records), ["P-001", "P-002", "P-003"])
+        self.assertEqual(sorted(records), [f"P-{n:03d}" for n in range(1, 12)])
         one, two, three = records["P-001"], records["P-002"], records["P-003"]
         self.assertEqual((one["standard"], one["variants"], one["mode"]), ("uh hi", ["uhi", "uhhi"], "replace"))
         self.assertEqual((two["standard"], two["variants"], two["mode"]), ("na", ["thil"], "replace"))
@@ -57,12 +57,10 @@ class RealProposalsTests(unittest.TestCase):
 
     def test_the_suggestion_the_owner_has_not_decided_is_kept_apart(self) -> None:
         data = json.loads(zs.DEFAULT_PROPOSALS.read_text(encoding="utf-8"))
-        self.assertEqual([p["id"] for p in data["proposals"]], ["P-001", "P-002", "P-003"])
+        self.assertEqual([p["id"] for p in data["proposals"]], [f"P-{n:03d}" for n in range(1, 12)])
         suggested = data["suggested_not_decided"]
-        self.assertEqual([(s["standard"], s["variants"]) for s in suggested],
-                         [("nate", ["thilte"]), ("cih", ["chih"]), ("haksa", ["harsa"]), ("pen", ["cu"]),
-                          ("ziakai", ["tlai"]), ("zingsang", ["zinglam"]), ("i", ["ii"]), ("hong", ["ong"]),
-                          ("keia", ["ke'"])])
+        self.assertEqual([(s["standard"], s["variants"]) for s in suggested], [("nate", ["thilte"])])
+        self.assertTrue(all("owner's decision" in s["needs"] for s in suggested))  # none is decided or adopted
         self.assertEqual([w["word"] for w in data["not_one_to_one"]["words"]], ["chi", "ti", "tih", "poimawh", "tlawm", "sami", "lungleng", "thit", "tengteng", "hmel"])
         accepted = {w["word"]: w for w in data["accepted_in_owner_corrections"]["words"]}
         self.assertEqual(list(accepted), ["minit", "me"])
@@ -70,6 +68,22 @@ class RealProposalsTests(unittest.TestCase):
         self.assertEqual((accepted["me"]["meaning"], accepted["me"]["origin"], accepted["me"]["also_ok"]),
                          ("vote, ballot", "borrowed from Burmese", ["vote", "ballot"]))
         self.assertTrue(all("owner's decision" in s["needs"] for s in suggested))  # none is decided or adopted
+
+
+class OwnersCorrectionsRulesTests(unittest.TestCase):
+    def test_the_eight_patterns_the_owner_asked_for_are_proposals(self) -> None:
+        _, records = zs.load_proposals(zs.DEFAULT_PROPOSALS, zs.DEFAULT_CHECKS, zs.load())
+        got = {r["id"]: (r["variants"], r["standard"]) for r in records.values() if r["id"] >= "P-004"}
+        self.assertEqual(got, {"P-004": (["chih"], "cih"), "P-005": (["harsa"], "haksa"), "P-006": (["cu"], "pen"),
+                               "P-007": (["tlai"], "ziakai"), "P-008": (["zinglam"], "zingsang"), "P-009": (["ii"], "i"),
+                               "P-010": (["ong"], "hong"), "P-011": (["ke'"], "keia")})
+        for name in got:
+            self.assertEqual(records[name]["owner_words"], "Yes, I want a rule for that.")
+            self.assertEqual(records[name]["approved_by"], [])
+        preview = zs.load_proposals(zs.DEFAULT_PROPOSALS, zs.DEFAULT_CHECKS, zs.load())[0]
+        # Whole words only, and the apostrophe form: nothing inside a longer word changes.
+        self.assertEqual(zs.standardize("ZOMI chih ZOMI harsa cu tlai ZOMI", preview).text, "ZOMI cih ZOMI haksa pen ziakai ZOMI")
+        self.assertEqual(zs.standardize("ZOMI ke' ZOMI ke'n ZOMI hong ZOMI cuting", preview).text, "ZOMI keia ZOMI ke'n ZOMI hong ZOMI cuting")
 
 
 class ProposalRuleTests(unittest.TestCase):

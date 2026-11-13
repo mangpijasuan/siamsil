@@ -5,7 +5,7 @@ Version 1.0 · Updated 2026-11-08
 > The Siamsil Zomi Standard Format (SZSF) is the authoritative data schema and linguistic file standard developed by Siamsil
 > for Zomi language preservation, improvement, and digital localization.
 
-The project owner chose this name and definition on 2026-11-08. SZSF is the format of Siamsil's **master file**: the one file
+The project owner, the original creator of the Siamsil Zomi Standard Form, chose this name and definition on 2026-11-08. SZSF is the format of Siamsil's **master file**: the one file
 that holds the trained and reviewed Zomi data, each record with its original text, its standard form, where it came from, who
 reviewed it, and what it may be used for. Training sets, test sets and the dictionary release are all drawn from it.
 
