@@ -15,13 +15,20 @@
       "proposed_on": "2026-11-13",
       "owner_words": "I want to use as the Bible uh hi",
       "approved_by": [],
-      "reason": "The project owner chose the Bibles' spelling, two words. This follows the Standard Form tie-break (common published usage first).",
+      "reason": "The project owner chose the Bibles' spelling, two words, because 'uh' marks the plural and 'hi' is the verb (owner_example). This also follows the Standard Form tie-break (common published usage first).",
       "evidence": {
         "corpus": "uhi: 32,520 words in 31,247 pairs; uhhi: 473 words in 464 pairs (language database v2, 2026-11-13)",
         "tedim_bibles": "'uh hi' as two words 21,496 times; 'uhi' and 'uhhi' 0 times (TDB and TB77)",
         "dictionary": "'uhi' and 'uhhi' 0 times in the 50K Translation Master",
         "context": "In the corpus 'uhi' appears mostly in pairs about 'they', 'their', 'people', 'each', 'both' (plural subjects), the same use as 'uh hi'",
-        "related": "rule check uh-hi lists 'uh hi' and 'uhhi' (the Zolai Standard Format writes uhhi); 'uh hiam' / 'uhhiam' is the same question for the question form and is not part of this proposal"
+        "related": "rule check uh-hi lists 'uh hi' and 'uhhi' (the Zolai Standard Format writes uhhi); 'uh hiam' / 'uhhiam' is the same question for the question form and is not part of this proposal",
+        "corpus_two_word_form": "'uh hi' as two words is already the main spelling in the corpus: 142,392 times, against 32,520 for 'uhi' and 473 for 'uhhi'"
+      },
+      "owner_reason": "uh is plural and hi is verb, for example: they will go. Amaute pai ding uh hi.",
+      "owner_example": {
+        "zomi": "Amaute pai ding uh hi.",
+        "english": "They will go.",
+        "given_by": "project owner, 2026-11-13"
       }
     },
     {
@@ -54,6 +61,15 @@
         "thilte"
       ],
       "note": "Follows from P-002 ('thil' + 'te' becomes 'na' + 'te'), and 'nate' is the Tedim Bible's word for 'things'. The owner has not decided it: 'thilte' appears 1,623 times in the corpus and in the Hakha Bible only.",
+      "needs": "the project owner's decision, then a second reviewer"
+    },
+    {
+      "standard": "uh hiam",
+      "variants": [
+        "uhiam",
+        "uhhiam"
+      ],
+      "note": "The question form, by the same reasoning as P-001 ('uh' plural, 'hiam' the question verb). 'uh hiam' as two words is the main form in the corpus (10,911 times); 'uhiam' appears 947 times and 'uhhiam' 9 times. It is already a pair in the rule check uh-hi. The owner has not decided it.",
       "needs": "the project owner's decision, then a second reviewer"
     }
   ]

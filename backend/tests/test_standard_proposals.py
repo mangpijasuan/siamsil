@@ -42,6 +42,8 @@ class RealProposalsTests(unittest.TestCase):
             self.assertEqual(record["approved_by"], [])  # a rule is adopted only by two reviewers
             self.assertEqual(record["proposed_by"], "project owner")
         self.assertIn("uh hi", one["owner_words"])
+        self.assertIn("plural", one["owner_reason"])  # the owner's reason: 'uh' is plural, 'hi' is the verb
+        self.assertEqual(one["owner_example"]["zomi"], "Amaute pai ding uh hi.")
         self.assertIn("thil", two["owner_words"])
         self.assertTrue(two["evidence"]["caution"])  # the reviewer is told 'na' has other meanings
         # Nothing is applied: the adopted standard does not change a text that uses either spelling.
@@ -53,8 +55,9 @@ class RealProposalsTests(unittest.TestCase):
         data = json.loads(zs.DEFAULT_PROPOSALS.read_text(encoding="utf-8"))
         self.assertEqual([p["id"] for p in data["proposals"]], ["P-001", "P-002"])
         suggested = data["suggested_not_decided"]
-        self.assertEqual([(s["standard"], s["variants"]) for s in suggested], [("nate", ["thilte"])])
-        self.assertIn("owner has not decided", suggested[0]["note"])
+        self.assertEqual([(s["standard"], s["variants"]) for s in suggested],
+                         [("nate", ["thilte"]), ("uh hiam", ["uhiam", "uhhiam"])])
+        self.assertTrue(all("not decided" in s["note"] for s in suggested))
 
 
 class ProposalRuleTests(unittest.TestCase):

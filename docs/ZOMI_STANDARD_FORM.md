@@ -78,11 +78,12 @@ A rule is adopted only when two reviewers agree. When the project owner asks for
 
 | Proposal | Owner's words (2026-11-13) | Change | Evidence |
 | --- | --- | --- | --- |
-| P-001 | "I want to use as the Bible uh hi" | `uhi`, `uhhi` → `uh hi` | The Tedim Bibles write `uh hi` as two words 21,496 times and never `uhi` or `uhhi`. In the corpus `uhi` is used about 32,500 times (`uhhi`, the *Zolai Standard Format* spelling, 473 times). |
+| P-001 | "I want to use as the Bible uh hi"; reason: "uh is plural and hi is verb, for example: they will go. Amaute pai ding uh hi." | `uhi`, `uhhi` → `uh hi` | The Tedim Bibles write `uh hi` as two words 21,496 times and never `uhi` or `uhhi`. The corpus already writes `uh hi` 142,392 times, against about 32,500 for `uhi` and 473 for `uhhi` (the *Zolai Standard Format* spelling). |
 | P-002 | "if you see "thil", replace with "na", etc" | `thil` → `na` | `thil` is used about 14,000 times in the corpus, never in the Tedim Bibles, but in the Falam and Hakha Bibles. Aligned with the English Bible, the Tedim word most tied to "thing(s)" is `nate`, which is `na` with the plural `te`. |
 
 - **Caution for P-002.** `na` is also a very common word with other meanings in the Tedim Bibles, so a Zomi reviewer should check sentences in context. A reviewer may adopt it first as mode `flag`, which lists each match and changes nothing.
-- **Not decided.** `thilte` → `nate` would follow from P-002 and `nate` is the Tedim Bible's word for "things", but the owner has not decided it (`suggested_not_decided` in the file). The question form `uh hiam` / `uhhiam` is part of the existing `uh-hi` check, not of P-001.
+- **Why P-001.** The owner's reason: `uh` is the plural and `hi` is the verb, as in *Amaute pai ding uh hi* ("They will go"). The two-word form is already the main spelling in the corpus, so this rule mostly tidies the joined forms.
+- **Not decided.** `thilte` → `nate` would follow from P-002 and `nate` is the Tedim Bible's word for "things", but the owner has not decided it (`suggested_not_decided` in the file). The question form follows the same reasoning (`uh hiam` is the main form, 10,911 times, against `uhiam` 947 and `uhhiam` 9) and is also kept as a suggestion, not part of P-001.
 - **Adopting.** Two reviewers confirm a proposal in the review workbook. It then goes into `standard.json` with an ID (`ZS-nnn`), two reviewer codes, the date and the reason, the version goes up by a minor number, and the proposal leaves the proposals file. Only then can an SZSF record cite it in `zomi_standard_rules`.
 - Counts in the table count words; `preview` counts matches by the tool's own rules, which skip a form joined to another word by an apostrophe or a hyphen, so the two differ slightly.
 
