@@ -49,7 +49,8 @@ body .shell-menu-btn:focus-visible, body .shell-user-link:focus-visible { outlin
 body .desktop-sidebar,
 body .mobile-drawer {
   background:
-    url("/theme/rail-mountain.webp") bottom center / 100% auto no-repeat,
+    linear-gradient(180deg, rgba(11, 31, 59, 0.80) 0%, rgba(11, 31, 59, 0.48) 42%, rgba(11, 31, 59, 0.2) 100%),
+    url("/theme/rail-zongam.webp") 85% 100% / cover no-repeat,
     linear-gradient(180deg, var(--st-navy-1) 0%, #0a1d3d 60%, #08172f 100%);
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: none;
@@ -176,7 +177,8 @@ body .mobile-drawer .side-panel-foot, body .desktop-sidebar .side-panel-foot { c
 body .desktop-sidebar,
 body .mobile-drawer {
   background:
-    url("/theme/rail-mountain.webp") bottom center / 100% auto no-repeat,
+    linear-gradient(180deg, rgba(11, 31, 59, 0.80) 0%, rgba(11, 31, 59, 0.48) 42%, rgba(11, 31, 59, 0.2) 100%),
+    url("/theme/rail-zongam.webp") 85% 100% / cover no-repeat,
     linear-gradient(180deg, #0b2246 0%, #0a1d3d 60%, #08172f 100%) !important;
   border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
@@ -215,12 +217,6 @@ body .mobile-drawer .side-panel-group-more > a:first-child::before {
 /* Glyphs cut from the sheet are masks, so one file takes any colour. */
 .st-nav-glyph { width: 26px; height: 26px; display: block; background: currentColor; -webkit-mask: var(--glyph) center / contain no-repeat; mask: var(--glyph) center / contain no-repeat; }
 body .desktop-sidebar .side-panel-icon, body .mobile-drawer .side-panel-icon { width: 26px; height: 26px; }
-/* The drawer is taller and wider than the rail: keep the peaks below the menu text. */
-body .mobile-drawer {
-  background:
-    url("/theme/rail-mountain.webp") center calc(100% + 170px) / 100% auto no-repeat,
-    linear-gradient(180deg, #0b1f3b 0%, #0a1d3d 60%, #08172f 100%) !important;
-}
 
 /* Featured Resources: photo cards (default, and gold on hover or keyboard focus, as in the design sheet). */
 .sr-home .sr-resources-grid .sr-resource-photo {

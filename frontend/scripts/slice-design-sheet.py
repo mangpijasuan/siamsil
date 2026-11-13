@@ -80,8 +80,7 @@ for key, box in SIDE.items():
     glyph_mask(box, key, "nav")
 for key, box in STATS.items():
     glyph_mask(box, key, "stat", floor=100, ceil=200)  # the stats bar is lighter than the rail, so a higher floor
-# Tall mountain for the foot of the rail; white mist mountains for the foot of the verse panel.
-faded((1551, 324, 1658, 485), "rail-mountain", (320, 482), fade=0.45)
+# White mist mountains for the foot of the verse panel.
 faded((1265, 354, 1531, 471), "mist-mountains", (798, 351), fade=0.5)
 # Featured Resources photos, from design/siamsil-resources-sheet.png: square, rounded, without the sheet's white frame.
 RES = Image.open(HERE / "design" / "siamsil-resources-sheet.png").convert("RGB")
@@ -98,4 +97,6 @@ for key, (x0, y0, x1, y1) in PHOTOS.items():
     photo = photo.convert("RGBA")
     photo.putalpha(mask.resize((240, 240), Image.LANCZOS))
     photo.save(OUT / f"photo-{key}.webp", quality=90, method=6)
+# The Zongam mountain photo (design/zongam-mountain.jpg) is the background of the side panel.
+Image.open(HERE / "design" / "zongam-mountain.jpg").convert("RGB").save(OUT / "rail-zongam.webp", quality=82, method=6)
 print("wrote", len(list(OUT.iterdir())), "files to", OUT)
