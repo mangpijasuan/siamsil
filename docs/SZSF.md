@@ -140,11 +140,29 @@ python3 ml_pipeline/scripts/szsf.py manifest szsf-master-v1.0.0.jsonl --out szsf
 python3 ml_pipeline/scripts/szsf.py validate szsf-master-v1.0.0.jsonl --manifest szsf-master-v1.0.0.manifest.json
 ```
 
+## Converting the training export
+
+`ml_pipeline/scripts/szsf_convert.py pairs` turns the output of `export_datasets.py` into a master file and its manifest:
+
+```bash
+python3 ml_pipeline/scripts/szsf_convert.py pairs \
+  --input data/datasets/train.jsonl data/datasets/validation.jsonl data/datasets/test.jsonl \
+  --db data/processed/language/siamsil_language.sqlite --reviews data/reviews/corpus-reviews.jsonl \
+  --roster roster.csv --out szsf-master-v1.0.0.jsonl --rejects rejects.jsonl
+```
+
+- `english` and `zomi` are copied as they are; `zomi_standard` comes from the adopted rules (`zolai_standard.py`), and equals `zomi` while none is adopted.
+- A corpus pair's review result comes from the saved review records (SOP-07), found through its pair hash. An export record marked human-reviewed that has no `HUMAN_APPROVED` decision stops the run: the export and the reviews are from different runs.
+- Corpus Zomi is `machine_generated` with the generator's `model`, and `provider_derived: true` unless `--own-model` names a model Siamsil trained itself. Sources whose origin is not recorded are `unknown`. Bible and the reviewed daily-use phrases are `human_written`; their `review` stays `UNREVIEWED`, because SZSF's review block records the SOP-07 pipeline, not who wrote the text.
+- Records that fail `szsf.py` go to `--rejects` with their problems and are never corrected. The written file is checked as a whole (rights file, adopted rules, roster) before it is put in place, and an existing master file is never overwritten.
+- Converting clears nothing. `szsf.py validate --purpose training` still refuses sources that are not cleared and provider-derived records.
+
+Tried on 2026-11-13 on a 913-pair sample of the local corpus: every record followed the format, and the training check refused all of them (rights `needs_review`; Gemini-made). No sample is kept.
+
 ## Status and next steps
 
-SZSF 1.0 is the format. **No master file has been made yet**, and nothing in the app reads one.
+SZSF 1.0 is the format, with a validator, a manifest writer and a converter for translation pairs. **No master file has been made yet**, and nothing in the app reads one.
 
 1. The project owner and the Zomi reviewers confirm the fields and the review statuses above.
-2. A converter turns what exists into SZSF: the training export (`export_datasets.py`), the corpus reviews, and the dictionary
-   senses, with the standard form added by `zolai_standard.py apply`. It starts with the pairs a human has approved.
-3. The first master file is made in siamsil-data, checked, given its manifest, and used to train the first reviewed baseline.
+2. The converter handles translation pairs. Dictionary senses (`kind: dictionary_sense`) are not converted yet, and the converter has not been run on the full export or on the Bible and phrase sources.
+3. The first master file is made in siamsil-data, checked, given its manifest, and used to train the first reviewed baseline, once the training rights of its sources are settled.
