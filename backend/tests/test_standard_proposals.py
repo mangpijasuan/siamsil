@@ -34,13 +34,17 @@ class RealProposalsTests(unittest.TestCase):
     def test_the_owners_two_proposals_are_recorded_and_not_adopted(self) -> None:
         adopted = zs.load()
         preview, records = zs.load_proposals(zs.DEFAULT_PROPOSALS, zs.DEFAULT_CHECKS, adopted)
-        self.assertEqual(sorted(records), ["P-001", "P-002"])
-        one, two = records["P-001"], records["P-002"]
+        self.assertEqual(sorted(records), ["P-001", "P-002", "P-003"])
+        one, two, three = records["P-001"], records["P-002"], records["P-003"]
         self.assertEqual((one["standard"], one["variants"], one["mode"]), ("uh hi", ["uhi", "uhhi"], "replace"))
         self.assertEqual((two["standard"], two["variants"], two["mode"]), ("na", ["thil"], "replace"))
         for record in records.values():
             self.assertEqual(record["approved_by"], [])  # a rule is adopted only by two reviewers
+            # The owner's decision is marked as a Zomi speaker review: one reviewer, no code yet, so not an adoption.
+            self.assertEqual([(r["reviewer"], r["kind"], r["code"]) for r in record["reviews"]],
+                             [("project owner", "Zomi speaker review", None)])
             self.assertEqual(record["proposed_by"], "project owner")
+        self.assertEqual((three["standard"], three["variants"]), ("uh hiam", ["uhiam", "uhhiam"]))
         self.assertIn("uh hi", one["owner_words"])
         self.assertIn("plural", one["owner_reason"])  # the owner's reason: 'uh' is plural, 'hi' is the verb
         self.assertEqual(one["owner_example"]["zomi"], "Amaute pai ding uh hi.")
@@ -53,10 +57,9 @@ class RealProposalsTests(unittest.TestCase):
 
     def test_the_suggestion_the_owner_has_not_decided_is_kept_apart(self) -> None:
         data = json.loads(zs.DEFAULT_PROPOSALS.read_text(encoding="utf-8"))
-        self.assertEqual([p["id"] for p in data["proposals"]], ["P-001", "P-002"])
+        self.assertEqual([p["id"] for p in data["proposals"]], ["P-001", "P-002", "P-003"])
         suggested = data["suggested_not_decided"]
-        self.assertEqual([(s["standard"], s["variants"]) for s in suggested],
-                         [("nate", ["thilte"]), ("uh hiam", ["uhiam", "uhhiam"])])
+        self.assertEqual([(s["standard"], s["variants"]) for s in suggested], [("nate", ["thilte"])])
         self.assertTrue(all("not decided" in s["note"] for s in suggested))
 
 
@@ -80,6 +83,10 @@ class ProposalRuleTests(unittest.TestCase):
         self.refused([proposal(id="ZS-001")], "id must look like P-001")
         self.refused([proposal(), proposal()], "used twice")
         self.refused([proposal(proposed_by="")], "who asked for it")
+        first = {"reviewer": "A", "kind": "Zomi speaker review", "decided_on": "2026-11-13", "code": "R01"}
+        self.refused([proposal(reviews=[first, {**first, "reviewer": "B", "code": "E01"}])], "two reviewers with codes")
+        self.refused([proposal(reviews=[{"reviewer": "A"}])], "each review needs")
+        self.refused([proposal(reviews=[{**first, "code": "Ann Smith"}])], "must look like R01")
         self.refused([proposal(), proposal(id="P-002", standard="OTHER")], "also in")  # the same variant in two proposals
         self.refused([proposal(variants=["ZSTD_ONE"])], "standard spelling itself")
         adopted = zs.parse({"version": "1.0.0", "rules": [

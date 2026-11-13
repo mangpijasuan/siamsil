@@ -246,6 +246,14 @@ def load_proposals(path: Path = DEFAULT_PROPOSALS, checks: Path | None = DEFAULT
             problems.append(f"proposal {name}: id used twice")
         if len(set(item.get("approved_by") or [])) >= 2:
             problems.append(f"proposal {name}: already has two reviewers; adopt it in standard.json instead")
+        reviews = item.get("reviews") or []
+        codes = {r.get("code") for r in reviews if isinstance(r, dict) and r.get("code")}
+        if not all(isinstance(r, dict) and r.get("reviewer") and r.get("kind") and r.get("decided_on") for r in reviews):
+            problems.append(f"proposal {name}: each review needs reviewer, kind and decided_on")
+        if any(code and not REVIEWER.match(str(code)) for code in codes):
+            problems.append(f"proposal {name}: a review code must look like R01 or E01")
+        if len(codes) >= 2:
+            problems.append(f"proposal {name}: two reviewers with codes have confirmed it; adopt it in standard.json instead")
         if not item.get("proposed_by") or not item.get("proposed_on"):
             problems.append(f"proposal {name}: needs proposed_by and proposed_on (who asked for it, and when)")
         records[name] = item
@@ -378,6 +386,8 @@ def main(argv: list[str] | None = None) -> int:
             record = records[name]
             print(f"\n{name}: {', '.join(record['variants'])} -> {record['standard']} ({record.get('mode', 'replace')}), "
                   f"proposed by {record['proposed_by']} on {record['proposed_on']}")
+            seen = ", ".join(f"{r['reviewer']} ({r['kind']}, {r['decided_on']})" for r in record.get("reviews", [])) or "none"
+            print(f"  reviews: {seen}; adopted only when two different reviewers have confirmed")
             print(f"  {result['occurrences']:,} occurrences in {result['pairs']:,} pairs; by spelling: "
                   + ", ".join(f"{v} {c:,}" for v, c in sorted(result["variants"].items(), key=lambda x: -x[1])))
             for example in result["examples"]:

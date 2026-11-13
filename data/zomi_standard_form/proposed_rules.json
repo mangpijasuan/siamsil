@@ -29,7 +29,16 @@
         "zomi": "Amaute pai ding uh hi.",
         "english": "They will go.",
         "given_by": "project owner, 2026-11-13"
-      }
+      },
+      "reviews": [
+        {
+          "reviewer": "project owner",
+          "kind": "Zomi speaker review",
+          "decided_on": "2026-11-13",
+          "code": null,
+          "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. One reviewer is not enough: a second, different reviewer must confirm before the rule is adopted."
+        }
+      ]
     },
     {
       "id": "P-002",
@@ -51,7 +60,46 @@
         "context": "In the corpus 'thil' appears mostly in pairs about 'things', 'something', 'everything', 'happen'",
         "tedim_bible_for_things": "Aligned with the English Bible, the Tedim word most tied to 'thing(s)' is 'nate' ('na' with the plural 'te'): 112 of 1,504 verses, 6.9 times the usual rate",
         "caution": "'na' is also a very common word with other meanings in the Tedim Bibles, so the sentences need a Zomi reviewer's check in context. A reviewer may prefer mode 'flag' first, which lists each match and changes nothing."
-      }
+      },
+      "reviews": [
+        {
+          "reviewer": "project owner",
+          "kind": "Zomi speaker review",
+          "decided_on": "2026-11-13",
+          "code": null,
+          "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. One reviewer is not enough: a second, different reviewer must confirm before the rule is adopted."
+        }
+      ]
+    },
+    {
+      "id": "P-003",
+      "standard": "uh hiam",
+      "variants": [
+        "uhiam",
+        "uhhiam"
+      ],
+      "mode": "replace",
+      "check": "uh-hi",
+      "proposed_by": "project owner",
+      "proposed_on": "2026-11-13",
+      "owner_words": "yes, that is the correct one",
+      "owner_words_context": "The owner's answer to the question whether 'uh hiam' (replacing 'uhiam' and 'uhhiam') should be a second proposal, after giving the reason for P-001.",
+      "owner_reason": "uh is plural and hi is verb (P-001); the question form follows the same reasoning",
+      "approved_by": [],
+      "reason": "The question form of P-001: 'uh' marks the plural and 'hiam' is the question verb. The two-word form is already the main spelling in the corpus.",
+      "evidence": {
+        "corpus": "'uh hiam' as two words 10,911 times; 'uhiam' 947 times; 'uhhiam' 9 times (language database v2, 2026-11-13)",
+        "related": "rule check uh-hi lists 'uh hiam' and 'uhhiam' as a pair"
+      },
+      "reviews": [
+        {
+          "reviewer": "project owner",
+          "kind": "Zomi speaker review",
+          "decided_on": "2026-11-13",
+          "code": null,
+          "note": "A human review of this spelling decision by a Zomi speaker. The roster code is added when the roster exists. One reviewer is not enough: a second, different reviewer must confirm before the rule is adopted."
+        }
+      ]
     }
   ],
   "suggested_not_decided": [
@@ -61,15 +109,6 @@
         "thilte"
       ],
       "note": "Follows from P-002 ('thil' + 'te' becomes 'na' + 'te'), and 'nate' is the Tedim Bible's word for 'things'. The owner has not decided it: 'thilte' appears 1,623 times in the corpus and in the Hakha Bible only.",
-      "needs": "the project owner's decision, then a second reviewer"
-    },
-    {
-      "standard": "uh hiam",
-      "variants": [
-        "uhiam",
-        "uhhiam"
-      ],
-      "note": "The question form, by the same reasoning as P-001 ('uh' plural, 'hiam' the question verb). 'uh hiam' as two words is the main form in the corpus (10,911 times); 'uhiam' appears 947 times and 'uhhiam' 9 times. It is already a pair in the rule check uh-hi. The owner has not decided it.",
       "needs": "the project owner's decision, then a second reviewer"
     }
   ]
