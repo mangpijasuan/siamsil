@@ -20,14 +20,24 @@ Measured on the 1,777,002-pair corpus (2026-11-08):
 
 ## The project owner's scheme
 
-Recorded in `data/zomi_names.json`, in the owner's words, with what is still to be confirmed:
+Recorded in `data/zomi_names.json`, in the owner's words (2026-11-08, corrected and extended 2026-11-13):
 
 | Stage | Girls and women | Boys and men |
 | --- | --- | --- |
-| `child` (to confirm) | Cingno | Thangno |
+| `child` (Cingno and Thangno are used from toddler to adult) | Cingno | Thangno |
 | **`young_adult` (default)** | Cing Khup | Ngam Bawm |
-| `married` | Nu Cing | Pa Pa Thang (may be "Pa Thang") |
-| `older` | Pi Cing Khup | Pu Ngam Bawm |
+| `married` | Nu Cing | Pa Thang |
+| `older` (from 60) | Pi Cing Khup | Pu Ngam Bawm |
+
+**Address forms** (owner, 2026-11-13). Besides the names above, a person is called differently by life stage:
+
+| Stage | Girls and women | Boys and men |
+| --- | --- | --- |
+| Not married, from age 12 until marriage | the name with **Lia** | the name with **Taang** or **Tg** |
+| Married | **Nu** | **Pa** |
+| From age 60 | **Pi** | **Pu** |
+
+The tool does **not** apply the address forms yet. Still to confirm with the owner: where Lia, Taang and Tg stand relative to the name, whether Taang and Tg are two spellings of one marker, and how they combine with the young adult names Cing Khup and Ngam Bawm.
 
 The owner ended with "etc.": more names are coming. **Nobody adds a name here unless a Zomi speaker supplied it.** A second
 person confirms the list, as for every adopted rule.
@@ -83,7 +93,8 @@ a small sample only.
 
 ## Not built yet
 
-- Stages other than the default. A name after a title is left alone, and the other stages are in the table for when the owner
-  says how the cues should work (for example what "Mr", "Uncle" or "old man" mean for the stage).
+- Stages other than the default, and the address forms (Lia, Taang or Tg, Nu, Pa, Pi, Pu). A name after a title is left alone, and
+  the other stages are in the tables for when the owner says how the cues should work (for example what "Mr", "Uncle" or
+  "old man" mean for the stage, and how the address forms attach to the name).
 - Names at translation time.
 - Reading the swapped file in `export_datasets.py`.
