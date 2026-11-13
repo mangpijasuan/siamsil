@@ -1,0 +1,241 @@
+/* Siamsil theme — navy shell, gold accents, serif headings (the owner's design mock-up, 2026-11-12).
+   Loaded after globals.css so it wins over the earlier shell rules; scoped to the shell and the home page. */
+:root {
+  /* The palette on the owner's design sheet. */
+  --st-navy-0: #0b1f3b;   /* Navy (primary) */
+  --st-navy-1: #0b1f3b;
+  --st-navy-2: #123a6b;   /* Deep blue */
+  --st-blue: #1e4e8c;     /* Blue */
+  --st-accent: #2d6cb3;   /* Accent blue */
+  --st-gold-0: #f9d778;   /* Gold light */
+  --st-gold-1: #d4af37;   /* Gold (primary) */
+  --st-gold-2: #b8922a;
+  --st-bg: #f5f7fb;       /* Background */
+  --st-card: #e8effb;     /* Card background */
+  --st-ink: #0f172a;      /* Text / dark */
+  --st-line: rgba(231, 196, 123, 0.28);
+  --st-gutter: clamp(14px, 2.5vw, 38px); /* the body content's side padding; the header lines up with it */
+}
+
+/* ── Top bar ─────────────────────────────────────────────── */
+body .shell-topbar {
+  height: 80px;
+  background: linear-gradient(90deg, var(--st-navy-0) 0%, var(--st-navy-1) 45%, var(--st-navy-2) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: none;
+}
+body .shell-topbar-inner { height: 80px; padding: 0 22px 0 24px; gap: 18px; max-width: none; }
+body .shell-menu-btn {
+  width: 52px; height: 46px; border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff;
+}
+body .shell-brand-mobile { margin-right: auto; }
+body .brand-lockup { height: 62px; width: auto; }
+body .shell-topbar-search {
+  flex: 0 1 365px; height: 46px; border-radius: 999px; background: #fff; border: 0;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); color: #6b7a92;
+}
+body .shell-topbar-search svg { color: #4c607f; }
+body .shell-topbar-search-input { font-size: 15px; color: #13294d; }
+body .shell-user-link { background: transparent; border: 0; padding: 0; gap: 0; }
+body .shell-user-copy { display: none; }
+body .shell-user-avatar {
+  width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--st-navy-1); color: var(--st-gold-0); border: 2px solid var(--st-gold-1);
+}
+body .shell-topbar-search:focus-within,
+body .shell-menu-btn:focus-visible, body .shell-user-link:focus-visible { outline: 3px solid var(--st-gold-0); outline-offset: 2px; }
+
+/* ── Side navigation ────────────────────────────────────── */
+body .desktop-sidebar,
+body .mobile-drawer {
+  background:
+    linear-gradient(180deg, rgba(11, 31, 59, 0.80) 0%, rgba(11, 31, 59, 0.48) 42%, rgba(11, 31, 59, 0.2) 100%),
+    url("/theme/rail-zogam.webp") 85% 100% / cover no-repeat,
+    linear-gradient(180deg, var(--st-navy-1) 0%, #0a1d3d 60%, #08172f 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+}
+@media (min-width: 1024px) {
+  body .desktop-sidebar:not(.collapsed) { width: 174px; min-width: 174px; display: flex; flex-direction: column; }
+  body .desktop-sidebar .side-panel-nav { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 14px 12px 20px; }
+}
+body .desktop-sidebar .side-panel-group,
+body .mobile-drawer .side-panel-group { display: contents; }
+body .desktop-sidebar .side-panel-group-title,
+body .mobile-drawer .side-panel-group-title { display: none; }
+body .desktop-sidebar .side-panel-hint,
+body .mobile-drawer .side-panel-hint { display: none; }
+body .desktop-sidebar .side-panel-item,
+body .mobile-drawer .side-panel-item {
+  min-height: 50px; padding: 0 12px; gap: 14px; border-radius: 10px;
+  color: #eaf0fb; background: transparent; box-shadow: none;
+}
+body .desktop-sidebar .side-panel-item:hover,
+body .mobile-drawer .side-panel-item:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+body .desktop-sidebar .side-panel-icon,
+body .mobile-drawer .side-panel-icon { width: 24px; height: 24px; background: transparent; color: #f3f6fc; }
+body .desktop-sidebar .side-panel-label,
+body .mobile-drawer .side-panel-label { font-size: 15px; font-weight: 500; color: inherit; }
+body .desktop-sidebar .side-panel-item.active,
+body .mobile-drawer .side-panel-item.active {
+  background: linear-gradient(135deg, var(--st-gold-0), var(--st-gold-1) 62%, var(--st-gold-2));
+  color: #0b2246; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+body .desktop-sidebar .side-panel-item.active .side-panel-icon,
+body .mobile-drawer .side-panel-item.active .side-panel-icon,
+body .desktop-sidebar .side-panel-item.active .side-panel-label,
+body .mobile-drawer .side-panel-item.active .side-panel-label { color: #0b2246; background: transparent; font-weight: 700; }
+body .desktop-sidebar .side-panel-item.active::before,
+body .mobile-drawer .side-panel-item.active::before { display: none; }
+/* Profile sits at the foot of the rail as an outlined button. */
+body .desktop-sidebar .side-panel-group-end,
+body .mobile-drawer .side-panel-group-end { display: block; margin-top: auto; padding-top: 14px; }
+body .desktop-sidebar .side-panel-group-end .side-panel-item,
+body .mobile-drawer .side-panel-group-end .side-panel-item {
+  border: 1px solid rgba(255, 255, 255, 0.45); background: rgba(8, 23, 47, 0.55);
+}
+body .desktop-sidebar .side-panel-item:focus-visible,
+body .mobile-drawer .side-panel-item:focus-visible { outline: 3px solid var(--st-gold-0); outline-offset: 2px; }
+body .mobile-drawer-head { border-bottom-color: rgba(255, 255, 255, 0.08); }
+body .mobile-drawer .side-panel-close { color: #fff; }
+body .mobile-drawer .side-panel-foot, body .desktop-sidebar .side-panel-foot { color: rgba(255, 255, 255, 0.55); }
+
+/* ── Home ───────────────────────────────────────────────── */
+.sr-home { background: var(--st-bg); color: var(--st-ink); padding-bottom: 36px; }
+.sr-home .sr-hero {
+  margin: 0; border-radius: 0; min-height: 410px; border-bottom: 0; box-shadow: none; padding-top: 56px;
+  background:
+    linear-gradient(90deg, rgba(7, 22, 47, 0.95) 0%, rgba(7, 22, 47, 0.82) 38%, rgba(7, 22, 47, 0.18) 74%, rgba(7, 22, 47, 0.04) 100%),
+    url("/hero-zomi-hills.webp") right center / cover no-repeat, #0b2246;
+}
+.sr-home .sr-eyebrow { font-size: 12.5px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: var(--st-gold-1); }
+.sr-home .sr-title { font-size: clamp(38px, 4.2vw, 64px); line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; }
+.sr-home .sr-title em { color: var(--st-gold-0); }
+.sr-home .sr-summary { font-size: 17px; line-height: 1.55; color: #dce5f3; }
+.sr-home .sr-search { max-width: 650px; padding: 7px; border-radius: 12px; }
+.sr-home .sr-search button { background: linear-gradient(135deg, var(--st-gold-0), var(--st-gold-1) 62%, var(--st-gold-2)); border-radius: 9px; padding: 0 28px; font-size: 16px; }
+.sr-home .sr-chip { background: rgba(255, 255, 255, 0.05); }
+.sr-home .sr-content { padding-top: 14px; padding-left: var(--st-gutter); padding-right: var(--st-gutter); }
+.sr-home .sr-feature { border-radius: 14px; min-height: 126px; padding: 16px 16px 14px; flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 4px 14px; }
+.sr-home .sr-feature-tile { width: 52px; height: 52px; border-radius: 14px; box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12); }
+.sr-home .sr-feature-title { font-size: 18px; align-self: center; flex: 1 1 0; min-width: 0; }
+.sr-home .sr-feature-copy { flex-basis: 100%; margin-left: 0; padding-right: 26px; }
+.sr-home .sr-feature-arrow { color: var(--st-gold-2); }
+.sr-home .sr-metrics { border-radius: 14px; padding: 14px 8px; background: linear-gradient(100deg, var(--st-navy-1), var(--st-navy-2)); }
+.sr-home .sr-metric { display: flex; align-items: center; gap: 16px; padding: 8px 26px; }
+.sr-home .sr-metric-icon { color: var(--st-gold-1); flex: none; display: grid; }
+.st-stat-glyph { width: 44px; height: 44px; display: block; background: var(--st-gold-1); -webkit-mask: var(--glyph) center / contain no-repeat; mask: var(--glyph) center / contain no-repeat; }
+.sr-home .sr-metric dd, .sr-home .sr-metric dt { margin: 0; }
+.sr-home .sr-metric strong { font-size: 26px; }
+.sr-home .sr-panel { border-radius: 14px; }
+.sr-home .sr-eyebrow.sr-eyebrow-dark { color: #b98a3b; font-size: 11.5px; }
+.sr-home .sr-panel-head a { color: #b07d2a; font-weight: 600; font-size: 13px; }
+.sr-home .sr-verse-box { position: relative; overflow: hidden; background: #fff; border: 0; border-left: 0; padding: 14px 0 70px; }
+.sr-home .sr-verse-box::before { content: "\201C"; font-family: var(--font-playfair), Georgia, serif; font-size: 54px; line-height: .6; color: var(--st-gold-1); display: block; margin-bottom: 6px; }
+.sr-home .sr-verse-box::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 62px;
+  background: url("/theme/mist-mountains.webp") bottom center / 100% 100% no-repeat; pointer-events: none;
+}
+.sr-home .sr-resources-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.sr-home .sr-panel { container-type: inline-size; }
+@container (min-width: 520px) { .sr-resources-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
+.sr-home .sr-resources-grid .sr-resource {
+  flex-direction: column; align-items: flex-start; gap: 10px; border: 1px solid #dbe5f5; border-radius: 12px; padding: 14px; background: var(--st-card);
+}
+.sr-home .sr-resources-grid .sr-resource:last-child { border-bottom: 1px solid #e5eaf1; }
+.sr-home .sr-resources-grid .sr-resource-icon { width: 44px; height: 44px; background: #fff; color: #183e69; }
+@media (max-width: 1190px) {
+  .sr-home .sr-feature { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: 7px; }
+  .sr-home .sr-feature-title { flex: none; align-self: flex-start; }
+  .sr-home .sr-feature-copy { flex-basis: auto; padding-right: 0; }
+}
+@media (max-width: 1023px) {
+  body .shell-topbar, body .shell-topbar-inner { height: 70px; }
+  body .brand-lockup { height: 50px; }
+  body .shell-topbar-search { display: none; }
+  body .shell-topbar-search-btn { color: #fff; }
+}
+@media (max-width: 767px) {
+  .sr-home .sr-hero { margin: 0; padding: 26px 17px 27px; min-height: 0;
+    background:
+      linear-gradient(180deg, rgba(7, 22, 47, 0.62) 0%, rgba(7, 22, 47, 0.82) 48%, rgba(7, 22, 47, 0.74) 100%),
+      url("/hero-zomi-hills-sm.webp") right center / cover no-repeat, #0b2246; }
+  .sr-home .sr-metric { padding: 10px 12px; gap: 10px; }
+  .sr-home .sr-summary br { display: none; }
+}
+
+/* ── Positions (the earlier shell rules use !important, so these do too) ── */
+@media (min-width: 1024px) {
+  body .shell-topbar { --shell-rail-width: 174px; }
+  body .shell-topbar.nav-collapsed { --shell-rail-width: 84px; }
+  body .desktop-sidebar { top: 80px !important; height: calc(100vh - 80px) !important; }
+  body .desktop-sidebar:not(.collapsed) { width: 174px !important; min-width: 174px !important; }
+  body .shell-topbar .shell-brand-mobile { left: calc(var(--shell-rail-width) + var(--st-gutter)); margin: 0; transform: translateY(-50%); }
+  body .shell-topbar-search { left: auto !important; right: calc(var(--st-gutter) + 62px); transform: translateY(-50%) !important; width: 365px !important; }
+  body .shell-user-link { right: var(--st-gutter); display: inline-flex; padding: 0; border: 0; background: transparent; }
+}
+body .desktop-sidebar,
+body .mobile-drawer {
+  background:
+    linear-gradient(180deg, rgba(11, 31, 59, 0.80) 0%, rgba(11, 31, 59, 0.48) 42%, rgba(11, 31, 59, 0.2) 100%),
+    url("/theme/rail-zogam.webp") 85% 100% / cover no-repeat,
+    linear-gradient(180deg, #0b2246 0%, #0a1d3d 60%, #08172f 100%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+body .mobile-drawer { top: 70px; }
+@media (min-width: 1024px) { body .desktop-sidebar .side-panel-group-end { position: relative; z-index: 1; } }
+@media (min-width: 1024px) { body { padding-bottom: 0 !important; } }
+/* The home page uses the full width at every size; other pages keep their reading column. */
+body .app-main:has(> .sr-home) { max-width: none; margin: 0; }
+
+/* ── Reading pages (About, Help, Resources) ── */
+.st-doc { max-width: 820px; margin: 0 auto; padding: 36px clamp(18px, 4vw, 40px) 64px; color: #152c50; }
+.st-doc-head { padding-bottom: 22px; border-bottom: 1px solid #e5eaf1; margin-bottom: 8px; }
+.st-doc-eyebrow { font-size: 12.5px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: #b98a3b; }
+.st-doc-head h1 { font-size: clamp(32px, 4vw, 46px); line-height: 1.15; margin: 10px 0 10px; color: #0b2246; }
+.st-doc-head p:last-child { font-size: 17px; line-height: 1.6; color: #4a5d78; }
+.st-doc-body section { margin-top: 26px; }
+.st-doc-body h2 { font-family: var(--font-playfair), Georgia, serif; font-size: 22px; color: #0b2246; margin-bottom: 10px; }
+.st-doc-body p, .st-doc-body li { font-size: 16px; line-height: 1.7; color: #33485f; }
+.st-doc-body ul { padding-left: 20px; display: grid; gap: 8px; }
+.st-doc-body a { color: #9a6b1f; text-decoration: underline; text-underline-offset: 3px; }
+.st-doc-list { list-style: none; padding: 0 !important; }
+.st-doc-list li { display: grid; gap: 2px; padding: 14px 16px; background: #fff; border: 1px solid #e5eaf1; border-radius: 12px; }
+.st-doc-list a { font-weight: 700; text-decoration: none; }
+.st-doc-list span { font-size: 14.5px; color: #4a5d78; }
+
+/* Resources / About / Help sit under a thin rule, like the design mock-up. */
+body .desktop-sidebar .side-panel-group-more,
+body .mobile-drawer .side-panel-group-more { display: contents; }
+body .desktop-sidebar .side-panel-group-more > a:first-child,
+body .mobile-drawer .side-panel-group-more > a:first-child { margin-top: 14px; position: relative; }
+body .desktop-sidebar .side-panel-group-more > a:first-child::before,
+body .mobile-drawer .side-panel-group-more > a:first-child::before {
+  content: ""; position: absolute; left: 4px; right: 4px; top: -8px; height: 1px; background: rgba(255, 255, 255, 0.14);
+}
+
+/* Glyphs cut from the sheet are masks, so one file takes any colour. */
+.st-nav-glyph { width: 26px; height: 26px; display: block; background: currentColor; -webkit-mask: var(--glyph) center / contain no-repeat; mask: var(--glyph) center / contain no-repeat; }
+body .desktop-sidebar .side-panel-icon, body .mobile-drawer .side-panel-icon { width: 26px; height: 26px; }
+
+/* Featured Resources: photo cards (default, and gold on hover or keyboard focus, as in the design sheet). */
+.sr-home .sr-resources-grid .sr-resource-photo {
+  flex-direction: row; align-items: center; gap: 14px; padding: 8px; min-height: 80px;
+  background: linear-gradient(180deg, #ffffff 0%, var(--st-card) 100%); border: 1px solid #dbe5f5; border-radius: 16px;
+  transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.sr-home .sr-resources-grid .sr-resource-photo img { width: 64px; height: 64px; border-radius: 14px; flex: none; object-fit: cover; }
+.sr-home .sr-resources-grid .sr-resource-photo strong { font-family: var(--font-playfair), Georgia, serif; font-size: 17px; color: var(--st-navy-1); }
+.sr-home .sr-resources-grid .sr-resource-photo small { display: block; margin-top: 4px; font-size: 13.5px; color: #4a6288; }
+.sr-home .sr-resources-grid .sr-resource-photo:hover,
+.sr-home .sr-resources-grid .sr-resource-photo:focus-visible {
+  border-color: var(--st-gold-1); background: linear-gradient(180deg, #fffdf6 0%, #fdf1cf 100%);
+  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.5), 0 8px 18px rgba(212, 175, 55, 0.2); outline: none;
+}
+@media (prefers-reduced-motion: reduce) { .sr-home .sr-resources-grid .sr-resource-photo { transition: none; } }
+
+/* One left edge: the logo, the hero text and the cards all start at the body gutter. */
+@media (min-width: 768px) {
+  .sr-home .sr-hero { padding-left: var(--st-gutter); padding-right: var(--st-gutter); }
+}
