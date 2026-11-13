@@ -17,7 +17,8 @@ outside the database so they survive every rebuild:
 Records are never edited or deleted. A reviewer who rates a pair again adds a new
 record and their latest one counts; an approval counts only if it is newer than
 every review it rests on. Corrections are kept for editors and never replace the
-stored text. Status per pair, using the SOP manual's names:
+stored text by themselves: a lead editor can approve one (corpus_revisions.py), and build_language_db.py
+then applies it. Status per pair, using the SOP manual's names:
 
   REJECTED            a reviewer's latest meaning is 0, or the latest approval rejects it
   HUMAN_APPROVED      enough reviewers rated it acceptable (meaning 2, fluency >= 1), and

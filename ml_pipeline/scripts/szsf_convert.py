@@ -16,6 +16,8 @@ What it does, record by record:
     exports by default. Sources whose origin is not recorded are `unknown`;
   * writes only records that pass `szsf.py`; the others go to a rejects file with their problems, never silently
     corrected (`zomi` is the source's text).
+  * leaves out and counts pairs whose Zomi was replaced by an approved correction (corpus_revisions.py, flag
+    `human_corrected`): SZSF 1.0 has no field for a correction, so that needs the owner's decision.
 
 The output is checked as a whole (rights file, adopted rules, roster) before it is put in place, together with its
 manifest. A master file is immutable: an existing file is never overwritten. Nothing here clears a source for use.
@@ -151,9 +153,15 @@ def read_jsonl(paths: Iterable[Path]) -> Iterator[dict]:
 def convert(
     records: Iterable[dict], standard: zolai_standard.Standard, decisions: dict[str, corpus_reviews.Decision],
     own_models: set[str], standard_check: dict[str, Any] | None = None,
+    left_out: collections.Counter[str] | None = None,
 ) -> Iterator[tuple[dict, list[str]]]:
-    """(SZSF record, its problems) for every input record, in order."""
+    """(SZSF record, its problems) for each input record, in order; records left out are counted in `left_out`."""
+    left_out = left_out if left_out is not None else collections.Counter()
     for record in records:
+        if "human_corrected" in (record.get("quality_flags") or []):
+            # The Zomi was replaced by an approved correction (corpus_revisions.py); SZSF 1.0 has no field for that.
+            left_out["Zomi replaced by an approved correction (SZSF has no field for it yet)"] += 1
+            continue
         converted = to_szsf(record, standard, decisions.get(record["id"]), own_models)
         yield converted, szsf.check_record(converted, standard_check)
 
@@ -355,8 +363,14 @@ def main(argv: list[str] | None = None) -> int:
                 return 1
             decisions = corpus_decisions(args.db, review_records, args.min_reviewers)
         own_models = set(args.own_model)
-        return publish(args, lambda: convert(read_jsonl(args.input), standard, decisions, own_models, standard_check),
-                       rights, standard_check, roster)
+        left_out_pairs: collections.Counter[str] = collections.Counter()
+        code = publish(args, lambda: convert(read_jsonl(args.input), standard, decisions, own_models, standard_check,
+                                              left_out_pairs), rights, standard_check, roster)
+        if left_out_pairs:
+            print("Not converted:", file=sys.stderr)
+            for reason, count in left_out_pairs.most_common():
+                print(f"  {count:,}  {reason}", file=sys.stderr)
+        return code
 
     # senses
     from build_language_db import default_eval_paths, eval_match_keys, load_eval_items  # type: ignore

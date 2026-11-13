@@ -25,7 +25,7 @@ This measures the training corpus. It does not replace the human evaluation sets
      --out data/exports/generator-review-v1/review-R01.csv
    ```
 
-   Reviewers fill in `meaning` and `fluency` (see the scale below), and optionally a `correction` (the right Zomi, if they know it) and `notes`. A row left blank is skipped, not scored. Corrections are kept for the lead editor; they never replace the stored text.
+   Reviewers fill in `meaning` and `fluency` (see the scale below), and optionally a `correction` (the right Zomi, if they know it) and `notes`. A row left blank is skipped, not scored. A correction is only a proposal: it never replaces the stored text unless a lead editor approves it (see [Corrections to the Zomi](#corrections-to-the-zomi)).
 
 3. **Summarize** to estimate each generator's quality.
 
@@ -96,6 +96,34 @@ This measures the training corpus. It does not replace the human evaluation sets
    ```
 
    It writes the stored records in the same format and order, then prints how many pairs reach each status by the same rules the build uses. An existing file is replaced only when every record in it is already stored at the same place. If the file holds decisions the database lacks, nothing is written: import the file first. The export and `review_sample.py` take the same lock on the file's folder, so a review recorded during an export is never lost, and the file keeps its permissions. Each release manifest records how many review records the build used (`counts.corpus_review_records`, 0 when none). Because the file only grows, that number identifies exactly which stored records went into the release.
+
+## Corrections to the Zomi
+
+A reviewer's `correction` becomes the pair's Zomi only through a second human step, the same two-person rule as the dictionary's corrections. The approved corrections are kept in their own append-only file next to the reviews, `corpus-revisions.jsonl` (private, with the sentences' Zomi in it):
+
+```bash
+# 1. the coordinator lists the fixes reviewers wrote for pairs that still need correction
+python3 ml_pipeline/scripts/review_sample.py corrections-sheet --database data/processed/language/siamsil_language.sqlite \
+  --reviews ../siamsil-data/reviews/corpus-reviews.jsonl --revisions ../siamsil-data/reviews/corpus-revisions.jsonl --out corrections-1.csv
+# 2. and makes the lead editor's Excel sheet, with an approve/decline dropdown
+python3 ml_pipeline/scripts/worksheets.py corrections-sheet corrections-1.csv --out Siamsil_Corrections_E01.xlsx
+# 3. the lead editor chooses approve or decline for each row (blank = later) and returns the file; the coordinator reads it back
+python3 ml_pipeline/scripts/worksheets.py corrections-import Siamsil_Corrections_E01.xlsx --out corrections-1-decided.csv
+# 4. check, then save
+python3 ml_pipeline/scripts/review_sample.py revise corrections-1-decided.csv --approver E01 --dry-run
+python3 ml_pipeline/scripts/review_sample.py revise corrections-1-decided.csv --approver E01 \
+  --reviews ../siamsil-data/reviews/corpus-reviews.jsonl --revisions ../siamsil-data/reviews/corpus-revisions.jsonl \
+  --roster ../siamsil-data/reviews/roster.csv
+```
+
+The Excel sheet has an Instructions sheet and a Corrections sheet. Only the Decision and Notes columns are for the lead editor. The last two columns (the pair's hash and a checksum of its text) are hidden: they let `revise` refuse a row whose English, Zomi or fix was edited. `corrections-import` stops on any decision that is not approve, decline or blank, and writes nothing. Text that begins with "=" is stored as text, so Excel never runs it as a formula. The sheets contain the sentences' Zomi: keep them private.
+
+- The sheet offers each fix a reviewer wrote (reviewers who wrote the same fix share a row), only for pairs that still need correction. A fix that equals the Zomi now, one already approved, and one a lead editor declined are not offered.
+- The lead editor chooses between reviewers' fixes; they do not type new Zomi. `revise` matches the corrected Zomi against the saved reviews and takes the proposers from them, never from the sheet.
+- `revise` refuses an approver who is not a roster lead editor or who proposed the fix, a pair whose text was changed in the sheet, a pair that no longer needs correction (for example another reviewer rejected it), and a second approved fix for the same pair. A declined fix is saved too, so it is not offered again. Nothing is saved if any row is refused.
+- **Rebuild.** `build_language_db.py` applies the latest approved correction of each pair after the review decisions (`--revisions PATH`; a path that does not exist stops the build). It applies only while the pair still holds the Zomi that was corrected, and never to a pair a reviewer rejected. The pair becomes verified with quality score 1, its automatic flags are worked out again for the new text, and `human_corrected` is added. It keeps its hash, so the saved reviews still find it; the original Zomi stays in `raw_target_text`; search finds the new text.
+- **Effect.** A corrected pair is exported as a human-reviewed silver pair, with the new Zomi, and the app shows it as approved by Zomi reviewers. It is exported for training only when the corpus is cleared for training in `data/rights.json`.
+- **SZSF.** `szsf_convert.py` leaves corrected pairs out and counts them, because SZSF 1.0 has no field for a correction (the owner decides; see `docs/SZSF.md`).
 
 ## Rating scale
 

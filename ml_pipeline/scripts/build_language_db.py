@@ -38,6 +38,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import corpus_reviews
+import corpus_revisions
 from data_repo import DataRepo, ParallelParts, SourceError, default_data_repo
 from data_repo import fingerprint as repo_fingerprint
 
@@ -50,6 +51,7 @@ DEFAULT_REPORT = ROOT / "data" / "processed" / "language" / "quality_report.json
 DEFAULT_MANIFEST = ROOT / "data" / "processed" / "language" / "manifest.json"
 DEFAULT_VERSIONS = ROOT / "data" / "versions"
 DEFAULT_REVIEWS = ROOT / "data" / "reviews" / "corpus-reviews.jsonl"
+DEFAULT_REVISIONS = ROOT / "data" / "reviews" / "corpus-revisions.jsonl"
 EVAL_TRANSLATION = ROOT / "data" / "evaluation" / "translation" / "sample.jsonl"
 EVAL_DICTIONARY = ROOT / "data" / "evaluation" / "dictionary" / "sample.jsonl"
 
@@ -752,6 +754,47 @@ def apply_reviews(con: sqlite3.Connection, decisions: dict) -> dict:
     return {status: counts.get(status, 0) for status in (*corpus_reviews.STATUSES, "not_in_corpus")}
 
 
+def apply_revisions(con: sqlite3.Connection, revisions: dict[str, dict]) -> dict[str, int]:
+    """Apply approved corrections of corpus Zomi (corpus_revisions.py), after the review decisions.
+
+    A correction is a lead editor's approval of a fix a reviewer wrote, so the pair becomes verified with
+    quality score 1, like a human-approved pair; its quality flags are recomputed for the new text and
+    `human_corrected` is added. It applies only while the pair still holds the Zomi that was corrected, and never
+    to a pair a reviewer rejected. The pair keeps its hash (so the saved reviews still find it) and its original
+    Zomi stays in `raw_target_text`. Search is updated with the new text.
+    """
+    counts: Counter[str] = Counter()
+    for pair_hash, revision in revisions.items():
+        row = con.execute(
+            "SELECT id, normalized_source_text, normalized_target_text, quality_flags FROM parallel_sentences "
+            "WHERE pair_hash = ?", (pair_hash,),
+        ).fetchone()
+        if row is None:
+            counts["not_in_corpus"] += 1
+            continue
+        row_id, english, current, flags_json = row
+        old_flags = json.loads(flags_json or "[]")
+        after = normalize_text(revision["after"])
+        if "reviewer_rejected" in old_flags:
+            counts["skipped_rejected"] += 1
+        elif corpus_revisions.same_text(current, after):
+            counts["already_applied"] += 1
+        elif not corpus_revisions.same_text(current, revision["before"]):
+            counts["skipped_changed_text"] += 1
+        else:
+            flags = [*quality_flags(english, after), "human_corrected"]
+            con.execute(
+                "UPDATE parallel_sentences SET normalized_target_text = ?, quality_flags = ?, quality_score = 1, "
+                "verified = 1 WHERE id = ?",
+                (after, json.dumps(flags, ensure_ascii=False), row_id),
+            )
+            con.execute("UPDATE parallel_fts SET normalized_target_text = ? WHERE rowid = ?", (after, row_id))
+            counts["applied"] += 1
+    con.commit()
+    return {name: counts.get(name, 0) for name in
+            ("applied", "already_applied", "skipped_changed_text", "skipped_rejected", "not_in_corpus")}
+
+
 def release_manifest(
     database: Path,
     source_files: dict[str, Path | dict],
@@ -926,6 +969,12 @@ def main() -> None:
         f"without it, {display_path(DEFAULT_REVIEWS)} is applied if present",
     )
     parser.add_argument(
+        "--revisions",
+        type=Path,
+        help=f"Approved corrections of corpus Zomi (review_sample.py revise). Must exist when given; "
+        f"without it, {display_path(DEFAULT_REVISIONS)} is applied if present",
+    )
+    parser.add_argument(
         "--dictionary-revisions",
         type=Path,
         help="Approved dictionary corrections (dictionary_review.py revise). Must exist when given; without it, "
@@ -947,6 +996,14 @@ def main() -> None:
         review_records = corpus_reviews.load(args.reviews) if args.reviews.exists() else []
     except ValueError as error:
         sys.exit(f"Saved reviews are not usable, nothing was built: {error}")
+    if args.revisions is None:
+        args.revisions = DEFAULT_REVISIONS
+    elif not args.revisions.exists():
+        sys.exit(f"Revisions file not found: {args.revisions}")
+    try:
+        revision_records = corpus_revisions.load(args.revisions)
+    except ValueError as error:
+        sys.exit(f"Saved corrections are not usable, nothing was built: {error}")
 
     if not args.eval:
         args.eval = default_eval_paths()
@@ -1023,6 +1080,10 @@ def main() -> None:
         print(f"Applying {len(review_records):,} saved review ratings from {display_path(args.reviews)}…")
         review_counts = apply_reviews(con, corpus_reviews.decide(review_records, args.min_reviewers))
         print("  " + "  ".join(f"{status}: {count:,}" for status, count in review_counts.items()))
+    if revision_records:
+        print(f"Applying approved corrections from {display_path(args.revisions)}…")
+        revision_counts = apply_revisions(con, corpus_revisions.latest_revisions(revision_records))
+        print("  " + "  ".join(f"{name}: {count:,}" for name, count in revision_counts.items()))
     verified_pairs = con.execute("SELECT COUNT(*) FROM parallel_sentences WHERE verified = 1").fetchone()[0]
 
     dictionary_record: Path | dict = (
@@ -1104,6 +1165,7 @@ def main() -> None:
             "dictionary_master": dictionary_record,
             "parallel_csv": parallel_record,
             **({"corpus_reviews": args.reviews} if review_records else {}),
+            **({"corpus_revisions": args.revisions} if revision_records else {}),
         },
         eval_files=args.eval,
         counts=release_counts(dict_total, parallel_total, review_records),
