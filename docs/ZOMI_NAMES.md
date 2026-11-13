@@ -4,7 +4,7 @@ Updated 2026-11-13 · Status: tool built, **names list incomplete and not yet co
 
 The English side of the parallel corpus is full of English names, and the Zomi side keeps them. On 2026-11-08 the project owner
 decided that, **for training data first**, Siamsil swaps English personal names for Zomi names, in English and Zomi alike, with
-**young adult** as the default stage. Using the names at translation time comes later.
+**`any_age` (Cingno and Thangno)** as the default stage (it was young adult until 2026-11-13). Using the names at translation time comes later.
 
 ## Why
 
@@ -24,8 +24,8 @@ Recorded in `data/zomi_names.json`, in the owner's words (2026-11-08, corrected 
 
 | Stage | Girls and women | Boys and men |
 | --- | --- | --- |
-| `child` (Cingno and Thangno are used from toddler to adult) | Cingno | Thangno |
-| **`young_adult` (default)** | Cing Khup | Ngam Bawm |
+| **`any_age` (default; Cingno and Thangno are used from toddler to adult)** | Cingno | Thangno |
+| `young_adult` (when the sentence points to a young adult) | Cing Khup | Ngam Bawm |
 | `married` | Nu Cing | Pa Thang |
 | `older` (from 60) | Pi Cing Khup | Pu Ngam Bawm |
 
@@ -37,7 +37,7 @@ Recorded in `data/zomi_names.json`, in the owner's words (2026-11-08, corrected 
 | Married | **Nu** | **Pa** |
 | From age 60 | **Pi** | **Pu** |
 
-The owner says **Lia and Tg. always come before the name**, and that Tg. is the short form of Taang (2026-11-13). The tool does **not** apply the address forms yet. Still to confirm with the owner: how the markers combine with the young adult names Cing Khup and Ngam Bawm.
+The owner says **Lia and Tg. always come before the name**, and that Tg. is the short form of Taang (2026-11-13). The tool does **not** apply the address forms yet. Still to confirm with the owner: how the markers combine with the names Cing Khup and Ngam Bawm. The tool still uses only the default stage; picking `young_adult`, `married` or `older` from cues in the sentence is not built.
 
 The owner ended with "etc.": more names are coming. **Nobody adds a name here unless a Zomi speaker supplied it.** A second
 person confirms the list, as for every adopted rule.
