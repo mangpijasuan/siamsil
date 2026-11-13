@@ -18,6 +18,7 @@ import openpyxl  # noqa: E402
 
 from build_language_db import apply_corpus_checks, connect, create_schema, ingest_parallel  # type: ignore  # noqa: E402
 from export_datasets import admitted_sources, export, load_workbook_sources, main, silver_models  # type: ignore  # noqa: E402
+import zolai_standard  # type: ignore  # noqa: E402
 from import_usx_bibles import main as import_bibles  # type: ignore  # noqa: E402
 from import_reference_dictionaries import SCHEMA as REFERENCE_SCHEMA  # type: ignore  # noqa: E402
 
@@ -162,6 +163,68 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(manifest["silver_models"], [])
         self.assertIn("parallel_corpus", manifest["uncleared_sources_included"])
         self.assertEqual(set(manifest["files"]), {"train", "validation", "test"})
+
+
+# Placeholder spellings, never real language data.
+STANDARD_RULES = {"version": "1.2.0", "rules": [
+    {"id": "ZS-001", "standard": "ZSTD", "variants": ["ZVAR"], "mode": "replace", "approved_by": ["R01", "E01"],
+     "approved_on": "2026-11-08", "reason": "test"},
+    {"id": "ZS-002", "standard": "ZONE", "variants": ["ZFLAG"], "mode": "flag", "approved_by": ["R01", "E01"],
+     "approved_on": "2026-11-08", "reason": "test"}]}
+
+
+class StandardFormExportTests(ExportTests):
+    def setUp(self) -> None:
+        super().setUp()
+        self.con.close()
+        con = sqlite3.connect(self.database)
+        con.execute("UPDATE parallel_sentences SET normalized_target_text = 'ZOMI ZVAR ZFLAG' WHERE raw_source_text = 'I bought 4 eggs.'")
+        con.commit()
+        con.close()
+        self.con = sqlite3.connect(self.database)
+        self.standard = zolai_standard.parse(STANDARD_RULES)
+
+    def test_corpus_zomi_is_standard_and_the_original_is_kept(self) -> None:
+        result, rows = self.run_export(standard=self.standard)
+        row = next(r for r in self.all_rows(rows).values() if r["english"] == "I bought 4 eggs.")
+        self.assertEqual((row["zomi"], row["zomi_original"]), ("ZOMI ZSTD ZFLAG", "ZOMI ZVAR ZFLAG"))
+        self.assertEqual((row["zomi_standard_rules"], row["zomi_standard_flags"], row["standard_version"]),
+                         (["ZS-001"], ["ZS-002:ZFLAG"], "1.2.0"))
+        other = next(r for r in self.all_rows(rows).values() if r["id"] == "corpus-1")
+        self.assertNotIn("zomi_original", other)  # unchanged text keeps one field only
+        self.assertEqual(result["standard_form"]["applied"], True)
+        self.assertEqual(result["standard_form"]["version"], "1.2.0")
+        self.assertEqual(result["standard_form"]["records_changed"], 1)
+
+    def test_it_is_off_unless_a_standard_is_given(self) -> None:
+        result, rows = self.run_export()
+        row = next(r for r in self.all_rows(rows).values() if r["english"] == "I bought 4 eggs.")
+        self.assertEqual(row["zomi"], "ZOMI ZVAR ZFLAG")
+        self.assertNotIn("zomi_original", row)
+        self.assertEqual(result["standard_form"], {"applied": False})
+
+    def test_published_texts_are_never_rewritten(self) -> None:
+        bible = [dict(BIBLE[0], zomi_original="ZOMI ZVAR")]
+        _, rows = self.run_export(standard=self.standard, bible=bible)
+        gold = next(r for r in self.all_rows(rows).values() if r["source"] == "bible_original")
+        self.assertEqual(gold["zomi"], "ZOMI ZVAR")
+        self.assertNotIn("standard_version", gold)
+
+    def test_evaluation_matching_uses_the_original_text(self) -> None:
+        item = {"direction": "en-zomi", "source_text": "Other text.", "references": ["ZOMI ZVAR ZFLAG"]}
+        _, rows = self.run_export(standard=self.standard, eval_items=[item])
+        self.assertNotIn("I bought 4 eggs.", [r["english"] for r in self.all_rows(rows).values()])
+
+    def test_the_command_applies_the_standard_by_default_and_can_be_turned_off(self) -> None:
+        path = self.dir / "standard.json"
+        path.write_text(json.dumps(STANDARD_RULES), encoding="utf-8")
+        for flags, applied in (([], True), (["--no-standard-form"], False)):
+            out = self.dir / f"cli-{applied}"
+            with redirect_stdout(StringIO()):
+                main(["--db", str(self.database), "--out", str(out), "--allow-uncleared", "--standard", str(path), *flags])
+            manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["standard_form"]["applied"], applied)
+            self.assertEqual("standard_form" in manifest["inputs"], applied)
 
 
 BIBLE_METADATA = """<DBLMetadata><identification><name>{abbr} name</name><abbreviation>{abbr}</abbreviation>

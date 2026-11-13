@@ -70,6 +70,14 @@ class RecordTests(unittest.TestCase):
         self.assertEqual((out["zomi"], out["zomi_standard"], out["zomi_standard_rules"]), ("a ZVAR b", "a ZSTD b", ["ZS-001"]))
         self.assertEqual(szsf.check_record(out, check), [])
 
+    def test_an_export_that_already_used_the_standard_form_keeps_zomi_as_the_corpus_text(self) -> None:
+        std, check = standard([RULE])
+        record = export_record(1, zomi="a ZSTD b")
+        record["zomi_original"] = "a ZVAR b"  # export_datasets wrote the standard form into zomi and kept the original
+        out = conv.to_szsf(record, std, None, set())
+        self.assertEqual((out["zomi"], out["zomi_standard"], out["zomi_standard_rules"]), ("a ZVAR b", "a ZSTD b", ["ZS-001"]))
+        self.assertEqual(szsf.check_record(out, check), [])
+
     def test_origin_by_source_and_bible_version_pairs(self) -> None:
         std, _ = standard()
         bible = {"id": "bible-tdb-kjv-1-1-1", "english": "E", "zomi": "ZOMI_PLACEHOLDER", "source": "bible_tdb",

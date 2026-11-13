@@ -74,6 +74,17 @@ python3 ml_pipeline/scripts/zolai_standard.py variants
 
 Bump the version when rules change: minor for added rules, major for a changed or removed rule. The language database, dictionary search, and dataset exports should record the standard version they used. Wiring them to this tool is the next step, once the first rules are adopted.
 
+## Training exports use the standard form
+
+`export_datasets.py` puts the Zomi of machine-made corpus pairs (source `parallel_corpus`) in the adopted standard form by default, so a model trains on one spelling.
+
+- A changed pair has the standard spelling in `zomi`, the corpus text in `zomi_original`, the rules in `zomi_standard_rules`, and `standard_version`. A pair no rule changes has no `zomi_original`. A lone flagged word (ZS-002 `thil`) is listed in `zomi_standard_flags` and left as it is.
+- Bible, daily-use phrases and dictionary text are published works and are never rewritten.
+- Evaluation matching uses the original text, so a held-out item cannot slip in because a rule changed its spelling.
+- The manifest records `standard_form` (version, how many pairs were checked and changed) and the fingerprint of `standard.json`. `--no-standard-form` leaves the corpus text as it is; `--standard PATH` uses another file.
+- `szsf_convert.py` reads `zomi_original` as `zomi` when it is there, so a master file always keeps the corpus text.
+- Spelling only: no review status changes and no rights are cleared. The corpus is still `needs_review` for training. A tried 1% sample changed 478 of 17,701 pairs (2.7%).
+
 ## Rules adopted by the creator alone
 
 **Decision (project owner, 2026-11-13).** The owner is the original creator of the Siamsil Zomi Standard Form and said: "use the rule, because this is my reviewed and my ownership even though it changed many and it will get better quality sentence paired." Until then every rule needed two reviewer codes. `standard.json` now carries a `governance` block recording this decision, and a rule may use `adopted_by: "creator"` (no reviewer codes) only while that block is there. The tool refuses a creator rule without it, and refuses one that also lists reviewer codes.

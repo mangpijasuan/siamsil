@@ -101,13 +101,15 @@ def to_szsf(
     source = str(record["source"])
     origin = origin_of(source)
     review = review_block(record, decision)
-    result = zolai_standard.standardize(record["zomi"], standard)
+    # An export that already applied the standard form keeps the corpus text in zomi_original; zomi is always the source text.
+    zomi = record.get("zomi_original", record["zomi"])
+    result = zolai_standard.standardize(zomi, standard)
     out: dict[str, Any] = {
         "szsf_version": szsf.SZSF_VERSION,
         "id": record["id"],
         "kind": "translation_pair",
         "english": record["english"],
-        "zomi": record["zomi"],
+        "zomi": zomi,
         "zomi_standard": result.text,
         "standard_version": standard.version,
         "source": source,

@@ -25,6 +25,13 @@ for internal experiments and records that in the manifest; "blocked" sources
 are never exported. A Bible version pair needs both versions admitted. Pairs
 matching a human evaluation item (--eval) are never exported.
 
+Standard Form: by default the Zomi of machine-made corpus pairs (source parallel_corpus) is written in the adopted
+Siamsil Zomi Standard Form (zolai_standard.py, data/zomi_standard_form/standard.json). A changed pair keeps the corpus
+text in `zomi_original`, names the rules in `zomi_standard_rules`, and carries `standard_version`; lone flagged words are
+listed in `zomi_standard_flags` and left as they are. Bible, daily-use phrases and dictionary text are other people's
+published words and are never rewritten. Evaluation matching uses the original text. --no-standard-form turns this off.
+The standard form is spelling, not review: it changes no review status and clears no rights.
+
 Bible splits are by whole book, the same for every version and the workbook, so
 a verse never sits in training in one translation and in test in another.
 Merged verse ranges (such as 17-18) are not paired.
@@ -52,6 +59,7 @@ from build_language_db import (
     template_key,
 )
 from import_usx_bibles import BOOKS
+import zolai_standard
 
 BIBLE_TEST_BOOKS = frozenset({"RUT", "MRK", "1JN"})
 BIBLE_VALIDATION_BOOKS = frozenset({"JOL", "JON", "PHP", "TIT"})
@@ -292,6 +300,24 @@ def load_workbook_sources(path: Path) -> tuple[list[dict], list[dict]]:
     return import_bible(path), import_daily_use(path)
 
 
+# Only machine-made corpus Zomi is put into the standard form. Published texts (Bible, phrases, dictionaries) are not.
+STANDARD_FORM_SOURCES = frozenset({"parallel_corpus"})
+
+
+def standardize_record(record: dict, standard: "zolai_standard.Standard") -> bool:
+    """Put record['zomi'] in the standard form, keeping the corpus text. True when the text changed."""
+    result = zolai_standard.standardize(record["zomi"], standard)
+    record["standard_version"] = standard.version
+    if result.flags:
+        record["zomi_standard_flags"] = [f"{flag['rule']}:{flag['text']}" for flag in result.flags]
+    if result.text == record["zomi"]:
+        return False
+    record["zomi_original"] = record["zomi"]
+    record["zomi"] = result.text
+    record["zomi_standard_rules"] = result.rules
+    return True
+
+
 def export(
     con: sqlite3.Connection,
     out_dir: Path,
@@ -307,12 +333,14 @@ def export(
     bible_versions: Path | None = None,
     reference_db: Path | None = None,
     corpus_fraction: float = 1.0,
+    standard: "zolai_standard.Standard | None" = None,
 ) -> dict:
     admitted = admitted_sources(rights, allow_uncleared)
     silver = silver_models(summary, min_acceptable)
     eval_english, eval_zomi = eval_match_keys(eval_items, set())
 
     counts: Counter[tuple[str, str, str]] = Counter()
+    standardized: Counter[str] = Counter()
     skipped: Counter[str] = Counter()
     out_dir.mkdir(parents=True, exist_ok=True)
     handles = {split: (out_dir / f"{split}.jsonl").open("w", encoding="utf-8") for split in SPLITS}
@@ -339,6 +367,9 @@ def export(
                 ):
                     skipped["evaluation_match"] += 1
                     continue
+                if standard is not None and record["source"] in STANDARD_FORM_SOURCES:
+                    standardized["records"] += 1
+                    standardized["changed"] += standardize_record(record, standard)
                 handles[record["split"]].write(json.dumps(record, ensure_ascii=False) + "\n")
                 counts[(record["split"], record["tier"], record["source"])] += 1
     finally:
@@ -366,6 +397,12 @@ def export(
             "silver_min_acceptable": min_acceptable,
             "corpus_fraction": corpus_fraction,
         },
+        "standard_form": (
+            {"applied": True, "version": standard.version, "sources": sorted(STANDARD_FORM_SOURCES),
+             "records_checked": standardized["records"], "records_changed": standardized["changed"],
+             "note": "spelling only: no review status changed, no rights cleared; the corpus text is in zomi_original"}
+            if standard is not None else {"applied": False}
+        ),
         "bible_split_books": {"test": sorted(BIBLE_TEST_BOOKS), "validation": sorted(BIBLE_VALIDATION_BOOKS)},
         "files": {split: file_fingerprint(out_dir / f"{split}.jsonl") for split in SPLITS},
     }
@@ -387,6 +424,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--min-score", type=float, default=0.5)
     parser.add_argument("--rights", type=Path, default=DEFAULT_RIGHTS)
     parser.add_argument("--allow-uncleared", action="store_true", help="Also export needs_review sources (internal use)")
+    parser.add_argument("--standard", type=Path, default=zolai_standard.DEFAULT_STANDARD, help="Standard Form file (standard.json)")
+    parser.add_argument("--no-standard-form", action="store_true", help="Leave the corpus Zomi as it is")
     parser.add_argument("--out", type=Path, help="Output directory (default: data/datasets/<release>-export)")
     args = parser.parse_args(argv)
     if not args.eval:
@@ -400,6 +439,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.exit(f"Reference dictionaries database not found: {args.reference_db}")
     if not 0 < args.corpus_fraction <= 1:
         sys.exit("--corpus-fraction must be between 0 and 1")
+    standard = None if args.no_standard_form else zolai_standard.load(args.standard)
     con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
     try:
         version = con.execute("SELECT version FROM dataset_versions ORDER BY id DESC LIMIT 1").fetchone()[0]
@@ -420,6 +460,7 @@ def main(argv: list[str] | None = None) -> int:
             bible_versions=args.bible_versions,
             reference_db=args.reference_db,
             corpus_fraction=args.corpus_fraction,
+            standard=standard,
         )
     finally:
         con.close()
@@ -433,6 +474,8 @@ def main(argv: list[str] | None = None) -> int:
         inputs["reference_db"] = file_fingerprint(args.reference_db)
     if args.generator_summary:
         inputs["generator_summary"] = file_fingerprint(args.generator_summary)
+    if standard is not None:
+        inputs["standard_form"] = file_fingerprint(args.standard)
     inputs["evaluation_sets"] = [{"file": p.name, "sha256": file_fingerprint(p)["sha256"]} for p in args.eval]
     manifest = {"language_release": version, "inputs": inputs, **result}
     (out_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -444,6 +487,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"not exported: {name} (training rights: {info['train_rights']})")
     if result["uncleared_sources_included"]:
         print(f"WARNING: uncleared sources included: {', '.join(result['uncleared_sources_included'])}")
+    form = result["standard_form"]
+    if form["applied"]:
+        print(f"standard form {form['version']}: {form['records_changed']:,} of {form['records_checked']:,} corpus pairs changed (originals in zomi_original)")
     print(f"wrote {out_dir}")
     return 0
 
