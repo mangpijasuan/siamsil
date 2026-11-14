@@ -35,8 +35,8 @@ class CreatorAdoptedRulesTests(unittest.TestCase):
 
     def test_the_eleven_rules_are_adopted_by_the_creator_and_say_so(self) -> None:
         standard = zs.load()
-        self.assertEqual(standard.version, "1.0.0")
-        self.assertEqual([r.id for r in standard.rules], [f"ZS-{n:03d}" for n in range(1, 14)])
+        self.assertEqual(standard.version, "1.1.0")
+        self.assertEqual([r.id for r in standard.rules], [f"ZS-{n:03d}" for n in range(1, 19)])
         self.assertTrue(all(r.adopted_by == "creator" and r.approved_by == () for r in standard.rules))
         got = {r.id: (list(r.variants), r.standard) for r in standard.rules}
         self.assertEqual(got["ZS-001"], (["uhi", "uhhi"], "uh hi"))
@@ -46,9 +46,12 @@ class CreatorAdoptedRulesTests(unittest.TestCase):
         self.assertEqual(got["ZS-011"], (["ke'"], "keia"))
         self.assertEqual(got["ZS-012"], (["thilte", "thil te", "na te"], "nate"))
         self.assertEqual(got["ZS-013"], (["thil khat", "na khat"], "nakhat"))
+        self.assertEqual({k: got[k] for k in ("ZS-014", "ZS-015", "ZS-016", "ZS-017", "ZS-018")},
+                         {"ZS-014": (["zil"], "sin"), "ZS-015": (["ngaihtuah"], "ngaihsun"), "ZS-016": (["pawt"], "pusuak"),
+                          "ZS-017": (["pem"], "kituah"), "ZS-018": (["thiam"], "siam")})
         data = json.loads(zs.DEFAULT_STANDARD.read_text(encoding="utf-8"))
         self.assertTrue(data["governance"]["creator_may_adopt_alone"])
-        self.assertEqual({r["source_proposal"] for r in data["rules"]} - {"suggested thilte -> nate", "owner, 2026-11-13"}, {f"P-{n:03d}" for n in range(1, 12)})
+        self.assertEqual({r["source_proposal"] for r in data["rules"]} - {"suggested thilte -> nate", "owner, 2026-11-13", "owner, 2026-11-14"}, {f"P-{n:03d}" for n in range(1, 12)})
 
     def test_the_standard_is_applied_and_the_original_kept(self) -> None:
         standard = zs.load()
@@ -56,6 +59,8 @@ class CreatorAdoptedRulesTests(unittest.TestCase):
         self.assertEqual(result.text, "ZOMI uh hi ZOMI thil ZOMI cih haksa pen ziakai ZOMI")  # thil is only flagged
         self.assertEqual([f["rule"] for f in result.flags], ["ZS-002"])
         self.assertEqual(len(result.rules), 5)
+        self.assertEqual(zs.standardize("Na pau zil in, ka ngaihtuah, a pawt, a pem, na thiam; ih om thuthang", standard).text,
+                         "Na pau sin in, ka ngaihsun, a pusuak, a kituah, na siam; ih om thuthang")  # ih and thuthang stay
         # Something and things are one word each; the longer phrase wins over the flagged thil inside it.
         self.assertEqual(zs.standardize("thil khat, na khat, thil te, na te, thilte", standard).text, "nakhat, nakhat, nate, nate, nate")
         # Whole words only, and the apostrophe form: nothing inside a longer word changes.
@@ -70,7 +75,7 @@ class CreatorAdoptedRulesTests(unittest.TestCase):
         self.assertEqual(data["suggested_not_decided"], [])  # thilte -> nate was adopted as ZS-012
         self.assertEqual(zs.standardize("ZOMI thilte ZOMI", zs.load()).text, "ZOMI nate ZOMI")
         accepted = {w["word"]: w for w in data["accepted_in_owner_corrections"]["words"]}
-        self.assertEqual(list(accepted), ["minit", "me"])
+        self.assertEqual(list(accepted), ["minit", "me", "thuthang", "ih"])
         self.assertEqual([w["word"] for w in data["not_one_to_one"]["words"]], ["chi", "ti", "tih", "poimawh", "tlawm", "sami", "lungleng", "thit", "tengteng", "hmel"])
         zs.load_proposals(zs.DEFAULT_PROPOSALS, zs.DEFAULT_CHECKS, zs.load())  # an empty list still loads
 

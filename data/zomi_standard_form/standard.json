@@ -1,6 +1,6 @@
 {
   "_comment": "The adopted Siamsil Zomi Standard Form (docs/ZOMI_STANDARD_FORM.md, steps 4-5). Rules belong here when two different reviewer codes are in approved_by, or when the creator adopted them alone under the governance block (adopted_by 'creator'). Each needs the date and the reason. AI suggestions in rule_checks.json and the review workbook are never copied here unreviewed. Applied by ml_pipeline/scripts/zolai_standard.py, which keeps every original text and stores the standard form beside it. mode 'replace' writes the standard spelling; mode 'flag' only lists the match, for spellings whose meaning depends on context. Bump the version when rules change: minor for new rules, major for a changed or removed rule.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "rules": [
     {
       "id": "ZS-001",
@@ -204,6 +204,81 @@
       "source_proposal": "owner, 2026-11-13",
       "owner_words": "since something on word, I want it as nakhat",
       "reason": "'Something' is one word, nakhat. thil khat and na khat become nakhat. Adopted by the creator alone."
+    },
+    {
+      "id": "ZS-014",
+      "standard": "sin",
+      "variants": [
+        "zil"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-14",
+      "source_proposal": "owner, 2026-11-14",
+      "owner_words": "learn = sin, Na pau sin in.",
+      "reason": "The owner corrected pairs where the machine wrote 'zil' and wrote 'sin' (batch 3, siamsil-data reviews/owner-corrections); 'zil' appears in the Falam or Hakha Bibles and never in the Tedim Bibles. Adopted by the creator alone."
+    },
+    {
+      "id": "ZS-015",
+      "standard": "ngaihsun",
+      "variants": [
+        "ngaihtuah"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-14",
+      "source_proposal": "owner, 2026-11-14",
+      "owner_words": "I am done thinking. Ngaihsun khin ing.",
+      "reason": "The owner corrected pairs where the machine wrote 'ngaihtuah' and wrote 'ngaihsun' (batch 3, siamsil-data reviews/owner-corrections); 'ngaihtuah' appears in the Falam or Hakha Bibles and never in the Tedim Bibles. Adopted by the creator alone."
+    },
+    {
+      "id": "ZS-016",
+      "standard": "pusuak",
+      "variants": [
+        "pawt"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-14",
+      "source_proposal": "owner, 2026-11-14",
+      "owner_words": "We are leaving. Ko pusuak ta ung. leave is pusuak.",
+      "reason": "The owner corrected pairs where the machine wrote 'pawt' and wrote 'pusuak' (batch 3, siamsil-data reviews/owner-corrections); 'pawt' appears in the Falam or Hakha Bibles and never in the Tedim Bibles. Adopted by the creator alone."
+    },
+    {
+      "id": "ZS-017",
+      "standard": "kituah",
+      "variants": [
+        "pem"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-14",
+      "source_proposal": "owner, 2026-11-14",
+      "owner_words": "move is kituah. Amau kituah uh hi.",
+      "reason": "The owner corrected pairs where the machine wrote 'pem' and wrote 'kituah' (batch 3, siamsil-data reviews/owner-corrections); 'pem' appears in the Falam or Hakha Bibles and never in the Tedim Bibles. Adopted by the creator alone."
+    },
+    {
+      "id": "ZS-018",
+      "standard": "siam",
+      "variants": [
+        "thiam"
+      ],
+      "mode": "replace",
+      "check": null,
+      "adopted_by": "creator",
+      "approved_by": [],
+      "approved_on": "2026-11-14",
+      "source_proposal": "owner, 2026-11-14",
+      "owner_words": "You are diplomatic, Pau daan siam ciai.",
+      "reason": "The owner corrected pairs where the machine wrote 'thiam' and wrote 'siam' (batch 3, siamsil-data reviews/owner-corrections); 'thiam' appears in the Falam or Hakha Bibles and never in the Tedim Bibles. Adopted by the creator alone."
     }
   ],
   "governance": {
