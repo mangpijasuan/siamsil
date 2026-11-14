@@ -79,13 +79,13 @@ function CloseIcon() {
   );
 }
 
-// The Siamsil lockup (mark, wordmark and tagline in one image), white and gold for navy backgrounds.
+// The Siamsil Technology Hub lockup (mark, wordmark and tagline in one image). White and gold on a transparent background, for the navy bars. logo-og.png is the same logo on navy for link previews.
 function BrandLockup({ height }: { height: number }) {
   return (
     <Image
       src="/logo-lockup.png"
-      alt="Siamsil, The Art of Literature"
-      width={Math.round(height * (1200 / 410))}
+      alt="Siamsil Technology Hub"
+      width={Math.round(height * (1200 / 272))}
       height={height}
       className="brand-lockup"
       priority
