@@ -84,6 +84,18 @@
         "seen_in": "correction 33 (Me kept)",
         "owner_words": "Me or me is vote, and ballot also called me, but it is a borrowed word from Burmese, we can use vote or ballot in Zomi as well",
         "note": "In correction 34 the owner wrote khutme (a different word, for 'finger' in the English) where the machine wrote khut-me."
+      },
+      {
+        "word": "thuthang",
+        "meaning": "news",
+        "decision": "kept by the owner (2026-11-14: 'thuthang is news, keep it')",
+        "also_ok": []
+      },
+      {
+        "word": "ih",
+        "meaning": "we (before the verb); the owner kept it in corrections 71 to 76 and wrote 'eite khempeuh' for 'we all' once",
+        "decision": "treated as accepted (owner said yes, 2026-11-14); not a rule; pairs with `ih` but no 'we' in the English need a sentence-by-sentence look",
+        "also_ok": []
       }
     ]
   },
