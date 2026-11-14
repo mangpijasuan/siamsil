@@ -30,7 +30,7 @@ body .shell-menu-btn {
   background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff;
 }
 body .shell-brand-mobile { margin-right: auto; }
-body .brand-lockup { height: 62px; width: auto; }
+body .brand-lockup { height: 62px; width: auto; background: #fff; border-radius: 10px; }
 body .shell-topbar-search {
   flex: 0 1 365px; height: 46px; border-radius: 999px; background: #fff; border: 0;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); color: #6b7a92;
