@@ -239,3 +239,28 @@ body .desktop-sidebar .side-panel-icon, body .mobile-drawer .side-panel-icon { w
 @media (min-width: 768px) {
   .sr-home .sr-hero { padding-left: var(--st-gutter); padding-right: var(--st-gutter); }
 }
+
+/* ── Phone bottom bar: a floating pill lifted off the edge, a round highlight on the current tab ── */
+@media (max-width: 1023px) {
+  body { padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }
+  body .bottom-nav {
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+    width: calc(100% - 28px) !important;
+    max-width: 440px;
+    height: 70px !important;
+    padding: 6px !important;
+    gap: 2px !important;
+    border-radius: 999px !important;
+    background: rgba(13, 30, 66, 0.96) !important;
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 14px 34px rgba(4, 12, 32, 0.5), 0 3px 8px rgba(4, 12, 32, 0.35) !important;
+  }
+  body .bottom-nav .nav-item { border-radius: 999px !important; gap: 2px; padding: 4px 2px; }
+  body .bottom-nav .nav-item.active {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: var(--gold2) !important;
+  }
+  body .bottom-nav .nav-label { font-size: 10.5px; }
+}
