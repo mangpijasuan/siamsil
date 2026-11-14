@@ -30,7 +30,7 @@ body .shell-menu-btn {
   background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff;
 }
 body .shell-brand-mobile { margin-right: auto; }
-body .brand-lockup { height: 62px; width: auto; background: #fff; border-radius: 10px; }
+body .brand-lockup { height: 68px; width: auto; }
 body .shell-topbar-search {
   flex: 0 1 365px; height: 46px; border-radius: 999px; background: #fff; border: 0;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); color: #6b7a92;
@@ -152,7 +152,7 @@ body .mobile-drawer .side-panel-foot, body .desktop-sidebar .side-panel-foot { c
 }
 @media (max-width: 1023px) {
   body .shell-topbar, body .shell-topbar-inner { height: 70px; }
-  body .brand-lockup { height: 50px; }
+  body .brand-lockup { height: 54px; }
   body .shell-topbar-search { display: none; }
   body .shell-topbar-search-btn { color: #fff; }
 }

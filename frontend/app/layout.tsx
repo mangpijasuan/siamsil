@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: "Siamsil — Zomi Dictionary & Translate",
     description: SITE_DESCRIPTION,
-    ...(SITE_URL ? { images: [{ url: "/logo-lockup.png", alt: "Siamsil" }] } : {}),
+    ...(SITE_URL ? { images: [{ url: "/logo-lockup-light.png", alt: "Siamsil" }] } : {}),
   },
   twitter: { card: "summary", title: "Siamsil — Zomi Dictionary & Translate", description: SITE_DESCRIPTION },
   keywords: [
