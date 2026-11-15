@@ -10,6 +10,8 @@ const TABS = [
   { href: "/bible", Icon: IconCross, label: "Bible" },
 ];
 
+const MORE_PAGES = ["/library", "/learning", "/chat", "/resources", "/about", "/help", "/profile"];
+
 function MoreIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
@@ -20,9 +22,9 @@ function MoreIcon() {
 
 export default function BottomNav() {
   const pathname = usePathname();
-  // Pages that live behind "More" (Library, Learn, Siamsil AI, Resources, About, Help, Profile) light up "More",
-  // so the bar always shows where you are.
-  const onATab = TABS.some(({ href }) => (href === "/" ? pathname === "/" : pathname.startsWith(href)));
+  // Pages that live behind "More" light it up, so the bar shows where you are. Only these known pages count,
+  // so an unknown address (a 404) highlights nothing.
+  const onMorePage = MORE_PAGES.some((href) => pathname.startsWith(href));
 
   return (
     <nav className="bottom-nav" aria-label="Main sections">
@@ -40,7 +42,7 @@ export default function BottomNav() {
           </Link>
         );
       })}
-      <button type="button" className={`nav-item${onATab ? "" : " active"}`} onClick={() => window.dispatchEvent(new Event("siamsil:open-menu"))}>
+      <button type="button" className={`nav-item${onMorePage ? " active" : ""}`} aria-current={onMorePage ? "true" : undefined} onClick={() => window.dispatchEvent(new Event("siamsil:open-menu"))}>
         <span className="nav-icon"><MoreIcon /></span>
         <span className="nav-label">More</span>
       </button>
