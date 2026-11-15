@@ -69,7 +69,7 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <div style={{ display: "flex", flexDirection: "column", minHeight: "calc(100vh - 160px)" }}>
+      <div className="ai-chat-shell">
         <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)", background: "var(--surface)", display: "flex", gap: 6, flexWrap: "wrap" }}>
           {["What does hope mean?", "Translate good morning", "Laisiangtho John 1"].map((prompt) => (
             <button

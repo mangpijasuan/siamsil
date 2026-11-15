@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 const COLLECTIONS = [
-  { href: "/zomidictionary", name: "Dictionary", note: "The English–Zomi master of about 20,000 entries. Entries not yet checked by a reviewer are labelled." },
+  { href: "/zomidictionary", name: "Dictionary", note: "The English–Zomi dictionary: about 50,000 senses from the 50K Translation Master. Entries not yet checked by a reviewer are labelled." },
   { href: "/zomitranslate", name: "Example sentences", note: "English sentences from Tatoeba/OPUS with a machine-written Zomi side. Unreviewed; not ground truth." },
   { href: "/bible", name: "Bible", note: "Zomi Bible versions that Siamsil is allowed to display." },
   { href: "/learning", name: "Learning phrases", note: "Everyday phrases already reviewed by Zomi teachers, and citizenship-test practice." },

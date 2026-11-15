@@ -265,3 +265,9 @@ body .desktop-sidebar .side-panel-icon, body .mobile-drawer .side-panel-icon { w
   }
   body .bottom-nav .nav-label { font-size: 10.5px; }
 }
+
+/* ── Siamsil AI: the message box stays above the floating phone bar, no scrolling needed ── */
+.ai-chat-shell { display: flex; flex-direction: column; min-height: calc(100vh - 160px); }
+@media (max-width: 1023px) {
+  .ai-chat-shell { min-height: calc(100vh - 160px - 104px - env(safe-area-inset-bottom, 0px)); }
+}

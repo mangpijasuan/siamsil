@@ -20,6 +20,9 @@ function MoreIcon() {
 
 export default function BottomNav() {
   const pathname = usePathname();
+  // Pages that live behind "More" (Library, Learn, Siamsil AI, Resources, About, Help, Profile) light up "More",
+  // so the bar always shows where you are.
+  const onATab = TABS.some(({ href }) => (href === "/" ? pathname === "/" : pathname.startsWith(href)));
 
   return (
     <nav className="bottom-nav" aria-label="Main sections">
@@ -37,7 +40,7 @@ export default function BottomNav() {
           </Link>
         );
       })}
-      <button type="button" className="nav-item" onClick={() => window.dispatchEvent(new Event("siamsil:open-menu"))}>
+      <button type="button" className={`nav-item${onATab ? "" : " active"}`} onClick={() => window.dispatchEvent(new Event("siamsil:open-menu"))}>
         <span className="nav-icon"><MoreIcon /></span>
         <span className="nav-label">More</span>
       </button>
