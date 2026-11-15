@@ -13,13 +13,16 @@ from settings import get_settings
 FTS_UNSAFE = re.compile(r'["\'*:^(){}[\]~-]')
 
 
-def fts_match(query: str) -> str | None:
+def fts_match(query: str, *, prefix: bool = True) -> str | None:
     cleaned = FTS_UNSAFE.sub(" ", query)
-    tokens = [token for token in cleaned.split() if token]
+    # A token with no letter or digit (a dash, "&") tokenizes to nothing, and an empty phrase makes the whole AND
+    # query match nothing, so it is left out.
+    tokens = [token for token in cleaned.split() if any(char.isalnum() for char in token)]
     if not tokens:
         return None
     parts = [f'"{token}"' for token in tokens[:-1]]
-    parts.append(f'"{tokens[-1]}"*')
+    # The last word is matched as a prefix while someone is typing; an exact lookup wants the whole word.
+    parts.append(f'"{tokens[-1]}"*' if prefix else f'"{tokens[-1]}"')
     return " AND ".join(parts)
 
 
@@ -42,11 +45,22 @@ _EXACT_ORDER = " AND quality_flags NOT LIKE '%reviewer_rejected%' ORDER BY quali
 # An exact match ignores case and closing punctuation: "Thank you" finds "Thank you." and "Thank you!".
 EXACT_FORMS = 4
 _EXACT_IN = "(" + ", ".join("?" * EXACT_FORMS) + ")"
+# An exact match is looked up among the pairs that full-text search finds for the query's words, never by scanning
+# the table: lower(column) cannot use an index, so the old query read all ~1.8 million pairs on every search
+# (about 1 s warm, ~20 s on a cold start). A sentence equal to the query holds all its words, so it is always
+# among those pairs, and the answer is the same. CROSS JOIN keeps the full-text table as the outer loop.
+_EXACT_CONDITION = {
+    None: f"(lower(p.normalized_source_text) IN {_EXACT_IN} OR lower(p.normalized_target_text) IN {_EXACT_IN})",
+    "en-ctd": f"lower(p.normalized_source_text) IN {_EXACT_IN}",
+    "ctd-en": f"lower(p.normalized_target_text) IN {_EXACT_IN}",
+}
 PARALLEL_EXACT_SQL = {
-    None: f"SELECT * FROM parallel_sentences WHERE (lower(normalized_source_text) IN {_EXACT_IN}"
-    f" OR lower(normalized_target_text) IN {_EXACT_IN})" + _EXACT_ORDER,
-    "en-ctd": f"SELECT * FROM parallel_sentences WHERE lower(normalized_source_text) IN {_EXACT_IN}" + _EXACT_ORDER,
-    "ctd-en": f"SELECT * FROM parallel_sentences WHERE lower(normalized_target_text) IN {_EXACT_IN}" + _EXACT_ORDER,
+    direction: (
+        "SELECT p.* FROM parallel_fts CROSS JOIN parallel_sentences p ON p.id = parallel_fts.rowid "
+        f"WHERE parallel_fts MATCH ? AND {condition} AND p.quality_flags NOT LIKE '%reviewer_rejected%' "
+        "ORDER BY p.quality_score DESC, p.id LIMIT ?"
+    )
+    for direction, condition in _EXACT_CONDITION.items()
 }
 
 
@@ -323,8 +337,13 @@ class LanguageEngine:
         con = self.connect()
         limit = min(max(limit, 1), 50)
         forms = exact_forms(query)
-        exact_params = (*forms, *forms, limit) if direction is None else (*forms, limit)
-        exact = con.execute(PARALLEL_EXACT_SQL[direction], exact_params).fetchall()
+        match_expression = f"{PARALLEL_FTS_COLUMN[direction]} : ({match})" if direction else match
+        whole_words = fts_match(query, prefix=False)
+        exact_expression = f"{PARALLEL_FTS_COLUMN[direction]} : ({whole_words})" if direction else whole_words
+        exact_forms_params = (*forms, *forms) if direction is None else tuple(forms)
+        exact = con.execute(
+            PARALLEL_EXACT_SQL[direction], (exact_expression, *exact_forms_params, limit)
+        ).fetchall()
         remaining = limit - len(exact)
         fts_rows: list[sqlite3.Row] = []
         if remaining > 0:
@@ -337,7 +356,7 @@ class LanguageEngine:
                 WHERE parallel_fts MATCH ?
                   AND p.quality_score >= 0.5
             """
-            params: list[Any] = [f"{PARALLEL_FTS_COLUMN[direction]} : ({match})" if direction else match]
+            params: list[Any] = [match_expression]
             if exact_ids:
                 sql += f" AND p.id NOT IN ({placeholders})"
                 params.extend(exact_ids)
