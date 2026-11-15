@@ -235,9 +235,6 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
         <div className={`mobile-drawer-backdrop${mobileOpen ? " visible" : ""}`} onClick={() => setMobileOpen(false)} aria-hidden="true" />
         <aside id="mobile-drawer" className={`mobile-drawer${mobileOpen ? " open" : ""}`} aria-label="Mobile navigation" aria-hidden={!mobileOpen}>
           <div className="mobile-drawer-head">
-            <Link href="/" className="sidebar-brand-link" onClick={() => setMobileOpen(false)}>
-              <BrandLockup height={44} />
-            </Link>
             <button type="button" className="side-panel-close" onClick={() => setMobileOpen(false)} aria-label="Close navigation">
               <CloseIcon />
             </button>
