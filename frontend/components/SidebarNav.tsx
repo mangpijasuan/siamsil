@@ -71,14 +71,6 @@ function MenuIcon() {
   );
 }
 
-function CloseIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-      <path d="M6 6l12 12M18 6 6 18" />
-    </svg>
-  );
-}
-
 // The Siamsil Technology Hub lockup (mark, wordmark and tagline in one image). White and gold on a transparent background, for the navy bars. logo-og.png is the same logo on navy for link previews.
 function BrandLockup({ height }: { height: number }) {
   return (
@@ -234,11 +226,6 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
 
         <div className={`mobile-drawer-backdrop${mobileOpen ? " visible" : ""}`} onClick={() => setMobileOpen(false)} aria-hidden="true" />
         <aside id="mobile-drawer" className={`mobile-drawer${mobileOpen ? " open" : ""}`} aria-label="Mobile navigation" aria-hidden={!mobileOpen}>
-          <div className="mobile-drawer-head">
-            <button type="button" className="side-panel-close" onClick={() => setMobileOpen(false)} aria-label="Close navigation">
-              <CloseIcon />
-            </button>
-          </div>
           <Navigation pathname={pathname} onNavigate={() => setMobileOpen(false)} />
           <div className="side-panel-foot">Literature in Zomi</div>
         </aside>
