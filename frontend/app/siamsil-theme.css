@@ -153,6 +153,7 @@ body .mobile-drawer .side-panel-foot, body .desktop-sidebar .side-panel-foot { c
 @media (max-width: 1023px) {
   body .shell-topbar, body .shell-topbar-inner { height: 70px; }
   body .brand-lockup { height: 32px; }
+  body .mobile-drawer-head .brand-lockup { height: 32px; } /* globals.css gives the drawer logo its own, stronger rule */
   body .shell-topbar-search { display: none; }
   body .shell-topbar-search-btn { color: #fff; }
 }
