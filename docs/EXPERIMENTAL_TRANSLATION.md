@@ -39,3 +39,5 @@ A local development server can use an OpenAI model to generate new translations 
 Open the Translate page, enter text, submit it to the page, then select **Generate translation (experimental)**. Only the submitted text and translation instructions go to the provider. The hosted path does not use the dictionary, corpus, Bible, or model training system. The default retrieval endpoint still serves stored matches.
 
 Before proposing production use, compare meaning, naturalness, dialect, omissions, and additions in both directions with Tedim-speaking reviewers. Also check latency and the failure rate. Use evaluation inputs authorized for provider processing, and keep protected sets and reviewer corrections out of provider requests unless separately approved. The hosted pilot is development-only while production authorization and usage controls are pending.
+
+Hosted translations, and any reviewer corrections made to them, are provider-derived. They are excluded from Siamsil's own model training unless the provider's current terms explicitly allow it, and the pilot never saves them to the corpus, the dictionary or any dataset.

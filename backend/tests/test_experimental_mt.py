@@ -165,6 +165,7 @@ class HostedEndpointTests(unittest.TestCase):
     def setUp(self) -> None:
         self.client = TestClient(app)
         configured = Settings(
+            environment="development",
             experimental_mt_openai_api_key="test-key",
             experimental_mt_openai_model="test-model",
         )
