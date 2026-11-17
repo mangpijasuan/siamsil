@@ -13,7 +13,7 @@ from rate_limit import rate_limited
 from services.bible_lookup import BibleLookup
 from services.bible_versions import get_bible_versions
 from services.data_loader import get_store
-from services import experimental_mt
+from services import experimental_mt, hosted_mt
 from services.language_engine import DIRECTION_PATTERN, canonical_direction, entry_zomi, get_engine
 from services.translation import active_system
 
@@ -140,7 +140,7 @@ def translate(request: TranslateRequest):
 @router.get("/experimental", response_model=ExperimentalTranslationStatus)
 def experimental_status():
     """Whether the opt-in experimental model is available, so the page can offer it."""
-    current = experimental_mt.status()
+    current = hosted_mt.status() or experimental_mt.status()
     return {"available": current.available, "note": current.reason,
             "system": current.name, "system_version": current.version}
 
@@ -148,6 +148,24 @@ def experimental_status():
 @router.post("/experimental", response_model=ExperimentalTranslationResponse)
 def translate_experimental(request: ExperimentalTranslateRequest):
     """Opt-in machine translation, always labelled experimental (docs/ROADMAP.md, Phase 2)."""
+    if not request.text.strip():
+        raise HTTPException(status_code=422, detail="Enter text to translate.")
+
+    if hosted_mt.status() is not None:
+        try:
+            translation, model = hosted_mt.translate(request.text, request.direction)
+        except hosted_mt.ProviderError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        return {
+            "input": request.text,
+            "direction": request.direction,
+            "translation": translation,
+            "label": experimental_mt.LABEL,
+            "note": hosted_mt.RESULT_NOTE,
+            "system": hosted_mt.SYSTEM,
+            "system_version": model,
+        }
+
     translator = experimental_mt.get_translator()
     if translator is None:
         raise HTTPException(status_code=503, detail=experimental_mt.status().reason)

@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -56,6 +56,10 @@ class Settings(BaseSettings):
     # Development only: serve a model trained on sources not yet cleared for training.
     experimental_mt_allow_uncleared: bool = False
 
+    # Hosted translation for a local pilot. Both values are required to enable it.
+    experimental_mt_openai_api_key: SecretStr | None = None
+    experimental_mt_openai_model: str | None = None
+
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:3002",
@@ -88,6 +92,14 @@ class Settings(BaseSettings):
             raise ValueError("SIAMSIL_DATABASE_URL is required when SIAMSIL_DATABASE_REQUIRED=true")
         if self.experimental_mt_allow_uncleared and self.environment != "development":
             raise ValueError("SIAMSIL_EXPERIMENTAL_MT_ALLOW_UNCLEARED is only allowed in development")
+        if self.experimental_mt_openai_api_key is not None or self.experimental_mt_openai_model is not None:
+            if self.environment != "development":
+                raise ValueError("Hosted experimental translation is only available in development")
+            key = self.experimental_mt_openai_api_key
+            if not key or not key.get_secret_value().strip() or not (self.experimental_mt_openai_model or "").strip():
+                raise ValueError("Hosted experimental translation requires an API key and model")
+            if self.experimental_mt_dir is not None:
+                raise ValueError("Choose either a local or hosted experimental translation model")
         if self.environment in {"staging", "production"} and not self.database_url:
             raise ValueError("SIAMSIL_DATABASE_URL is required in staging and production")
         if self.oidc_enabled:
