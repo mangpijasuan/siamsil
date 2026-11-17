@@ -3,7 +3,7 @@
 Siamsil currently ships as a web-first, API-first language platform. Its target architecture is mobile-first with Expo apps for iOS and Android; those native clients are not built yet.
 
 Durable product rules: [`docs/PRODUCTION_MASTER_BUILD_PROMPT.md`](docs/PRODUCTION_MASTER_BUILD_PROMPT.md)
-Latest audit: [`docs/AUDIT.md`](docs/AUDIT.md)
+Audit: [`docs/AUDIT.md`](docs/AUDIT.md) (historical, 2026-08-18; current status is in [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md))
 Target architecture and migration plan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 Mobile and language-AI target architecture: [`docs/MOBILE_AI_ARCHITECTURE.md`](docs/MOBILE_AI_ARCHITECTURE.md)
 Long-term vision: [`docs/VISION.md`](docs/VISION.md)

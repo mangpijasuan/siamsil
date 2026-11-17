@@ -197,6 +197,7 @@ Atomic job claiming requires a lease owner, lease expiry, attempt count, next re
 Keep `/api/v1` and remove the duplicate unversioned route registration after clients migrate.
 
 ```text
+# Proposed routes. Implemented routes are in the OpenAPI contract (`frontend/openapi.json`), not here.
 GET  /api/v1/dictionary/search
 GET  /api/v1/dictionary/entries/{public_id}
 GET  /api/v1/translation/search

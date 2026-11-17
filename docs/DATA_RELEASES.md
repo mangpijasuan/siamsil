@@ -1,5 +1,7 @@
 # Immutable Siamsil data releases (operator runbook)
 
+> **SAFETY HOLD: do not run the data-release workflow.** PR #64 exposed restricted source-derived data through public workflow artifacts and left out the rights, review and holdout gates. `.github/workflows/data-release.yml` is now a stub that fails on purpose (`release_safety_hold`). Do not unpause it, and never upload a private bundle as a workflow artifact in this public repository. It stays paused until the hardening under [Future hardening](#future-hardening) is built and the owner approves in writing. Releases to the private bucket follow the manual route in [DEPLOY.md](DEPLOY.md) for now. This page keeps the topology, the verification checks and the rollback procedure for bundles that were already approved.
+
 This workflow connects the private **siamsil-data** source archive to reproducible build artifacts, not to live GitHub requests from the website. It supplements [DEPLOY.md](DEPLOY.md). **Never put restricted originals, R2 credentials, or bundles in the public application repository.**
 
 ## Release topology
@@ -16,11 +18,11 @@ A new source commit, including terminology corrections, does **not** imply permi
 4. Do not configure personal secrets in code or PR comments. The action's checkout of the private data repo and its upload step cannot run successfully without these settings.
 5. Keep the private source repo and its large tracked assets accessible to GitHub Actions. Account for Git LFS and GitHub bandwidth quotas before running; this workflow does not download an uncommitted local `zomi-data.zip`.
 
-## Build and release
+## Build and release (suspended)
 
-Open **Actions → Build and validate Siamsil data release → Run workflow** and choose `publish_to_r2=false` for a dry run. The workflow checks out the private repo, hashes its pinned originals, builds the SQLite databases, and produces `dist/siamsil-data.tar.gz` and `dist/release.json`. Both are saved as a short-retention **private workflow artifact**. Do not forward either externally. Inspect the output, license metadata and holdout exclusions before approval.
+The workflow-based build below is **not available while the hold is in place.** The earlier procedure produced `dist/siamsil-data.tar.gz` and `dist/release.json` and saved them as a workflow artifact; that is the step that exposed data and it has been removed. Do not recreate it.
 
-For a reviewed release, run again with `publish_to_r2=true` and approve the protected environment. The action uploads to:
+When a release is approved by the owner, the bundle is built and uploaded on the computer that holds `siamsil-data`, as in [DEPLOY.md](DEPLOY.md). Each release goes to an immutable, digest-specific key:
 
 ```text
 releases/sha256-<full-bundle-sha256>/siamsil-data.tar.gz

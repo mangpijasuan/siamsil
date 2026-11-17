@@ -115,7 +115,7 @@ Any other field is refused. A local addition belongs in a separate file that poi
    exports of the parallel corpus have it in about 1% of rows (`siamsil-data/parallel/workbooks/FINDINGS.md`). A record that has it is
    refused.
 3. `zomi` is the source's text. The standard form is a separate field, never a replacement.
-4. A changed standard form names the adopted rules that changed it, and each must be in the adopted rule set (`data/zomi_standard_form/standard.json`) under the `standard_version` the record states. Rules are adopted only by two Zomi reviewers.
+4. A changed standard form names the adopted rules that changed it, and each must be in the adopted rule set (`data/zomi_standard_form/standard.json`) under the `standard_version` the record states. A rule has two separate statuses: **adopted by the creator** (the `governance` block of `standard.json`; version 1.1.0 holds ZS-001 to ZS-018 this way) and **confirmed by two Zomi reviewers** (none yet). Exports apply every creator-adopted rule and record its version in `standard_version`; the confirmed status is not required to apply it, but must be reached before a rule is evaluated for paid translation.
 5. Every `source` is in `data/rights.json`. For a file meant for training, every source of a record not `excluded` must be `cleared`
    for training; for display, for display. `--purpose training|display` checks this, and cannot be combined with `--no-rights`.
 6. The review rules above, including that nobody approves their own review.

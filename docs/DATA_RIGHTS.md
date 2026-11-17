@@ -176,6 +176,7 @@ To clear it for training, record in this file: (1) the dataset card as published
 **Decision (2026-10-17, project owner):** Siamsil is a non-profit app, offered free of charge.
 
 - Licenses that allow only non-commercial use are acceptable for Siamsil, including NLLB-200 model weights (CC BY-NC 4.0) and the Bible permissions recorded above.
+- **Paid translation: proposed, not decided.** The decision above still stands: no paid feature exists. If a paid `/v1/translate` route is ever added, it must be specified first and may use only components that are `commercial: cleared` in `data/rights.json`: the model and its weights (NLLB-200 is CC BY-NC and cannot be used), every training source, every retrieved example, and any example sent to an outside provider. The Bible versions (`bible_tdb`, `bible_tb77`, FCL, HCL06, BJB), `zomi_worship_songs` and `bible_iso_improved` are not commercial-cleared. The current `POST /api/v1/translate` returns retrieval results from labelled, unreviewed data and stays free; neural translation is a separate experimental route. Today's serving check verifies training clearance only, so it would need a commercial check before any paid use. A second person confirms before anything moves to `cleared`.
 - "Non-commercial" describes how the app is used, not only who runs it. Donations are fine. Paid features, a paid API, advertising, or selling data or models would be commercial use: before adding any of them, review every non-commercial license and permission in this register.
 
 ## Closing an item

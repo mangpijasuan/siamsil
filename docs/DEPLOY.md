@@ -22,6 +22,8 @@ Buy `siamsil.com` under **Domain Registration**. Its DNS is then managed in Clou
 
 The bundle holds Bible text and dictionaries that Siamsil may show but not redistribute (`docs/DATA_RIGHTS.md`), so the bucket stays **private**.
 
+> The GitHub data-release workflow is on a safety hold and fails on purpose. Build and upload from your own computer as below, never as a workflow artifact. See [DATA_RELEASES.md](DATA_RELEASES.md).
+
 1. **R2 → Create bucket**, for example `siamsil-data-bundle`. Do not turn on public access, and do not connect a custom domain to the bucket.
 2. **R2 → Manage API tokens**, then make two tokens limited to that bucket:
    - **Read-only** (*Object Read only*), for the API. Note its Access Key ID and Secret Access Key.
