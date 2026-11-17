@@ -48,13 +48,8 @@ const NAV_GROUPS: Array<{ title: string; tabs: NavTab[] }> = [
   {
     title: "Learn",
     tabs: [
-<<<<<<< HEAD
-      { href: "/learning", Icon: IconAcademic, label: "Learn", short: "Learn", hint: "Grammar & phrases" },
-      { href: "/chat", Icon: IconChat, label: "Siamsil AI", short: "AI", hint: "Retrieval assistant" },
-=======
       { href: "/learning", Icon: IconAcademic, glyph: "learn", label: "Learn", short: "Learn", hint: "Grammar & phrases" },
       { href: "/chat", Icon: IconAI, glyph: "ai", label: "Siamsil AI", short: "AI", hint: "Retrieval assistant" },
->>>>>>> origin/main
     ],
   },
 ];
@@ -79,26 +74,10 @@ function MenuIcon() {
 // The Siamsil Technology Hub lockup (mark, wordmark and tagline in one image). White and gold on a transparent background, for the navy bars. logo-og.png is the same logo on navy for link previews.
 function BrandLockup({ height }: { height: number }) {
   return (
-<<<<<<< HEAD
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-      <path d="M6 6l12 12M18 6 6 18" />
-    </svg>
-  );
-}
-
-// The Siamsil lockup (mark, wordmark and tagline in one image), white and gold for navy backgrounds.
-function BrandLockup({ height }: { height: number }) {
-  return (
-    <Image
-      src="/logo-lockup.png"
-      alt="Siamsil, The Art of Literature"
-      width={Math.round(height * (1200 / 410))}
-=======
     <Image
       src="/logo-lockup.png"
       alt="Siamsil Technology Hub"
       width={Math.round(height * (1200 / 272))}
->>>>>>> origin/main
       height={height}
       className="brand-lockup"
       priority
@@ -227,8 +206,6 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
           </form>
           <Link href="/zomidictionary" className="shell-topbar-search-btn" aria-label="Search the dictionary">
             <IconSearch size={18} />
-<<<<<<< HEAD
-=======
           </Link>
           <Link
             href="/profile"
@@ -238,7 +215,6 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
           >
             <span className="shell-user-copy"><strong>Guest</strong><small>Local profile</small></span>
             <span className="shell-user-avatar"><IconUser size={20} /></span>
->>>>>>> origin/main
           </Link>
         </div>
       </header>
@@ -250,17 +226,6 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
 
         <div className={`mobile-drawer-backdrop${mobileOpen ? " visible" : ""}`} onClick={() => setMobileOpen(false)} aria-hidden="true" />
         <aside id="mobile-drawer" className={`mobile-drawer${mobileOpen ? " open" : ""}`} aria-label="Mobile navigation" aria-hidden={!mobileOpen}>
-<<<<<<< HEAD
-          <div className="mobile-drawer-head">
-            <Link href="/" className="sidebar-brand-link" onClick={() => setMobileOpen(false)}>
-              <BrandLockup height={44} />
-            </Link>
-            <button type="button" className="side-panel-close" onClick={() => setMobileOpen(false)} aria-label="Close navigation">
-              <CloseIcon />
-            </button>
-          </div>
-=======
->>>>>>> origin/main
           <Navigation pathname={pathname} onNavigate={() => setMobileOpen(false)} />
           <div className="side-panel-foot">Literature in Zomi</div>
         </aside>

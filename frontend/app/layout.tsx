@@ -3,10 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import BottomNav from "@/components/BottomNav";
 import SidebarNav from "@/components/SidebarNav";
 import { PREFERENCES_BOOT_SCRIPT } from "@/lib/bible/preferences";
-<<<<<<< HEAD
-=======
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
->>>>>>> origin/main
 import "./globals.css";
 import "./siamsil-theme.css";
 

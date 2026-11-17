@@ -36,21 +36,7 @@ const loadVersions = cache(async (): Promise<{ versions: BibleVersionInfo[]; err
   }
 });
 
-<<<<<<< HEAD
-export default async function BiblePage({ searchParams }: Props) {
-  const params = await searchParams;
-  const { versions, error: versionsError } = await loadVersions();
-
-  if (versions.length === 0) return <WorkbookBible {...params} notice={versionsError} />;
-
-  const version = versions.find((item) => item.id === params.v) ?? versions[0];
-  // Bilingual by default: a Zomi version is paired with English unless the link says otherwise (compare=none).
-  const compare = chooseCompanion(versions, version, params.compare);
-  let error: string | null = null;
-  let books: Awaited<ReturnType<typeof getBibleVersionBooks>>["books"] = [];
-=======
 const loadBooks = cache(async (versionId: string): Promise<{ books: BibleVersionBook[]; error: string | null }> => {
->>>>>>> origin/main
   try {
     return { books: (await getBibleVersionBooks(versionId)).books, error: null };
   } catch (caught) {

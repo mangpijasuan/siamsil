@@ -14,10 +14,7 @@ type Tab = "bookmarks" | "notes" | "highlights";
 export default function SavedPanel({ onClose, compareParam }: { onClose: () => void; compareParam: string }) {
   const { data, update } = useSavedData();
   const [tab, setTab] = useState<Tab>("bookmarks");
-<<<<<<< HEAD
-=======
   const [query, setQuery] = useState("");
->>>>>>> origin/main
   const now = () => new Date().toISOString();
 
   const lists = {
@@ -32,13 +29,10 @@ export default function SavedPanel({ onClose, compareParam }: { onClose: () => v
     else update((current) => setHighlight(current, ref, null, now()));
   };
   const labels: Record<Tab, string> = { bookmarks: "Bookmarks", notes: "Notes", highlights: "Highlights" };
-<<<<<<< HEAD
-=======
   const matches = lists[tab].filter((item) => {
     const text = `${item.label} ${item.version} ${"text" in item ? item.text : ""}`;
     return text.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
   });
->>>>>>> origin/main
 
   return (
     <Sheet title="Bookmarks and notes" onClose={onClose}>
@@ -50,18 +44,6 @@ export default function SavedPanel({ onClose, compareParam }: { onClose: () => v
           </button>
         ))}
       </div>
-<<<<<<< HEAD
-      <div id="sb-saved-list" role="tabpanel" aria-labelledby={`sb-tab-${tab}`}>
-        {lists[tab].length === 0 ? (
-          <p className="sb-muted">
-            {tab === "bookmarks" && "No bookmarks yet. Tap a verse, then Bookmark."}
-            {tab === "notes" && "No notes yet. Tap a verse, then Note."}
-            {tab === "highlights" && "No highlights yet. Tap a verse and pick a colour."}
-          </p>
-        ) : (
-          <ul className="sb-saved">
-            {lists[tab].map((item) => (
-=======
       <label className="sb-field">
         <span className="sr-only">Filter saved references</span>
         <input className="sb-input" type="search" value={query} onChange={(event) => setQuery(event.target.value)}
@@ -79,7 +61,6 @@ export default function SavedPanel({ onClose, compareParam }: { onClose: () => v
         ) : (
           <ul className="sb-saved">
             {matches.map((item) => (
->>>>>>> origin/main
               <li key={refKey(item)} className="sb-saved-row">
                 <Link href={href(item)} className="sb-saved-link" onClick={onClose}>
                   <strong>{item.label}</strong>

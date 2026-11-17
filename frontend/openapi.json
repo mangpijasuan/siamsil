@@ -4510,33 +4510,21 @@
             }
           },
           {
-<<<<<<< HEAD
-            "description": "Search only the side translated from: English for en-zom, Zomi for zom-en. Omit to search both.",
-=======
             "description": "Search only the side translated from: English for en-ctd, Zomi for ctd-en. Omit to search both. The older names en-zom and zom-en are still accepted.",
->>>>>>> origin/main
             "in": "query",
             "name": "direction",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-<<<<<<< HEAD
-                  "pattern": "^(en-zom|zom-en)$",
-=======
                   "pattern": "^(en-ctd|ctd-en|en-zom|zom-en)$",
->>>>>>> origin/main
                   "type": "string"
                 },
                 {
                   "type": "null"
                 }
               ],
-<<<<<<< HEAD
-              "description": "Search only the side translated from: English for en-zom, Zomi for zom-en. Omit to search both.",
-=======
               "description": "Search only the side translated from: English for en-ctd, Zomi for ctd-en. Omit to search both. The older names en-zom and zom-en are still accepted.",
->>>>>>> origin/main
               "title": "Direction"
             }
           }

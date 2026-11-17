@@ -2629,11 +2629,7 @@ export interface operations {
             query: {
                 q: string;
                 limit?: number;
-<<<<<<< HEAD
-                /** @description Search only the side translated from: English for en-zom, Zomi for zom-en. Omit to search both. */
-=======
                 /** @description Search only the side translated from: English for en-ctd, Zomi for ctd-en. Omit to search both. The older names en-zom and zom-en are still accepted. */
->>>>>>> origin/main
                 direction?: string | null;
             };
             header?: never;

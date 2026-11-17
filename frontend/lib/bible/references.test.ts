@@ -1,10 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-<<<<<<< HEAD
-import { adjacentChapters, alignVerses, bibleHref, chooseCompanion, filterBooks, formatReference, NO_COMPARE } from "./references.ts";
-=======
 import { adjacentChapters, alignVerses, bibleHref, chooseCompanion, filterBooks, formatReference, NO_COMPARE, readingMode, readingModeTargets } from "./references.ts";
->>>>>>> origin/main
 
 const books = [
   { book_id: 1, code: "GEN", name: "Genesis", name_local: "Piancilna", chapters: [1, 2, 3] },
@@ -73,11 +69,7 @@ test("references read naturally", () => {
 });
 
 const versions = [
-<<<<<<< HEAD
-  { id: "tdb", abbreviation: "TDB", language_iso: "zom" },
-=======
   { id: "tdb", abbreviation: "TDB", language_iso: "ctd" },
->>>>>>> origin/main
   { id: "kjv", abbreviation: "KJV", language_iso: "eng" },
   { id: "web", abbreviation: "WEB", language_iso: "eng" },
 ];
@@ -97,8 +89,6 @@ test("an English main version gets no default companion", () => {
   assert.equal(chooseCompanion(versions, versions[2], undefined), null);
 });
 
-<<<<<<< HEAD
-=======
 test("URL-selected versions, not stale device preferences, determine reading mode", () => {
   assert.equal(readingMode(versions[0], versions[2]), "both");
   assert.equal(readingMode(versions[0], null), "zomi");
@@ -107,7 +97,6 @@ test("URL-selected versions, not stale device preferences, determine reading mod
   assert.deepEqual(readingModeTargets(versions, versions[2], null), { zomi: versions[0], english: versions[2] });
 });
 
->>>>>>> origin/main
 test("book search matches Zomi names, English names and codes", () => {
   assert.deepEqual(filterBooks(books, "pian").map((b) => b.book_id), [1]);
   assert.deepEqual(filterBooks(books, "exo").map((b) => b.book_id), [2]);

@@ -4279,14 +4279,6 @@ body, body::before { background: var(--page); }
 
 /* Top bar */
 .shell-topbar {
-<<<<<<< HEAD
-  background: linear-gradient(90deg, #0E1F45 0%, #162E63 55%, #1B3670 100%) !important;
-  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
-  box-shadow: 0 4px 18px rgba(8,20,48,0.35) !important;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-=======
   background: linear-gradient(90deg, #081935 0%, #0b2144 65%, #10234b 100%) !important;
   border-bottom: 0 !important;
   box-shadow: 0 6px 20px rgba(5, 16, 36, .22) !important;
@@ -4301,17 +4293,12 @@ body, body::before { background: var(--page); }
   background: linear-gradient(90deg, rgba(226, 188, 106, .18), rgba(226, 188, 106, .42) 50%, rgba(226, 188, 106, .18));
   pointer-events: none;
 }
->>>>>>> origin/main
 .shell-topbar,
 .shell-topbar-inner { height: 76px; }
 .shell-topbar-inner { gap: 18px; padding: 0 22px 0 16px !important; }
 .shell-brand-mobile { margin-left: 0 !important; }
 .brand-lockup { height: 46px; width: auto; display: block; }
-<<<<<<< HEAD
-.mobile-drawer-head .brand-lockup { height: 40px; }
-=======
 .mobile-drawer-head .brand-lockup { height: 44px; }
->>>>>>> origin/main
 .shell-menu-btn,
 .shell-menu-btn[aria-expanded="true"] {
   width: 46px !important;
@@ -4365,13 +4352,6 @@ body, body::before { background: var(--page); }
 }
 @media (max-width: 767px) {
   .shell-topbar,
-<<<<<<< HEAD
-  .shell-topbar-inner { height: 64px; }
-  .shell-topbar-inner { padding: 0 12px !important; gap: 10px; }
-  .brand-lockup { height: 38px; }
-  .shell-menu-btn,
-  .shell-menu-btn[aria-expanded="true"] { width: 42px !important; height: 42px; }
-=======
   .shell-topbar-inner { height: 70px; }
   .shell-topbar-inner { padding: 0 12px !important; gap: 10px; }
   .brand-lockup { height: 44px; }
@@ -4379,23 +4359,17 @@ body, body::before { background: var(--page); }
   .shell-menu-btn[aria-expanded="true"] { width: 46px !important; height: 46px; }
   .shell-topbar-search-btn { width: 46px; height: 46px; }
   .mobile-drawer-backdrop { inset: 70px 0 0; }
->>>>>>> origin/main
 }
 
 /* Side menus: deep navy, flat items, gold pill for the current page */
 .desktop-sidebar,
 .mobile-drawer {
-<<<<<<< HEAD
-  background: linear-gradient(180deg, #102350 0%, #0D1D42 100%) !important;
-  border-right: 1px solid rgba(255,255,255,0.06) !important;
-=======
   /* Share the hero's dark left edge so the desktop rail is not a separate blue slab. */
   background:
     linear-gradient(180deg, rgba(8, 25, 53, .94) 0%, rgba(8, 25, 53, .96) 48%, #081935 100%),
     url("/hero-zomi-hills.webp") left top / auto 440px no-repeat,
     #081935 !important;
   border-right: 1px solid rgba(226, 188, 106, .2) !important;
->>>>>>> origin/main
   box-shadow: none !important;
 }
 @media (min-width: 1024px) {
@@ -4403,15 +4377,11 @@ body, body::before { background: var(--page); }
   .desktop-sidebar:not(.collapsed) { width: 210px !important; min-width: 210px !important; }
   .desktop-sidebar.collapsed { width: 84px !important; min-width: 84px !important; }
 }
-<<<<<<< HEAD
-.mobile-drawer { top: 64px; }
-=======
 .mobile-drawer { top: 70px; }
 @media (min-width: 768px) and (max-width: 1023px) {
   .mobile-drawer { top: 76px; }
   .mobile-drawer-backdrop { inset: 76px 0 0; }
 }
->>>>>>> origin/main
 .mobile-drawer-head { border-bottom: 1px solid rgba(255,255,255,0.08); }
 .side-panel-close { color: rgba(255,255,255,0.8); }
 .side-panel-group-title { display: none; }
@@ -4712,8 +4682,6 @@ body { padding-bottom: 84px; }
   .hx-hero-copy { max-width: 660px; }
 }
 
-<<<<<<< HEAD
-=======
 /* Carry the home landscape into the language tools without placing art behind results. */
 .dict-header,
 .tr-header {
@@ -4760,7 +4728,6 @@ body { padding-bottom: 84px; }
   }
 }
 
->>>>>>> origin/main
 /* Logo centred in the top bar; ☰ stays left and search stays right. */
 .shell-topbar-inner { position: relative; }
 .shell-topbar .shell-brand-mobile {
@@ -4770,16 +4737,11 @@ body { padding-bottom: 84px; }
   transform: translate(-50%, -50%);
   margin: 0 !important;
 }
-<<<<<<< HEAD
-=======
 .shell-user-link { display: none; }
->>>>>>> origin/main
 /* Leave room either side of the centred logo for the search field. */
 @media (min-width: 768px) {
   .shell-topbar-search { flex: 0 1 min(420px, calc(50vw - 150px)) !important; width: auto; }
 }
-<<<<<<< HEAD
-=======
 @media (min-width: 1024px) {
   .shell-topbar { --shell-rail-width: 210px; }
   .shell-topbar.nav-collapsed { --shell-rail-width: 84px; }
@@ -4885,4 +4847,3 @@ body { padding-bottom: 84px; }
 .tr-exp-model { margin-top: 4px; font-size: 12px; color: var(--gray); }
 .tr-exp-loading, .tr-exp-error { font-size: 14px; color: var(--gray); }
 .tr-exp-error { color: #b91c1c; }
->>>>>>> origin/main

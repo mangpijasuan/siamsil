@@ -67,17 +67,6 @@ Agreed order, 2026-10-25. Each step lists what must be true before it counts as 
 
 ### Platform and quality
 
-<<<<<<< HEAD
-- [x] Responsive application shell, sidebar, mobile drawer, page header, and bottom navigation exist.
-- [x] Home, Dictionary, Translate, Learning, Citizenship, Library, Bible, Siamsil AI, and Profile routes exist.
-- [x] Dictionary search uses the 20k-entry SQLite index.
-- [x] Translation retrieval searches dictionary, reviewed phrases, Bible, and the corpus.
-- [x] Unified search endpoint exists.
-- [x] Bible reader and search exist (reading settings, verse actions, device-local bookmarks and notes, scripture search: `docs/BIBLE_READER.md`).
-- [x] Siamsil AI performs grounded retrieval and refuses to invent missing translations.
-- [x] Saved words and search history work in browser-local storage.
-- [x] Learning publishes the existing teacher-reviewed daily-use phrases.
-=======
 - [x] Next.js web app, FastAPI backend, `/api/v1` only (the unversioned aliases are removed).
 - [x] Typed API client generated from OpenAPI; CI rejects drift.
 - [x] Request IDs, standard error responses, health and readiness endpoints.
@@ -91,7 +80,6 @@ Agreed order, 2026-10-25. Each step lists what must be true before it counts as 
 - [ ] Backup and restore procedure for PostgreSQL and the language database release.
 - [ ] Privacy policy, terms, and dataset/source disclosure pages.
 - [-] Search engines: robots, sitemap (pages and Zomi Bible chapters), per-chapter titles, canonical links, social previews, and schema.org data, all switched on by `SIAMSIL_SITE_URL` ([`SEARCH_ENGINES.md`](SEARCH_ENGINES.md)). Still needed: the public domain, Search Console, and per-word dictionary pages, which wait on dictionary rights.
->>>>>>> origin/main
 
 ### Auth foundation
 

@@ -1,9 +1,5 @@
 /* Siamsil Bible reader. Scoped to .sb-* so other routes are untouched.
-<<<<<<< HEAD
-   Theme, display mode and type settings come from data attributes on <html> (see lib/bible/preferences.ts). */
-=======
    Theme and type come from device preferences; visible versions come from the URL. */
->>>>>>> origin/main
 
 .sb-root {
   --sb-navy: #102746;
@@ -30,8 +26,6 @@
   min-height: calc(100vh - 64px);
   padding-bottom: 96px;
 }
-<<<<<<< HEAD
-=======
 /* A quiet scenic surround ties the reader to the home artwork; verses stay on a solid surface. */
 .sb-root {
   background-image:
@@ -42,7 +36,6 @@
   background-position: center top, center top, right top;
   background-repeat: no-repeat;
 }
->>>>>>> origin/main
 html[data-bible-theme="sepia"] .sb-root {
   --sb-page-bg: #efe6d2;
   --sb-surface: #f8f0de;
@@ -70,11 +63,7 @@ html[data-bible-theme="dark"] .sb-root {
   --sb-hl-rose: rgba(210, 110, 140, 0.32);
   --sb-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
-<<<<<<< HEAD
-html[data-bible-face="serif"] .sb-root { --sb-body-font: var(--font-playfair), Georgia, serif; }
-=======
 html[data-bible-face="serif"] .sb-root { --sb-body-font: Georgia, "Times New Roman", serif; }
->>>>>>> origin/main
 
 .sb-root .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
@@ -93,9 +82,6 @@ html[data-bible-face="serif"] .sb-root { --sb-body-font: Georgia, "Times New Rom
   background: color-mix(in srgb, var(--sb-page-bg) 92%, transparent);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-<<<<<<< HEAD
-  border-bottom: 1px solid var(--sb-border);
-=======
   border-bottom: 1px solid rgba(185, 141, 47, .28);
 }
 .sb-progress {
@@ -112,7 +98,6 @@ html[data-bible-face="serif"] .sb-root { --sb-body-font: Georgia, "Times New Rom
   width: var(--sb-progress);
   height: 100%;
   background: var(--sb-gold-ink);
->>>>>>> origin/main
 }
 .sb-toolbar-group { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .sb-pill {
@@ -153,11 +138,8 @@ html[data-bible-face="serif"] .sb-root { --sb-body-font: Georgia, "Times New Rom
   text-decoration: none;
 }
 .sb-icon-btn:hover { background: var(--sb-chip); }
-<<<<<<< HEAD
-=======
 .sb-focus-btn { width: auto; padding: 0 10px; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .sb-focus-symbol { display: none; }
->>>>>>> origin/main
 .sb-icon-btn:disabled, .sb-icon-btn.is-disabled { opacity: 0.35; cursor: default; background: transparent; }
 .sb-text-btn { font-size: 14px; font-weight: 700; }
 .sb-text-btn-lg { font-size: 18px; }
@@ -167,18 +149,12 @@ html[data-bible-face="serif"] .sb-root { --sb-body-font: Georgia, "Times New Rom
 }
 @media (max-width: 767px) {
   .sb-desktop { display: none !important; }
-<<<<<<< HEAD
-  .sb-toolbar { padding: 8px 10px; gap: 4px; }
-  .sb-pill { font-size: 14px; padding: 0 12px; }
-  .sb-icon-btn { min-width: 42px; }
-=======
   .sb-toolbar { top: 70px; padding: 8px 10px; gap: 4px; }
   .sb-pill { font-size: 14px; padding: 0 9px; gap: 4px; }
   .sb-toolbar .sb-icon-btn { min-width: 36px; width: 36px; height: 42px; padding: 0 2px; }
   .sb-focus-btn { display: none; }
   .sb-focus-word { display: none; }
   .sb-focus-symbol { display: inline; font-size: 20px; }
->>>>>>> origin/main
 }
 
 /* ── Reading surface ── */
@@ -189,11 +165,6 @@ html[data-bible-face="serif"] .sb-root { --sb-body-font: Georgia, "Times New Rom
   padding: clamp(22px, 4vw, 48px) clamp(18px, 5vw, 64px) 32px;
   background: var(--sb-surface);
   border: 1px solid var(--sb-border);
-<<<<<<< HEAD
-  border-radius: 22px;
-  box-shadow: var(--sb-shadow);
-}
-=======
   border-top: 3px solid var(--sb-gold);
   border-radius: 26px;
   box-shadow: var(--sb-shadow);
@@ -204,25 +175,16 @@ html[data-bible-face="serif"] .sb-root { --sb-body-font: Georgia, "Times New Rom
 html[data-bible-theme="sepia"] .sb-root,
 html[data-bible-theme="dark"] .sb-root { background-image: none; }
 html[data-bible-focus="true"] .sb-root { background-image: none; }
->>>>>>> origin/main
 .sb-page-head { margin-bottom: 18px; }
 .sb-version-line {
   font-size: 12px;
   font-weight: 700;
-<<<<<<< HEAD
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-=======
   letter-spacing: 0.01em;
->>>>>>> origin/main
   color: var(--sb-muted);
 }
 .sb-secondary-label { color: var(--sb-gold-ink); }
 .sb-chapter-title { margin: 6px 0 0; font-size: clamp(30px, 4vw, 42px); line-height: 1.15; color: var(--sb-text); }
-<<<<<<< HEAD
-=======
 .sb-chapter-title { font-family: var(--font-playfair), Georgia, serif; }
->>>>>>> origin/main
 .sb-book-en-line { margin-top: 2px; font-size: 15px; color: var(--sb-muted); }
 
 .sb-verses { list-style: none; margin: 0; padding: 0; font-family: var(--sb-body-font); }
@@ -293,17 +255,6 @@ html[data-bible-focus="true"] .sb-root { background-image: none; }
 .sb-note svg { flex-shrink: 0; margin-top: 3px; color: var(--sb-gold-ink); }
 .sb-marks { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 8px; color: var(--sb-gold-ink); }
 
-<<<<<<< HEAD
-/* Display modes */
-html[data-bible-mode="primary"] .sb-root .sb-secondary { display: none; }
-html[data-bible-mode="secondary"] .sb-root .sb-primary { display: none; }
-html[data-bible-mode="secondary"] .sb-root .sb-secondary { margin-top: 0; padding-left: 0; border-left: 0; font-size: var(--sb-font-size, 18px); color: var(--sb-text); }
-.sb-when-secondary { display: none; }
-html[data-bible-mode="secondary"] .sb-root .sb-when-secondary { display: block; }
-html[data-bible-mode="secondary"] .sb-root .sb-when-secondary ~ .sb-verses .sb-primary { display: block; }
-
-=======
->>>>>>> origin/main
 /* Selection and highlights: a coloured background plus a left bar, so they don't rely on colour alone */
 .sb-verse.is-selected { background: var(--sb-select); box-shadow: inset 4px 0 0 var(--sb-select-edge); }
 .sb-verse.is-selected .sb-vnum { background: var(--sb-select-edge); color: #fff; }
@@ -561,12 +512,9 @@ html[data-bible-theme="dark"] .sb-sheet .sb-chapter.is-current { background: #d8
 .sb-segment.is-on { background: #102746; border-color: #102746; color: #fff; }
 .sb-segment.is-on small { color: #d8e1ee; }
 .sb-segment:focus-within { outline: 3px solid #d8b66b; outline-offset: 2px; }
-<<<<<<< HEAD
-=======
 .sb-segment-link { text-decoration: none; color: inherit; }
 .sb-segment-link:hover { border-color: #8a6420; }
 .sb-segment.is-unavailable { opacity: 0.55; cursor: not-allowed; }
->>>>>>> origin/main
 .sb-stepper { display: inline-flex; align-items: center; gap: 10px; }
 .sb-stepper output { min-width: 56px; text-align: center; font-weight: 700; }
 .sb-stepper .sb-icon-btn { color: inherit; border-color: rgba(16, 39, 70, 0.16); }
@@ -580,14 +528,9 @@ html[data-bible-theme="dark"] .sb-sheet .sb-chapter.is-current { background: #d8
   font-size: var(--sb-font-size, 18px);
   line-height: var(--sb-line-height, 1.8);
 }
-<<<<<<< HEAD
-html[data-bible-face="serif"] .sb-sample { font-family: var(--font-playfair), Georgia, serif; }
-.sb-vnum-sample { color: #8a6420; font-size: 13px; font-weight: 700; margin-right: 6px; }
-=======
 html[data-bible-face="serif"] .sb-sample { font-family: Georgia, "Times New Roman", serif; }
 .sb-vnum-sample { color: #8a6420; font-size: 13px; font-weight: 700; margin-right: 6px; }
 .sb-settings-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
->>>>>>> origin/main
 
 .sb-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 12px; }
 .sb-tab { min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(16, 39, 70, 0.16); background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
@@ -607,11 +550,7 @@ html[data-bible-face="serif"] .sb-sample { font-family: Georgia, "Times New Roma
 /* Phones: keep the book name whole; the version pill gives way first. Actions fit one row. */
 @media (max-width: 767px) {
   .sb-toolbar-group:first-child { flex: 1 1 auto; }
-<<<<<<< HEAD
-  .sb-pill-book { flex: 0 0 auto; max-width: 58vw; }
-=======
   .sb-pill-book { flex: 0 1 auto; max-width: 42vw; }
->>>>>>> origin/main
   .sb-pill-version { flex: 0 1 auto; min-width: 0; overflow: hidden; }
   .sb-toolbar-group:last-child { flex: 0 0 auto; gap: 0; }
   .sb-actions-row { flex-wrap: nowrap; justify-content: space-between; }
@@ -619,19 +558,13 @@ html[data-bible-face="serif"] .sb-sample { font-family: Georgia, "Times New Roma
   .sb-swatch-btn { width: 30px; height: 30px; }
 }
 @media (max-width: 380px) {
-<<<<<<< HEAD
-  .sb-pill-sub { display: none; }
-=======
   .sb-pill-sub { font-size: 11px; }
   .sb-pill { padding: 0 8px; }
   .sb-toolbar a[aria-label="Search the Bible"] { display: none; }
->>>>>>> origin/main
   .sb-swatch-btn { width: 26px; height: 26px; }
   .sb-action { padding: 0 8px; }
 }
 
-<<<<<<< HEAD
-=======
 /* Focus keeps the chapter controls and a one-tap exit; the app shell returns on exit. */
 html[data-bible-focus="true"] .desktop-sidebar,
 html[data-bible-focus="true"] .mobile-drawer,
@@ -648,7 +581,6 @@ html[data-bible-focus="true"] .sb-actions { bottom: calc(16px + env(safe-area-in
   .sb-progress::before { transition: none; }
 }
 
->>>>>>> origin/main
 /* ── Search ── */
 .sb-search-form { display: grid; grid-template-columns: 1fr; gap: 10px 14px; margin-top: 16px; align-items: end; }
 @media (min-width: 768px) { .sb-search-form { grid-template-columns: 2fr 1fr 1fr; } .sb-search-q { grid-column: 1 / -1; } }
@@ -664,34 +596,19 @@ html[data-bible-focus="true"] .sb-actions { bottom: calc(16px + env(safe-area-in
 .sb-result-text mark { background: var(--sb-hl-gold); color: inherit; border-radius: 3px; padding: 0 1px; }
 .sb-link-back { color: var(--sb-gold-ink); font-weight: 600; }
 .sb-root .sb-muted { color: var(--sb-muted); }
-<<<<<<< HEAD
-
-/* The navy-and-gold shell's top bar is 76px tall on wider screens. */
-@media (min-width: 768px) {
-  .sb-toolbar { top: 76px; }
-  .sb-root { min-height: calc(100vh - 76px); }
-}
-
-/* Tablets and desktop: chapter and version controls sit in the centre, tools on the right. */
-@media (min-width: 768px) {
-=======
 .sb-focus-setting { display: none; }
 @media (max-width: 767px) { .sb-focus-setting { display: inline-flex; } }
 
 /* Tablets and desktop: chapter and version controls sit in the centre, tools on the right. */
 @media (min-width: 768px) {
   .sb-toolbar { top: 76px; }
->>>>>>> origin/main
   .sb-toolbar { display: grid; grid-template-columns: 1fr auto 1fr; }
   .sb-toolbar-group:first-child { grid-column: 2; justify-content: center; }
   .sb-toolbar-group:last-child { grid-column: 3; justify-self: end; }
 }
-<<<<<<< HEAD
-=======
 @media (min-width: 768px) and (max-width: 1199px) {
   .sb-toolbar { display: flex; }
   .sb-toolbar-group:first-child { flex: 1 1 auto; justify-content: flex-start; }
   .sb-toolbar-group:last-child { flex: 0 0 auto; }
   .sb-pill-book { max-width: min(34vw, 220px); }
 }
->>>>>>> origin/main

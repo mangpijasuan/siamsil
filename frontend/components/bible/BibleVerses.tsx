@@ -2,11 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSavedData } from "@/lib/bible/hooks";
-<<<<<<< HEAD
-import { formatReference } from "@/lib/bible/references";
-=======
 import { bibleHref, formatReference, NO_COMPARE } from "@/lib/bible/references";
->>>>>>> origin/main
 import type { AlignedVerse, VerseLike } from "@/lib/bible/references";
 import { HIGHLIGHT_COLORS, NOTE_MAX_LENGTH, refKey, saveNote, setHighlight, shareText, toggleBookmark } from "@/lib/bible/savedData";
 import type { HighlightColor, VerseRef } from "@/lib/bible/savedData";
@@ -87,17 +83,6 @@ export default function BibleVerses({ rows, book, bookName, chapter, primary, se
   const now = () => new Date().toISOString();
   const saveFailed = "Couldn't save on this device. Storage may be full or turned off.";
 
-<<<<<<< HEAD
-  // Text for copy and share follows what is on screen: both versions, or one.
-  const versesText = () => {
-    if (!row) return "";
-    const mode = document.documentElement.getAttribute("data-bible-mode") ?? "both";
-    const parts: string[] = [];
-    const labels: string[] = [];
-    if (row.primary.length && mode !== "secondary") { parts.push(joinText(row.primary)); labels.push(primary.abbreviation.toUpperCase()); }
-    if (row.secondary.length && secondary && mode !== "primary") { parts.push(joinText(row.secondary)); labels.push(secondary.abbreviation.toUpperCase()); }
-    if (!parts.length && row.primary.length) { parts.push(joinText(row.primary)); labels.push(primary.abbreviation.toUpperCase()); }
-=======
   // The URL-selected versions are the only text on screen and the only text copied.
   const versesText = () => {
     if (!row) return "";
@@ -105,7 +90,6 @@ export default function BibleVerses({ rows, book, bookName, chapter, primary, se
     const labels: string[] = [];
     if (row.primary.length) { parts.push(joinText(row.primary)); labels.push(primary.abbreviation.toUpperCase()); }
     if (row.secondary.length && secondary) { parts.push(joinText(row.secondary)); labels.push(secondary.abbreviation.toUpperCase()); }
->>>>>>> origin/main
     return shareText(parts.join("\n"), ref!.label, labels.join(" · "));
   };
 
@@ -120,31 +104,21 @@ export default function BibleVerses({ rows, book, bookName, chapter, primary, se
 
   const share = async () => {
     const text = versesText();
-<<<<<<< HEAD
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: ref!.label, text });
-=======
     const url = new URL(bibleHref({ v: primary.id, compare: secondary?.id ?? NO_COMPARE, book, chapter }, row!.verse), window.location.origin).href;
     if (navigator.share) {
       try {
         await navigator.share({ title: ref!.label, text, url });
->>>>>>> origin/main
         return;
       } catch (error) {
         if ((error as DOMException)?.name === "AbortError") return;
       }
     }
-<<<<<<< HEAD
-    await copy();
-=======
     try {
       await navigator.clipboard.writeText(`${text}\n${url}`);
       setMessage(`Copied link to ${ref!.label}`);
     } catch {
       setMessage("Couldn't share. Copy the page address instead.");
     }
->>>>>>> origin/main
   };
 
   const bookmark = () => {

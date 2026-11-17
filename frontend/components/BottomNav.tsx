@@ -10,11 +10,8 @@ const TABS = [
   { href: "/bible", Icon: IconCross, label: "Bible" },
 ];
 
-<<<<<<< HEAD
-=======
 const MORE_PAGES = ["/library", "/learning", "/chat", "/resources", "/about", "/help", "/profile"];
 
->>>>>>> origin/main
 function MoreIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
@@ -45,11 +42,7 @@ export default function BottomNav() {
           </Link>
         );
       })}
-<<<<<<< HEAD
-      <button type="button" className="nav-item" onClick={() => window.dispatchEvent(new Event("siamsil:open-menu"))}>
-=======
       <button type="button" className={`nav-item${onMorePage ? " active" : ""}`} aria-current={onMorePage ? "true" : undefined} onClick={() => window.dispatchEvent(new Event("siamsil:open-menu"))}>
->>>>>>> origin/main
         <span className="nav-icon"><MoreIcon /></span>
         <span className="nav-label">More</span>
       </button>

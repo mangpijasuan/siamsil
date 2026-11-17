@@ -50,11 +50,8 @@ test("saved data survives a round trip through storage", () => {
 
 test("corrupt storage is ignored entry by entry", () => {
   assert.deepEqual(parseSavedData("{not json"), emptySavedData());
-<<<<<<< HEAD
-=======
   assert.deepEqual(parseSavedData("null"), emptySavedData());
   assert.deepEqual(parseSavedData("[]"), emptySavedData());
->>>>>>> origin/main
   const raw = JSON.stringify({
     bookmarks: { a: { ...ref, createdAt: T1 }, b: { version: "tdb" } },
     highlights: { c: { ...ref, color: "purple", updatedAt: T1 } },
@@ -64,10 +61,7 @@ test("corrupt storage is ignored entry by entry", () => {
   assert.equal(Object.keys(data.bookmarks).length, 1);
   assert.equal(Object.keys(data.highlights).length, 0);
   assert.equal(Object.keys(data.notes).length, 0);
-<<<<<<< HEAD
-=======
   assert.deepEqual(parseSavedData(JSON.stringify({ bookmarks: { bad: { ...ref, verse: -1, createdAt: T1 } } })), emptySavedData());
->>>>>>> origin/main
 });
 
 test("newest first", () => {

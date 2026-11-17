@@ -131,8 +131,6 @@ export function chooseCompanion<V extends VersionLike>(versions: V[], main: V, r
   return english.find((item) => item.id === "web") ?? english[0] ?? null;
 }
 
-<<<<<<< HEAD
-=======
 /** URL-selected versions, never a device preference, determine the visible reading mode. */
 export function readingMode(main: VersionLike, compare: VersionLike | null): "both" | "zomi" | "english" | "single" {
   if (compare) return "both";
@@ -155,7 +153,6 @@ export function readingModeTargets<V extends VersionLike>(versions: V[], main: V
   return { zomi, english };
 }
 
->>>>>>> origin/main
 /** Books whose local or English name, or code, starts with or contains the query (case- and accent-insensitive). */
 export function filterBooks<B extends BookLike & { code?: string }>(books: B[], query: string): B[] {
   const fold = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
