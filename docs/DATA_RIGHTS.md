@@ -49,6 +49,7 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 
 **Parallel corpus, English side**
 - Tatoeba publishes sentences under CC-BY 2.0 FR, with some under CC0. Confirm the license of the OPUS release used and record the attribution text required.
+- **Evidence received 2026-11-17 (project owner):** `LICENSE.txt` in the Hugging Face repository `zomi-language-corpora/English-Zomi-OPUS_Tatoeba_v20230412` is the standard CC0 1.0 Universal text. It names no copyright holder or date. What it settles: the uploader waives its own rights in the dataset as a compilation and in any translation work it holds. What it does not settle: CC0 section 4(c) says the affirmer disclaims clearing the rights of other people, so it does not replace Tatoeba's own per-sentence licenses (mostly CC-BY 2.0 FR, which require attribution) or Google's terms for the generated Zomi. Status stays `needs_review` until a second person confirms; see the Zomi side questions below.
 
 **Parallel corpus, Zomi side**
 - Which accounts and terms of service were in force when each Gemini model generated output (`gemini-pro`, `gemini-2.5-flash`, `gemini-3-flash-preview`, `gemini-3-pro-preview`)?
