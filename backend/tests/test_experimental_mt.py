@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import json
 import os
 import sys
@@ -8,6 +9,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
+from urllib.error import URLError
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
@@ -16,7 +18,7 @@ sys.path.insert(0, str(BACKEND_ROOT.parent / "ml_pipeline" / "scripts"))
 from fastapi.testclient import TestClient  # noqa: E402
 
 from main import app  # noqa: E402
-from services import experimental_mt  # noqa: E402
+from services import experimental_mt, hosted_mt  # noqa: E402
 from settings import Settings, get_settings  # noqa: E402
 
 # Zomi-side strings are placeholders, never real language data.
@@ -157,6 +159,52 @@ class EndpointTests(unittest.TestCase):
 
     def test_retrieval_translate_is_unchanged(self) -> None:
         self.assertNotIn("experimental", self.client.post("/api/v1/translate", json={"text": "water"}).json())
+
+
+class HostedEndpointTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.client = TestClient(app)
+        configured = Settings(
+            environment="development",
+            experimental_mt_openai_api_key="test-key",
+            experimental_mt_openai_model="test-model",
+        )
+        config = patch.object(hosted_mt, "get_settings", return_value=configured)
+        config.start()
+        self.addCleanup(config.stop)
+
+    def test_generation_forwards_submitted_text_in_both_directions(self) -> None:
+        route = "/api/v1/translate/experimental"
+        self.assertEqual(self.client.get(route).json()["system"], "OpenAI")
+        for direction, source in [("en-ctd", "English"), ("ctd-en", "Tedim-based Zomi")]:
+            with self.subTest(direction=direction):
+                provider_response = {
+                    "status": "completed",
+                    "model": "test-model-snapshot",
+                    "output": [{"type": "message", "content": [{"type": "output_text", "text": "GENERATED"}]}],
+                }
+                with patch.object(hosted_mt, "urlopen", return_value=io.BytesIO(json.dumps(provider_response).encode())) as send:
+                    response = self.client.post(route, json={"text": "INPUT", "direction": direction})
+                request = send.call_args.args[0]
+                payload = json.loads(request.data)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()["translation"], "GENERATED")
+                self.assertEqual(response.json()["system_version"], "test-model-snapshot")
+                self.assertTrue(response.json()["experimental"])
+                self.assertEqual(payload["input"], "INPUT")
+                self.assertIn(f"Translate from {source}", payload["instructions"])
+                self.assertFalse(payload["store"])
+
+    def test_provider_error_does_not_return_retrieved_or_private_text(self) -> None:
+        with patch.object(hosted_mt, "urlopen", side_effect=URLError("PRIVATE UPSTREAM ERROR")):
+            response = self.client.post("/api/v1/translate/experimental", json={"text": "INPUT"})
+        self.assertEqual(response.status_code, 503)
+        self.assertNotIn("PRIVATE", response.text)
+        self.assertNotIn("translation", response.json())
+
+    def test_hosted_configuration_is_rejected_in_production(self) -> None:
+        with self.assertRaisesRegex(ValueError, "only available in development"):
+            Settings(environment="production", experimental_mt_openai_model="test-model")
 
 
 @unittest.skipUnless(os.getenv("SIAMSIL_TEST_MT_DIR"), "set SIAMSIL_TEST_MT_DIR to an exported model to run")
