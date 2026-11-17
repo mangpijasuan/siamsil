@@ -1,4 +1,28 @@
-# Siamsil — Digital home for the Zomi language
+<h1 align="center">SIAMSIL</h1>
+<p align="center"><strong>Digital home for the Zomi language</strong></p>
+<p align="center">A community-centered language platform for dictionary lookup, translation retrieval, Bible reading, and learning resources.</p>
+<p align="center">
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-Web-111111?logo=nextdotjs&logoColor=white">
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white">
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-App%20Data-4169E1?logo=postgresql&logoColor=white">
+  <img alt="SQLite" src="https://img.shields.io/badge/SQLite-Language%20Data-003B57?logo=sqlite&logoColor=white">
+</p>
+<p align="center">
+  <a href="#what-is-live-release-1">Current Features</a> ·
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="#tests">Tests</a> ·
+  <a href="docs/ARCHITECTURE.md">Architecture</a> ·
+  <a href="docs/ROADMAP.md">Roadmap</a> ·
+  <a href="docs/DATA_RIGHTS.md">Data Rights</a> ·
+  <a href="docs/IMPLEMENTATION_ROADMAP.md">Project Status</a>
+</p>
+
+> [!IMPORTANT]
+> Siamsil currently ships as a web-first project. Translation and Siamsil AI use retrieval rather than unrestricted Zomi generation. Unverified machine-translated corpus content is identified as such; native iOS/Android clients are planned, not released.
+
+---
+
+## About Siamsil
 
 Siamsil currently ships as a web-first, API-first language platform. Its target architecture is mobile-first with Expo apps for iOS and Android; those native clients are not built yet.
 
