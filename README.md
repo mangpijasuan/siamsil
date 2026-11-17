@@ -10,11 +10,16 @@ Long-term vision: [`docs/VISION.md`](docs/VISION.md)
 Phase roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md)
 Data rights register: [`docs/DATA_RIGHTS.md`](docs/DATA_RIGHTS.md)
 Human evaluation sets: [`docs/EVALUATION_SET.md`](docs/EVALUATION_SET.md)
+Master data format (trained and reviewed Zomi data): [`docs/SZSF.md`](docs/SZSF.md), the Siamsil Zomi Standard Format
 Audio recording consent (draft): [`docs/AUDIO_CONSENT.md`](docs/AUDIO_CONSENT.md)
 Generator spot-check: [`docs/GENERATOR_REVIEW.md`](docs/GENERATOR_REVIEW.md)
 Model evaluation: [`docs/MODEL_EVALUATION.md`](docs/MODEL_EVALUATION.md)
 Implementation status and prioritized to-do list: [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md)
 Identity and authorization setup: [`docs/IDENTITY_AND_AUTHORIZATION.md`](docs/IDENTITY_AND_AUTHORIZATION.md)
+
+## Quality Operator design (planned)
+
+See [Siamsil Quality Operator Architecture](docs/QUALITY_OPERATOR_ARCHITECTURE.md) for the proposed OpenAI-assisted Chat QA, terminology checks, reviewer workflow, strict provider-data boundaries, and the human-controlled implementation phases. This is design documentation only, not a deployed service.
 
 ## What is live (Release 1)
 
@@ -84,6 +89,10 @@ npm run dev
 ```
 
 Open [http://127.0.0.1:3002](http://127.0.0.1:3002)
+
+## Deploying
+
+The website runs on Vercel, the API on Railway, and the data bundle sits in a private Cloudflare R2 bucket. Step by step: [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Tests
 

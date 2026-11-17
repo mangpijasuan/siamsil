@@ -1,6 +1,6 @@
 # Human evaluation sets
 
-Updated: 2026-10-04
+Updated: 2026-10-25
 Phase: [ROADMAP.md](ROADMAP.md) Phase 0
 
 The evaluation sets are the only trustworthy measure of Siamsil translation quality. The parallel corpus test split is machine-generated Zomi and measures agreement with Gemini, not correctness. Every model and retrieval change in Phase 2 is judged against these sets.
@@ -46,7 +46,8 @@ Translators and reviewers are credited by their chosen name and paid or formally
 
 - The JSONL files are excluded from git (`data/evaluation/**/*.jsonl` in `.gitignore`). Store them in restricted storage; commit only the manifest (counts and SHA-256).
 - Never use them for training, prompt examples, few-shot demonstrations, filter tuning, or dataset debugging.
-- Phase 1 dataset builds must exclude any training pair whose normalized English or Zomi matches an evaluation item. Pass each set to the build with `--eval`; matching pairs, including English template variants of an item, go to the `eval_holdout` split.
+- Dataset builds exclude any training pair whose normalized English or Zomi matches an evaluation item, including English template variants (numbers masked). `build_language_db.py` moves such pairs to the `eval_holdout` split and `export_datasets.py` never writes them. Both use **every file in `data/evaluation/human/`** automatically (finished sets, drafts, and English source lists), so the exclusion cannot be forgotten; `--eval` overrides the list.
+- Protection starts when the source text is chosen: save the source sentences as `data/evaluation/human/<set>-v<N>.sources.csv` before translation begins. The columns are `id`, `domain`, and either `english` (an `en-zomi` set) or `zomi` (a `zomi-en` set), never both. That folder is not committed.
 - Anyone who has read the evaluation items should not hand-tune the training data filters.
 
 ## File format
@@ -100,9 +101,20 @@ python3 ml_pipeline/scripts/eval_set.py leakage data/evaluation/human/en-zomi-v1
 python3 ml_pipeline/scripts/eval_set.py manifest data/evaluation/human/en-zomi-v1.jsonl
 ```
 
+Before translation, check the sources against the corpus side and the Bibles in the same language: English sources against the English side and English Bibles, Zomi sources against the Zomi side and Zomi Bibles. Replace every sentence it reports (exact copies and number variants):
+
+```bash
+python3 ml_pipeline/scripts/eval_set.py check-sources data/evaluation/human/en-zomi-v1.sources.csv \
+  --database data/processed/language/siamsil_language.sqlite \
+  --bible-versions data/processed/bible/bible_versions.sqlite
+```
+
 Translators and reviewers work in Excel. `ml_pipeline/scripts/worksheets.py` moves their sheets in and out:
 
 ```bash
+# Translator's sheet from the checked sources list
+python3 ml_pipeline/scripts/worksheets.py testset-sheet data/evaluation/human/en-zomi-v1.sources.csv \
+  --out Siamsil_TestSet_en-zomi_batch1.xlsx
 # Translator's filled "Translate" sheet -> draft items (review pending)
 python3 ml_pipeline/scripts/worksheets.py testset-import Siamsil_TestSet_en-zomi_batch1.xlsx \
   --translator T01 --origin "written for Siamsil, 2026-10-17" --out data/evaluation/human/en-zomi-v1.draft.jsonl
@@ -112,6 +124,28 @@ python3 ml_pipeline/scripts/worksheets.py review-sheet data/evaluation/human/en-
 python3 ml_pipeline/scripts/worksheets.py review-merge data/evaluation/human/en-zomi-v1.draft.jsonl review.xlsx \
   --reviewer R01 --out data/evaluation/human/en-zomi-v1.jsonl
 ```
+
+A `zomi-en` set uses the same commands with a Zomi sources list (`zomi-en-v1.sources.csv`). The sheets then show the Zomi and ask for an English translation, and the second reader corrects the English.
+
+### Collecting original Zomi for the `zomi-en` set
+
+The Zomi sources must be written by native speakers, so Siamsil prepares situations (prompts such as "Ask a shopkeeper for a price and bargain politely"), never sentences to translate. `data/evaluation_prompts/zomi-en-writing-prompts-v1.csv` holds 140 of them, 20 per domain (5 short, 10 medium, 5 long). They are not secret and are committed; what speakers write is hidden like any other source.
+
+```bash
+# The speaker's "Write" sheet
+python3 ml_pipeline/scripts/worksheets.py writing-sheet data/evaluation_prompts/zomi-en-writing-prompts-v1.csv \
+  --out Siamsil_ZomiWriting_zomi-en_batch1.xlsx
+# Their filled sheet -> the Zomi sources list (add --append for a second writer's rows)
+python3 ml_pipeline/scripts/worksheets.py writing-import Siamsil_ZomiWriting_zomi-en_batch1.xlsx \
+  --writer W01 --out data/evaluation/human/zomi-en-v1.sources.csv
+```
+
+The import refuses unknown topics, an answer that only repeats the situation, repeated sentences, and any overwrite of an existing sources list. The list records each writer's contributor ID. Run `check-sources` on it, then `testset-sheet` for the English translators, as for any `zomi-en` set.
+
+### Batches and sizes
+
+A set is built in batches and frozen when it reaches its target size. Batch 1 is 210 English sentences (30 per domain: 9 short, 17 medium, 4 long) and 140 situations for Zomi writers; the first frozen version may be smaller than the 1,000–2,000 target if the owner decides so, and grows in a later version. Generated workbooks (`data/evaluation/**/*.xlsx`) are hidden like the JSONL and CSV files.
+
 
 Leakage matching uses the same normalization as the corpus build (`normalize_word` in `build_language_db.py`), on both the English and the Zomi side.
 

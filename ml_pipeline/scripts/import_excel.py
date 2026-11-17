@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Import Zomi Bible Excel workbook into Siamsil processed JSON datasets."""
+"""Import Zomi Bible Excel workbook into Siamsil processed JSON datasets.
+
+By default reads bible/Zomi_Bible_Final_v14.xlsx straight from the private siamsil-data
+repository (beside this one, or $SIAMSIL_DATA_REPO), checked against data/source_files.json.
+Pass --input to read another copy.
+"""
 
 from __future__ import annotations
 
@@ -11,8 +16,9 @@ from pathlib import Path
 
 import pandas as pd
 
+from data_repo import DataRepo, SourceError, default_data_repo
+
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_INPUT = ROOT / "ml_pipeline" / "raw_data" / "Zomi_Bible_Final_v14.xlsx"
 DEFAULT_OUTPUT = ROOT / "ml_pipeline" / "processed_data"
 BACKEND_DATA = ROOT / "backend" / "data"
 
@@ -172,7 +178,10 @@ def write_json(path: Path, payload: object) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
+    parser.add_argument("--input", type=Path, default=None,
+                        help="workbook to read (default: bible/Zomi_Bible_Final_v14.xlsx in siamsil-data)")
+    parser.add_argument("--data-repo", type=Path, default=None,
+                        help="siamsil-data clone (default: $SIAMSIL_DATA_REPO, else ../siamsil-data)")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument(
         "--sync-backend",
@@ -181,6 +190,12 @@ def main() -> None:
         help="Copy processed JSON into backend/data for the API server.",
     )
     args = parser.parse_args()
+
+    if args.input is None:
+        try:
+            args.input = DataRepo(args.data_repo or default_data_repo()).verified("bible_workbook")
+        except SourceError as error:
+            raise SystemExit(f"Nothing was imported: {error}") from None
 
     if not args.input.exists():
         raise SystemExit(f"Input file not found: {args.input}")

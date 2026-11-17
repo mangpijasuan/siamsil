@@ -95,7 +95,7 @@ class OIDCTokenVerificationTests(unittest.TestCase):
                 "jti": "token-1",
                 "email": "verified@example.com",
                 "email_verified": True,
-                "locale": "zom",
+                "locale": "zom",  # labelled before Zomi became ctd; read as ctd
             },
             private_key,
             algorithm="RS256",
@@ -105,7 +105,7 @@ class OIDCTokenVerificationTests(unittest.TestCase):
 
         self.assertEqual(claims.subject, "person-1")
         self.assertEqual(claims.email, "verified@example.com")
-        self.assertEqual(claims.locale, "zom")
+        self.assertEqual(claims.locale, "ctd")
 
 
 class AuthorizationTests(unittest.TestCase):
@@ -139,7 +139,7 @@ class AuthorizationTests(unittest.TestCase):
             roles=frozenset({"learner", "reviewer"}),
             email="learner@example.com",
             display_name="Zomi Learner",
-            locale="zom",
+            locale="ctd",
         )
         app.dependency_overrides[get_current_user] = lambda: user
 
@@ -185,7 +185,7 @@ class IdentityRepositoryIntegrationTests(unittest.TestCase):
             subject=f"integration-{uuid4()}",
             email="reviewer@example.com",
             display_name="Integration Reviewer",
-            locale="zom",
+            locale="ctd",
             token_id=f"token-{uuid4()}",
             expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )

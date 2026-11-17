@@ -22,16 +22,13 @@ Free disk space needed: about 15 GB (language database, model download, checkpoi
 
 ## 2. Prepare the data
 
-Raw files come from the private `siamsil-data` repository. Never edit them; the scripts only read them.
+The scripts read the originals straight from the private `siamsil-data` repository, cloned beside this one (`~/Projects/siamsil-data`), or wherever `SIAMSIL_DATA_REPO` points. Every file is checked against `data/source_files.json` first. Never edit the originals.
 
 ```bash
-# Dictionary and corpus, as data/raw expects them
-#   data/raw/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx  (copy of dictionary/Zomi_Dictionary_Master_Data.xlsx)
-#   data/raw/parallel/zomi_english_sentences.csv
+# Dictionary and corpus, from siamsil-data
 python3 ml_pipeline/scripts/build_language_db.py                     # about 5 minutes
 
-# Bibles: unzip Chin-Bible.zip and engwebu_usfm.zip under data/raw/bible/usx/
-#   data/raw/bible/usx/chin/...   data/raw/bible/usx/web/...
+# Bibles, from the zips in siamsil-data (unpacked only into a temporary folder)
 python3 ml_pipeline/scripts/import_usx_bibles.py
 
 # Training files: only sources cleared in data/rights.json are exported
@@ -107,3 +104,16 @@ A model reaches the app only after it passes the gate and a Zomi speaker approve
 ## Keep out of git
 
 Model checkpoints (`models/`), exports (`data/datasets/`, `data/exports/`) and evaluation sets are gitignored. Store checkpoints you want to keep in private storage, and record which checkpoint is in use with its `train_meta.json`.
+
+## Model backup
+
+Trained models are backed up in the **private** Hugging Face repository `ZomiDatasets/siamsil-models` (the Siamsil organization). Since 2026-10-30 it holds `nllb-zomi-bible-v1`, `nllb-zomi-everyday-v2-exp`, their CTranslate2 serving copies, and `BACKUP_MANIFEST.sha256`; all 25 files were checked against the local copies. Keep it private: NLLB weights are CC BY-NC 4.0, the Bible permission does not cover redistribution, and everyday-v2 was trained on sources not yet cleared. A transfer between accounts can change visibility, so check it afterwards.
+
+```bash
+python3 ml_pipeline/scripts/models_backup.py manifest   # after training a new model (add it with --folder NAME for each folder)
+python3 ml_pipeline/scripts/models_backup.py upload
+python3 ml_pipeline/scripts/models_backup.py verify     # ALL MATCH, and fails if the repository is public
+python3 ml_pipeline/scripts/models_backup.py restore    # on a new computer: download into models/ and check
+```
+
+You need a Hugging Face token that can write to ZomiDatasets (`hf auth login`).

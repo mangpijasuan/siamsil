@@ -10,7 +10,7 @@ from api_schemas import (
     DictionarySearchResponse,
     DictionarySuggestionsResponse,
 )
-from services.language_engine import get_engine
+from services.language_engine import DIRECTION_PATTERN, canonical_direction, get_engine
 
 router = APIRouter(prefix="/dictionary", tags=["dictionary"])
 
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/dictionary", tags=["dictionary"])
 def search_dictionary(
     q: str = Query("", max_length=200),
     letter: str | None = Query(None, min_length=1, max_length=1),
-    direction: str = Query("en-zom", pattern="^(en-zom|zom-en)$"),
+    direction: str = Query("en-ctd", pattern=DIRECTION_PATTERN),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
 ):
@@ -28,6 +28,7 @@ def search_dictionary(
         raise HTTPException(status_code=503, detail="Language database is not built yet.")
     if not q.strip() and not letter:
         return {"query": q, "count": 0, "results": []}
+    direction = canonical_direction(direction)
     results = engine.search_dictionary(
         q, letter=letter, direction=direction, limit=limit, offset=offset
     )

@@ -7,7 +7,8 @@ export default async function DictionaryPage({ searchParams }: Props) {
   const { q, letter, dir } = await searchParams;
   const query = q?.trim() ?? "";
   const activeLetter = letter?.toUpperCase() ?? "All";
-  const direction = dir === "zom-en" ? "zom-en" : "en-zom";
+  // zom-en: links from before Zomi was labelled ctd.
+  const direction = dir === "ctd-en" || dir === "zom-en" ? "ctd-en" : "en-ctd";
 
   let entries: DictionaryEntry[] = [];
   let letters: Array<{ letter: string; count: number }> = [];

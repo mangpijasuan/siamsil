@@ -13,16 +13,20 @@ from settings import get_settings
 FTS_UNSAFE = re.compile(r'["\'*:^(){}[\]~-]')
 
 
-def fts_match(query: str) -> str | None:
+def fts_match(query: str, *, prefix: bool = True) -> str | None:
     cleaned = FTS_UNSAFE.sub(" ", query)
-    tokens = [token for token in cleaned.split() if token]
+    # A token with no letter or digit (a dash, "&") tokenizes to nothing, and an empty phrase makes the whole AND
+    # query match nothing, so it is left out.
+    tokens = [token for token in cleaned.split() if any(char.isalnum() for char in token)]
     if not tokens:
         return None
     parts = [f'"{token}"' for token in tokens[:-1]]
-    parts.append(f'"{tokens[-1]}"*')
+    # The last word is matched as a prefix while someone is typing; an exact lookup wants the whole word.
+    parts.append(f'"{tokens[-1]}"*' if prefix else f'"{tokens[-1]}"')
     return " AND ".join(parts)
 
 
+<<<<<<< HEAD
 # Translation direction -> the corpus side that holds the text being translated.
 # English is stored in normalized_source_text and Zomi in normalized_target_text.
 PARALLEL_FTS_COLUMN = {"en-zom": "normalized_source_text", "zom-en": "normalized_target_text"}
@@ -34,6 +38,52 @@ PARALLEL_EXACT_SQL = {
     "zom-en": "SELECT * FROM parallel_sentences WHERE lower(normalized_target_text) = lower(?)" + _EXACT_ORDER,
 }
 
+=======
+# Translation directions are named by language code; Zomi is ctd (ISO 639-3, Tedim). Callers and links
+# from before 2026-10-27, when Siamsil labelled Zomi zom, still send en-zom and zom-en.
+DIRECTION_PATTERN = "^(en-ctd|ctd-en|en-zom|zom-en)$"
+LEGACY_DIRECTIONS = {"en-zom": "en-ctd", "zom-en": "ctd-en"}
+
+
+def canonical_direction(direction: str | None) -> str | None:
+    return LEGACY_DIRECTIONS.get(direction, direction) if direction else direction
+
+
+# Translation direction -> the corpus side that holds the text being translated.
+# English is stored in normalized_source_text and Zomi in normalized_target_text.
+PARALLEL_FTS_COLUMN = {"en-ctd": "normalized_source_text", "ctd-en": "normalized_target_text"}
+PARALLEL_LENGTH_COLUMN = {None: "normalized_source_text", **PARALLEL_FTS_COLUMN}
+# Pairs Zomi reviewers rejected (build_language_db.py --reviews) are never shown, even on an exact match.
+_EXACT_ORDER = " AND quality_flags NOT LIKE '%reviewer_rejected%' ORDER BY quality_score DESC, id LIMIT ?"
+# An exact match ignores case and closing punctuation: "Thank you" finds "Thank you." and "Thank you!".
+EXACT_FORMS = 4
+_EXACT_IN = "(" + ", ".join("?" * EXACT_FORMS) + ")"
+# An exact match is looked up among the pairs that full-text search finds for the query's words, never by scanning
+# the table: lower(column) cannot use an index, so the old query read all ~1.8 million pairs on every search
+# (about 1 s warm, ~20 s on a cold start). A sentence equal to the query holds all its words, so it is always
+# among those pairs, and the answer is the same. CROSS JOIN keeps the full-text table as the outer loop.
+_EXACT_CONDITION = {
+    None: f"(lower(p.normalized_source_text) IN {_EXACT_IN} OR lower(p.normalized_target_text) IN {_EXACT_IN})",
+    "en-ctd": f"lower(p.normalized_source_text) IN {_EXACT_IN}",
+    "ctd-en": f"lower(p.normalized_target_text) IN {_EXACT_IN}",
+}
+PARALLEL_EXACT_SQL = {
+    direction: (
+        "SELECT p.* FROM parallel_fts CROSS JOIN parallel_sentences p ON p.id = parallel_fts.rowid "
+        f"WHERE parallel_fts MATCH ? AND {condition} AND p.quality_flags NOT LIKE '%reviewer_rejected%' "
+        "ORDER BY p.quality_score DESC, p.id LIMIT ?"
+    )
+    for direction, condition in _EXACT_CONDITION.items()
+}
+
+
+def exact_forms(text: str) -> list[str]:
+    """The query in lower case, bare and with each closing mark, for PARALLEL_EXACT_SQL."""
+    bare = text.strip().lower().rstrip(".!?").rstrip()
+    return [bare, f"{bare}.", f"{bare}!", f"{bare}?"]
+
+
+>>>>>>> origin/main
 def split_zomi_definition(text: str | None) -> tuple[str | None, str | None]:
     """Split 'gloss; longer Zomi definition' without inventing English text."""
     value = (text or "").strip()
@@ -46,6 +96,15 @@ def split_zomi_definition(text: str | None) -> tuple[str | None, str | None]:
         if gloss and rest:
             return gloss, rest
     return value, value
+
+
+def entry_zomi(entry: dict[str, Any]) -> str | None:
+    """The Zomi to show for a presented dictionary entry in Translate and Siamsil AI.
+
+    50K Translation Master rows carry their Zomi in `zomi` (`definition` is English);
+    Zomi Standard Dictionary rows keep their Zomi definition in `definition`, as before.
+    """
+    return entry["zomi"] if entry.get("definition_language") == "en" else entry["definition"]
 
 
 def row_to_dict(row: sqlite3.Row | None) -> dict[str, Any] | None:
@@ -147,7 +206,7 @@ class LanguageEngine:
         query: str = "",
         *,
         letter: str | None = None,
-        direction: str = "en-zom",
+        direction: str = "en-ctd",
         limit: int = 20,
         offset: int = 0,
     ) -> list[dict[str, Any]]:
@@ -176,7 +235,7 @@ class LanguageEngine:
             letter_sql = " AND letter = ?" if letter else ""
             letter_params: list[Any] = [letter.upper()[:1]] if letter else []
 
-            if direction != "zom-en":
+            if direction != "ctd-en":
                 add_rows(
                     con.execute(
                         f"""
@@ -201,18 +260,38 @@ class LanguageEngine:
                         ).fetchall()
                     )
 
+            if direction == "ctd-en" and len(found) < limit:
+                # Entries whose Zomi is exactly the word searched, or one of its ' ; '-separated
+                # alternatives (50K Translation Master), before looser full-text matches.
+                has_tier = "usage_tier" in {row[1] for row in con.execute("PRAGMA table_info(dictionary_entries)")}
+                tier = ("CASE usage_tier WHEN 'A1' THEN 1 WHEN 'A2' THEN 2 WHEN 'B1' THEN 3 WHEN 'B2' THEN 4 "
+                        "WHEN 'C1' THEN 5 WHEN 'C2' THEN 6 ELSE 7 END, ") if has_tier else ""
+                add_rows(
+                    con.execute(
+                        f"""
+                        SELECT * FROM dictionary_entries
+                        WHERE (lower(definition) = ? OR ' ; ' || lower(definition) || ' ; ' LIKE ?){letter_sql}
+                        ORDER BY flagged ASC, lower(definition) = ? DESC, {tier}length(source_word), id
+                        LIMIT ?
+                        """,
+                        [needle, f"% ; {needle} ; %", *letter_params, needle, limit],
+                    ).fetchall()
+                )
+
             remaining = limit - len(found)
             match = fts_match(query)
             if remaining > 0 and match:
                 exclude = ""
-                fts_params: list[Any] = [match]
+                # Headwords are English, definitions Zomi: search only the side translated from.
+                column = "definition" if direction == "ctd-en" else "source_word"
+                fts_params: list[Any] = [f"{column} : ({match})"]
                 if seen:
                     exclude = f" AND e.id NOT IN ({','.join('?' for _ in seen)})"
                     fts_params.extend(seen)
                 if letter:
                     exclude += " AND e.letter = ?"
                     fts_params.append(letter.upper()[:1])
-                if direction == "zom-en":
+                if direction == "ctd-en":
                     exclude += " AND e.definition IS NOT NULL"
                 fts_params.extend([remaining, offset if not found else 0])
                 add_rows(
@@ -232,12 +311,12 @@ class LanguageEngine:
             if found:
                 return [self._present_entry(row) for row in found[:limit]]
 
-            if direction == "zom-en":
+            if direction == "ctd-en":
                 where.append("lower(definition) LIKE ?")
                 params.append(f"%{needle}%")
             else:
-                where.append("(normalized_word LIKE ? OR lower(source_word) LIKE ? OR lower(definition) LIKE ?)")
-                params.extend([f"{needle}%", f"{needle}%", f"%{needle}%"])
+                where.append("(normalized_word LIKE ? OR lower(source_word) LIKE ?)")
+                params.extend([f"{needle}%", f"{needle}%"])
 
         clause = f"WHERE {' AND '.join(where)}" if where else ""
         order = "ORDER BY flagged ASC, source_word COLLATE NOCASE, id"
@@ -271,9 +350,20 @@ class LanguageEngine:
             return []
         con = self.connect()
         limit = min(max(limit, 1), 50)
+<<<<<<< HEAD
         text = query.strip()
         exact_params = (text, text, limit) if direction is None else (text, limit)
         exact = con.execute(PARALLEL_EXACT_SQL[direction], exact_params).fetchall()
+=======
+        forms = exact_forms(query)
+        match_expression = f"{PARALLEL_FTS_COLUMN[direction]} : ({match})" if direction else match
+        whole_words = fts_match(query, prefix=False)
+        exact_expression = f"{PARALLEL_FTS_COLUMN[direction]} : ({whole_words})" if direction else whole_words
+        exact_forms_params = (*forms, *forms) if direction is None else tuple(forms)
+        exact = con.execute(
+            PARALLEL_EXACT_SQL[direction], (exact_expression, *exact_forms_params, limit)
+        ).fetchall()
+>>>>>>> origin/main
         remaining = limit - len(exact)
         fts_rows: list[sqlite3.Row] = []
         if remaining > 0:
@@ -286,11 +376,16 @@ class LanguageEngine:
                 WHERE parallel_fts MATCH ?
                   AND p.quality_score >= 0.5
             """
+<<<<<<< HEAD
             params: list[Any] = [f"{PARALLEL_FTS_COLUMN[direction]} : ({match})" if direction else match]
+=======
+            params: list[Any] = [match_expression]
+>>>>>>> origin/main
             if exact_ids:
                 sql += f" AND p.id NOT IN ({placeholders})"
                 params.extend(exact_ids)
-            sql += " ORDER BY p.quality_score DESC, p.id LIMIT ?"
+            # Closest first: the shortest sentence on the searched side, then the best text match.
+            sql += f" ORDER BY length(p.{PARALLEL_LENGTH_COLUMN[direction]}), bm25(parallel_fts), p.id LIMIT ?"
             params.append(remaining)
             fts_rows = con.execute(sql, params).fetchall()
         return [self._present_pair(row, exact=row["id"] in {r["id"] for r in exact}) for row in [*exact, *fts_rows]]
@@ -299,7 +394,12 @@ class LanguageEngine:
         data = row_to_dict(row)
         if not data:
             return None
-        zomi, definition = split_zomi_definition(data["definition"])
+        if data.get("zomi") is not None or data.get("definition_en") is not None:
+            # 50K Translation Master: Zomi equivalents kept whole, plus an English definition.
+            zomi, definition, definition_language = data.get("zomi"), data.get("definition_en"), "en"
+        else:
+            zomi, definition = split_zomi_definition(data["definition"])
+            definition_language = "ctd"
         return {
             "id": data["id"],
             "english": data["source_word"],
@@ -313,7 +413,8 @@ class LanguageEngine:
             "definition": definition,
             "pronunciation": data["pronunciation"],
             "usage_notes": data["usage_notes"],
-            "domain": None,
+            "domain": data.get("domain"),
+            "definition_language": definition_language,
             "source": data["source"],
             "source_reference": data["source_reference"],
             "confidence": data["confidence"],
@@ -341,7 +442,11 @@ class LanguageEngine:
             "verified": bool(row["verified"]),
             "dataset_split": row["dataset_split"],
             "exact": exact,
-            "label": "Machine-translated example (unverified)",
+            "label": (
+                "Machine-translated example, approved by Zomi reviewers"
+                if row["verified"]
+                else "Machine-translated example (unverified)"
+            ),
         }
 
 

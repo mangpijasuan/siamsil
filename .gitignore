@@ -13,7 +13,10 @@ data/processed/dictionary/
 data/processed/parallel/
 data/datasets/
 data/evaluation/**/*.jsonl
+data/evaluation/**/*.csv
 data/exports/
+# Saved review decisions: private; back them up in the siamsil-data repository
+data/reviews/
 data/versions/*
 !data/versions/*.json
 *.sqlite
@@ -67,4 +70,18 @@ data/raw/bible/**
 data/processed/bible/
 
 # Trained model checkpoints (large; keep out of git)
-models/
+/models/
+
+# Speech Data Lab: recordings live in private object storage, never in git (docs/SPEECH_DATA_LAB.md)
+*.mp3
+*.m4a
+*.wav
+*.mp4
+*.flac
+*.ogg
+*.opus
+*.webm
+data/speech/
+
+# Hidden evaluation sheets (docs/EVALUATION_SET.md)
+data/evaluation/**/*.xlsx

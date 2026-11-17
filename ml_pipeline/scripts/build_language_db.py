@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""Build the Siamsil language database from immutable raw files.
+"""Build the Siamsil language database from the originals in siamsil-data.
 
-Reads:
-  data/raw/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx
-  data/raw/parallel/zomi_english_sentences.csv
+Reads, directly from the private siamsil-data repository (beside this one, or $SIAMSIL_DATA_REPO),
+each file checked against data/source_files.json:
+  dictionary/sources/translation-master-v1.0.1/50K-...-Review-v1.0.xlsx  (the live dictionary;
+      --dictionary standard builds from dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx instead)
+  parallel/zomi_english_sentences.part-*.csv.gz (joined; the original CSV's checksum is confirmed)
+
+With --raw FOLDER it reads the older layout instead, unpinned:
+  FOLDER/dictionary/Zomi_Standard_Dictionary_AI_Cleaned.xlsx
+  FOLDER/parallel/zomi_english_sentences.csv
 
 Optionally reads human evaluation sets (--eval) so matching pairs are held out.
 
@@ -18,6 +24,7 @@ Writes (never touches raw files):
 from __future__ import annotations
 
 import argparse
+import contextlib
 import csv
 import hashlib
 import json
@@ -30,15 +37,21 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCRIPT_VERSION = "1.1.0"
+import corpus_reviews
+import corpus_revisions
+from data_repo import DataRepo, ParallelParts, SourceError, default_data_repo
+from data_repo import fingerprint as repo_fingerprint
+
+SCRIPT_VERSION = "1.4.0"
 DATASET_VERSION = "v2"
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_RAW = ROOT / "data" / "raw"
 DEFAULT_OUT_DB = ROOT / "data" / "processed" / "language" / "siamsil_language.sqlite"
 DEFAULT_REPORT = ROOT / "data" / "processed" / "language" / "quality_report.json"
 DEFAULT_MANIFEST = ROOT / "data" / "processed" / "language" / "manifest.json"
 DEFAULT_VERSIONS = ROOT / "data" / "versions"
+DEFAULT_REVIEWS = ROOT / "data" / "reviews" / "corpus-reviews.jsonl"
+DEFAULT_REVISIONS = ROOT / "data" / "reviews" / "corpus-revisions.jsonl"
 EVAL_TRANSLATION = ROOT / "data" / "evaluation" / "translation" / "sample.jsonl"
 EVAL_DICTIONARY = ROOT / "data" / "evaluation" / "dictionary" / "sample.jsonl"
 
@@ -263,7 +276,12 @@ def create_schema(con: sqlite3.Connection) -> None:
             suggested_correction TEXT,
             letter TEXT,
             version TEXT NOT NULL,
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            zomi TEXT,
+            definition_en TEXT,
+            burmese TEXT,
+            domain TEXT,
+            usage_tier TEXT
         );
 
         CREATE INDEX idx_dict_normalized ON dictionary_entries(normalized_word);
@@ -284,7 +302,7 @@ def create_schema(con: sqlite3.Connection) -> None:
             normalized_source_text TEXT NOT NULL,
             normalized_target_text TEXT NOT NULL,
             source_language TEXT NOT NULL DEFAULT 'en',
-            target_language TEXT NOT NULL DEFAULT 'zom',
+            target_language TEXT NOT NULL DEFAULT 'ctd',
             source TEXT,
             source_reference TEXT,
             model TEXT,
@@ -394,8 +412,74 @@ def ingest_master_dictionary(con: sqlite3.Connection, path: Path, created_at: st
     return dict(stats)
 
 
-def ingest_parallel(con: sqlite3.Connection, path: Path, created_at: str) -> dict:
-    if not path.exists():
+TRANSLATION_MASTER = "English–Zomi–Burmese Translation Master"
+
+
+def ingest_translation_master(con: sqlite3.Connection, path: Path, created_at: str,
+                              revisions: dict[str, dict] | None = None) -> dict:
+    """The 50K Translation Master as the live dictionary: one row per sense, text as written.
+
+    `definition` holds the Zomi equivalents (the searchable Zomi side, as for the Zomi Standard
+    Dictionary), `zomi` the same text for display, `definition_en` the simple English definition.
+    Burmese is kept but marked reference-only in the source. Every row is unreviewed, except a sense
+    with an approved correction (dictionary_reviews.py, revisions): a reviewer wrote it and a lead
+    editor approved it, so it shows the corrected Zomi as verified. A correction applies only while
+    the source still holds the text that was corrected.
+    """
+    import dictionary_reviews
+
+    revisions = revisions or {}
+    from dictionary_sources import read_master_workbook
+
+    read = read_master_workbook(path)
+    stats: Counter[str] = Counter({"source_rows": len(read.records) + sum(read.skipped.values())})
+    rows_out: list[tuple] = []
+    fts_out: list[tuple] = []
+    for next_id, record in enumerate(read.records, start=1):
+        zomi = " ; ".join(text for language, _, text in record.equivalents if language == "ctd") or None
+        burmese = " ; ".join(text for language, _, text in record.equivalents if language == "my") or None
+        status = "unreviewed"
+        revision = revisions.get(record.record_id)
+        if revision:
+            before = revision["before"].partition(" | ")[0]
+            after = revision["after"].partition(" | ")[0].strip()
+            if zomi and dictionary_reviews.same_text(zomi, before):
+                zomi, status = after, "verified"
+                stats["revisions_applied"] += 1
+            else:
+                stats["revisions_skipped_changed_source"] += 1
+        if not zomi:
+            stats["empty_definition"] += 1
+        stats["with_open_issues"] += bool(record.issues)
+        word = normalize_text(record.headword)
+        rows_out.append((
+            next_id, word, normalize_word(word), "en", None, record.part_of_speech, None, zomi, None, None,
+            TRANSLATION_MASTER, record.record_id, 0.6, status, 0, None, word[:1].upper(), DATASET_VERSION,
+            created_at, zomi, record.definition_en, burmese, record.domain, record.usage_tier,
+        ))
+        fts_out.append((word, zomi or "", record.part_of_speech or ""))
+    stats["empty_headword"] = read.skipped.get("no_id_or_headword", 0)
+    con.executemany(
+        """
+        INSERT INTO dictionary_entries (
+            id, source_word, normalized_word, language, dialect, part_of_speech,
+            part_of_speech_full, definition, pronunciation, usage_notes, source,
+            source_reference, confidence, verification_status, flagged,
+            suggested_correction, letter, version, created_at,
+            zomi, definition_en, burmese, domain, usage_tier
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """,
+        rows_out,
+    )
+    con.executemany("INSERT INTO dictionary_fts (source_word, definition, part_of_speech) VALUES (?,?,?)", fts_out)
+    con.commit()
+    stats["ingested"] = len(rows_out)
+    return dict(stats)
+
+
+def ingest_parallel(con: sqlite3.Connection, path: Path | ParallelParts, created_at: str) -> dict:
+    """Ingest the corpus from a CSV file, or from siamsil-data's parts (ParallelParts)."""
+    if isinstance(path, Path) and not path.exists():
         sys.exit(f"Parallel corpus not found: {path}")
 
     csv.field_size_limit(min(sys.maxsize, 8_000_000))
@@ -428,7 +512,12 @@ def ingest_parallel(con: sqlite3.Connection, path: Path, created_at: str) -> dic
         batch_rows.clear()
         batch_fts.clear()
 
-    with path.open(encoding="utf-8", errors="replace", newline="") as handle:
+    source = (
+        path.open(encoding="utf-8", errors="replace", newline="")
+        if isinstance(path, Path)
+        else contextlib.nullcontext(path.lines())
+    )
+    with source as handle:
         reader = csv.DictReader(handle)
         expected = {"en", "zomi"}
         if not reader.fieldnames or not expected.issubset(set(reader.fieldnames)):
@@ -437,19 +526,19 @@ def ingest_parallel(con: sqlite3.Connection, path: Path, created_at: str) -> dic
         for row in reader:
             stats["source_rows"] += 1
             raw_en = str(row.get("en") or "")
-            raw_zom = str(row.get("zomi") or "")
+            raw_zomi = str(row.get("zomi") or "")
             en = normalize_text(raw_en)
-            zom = normalize_text(raw_zom)
-            if not en or not zom:
+            zomi = normalize_text(raw_zomi)
+            if not en or not zomi:
                 stats["empty"] += 1
                 continue
-            digest = pair_key(en, zom)
+            digest = pair_key(en, zomi)
             if digest in seen_hashes:
                 stats["duplicates"] += 1
                 continue
             seen_hashes.add(digest)
 
-            flags = quality_flags(en, zom)
+            flags = quality_flags(en, zomi)
             score = quality_score(flags)
             for flag in flags:
                 flag_counts[flag] += 1
@@ -469,11 +558,11 @@ def ingest_parallel(con: sqlite3.Connection, path: Path, created_at: str) -> dic
                 (
                     next_id,
                     raw_en,
-                    raw_zom,
+                    raw_zomi,
                     en,
-                    zom,
+                    zomi,
                     "en",
-                    "zom",
+                    "ctd",
                     "OPUS/Tatoeba + Gemini machine translation",
                     worker,
                     model,
@@ -487,7 +576,7 @@ def ingest_parallel(con: sqlite3.Connection, path: Path, created_at: str) -> dic
                     created_at,
                 )
             )
-            batch_fts.append((en, zom))
+            batch_fts.append((en, zomi))
             next_id += 1
 
             if len(batch_rows) >= 10_000:
@@ -524,8 +613,8 @@ def apply_corpus_checks(con: sqlite3.Connection, eval_items: list[dict] | None =
     ratios = sorted(
         ratio
         for ratio in (
-            length_log_ratio(en, zom)
-            for en, zom in con.execute(
+            length_log_ratio(en, zomi)
+            for en, zomi in con.execute(
                 "SELECT normalized_source_text, normalized_target_text FROM parallel_sentences"
             )
         )
@@ -564,20 +653,20 @@ def apply_corpus_checks(con: sqlite3.Connection, eval_items: list[dict] | None =
         if not rows:
             break
         updates = []
-        for row_id, en, zom, flags_json in rows:
+        for row_id, en, zomi, flags_json in rows:
             flags = json.loads(flags_json or "[]")
             extra = []
-            if zom in reused_targets:
+            if zomi in reused_targets:
                 extra.append("target_reused")
-            if number_mismatch(en, zom):
+            if number_mismatch(en, zomi):
                 extra.append("number_mismatch")
-            ratio = length_log_ratio(en, zom)
+            ratio = length_log_ratio(en, zomi)
             if bounds and ratio is not None and not bounds[0] <= ratio <= bounds[1]:
                 extra.append("length_ratio_outlier")
             flags += [flag for flag in extra if flag not in flags]
 
             key = template_key(en, names)
-            if key in eval_english or normalize_word(zom) in eval_zomi:
+            if key in eval_english or normalize_word(zomi) in eval_zomi:
                 split = EVAL_HOLDOUT_SPLIT
             else:
                 split = split_for_key(key)
@@ -631,9 +720,84 @@ def display_path(path: Path) -> str:
         return path.name
 
 
+def apply_reviews(con: sqlite3.Connection, decisions: dict) -> dict:
+    """Apply saved human review decisions (corpus_reviews.decide) to the corpus.
+
+    HUMAN_APPROVED (reviewed, then approved by a separate lead editor): verified = 1
+    and quality score 1, because people's judgement outranks the automatic checks
+    (their flags stay, for the record). REJECTED: flagged reviewer_rejected with
+    quality score 0, so the app and the dataset export leave it out.
+    READY_FOR_APPROVAL and NEEDS_CORRECTION: unchanged and unverified. Decisions
+    whose pair is no longer in the corpus are counted, never applied elsewhere.
+    """
+    counts: Counter[str] = Counter()
+    for pair_hash, decision in decisions.items():
+        row = con.execute(
+            "SELECT id, quality_flags FROM parallel_sentences WHERE pair_hash = ?", (pair_hash,)
+        ).fetchone()
+        if row is None:
+            counts["not_in_corpus"] += 1
+            continue
+        row_id, flags_json = row
+        if decision.status == corpus_reviews.HUMAN_APPROVED:
+            con.execute("UPDATE parallel_sentences SET verified = 1, quality_score = 1 WHERE id = ?", (row_id,))
+        elif decision.status == corpus_reviews.REJECTED:
+            flags = json.loads(flags_json or "[]")
+            if "reviewer_rejected" not in flags:
+                flags.append("reviewer_rejected")
+            con.execute(
+                "UPDATE parallel_sentences SET verified = 0, quality_flags = ?, quality_score = 0 WHERE id = ?",
+                (json.dumps(flags, ensure_ascii=False), row_id),
+            )
+        counts[decision.status] += 1
+    con.commit()
+    return {status: counts.get(status, 0) for status in (*corpus_reviews.STATUSES, "not_in_corpus")}
+
+
+def apply_revisions(con: sqlite3.Connection, revisions: dict[str, dict]) -> dict[str, int]:
+    """Apply approved corrections of corpus Zomi (corpus_revisions.py), after the review decisions.
+
+    A correction is a lead editor's approval of a fix a reviewer wrote, so the pair becomes verified with
+    quality score 1, like a human-approved pair; its quality flags are recomputed for the new text and
+    `human_corrected` is added. It applies only while the pair still holds the Zomi that was corrected, and never
+    to a pair a reviewer rejected. The pair keeps its hash (so the saved reviews still find it) and its original
+    Zomi stays in `raw_target_text`. Search is updated with the new text.
+    """
+    counts: Counter[str] = Counter()
+    for pair_hash, revision in revisions.items():
+        row = con.execute(
+            "SELECT id, normalized_source_text, normalized_target_text, quality_flags FROM parallel_sentences "
+            "WHERE pair_hash = ?", (pair_hash,),
+        ).fetchone()
+        if row is None:
+            counts["not_in_corpus"] += 1
+            continue
+        row_id, english, current, flags_json = row
+        old_flags = json.loads(flags_json or "[]")
+        after = normalize_text(revision["after"])
+        if "reviewer_rejected" in old_flags:
+            counts["skipped_rejected"] += 1
+        elif corpus_revisions.same_text(current, after):
+            counts["already_applied"] += 1
+        elif not corpus_revisions.same_text(current, revision["before"]):
+            counts["skipped_changed_text"] += 1
+        else:
+            flags = [*quality_flags(english, after), "human_corrected"]
+            con.execute(
+                "UPDATE parallel_sentences SET normalized_target_text = ?, quality_flags = ?, quality_score = 1, "
+                "verified = 1 WHERE id = ?",
+                (after, json.dumps(flags, ensure_ascii=False), row_id),
+            )
+            con.execute("UPDATE parallel_fts SET normalized_target_text = ? WHERE rowid = ?", (after, row_id))
+            counts["applied"] += 1
+    con.commit()
+    return {name: counts.get(name, 0) for name in
+            ("applied", "already_applied", "skipped_changed_text", "skipped_rejected", "not_in_corpus")}
+
+
 def release_manifest(
     database: Path,
-    source_files: dict[str, Path],
+    source_files: dict[str, Path | dict],
     eval_files: list[Path],
     counts: dict,
     created_at: str,
@@ -649,10 +813,23 @@ def release_manifest(
         "script_version": SCRIPT_VERSION,
         "database": file_fingerprint(database),
         "counts": counts,
-        "source_files": {key: file_fingerprint(path) for key, path in source_files.items()},
+        "source_files": {
+            key: value if isinstance(value, dict) else file_fingerprint(value) for key, value in source_files.items()
+        },
         "evaluation_sets": [
             {"file": path.name, "sha256": file_fingerprint(path)["sha256"]} for path in eval_files
         ],
+    }
+
+
+def release_counts(dictionary_entries: int, parallel_sentences: int, review_records: list[dict]) -> dict:
+    # The decisions file is append-only, so the review count names exactly which records the release
+    # used: the first N, which the Review Center stores at positions 0..N-1 (import_reviews.py).
+    # 0 is written too, so a release without reviews says so.
+    return {
+        "dictionary_entries": dictionary_entries,
+        "parallel_sentences": parallel_sentences,
+        "corpus_review_records": len(review_records),
     }
 
 
@@ -667,14 +844,26 @@ def write_release_manifest(manifest: dict, current: Path, versions_dir: Path) ->
     return versioned
 
 
+DEFAULT_EVAL_DIR = ROOT / "data" / "evaluation" / "human"
+
+
+def default_eval_paths(folder: Path = DEFAULT_EVAL_DIR) -> list[Path]:
+    """Every evaluation file kept in the private evaluation folder: finished and draft sets
+    (*.jsonl) and English source lists not yet translated (*.sources.csv). Used whenever
+    --eval is not given, so forgetting the flag cannot let test sentences into training."""
+    if not folder.is_dir():
+        return []
+    return sorted([*folder.glob("*.jsonl"), *folder.glob("*.sources.csv")])
+
+
 def load_eval_items(paths: list[Path]) -> list[dict]:
-    from eval_set import load_items
+    from eval_set import load_items, read_sources
 
     items: list[dict] = []
     for path in paths:
         if not path.exists():
             sys.exit(f"Evaluation set not found: {path}")
-        loaded, errors = load_items(path)
+        loaded, errors = read_sources(path) if path.suffix == ".csv" else load_items(path)
         if errors:
             sys.exit(f"Evaluation set {path} is not valid JSONL: {errors[0]}")
         items.extend(loaded)
@@ -745,7 +934,24 @@ def export_evaluation_samples(con: sqlite3.Connection) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--raw", type=Path, default=DEFAULT_RAW)
+    parser.add_argument(
+        "--data-repo",
+        type=Path,
+        default=None,
+        help="siamsil-data clone to read originals from (default: $SIAMSIL_DATA_REPO, else ../siamsil-data)",
+    )
+    parser.add_argument(
+        "--dictionary",
+        choices=("50k", "standard"),
+        default="50k",
+        help="which dictionary the app shows: the 50K Translation Master (default) or the Zomi Standard Dictionary",
+    )
+    parser.add_argument(
+        "--raw",
+        type=Path,
+        default=None,
+        help="read the older unpinned layout from this folder instead of siamsil-data (e.g. data/raw)",
+    )
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT_DB)
     parser.add_argument("--limit-parallel", type=int, default=0, help="Optional cap for tests")
     parser.add_argument(
@@ -753,14 +959,73 @@ def main() -> None:
         type=Path,
         action="append",
         default=[],
-        help="Human evaluation set (JSONL); matching corpus pairs go to the eval_holdout split. Repeatable.",
+        help="Human evaluation set (JSONL) or English sources list (.sources.csv); matching corpus pairs go "
+        "to the eval_holdout split. Repeatable. Default: every such file in data/evaluation/human/.",
+    )
+    parser.add_argument(
+        "--reviews",
+        type=Path,
+        help=f"Saved corpus review decisions (review_sample.py record). Must exist when given; "
+        f"without it, {display_path(DEFAULT_REVIEWS)} is applied if present",
+    )
+    parser.add_argument(
+        "--revisions",
+        type=Path,
+        help=f"Approved corrections of corpus Zomi (review_sample.py revise). Must exist when given; "
+        f"without it, {display_path(DEFAULT_REVISIONS)} is applied if present",
+    )
+    parser.add_argument(
+        "--dictionary-revisions",
+        type=Path,
+        help="Approved dictionary corrections (dictionary_review.py revise). Must exist when given; without it, "
+        "reviews/dictionary-revisions.jsonl in siamsil-data is applied if present",
+    )
+    parser.add_argument(
+        "--min-reviewers",
+        type=int,
+        default=1,
+        help="Reviewers who must rate a corpus pair acceptable before a lead editor can approve it",
     )
     args = parser.parse_args()
+    if args.reviews is None:
+        args.reviews = DEFAULT_REVIEWS
+    elif not args.reviews.exists():
+        # A mistyped path must not quietly build a database with every reviewer decision dropped.
+        sys.exit(f"Reviews file not found: {args.reviews}")
+    try:
+        review_records = corpus_reviews.load(args.reviews) if args.reviews.exists() else []
+    except ValueError as error:
+        sys.exit(f"Saved reviews are not usable, nothing was built: {error}")
+    if args.revisions is None:
+        args.revisions = DEFAULT_REVISIONS
+    elif not args.revisions.exists():
+        sys.exit(f"Revisions file not found: {args.revisions}")
+    try:
+        revision_records = corpus_revisions.load(args.revisions)
+    except ValueError as error:
+        sys.exit(f"Saved corrections are not usable, nothing was built: {error}")
 
+    if not args.eval:
+        args.eval = default_eval_paths()
     eval_items = load_eval_items(args.eval)
+    print(f"Keeping {len(eval_items):,} evaluation items out of training ({len(args.eval)} files)")
 
-    dictionary_xlsx = args.raw / "dictionary" / "Zomi_Standard_Dictionary_AI_Cleaned.xlsx"
-    parallel_csv = args.raw / "parallel" / "zomi_english_sentences.csv"
+    repo: DataRepo | None = None
+    dictionary_key = "dictionary_master"
+    if args.raw is not None:
+        args.dictionary = "standard"
+        dictionary_xlsx = args.raw / "dictionary" / "Zomi_Standard_Dictionary_AI_Cleaned.xlsx"
+        parallel: Path | ParallelParts = args.raw / "parallel" / "zomi_english_sentences.csv"
+        print(f"Reading the older layout in {args.raw} (unpinned)")
+    else:
+        try:
+            repo = DataRepo(args.data_repo or default_data_repo())
+            print(f"Checking originals in {repo.root}…")
+            dictionary_key = "dictionary_50k" if args.dictionary == "50k" else "dictionary_master"
+            dictionary_xlsx = repo.verified(dictionary_key)
+            parallel = repo.parallel()
+        except SourceError as error:
+            sys.exit(f"Nothing was built: {error}")
 
     if not dictionary_xlsx.exists():
         sys.exit(f"Dictionary workbook not found: {dictionary_xlsx}")
@@ -770,12 +1035,39 @@ def main() -> None:
     con = connect(args.out)
     create_schema(con)
 
-    print("Ingesting dictionary master…")
-    dict_stats = ingest_master_dictionary(con, dictionary_xlsx, created_at)
+    if args.dictionary == "50k":
+        revisions_path = args.dictionary_revisions
+        if revisions_path is not None and not revisions_path.exists():
+            sys.exit(f"Dictionary revisions file not found: {revisions_path}")
+        if revisions_path is None and repo is not None:
+            revisions_path = repo.root / "reviews" / "dictionary-revisions.jsonl"
+        revisions: dict[str, dict] = {}
+        if revisions_path is not None and revisions_path.exists():
+            import dictionary_reviews
+
+            try:
+                revisions = dictionary_reviews.latest_revisions(dictionary_reviews.load(revisions_path))
+            except ValueError as error:
+                sys.exit(f"Dictionary revisions are not usable, nothing was built: {error}")
+            print(f"Applying {len(revisions):,} approved dictionary corrections from {revisions_path}…")
+        print("Ingesting the 50K Translation Master…")
+        dict_stats = ingest_translation_master(con, dictionary_xlsx, created_at, revisions)
+        if revisions:
+            print(f"  corrections applied: {dict_stats.get('revisions_applied', 0):,}; skipped because the source "
+                  f"changed: {dict_stats.get('revisions_skipped_changed_source', 0):,}")
+    else:
+        print("Ingesting the Zomi Standard Dictionary…")
+        dict_stats = ingest_master_dictionary(con, dictionary_xlsx, created_at)
     print(f"  master entries: {dict_stats.get('ingested', 0):,}")
 
     print("Ingesting parallel corpus (this can take a few minutes)…")
-    parallel_stats = ingest_parallel(con, parallel_csv, created_at)
+    parallel_stats = ingest_parallel(con, parallel, created_at)
+    parallel_record: Path | dict = parallel
+    if isinstance(parallel, ParallelParts):
+        try:
+            parallel_record = parallel.finish()
+        except SourceError as error:
+            sys.exit(f"Not released: {error}")
     print(f"  unique pairs kept: {parallel_stats['counts'].get('ingested', 0):,}")
 
     print("Running whole-corpus checks (template families, alignment, evaluation holdout)…")
@@ -783,9 +1075,23 @@ def main() -> None:
     print(f"  template families: {checks['template_families']:,}")
     print(f"  evaluation holdout pairs: {checks['splits'].get(EVAL_HOLDOUT_SPLIT, 0):,}")
 
+    review_counts = {status: 0 for status in (*corpus_reviews.STATUSES, "not_in_corpus")}
+    if review_records:
+        print(f"Applying {len(review_records):,} saved review ratings from {display_path(args.reviews)}…")
+        review_counts = apply_reviews(con, corpus_reviews.decide(review_records, args.min_reviewers))
+        print("  " + "  ".join(f"{status}: {count:,}" for status, count in review_counts.items()))
+    if revision_records:
+        print(f"Applying approved corrections from {display_path(args.revisions)}…")
+        revision_counts = apply_revisions(con, corpus_revisions.latest_revisions(revision_records))
+        print("  " + "  ".join(f"{name}: {count:,}" for name, count in revision_counts.items()))
+    verified_pairs = con.execute("SELECT COUNT(*) FROM parallel_sentences WHERE verified = 1").fetchone()[0]
+
+    dictionary_record: Path | dict = (
+        repo_fingerprint(repo.root, dictionary_xlsx, repo.sources[dictionary_key]["sha256"]) if repo else dictionary_xlsx
+    )
     source_files = {
-        "dictionary_master": display_path(dictionary_xlsx),
-        "parallel_csv": display_path(parallel_csv),
+        "dictionary_master": dictionary_record["path"] if isinstance(dictionary_record, dict) else display_path(dictionary_record),
+        "parallel_csv": parallel_record["path"] if isinstance(parallel_record, dict) else display_path(parallel_record),
     }
     con.execute(
         """
@@ -813,7 +1119,11 @@ def main() -> None:
             "verified": verified_dict,
             "empty_headword": dict_stats.get("empty_headword", 0),
             "empty_definition": dict_stats.get("empty_definition", 0),
-            "note": "Zomi Standard Dictionary is the sole dictionary source.",
+            "approved_corrections": dict_stats.get("revisions_applied", 0),
+            "corrections_skipped_changed_source": dict_stats.get("revisions_skipped_changed_source", 0),
+            "source": TRANSLATION_MASTER if args.dictionary == "50k" else "Zomi Standard Dictionary",
+            "note": "Sole dictionary source shown in the app; every entry unreviewed except approved corrections "
+            "(reviewed and approved by two people), which are verified.",
         },
         "parallel": {
             "source_rows": parallel_stats["counts"].get("source_rows"),
@@ -822,7 +1132,8 @@ def main() -> None:
             "empty_dropped": parallel_stats["counts"].get("empty", 0),
             "clean": checks["clean"],
             "needs_review": checks["flagged"],
-            "verified": 0,
+            "verified": verified_pairs,
+            "human_review": {**review_counts, "min_reviewers": args.min_reviewers, "ratings": len(review_records)},
             "splits": checks["splits"],
             "split_key": "template family (English with learned names and numbers masked)",
             "template_families": checks["template_families"],
@@ -832,7 +1143,7 @@ def main() -> None:
             "evaluation_items_checked": checks["eval_items_checked"],
             "quality_flags": checks["flags"],
             "models": parallel_stats["models"],
-            "note": "Zomi side is machine-translated and unverified. Do not treat as gold data.",
+            "note": "Zomi side is machine-translated. Only pairs counted as verified were accepted by human reviewers.",
         },
     }
 
@@ -850,9 +1161,14 @@ def main() -> None:
     print("Hashing inputs and database for the release manifest…")
     manifest = release_manifest(
         database=args.out,
-        source_files={"dictionary_master": dictionary_xlsx, "parallel_csv": parallel_csv},
+        source_files={
+            "dictionary_master": dictionary_record,
+            "parallel_csv": parallel_record,
+            **({"corpus_reviews": args.reviews} if review_records else {}),
+            **({"corpus_revisions": args.revisions} if revision_records else {}),
+        },
         eval_files=args.eval,
-        counts={"dictionary_entries": dict_total, "parallel_sentences": parallel_total},
+        counts=release_counts(dict_total, parallel_total, review_records),
         created_at=created_at,
     )
     version_file = write_release_manifest(manifest, DEFAULT_MANIFEST, DEFAULT_VERSIONS)
@@ -867,7 +1183,7 @@ def main() -> None:
         f"  Parallel source rows: {report['parallel']['source_rows']:,}\n"
         f"  Unique pairs kept: {parallel_total:,}\n"
         f"  Duplicates dropped: {report['parallel']['duplicates_dropped']:,}\n"
-        f"  Verified parallel pairs: 0\n"
+        f"  Verified parallel pairs: {verified_pairs:,}\n"
     )
 
 

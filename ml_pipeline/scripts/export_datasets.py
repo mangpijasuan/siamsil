@@ -9,15 +9,28 @@ Tiers:
   gold    human-made or human-reviewed: Bible ("Original ZSF Text" only, and each
           Zomi Bible version paired verse by verse with each English version) and
           teacher-reviewed daily-use phrases
-  silver  corpus pairs with no quality flags, from generators whose spot-check
+  silver  corpus pairs accepted by human reviewers (build_language_db.py --reviews),
+          and corpus pairs with no quality flags from generators whose spot-check
           acceptable share (lower 95% bound) meets --silver-min-acceptable
-  bronze  remaining corpus pairs with quality score >= --min-score
+  bronze  remaining corpus pairs with quality score >= --min-score, and unreviewed
+          reference dictionaries (--reference-db): Essential 3000 example sentences
+          and phrases, and the first Zomi equivalent of 50K Master usage-tier A senses
+
+--corpus-fraction keeps a fixed, reproducible share of machine-made corpus pairs
+(by id hash) so a run fits local training time; human-accepted pairs are always kept.
 
 Rights gate: only sources whose training status in data/rights.json is
 "cleared" are exported. --allow-uncleared also admits "needs_review" sources
 for internal experiments and records that in the manifest; "blocked" sources
 are never exported. A Bible version pair needs both versions admitted. Pairs
 matching a human evaluation item (--eval) are never exported.
+
+Standard Form: by default the Zomi of machine-made corpus pairs (source parallel_corpus) is written in the adopted
+Siamsil Zomi Standard Form (zolai_standard.py, data/zomi_standard_form/standard.json). A changed pair keeps the corpus
+text in `zomi_original`, names the rules in `zomi_standard_rules`, and carries `standard_version`; lone flagged words are
+listed in `zomi_standard_flags` and left as they are. Bible, daily-use phrases and dictionary text are other people's
+published words and are never rewritten. Evaluation matching uses the original text. --no-standard-form turns this off.
+The standard form is spelling, not review: it changes no review status and clears no rights.
 
 Bible splits are by whole book, the same for every version and the workbook, so
 a verse never sits in training in one translation and in test in another.
@@ -27,6 +40,7 @@ Merged verse ranges (such as 17-18) are not paired.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sqlite3
 import sys
@@ -36,6 +50,7 @@ from pathlib import Path
 from build_language_db import (
     EVAL_HOLDOUT_SPLIT,
     ROOT,
+    default_eval_paths,
     eval_match_keys,
     file_fingerprint,
     load_eval_items,
@@ -44,6 +59,7 @@ from build_language_db import (
     template_key,
 )
 from import_usx_bibles import BOOKS
+import zolai_standard
 
 BIBLE_TEST_BOOKS = frozenset({"RUT", "MRK", "1JN"})
 BIBLE_VALIDATION_BOOKS = frozenset({"JOL", "JON", "PHP", "TIT"})
@@ -78,25 +94,46 @@ def silver_models(summary: dict | None, min_acceptable: float) -> set[str]:
     }
 
 
-def corpus_records(con: sqlite3.Connection, silver: set[str], min_score: float):
+def in_sample(key: str, fraction: float) -> bool:
+    if fraction >= 1:
+        return True
+    bucket = int.from_bytes(hashlib.sha256(key.encode()).digest()[:4], "big") / 2**32
+    return bucket < fraction
+
+
+def corpus_records(
+    con: sqlite3.Connection,
+    silver: set[str],
+    min_score: float,
+    fraction: float = 1.0,
+    skipped: Counter[str] | None = None,
+):
+    skipped = skipped if skipped is not None else Counter()
     rows = con.execute(
         """
         SELECT id, normalized_source_text, normalized_target_text, model,
-               quality_flags, quality_score, dataset_split
+               quality_flags, quality_score, dataset_split, verified
         FROM parallel_sentences
         WHERE dataset_split != ? AND quality_score >= ?
         ORDER BY id
         """,
         (EVAL_HOLDOUT_SPLIT, min_score),
     )
-    for row_id, english, zomi, model, flags_json, score, split in rows:
+    for row_id, english, zomi, model, flags_json, score, split, verified in rows:
+        # Sampling thins machine-made pairs only; every human-accepted pair is kept.
+        if not verified and not in_sample(f"corpus-{row_id}", fraction):
+            skipped["corpus_not_sampled"] += 1
+            continue
         flags = json.loads(flags_json or "[]")
+        # A pair human reviewers accepted is silver whatever its generator scored; rejected
+        # pairs never reach this loop (their quality score is 0).
         yield {
             "id": f"corpus-{row_id}",
             "english": english,
             "zomi": zomi,
             "source": "parallel_corpus",
-            "tier": "silver" if not flags and model in silver else "bronze",
+            "tier": "silver" if verified or (not flags and model in silver) else "bronze",
+            "human_reviewed": bool(verified),
             "split": split,
             "model": model,
             "quality_score": score,
@@ -152,14 +189,68 @@ def gold_records(bible: list[dict], phrases: list[dict], skipped: Counter[str] |
         }
 
 
+def reference_records(path: Path, skipped: Counter[str]):
+    """Unreviewed reference dictionaries, as bronze pairs split by English text."""
+    con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    seen: set[tuple[str, str]] = set()
+
+    def record(record_id: str, source: str, kind: str, english: str | None, zomi: str | None):
+        english, zomi = (english or "").strip(), (zomi or "").strip()
+        if not english or not zomi:
+            skipped["reference_empty"] += 1
+            return None
+        if (english, zomi) in seen:
+            skipped["reference_duplicate"] += 1
+            return None
+        seen.add((english, zomi))
+        return {
+            "id": record_id,
+            "english": english,
+            "zomi": zomi,
+            "source": source,
+            "tier": "bronze",
+            "split": split_for_key(template_key(english, set())),
+            "kind": kind,
+        }
+
+    try:
+        examples = con.execute(
+            """
+            SELECT x.id, e.source_id, x.kind, x.english, x.zomi
+            FROM examples x JOIN senses s ON s.id = x.sense_id JOIN entries e ON e.id = s.entry_id
+            ORDER BY x.id
+            """
+        )
+        for example_id, source, kind, english, zomi in examples:
+            if (r := record(f"ref-{example_id}", source, kind, english, zomi)):
+                yield r
+        # Tier-A senses only; ";" separates alternative equivalents, so keep the first.
+        senses = con.execute(
+            """
+            SELECT s.id, e.source_id, e.headword, s.zomi
+            FROM senses s JOIN entries e ON e.id = s.entry_id
+            WHERE e.source_id = 'translation_master_50k' AND s.usage_tier = 'A'
+            ORDER BY s.id
+            """
+        )
+        for sense_id, source, headword, zomi in senses:
+            first = (zomi or "").split(";")[0]
+            if (r := record(f"ref-{sense_id}", source, "headword", headword, first)):
+                yield r
+    finally:
+        con.close()
+
+
 def bible_version_records(path: Path, skipped: Counter[str]):
     """Each Zomi version paired with each English version, verse by verse."""
     con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     try:
         versions = con.execute(
-            "SELECT id, language_iso, rights_source FROM versions WHERE language_iso IN ('zom', 'eng') ORDER BY sort_order"
+            "SELECT id, language_iso, rights_source FROM versions WHERE language_iso IN ('ctd', 'zom', 'eng')"
+            " ORDER BY sort_order"
         ).fetchall()
-        zomi = [(vid, rights) for vid, iso, rights in versions if iso == "zom"]
+        # Zomi is ctd; databases imported before 2026-10-27 label it zom until they are rebuilt.
+        zomi = [(vid, rights) for vid, iso, rights in versions if iso in ("ctd", "zom")]
         english = [(vid, rights) for vid, iso, rights in versions if iso == "eng"]
         for zomi_id, zomi_rights in zomi:
             for english_id, english_rights in english:
@@ -209,6 +300,24 @@ def load_workbook_sources(path: Path) -> tuple[list[dict], list[dict]]:
     return import_bible(path), import_daily_use(path)
 
 
+# Only machine-made corpus Zomi is put into the standard form. Published texts (Bible, phrases, dictionaries) are not.
+STANDARD_FORM_SOURCES = frozenset({"parallel_corpus"})
+
+
+def standardize_record(record: dict, standard: "zolai_standard.Standard") -> bool:
+    """Put record['zomi'] in the standard form, keeping the corpus text. True when the text changed."""
+    result = zolai_standard.standardize(record["zomi"], standard)
+    record["standard_version"] = standard.version
+    if result.flags:
+        record["zomi_standard_flags"] = [f"{flag['rule']}:{flag['text']}" for flag in result.flags]
+    if result.text == record["zomi"]:
+        return False
+    record["zomi_original"] = record["zomi"]
+    record["zomi"] = result.text
+    record["zomi_standard_rules"] = result.rules
+    return True
+
+
 def export(
     con: sqlite3.Connection,
     out_dir: Path,
@@ -222,19 +331,28 @@ def export(
     min_acceptable: float,
     min_score: float,
     bible_versions: Path | None = None,
+    reference_db: Path | None = None,
+    corpus_fraction: float = 1.0,
+    standard: "zolai_standard.Standard | None" = None,
 ) -> dict:
     admitted = admitted_sources(rights, allow_uncleared)
     silver = silver_models(summary, min_acceptable)
     eval_english, eval_zomi = eval_match_keys(eval_items, set())
 
     counts: Counter[tuple[str, str, str]] = Counter()
+    standardized: Counter[str] = Counter()
     skipped: Counter[str] = Counter()
     out_dir.mkdir(parents=True, exist_ok=True)
     handles = {split: (out_dir / f"{split}.jsonl").open("w", encoding="utf-8") for split in SPLITS}
     try:
-        streams = [gold_records(bible, phrases, skipped), corpus_records(con, silver, min_score)]
+        streams = [
+            gold_records(bible, phrases, skipped),
+            corpus_records(con, silver, min_score, corpus_fraction, skipped),
+        ]
         if bible_versions:
             streams.append(bible_version_records(bible_versions, skipped))
+        if reference_db:
+            streams.append(reference_records(reference_db, skipped))
         for stream in streams:
             for record in stream:
                 if record["source"] not in admitted:
@@ -249,6 +367,9 @@ def export(
                 ):
                     skipped["evaluation_match"] += 1
                     continue
+                if standard is not None and record["source"] in STANDARD_FORM_SOURCES:
+                    standardized["records"] += 1
+                    standardized["changed"] += standardize_record(record, standard)
                 handles[record["split"]].write(json.dumps(record, ensure_ascii=False) + "\n")
                 counts[(record["split"], record["tier"], record["source"])] += 1
     finally:
@@ -271,7 +392,17 @@ def export(
         },
         "uncleared_sources_included": sorted(n for n in admitted if rights[n] != "cleared"),
         "silver_models": sorted(silver),
-        "parameters": {"min_score": min_score, "silver_min_acceptable": min_acceptable},
+        "parameters": {
+            "min_score": min_score,
+            "silver_min_acceptable": min_acceptable,
+            "corpus_fraction": corpus_fraction,
+        },
+        "standard_form": (
+            {"applied": True, "version": standard.version, "sources": sorted(STANDARD_FORM_SOURCES),
+             "records_checked": standardized["records"], "records_changed": standardized["changed"],
+             "note": "spelling only: no review status changed, no rights cleared; the corpus text is in zomi_original"}
+            if standard is not None else {"applied": False}
+        ),
         "bible_split_books": {"test": sorted(BIBLE_TEST_BOOKS), "validation": sorted(BIBLE_VALIDATION_BOOKS)},
         "files": {split: file_fingerprint(out_dir / f"{split}.jsonl") for split in SPLITS},
     }
@@ -281,20 +412,34 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--db", type=Path, default=DEFAULT_DB)
     parser.add_argument("--workbook", type=Path, help="Bible and daily-use workbook (Zomi_Bible_Final_v14.xlsx)")
-    parser.add_argument("--eval", type=Path, action="append", default=[], help="Human evaluation set; repeatable")
+    parser.add_argument(
+        "--eval", type=Path, action="append", default=[],
+        help="Human evaluation set or .sources.csv; repeatable. Default: every such file in data/evaluation/human/",
+    )
     parser.add_argument("--bible-versions", type=Path, help="bible_versions.sqlite from import_usx_bibles.py")
+    parser.add_argument("--reference-db", type=Path, help="reference_dictionaries.sqlite from import_reference_dictionaries.py")
+    parser.add_argument("--corpus-fraction", type=float, default=1.0, help="Share of corpus pairs to keep, 0-1")
     parser.add_argument("--generator-summary", type=Path, help="summary.json from review_sample.py summarize")
     parser.add_argument("--silver-min-acceptable", type=float, default=0.8)
     parser.add_argument("--min-score", type=float, default=0.5)
     parser.add_argument("--rights", type=Path, default=DEFAULT_RIGHTS)
     parser.add_argument("--allow-uncleared", action="store_true", help="Also export needs_review sources (internal use)")
+    parser.add_argument("--standard", type=Path, default=zolai_standard.DEFAULT_STANDARD, help="Standard Form file (standard.json)")
+    parser.add_argument("--no-standard-form", action="store_true", help="Leave the corpus Zomi as it is")
     parser.add_argument("--out", type=Path, help="Output directory (default: data/datasets/<release>-export)")
     args = parser.parse_args(argv)
+    if not args.eval:
+        args.eval = default_eval_paths()
 
     if not args.db.exists():
         sys.exit(f"Language database not found: {args.db}")
     if args.bible_versions and not args.bible_versions.exists():
         sys.exit(f"Bible versions database not found: {args.bible_versions}")
+    if args.reference_db and not args.reference_db.exists():
+        sys.exit(f"Reference dictionaries database not found: {args.reference_db}")
+    if not 0 < args.corpus_fraction <= 1:
+        sys.exit("--corpus-fraction must be between 0 and 1")
+    standard = None if args.no_standard_form else zolai_standard.load(args.standard)
     con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
     try:
         version = con.execute("SELECT version FROM dataset_versions ORDER BY id DESC LIMIT 1").fetchone()[0]
@@ -313,6 +458,9 @@ def main(argv: list[str] | None = None) -> int:
             min_acceptable=args.silver_min_acceptable,
             min_score=args.min_score,
             bible_versions=args.bible_versions,
+            reference_db=args.reference_db,
+            corpus_fraction=args.corpus_fraction,
+            standard=standard,
         )
     finally:
         con.close()
@@ -322,8 +470,12 @@ def main(argv: list[str] | None = None) -> int:
         inputs["workbook"] = file_fingerprint(args.workbook)
     if args.bible_versions:
         inputs["bible_versions"] = file_fingerprint(args.bible_versions)
+    if args.reference_db:
+        inputs["reference_db"] = file_fingerprint(args.reference_db)
     if args.generator_summary:
         inputs["generator_summary"] = file_fingerprint(args.generator_summary)
+    if standard is not None:
+        inputs["standard_form"] = file_fingerprint(args.standard)
     inputs["evaluation_sets"] = [{"file": p.name, "sha256": file_fingerprint(p)["sha256"]} for p in args.eval]
     manifest = {"language_release": version, "inputs": inputs, **result}
     (out_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -335,6 +487,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"not exported: {name} (training rights: {info['train_rights']})")
     if result["uncleared_sources_included"]:
         print(f"WARNING: uncleared sources included: {', '.join(result['uncleared_sources_included'])}")
+    form = result["standard_form"]
+    if form["applied"]:
+        print(f"standard form {form['version']}: {form['records_changed']:,} of {form['records_checked']:,} corpus pairs changed (originals in zomi_original)")
     print(f"wrote {out_dir}")
     return 0
 

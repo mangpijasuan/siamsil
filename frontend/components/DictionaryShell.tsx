@@ -2,11 +2,17 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import type { DictionaryEntry, TranslateMatch } from "@/lib/api";
-import { getDictionaryEntry } from "@/lib/api";
+import { getDictionaryEntry, suggestDictionaryWords, suggestZomiWords } from "@/lib/api";
 import { pushHistory, useRecentSearches, useSavedWords } from "@/lib/localData";
 import { IconSwap } from "@/components/Icons";
+import { useWordCompletions } from "@/lib/useWordCompletions";
+import { completeTrailingWord, completionPrefix, usefulCompletions } from "@/lib/wordComplete";
 
 const EXAMPLE_WORDS = ["water", "house", "mother", "eat", "love"];
+// Completion follows the search direction: English headwords, or Zomi words as Zomi writers use them.
+const completeEnglish = (prefix: string) =>
+  suggestDictionaryWords(prefix).then((data) => data.results.map((item) => item.source_word));
+const completeZomi = (prefix: string) => suggestZomiWords(prefix).then((data) => data.words.map((item) => item.word));
 const LETTERS = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
 
 function IconSearch() {
@@ -42,7 +48,7 @@ type Props = {
   entries: DictionaryEntry[];
   query: string;
   activeLetter: string;
-  direction: "en-zom" | "zom-en";
+  direction: "en-ctd" | "ctd-en";
   letters: Array<{ letter: string; count: number }>;
   error: string | null;
 };
@@ -57,6 +63,12 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
   const letterSet = new Set(letters.map((item) => item.letter));
   const selectedId = selected?.id;
   const examples = exampleState && exampleState.entryId === selectedId ? exampleState.items : [];
+  const [typed, setTyped] = useState(query);
+  const typedPrefix = completionPrefix(typed);
+  const completions = usefulCompletions(
+    useWordCompletions(typedPrefix, direction === "ctd-en" ? completeZomi : completeEnglish),
+    typedPrefix ?? "",
+  );
 
   useEffect(() => {
     if (!selectedId) return;
@@ -98,7 +110,7 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
     const dirValue = next.dir ?? direction;
     if (qValue) params.set("q", qValue);
     if (letterValue && letterValue !== "All") params.set("letter", letterValue);
-    if (dirValue === "zom-en") params.set("dir", "zom-en");
+    if (dirValue === "ctd-en") params.set("dir", "ctd-en");
     const qs = params.toString();
     return qs ? `/zomidictionary?${qs}` : "/zomidictionary";
   }
@@ -110,17 +122,16 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
     <div className="dict-root">
       {/* ── Page header ── */}
       <div className="dict-header">
-        <p className="gold-label" style={{ marginBottom: 6 }}>Siamsil</p>
         <h1 className="font-playfair dict-h1">Zomi Dictionary</h1>
 
         <Link
-          href={hrefFor({ dir: direction === "en-zom" ? "zom-en" : "en-zom" })}
+          href={hrefFor({ dir: direction === "en-ctd" ? "ctd-en" : "en-ctd" })}
           className="tr-langs dict-langs"
-          aria-label={direction === "en-zom" ? "English to Zomi. Switch to Zomi to English" : "Zomi to English. Switch to English to Zomi"}
+          aria-label={direction === "en-ctd" ? "English to Zomi. Switch to Zomi to English" : "Zomi to English. Switch to English to Zomi"}
         >
-          <span>{direction === "en-zom" ? "English" : "Zomi"}</span>
+          <span>{direction === "en-ctd" ? "English" : "Zomi"}</span>
           <IconSwap />
-          <span>{direction === "en-zom" ? "Zomi" : "English"}</span>
+          <span>{direction === "en-ctd" ? "Zomi" : "English"}</span>
         </Link>
 
         <div className="dict-search-row">
@@ -132,8 +143,17 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
               defaultValue={query}
               placeholder="Search English or Zomi…"
               className="dict-search-input"
+              list="dict-word-completions"
+              autoComplete="off"
+              lang={direction === "ctd-en" ? "ctd" : "en"}
+              onChange={(event) => setTyped(event.target.value)}
             />
-            {direction === "zom-en" && <input type="hidden" name="dir" value="zom-en" />}
+            <datalist id="dict-word-completions">
+              {completions.map((word) => (
+                <option key={word} value={completeTrailingWord(typed, word).trimEnd()} />
+              ))}
+            </datalist>
+            {direction === "ctd-en" && <input type="hidden" name="dir" value="ctd-en" />}
             {activeLetter !== "All" && <input type="hidden" name="letter" value={activeLetter} />}
             {query && (
               <Link href="/zomidictionary" className="dict-search-clear" aria-label="Clear">
@@ -199,11 +219,11 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
             <div className="dict-empty">
               <p className="font-playfair" style={{ fontSize: 16, fontWeight: 700, color: "var(--navy)" }}>No results for &ldquo;{query || activeLetter}&rdquo;</p>
               <p style={{ fontSize: 13, color: "var(--gray)" }}>
-                {direction === "en-zom" ? "Try searching from Zomi instead, or check the spelling." : "Try searching from English instead, or check the spelling."}
+                {direction === "en-ctd" ? "Try searching from Zomi instead, or check the spelling." : "Try searching from English instead, or check the spelling."}
               </p>
               <div className="dict-suggestions">
-                <Link href={hrefFor({ dir: direction === "en-zom" ? "zom-en" : "en-zom" })} className="dict-suggestion">
-                  {direction === "en-zom" ? "Search Zomi → English" : "Search English → Zomi"}
+                <Link href={hrefFor({ dir: direction === "en-ctd" ? "ctd-en" : "en-ctd" })} className="dict-suggestion">
+                  {direction === "en-ctd" ? "Search Zomi → English" : "Search English → Zomi"}
                 </Link>
                 {query && (
                   <Link href={`/zomitranslate?q=${encodeURIComponent(query)}`} className="dict-suggestion">Try Translate</Link>
@@ -369,7 +389,7 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
                 {selected.source && (
                   <div className="dict-detail-section">
                     <div className="dict-detail-label">Source</div>
-                    <p className="dict-detail-source">{selected.source} · English headwords defined in Zomi</p>
+                    <p className="dict-detail-source">{selected.source} · {selected.verified ? "Reviewed" : "Unreviewed: not yet checked by Zomi reviewers"}</p>
                   </div>
                 )}
               </>

@@ -5,12 +5,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  IconAI,
   IconAcademic,
   IconBook,
-  IconChat,
   IconCross,
+  IconHelp,
   IconHome,
+  IconInfo,
   IconLibrary,
+  IconResources,
   IconSearch,
   IconTranslate,
   IconUser,
@@ -19,6 +22,8 @@ import {
 type NavTab = {
   href: string;
   Icon: typeof IconHome;
+  /** The glyph cut from the design sheet (public/theme/nav-<glyph>.png). */
+  glyph: string;
   label: string;
   short: string;
   hint: string;
@@ -28,27 +33,37 @@ const NAV_GROUPS: Array<{ title: string; tabs: NavTab[] }> = [
   {
     title: "Language",
     tabs: [
-      { href: "/", Icon: IconHome, label: "Home", short: "Home", hint: "Your Zomi library" },
-      { href: "/zomidictionary", Icon: IconBook, label: "Dictionary", short: "Dictionary", hint: "Zomi–English" },
-      { href: "/zomitranslate", Icon: IconTranslate, label: "Translate", short: "Translate", hint: "Retrieve known pairs" },
+      { href: "/", Icon: IconHome, glyph: "home", label: "Home", short: "Home", hint: "Your Zomi library" },
+      { href: "/zomidictionary", Icon: IconBook, glyph: "dictionary", label: "Dictionary", short: "Dictionary", hint: "Zomi–English" },
+      { href: "/zomitranslate", Icon: IconTranslate, glyph: "translate", label: "Translate", short: "Translate", hint: "Retrieve known pairs" },
     ],
   },
   {
     title: "Read",
     tabs: [
-      { href: "/bible", Icon: IconCross, label: "Bible", short: "Bible", hint: "Laisiangtho" },
-      { href: "/library", Icon: IconLibrary, label: "Library", short: "Library", hint: "Books & archives" },
+      { href: "/bible", Icon: IconCross, glyph: "bible", label: "Bible", short: "Bible", hint: "Laisiangtho" },
+      { href: "/library", Icon: IconLibrary, glyph: "library", label: "Library", short: "Library", hint: "Books & archives" },
     ],
   },
   {
     title: "Learn",
     tabs: [
+<<<<<<< HEAD
       { href: "/learning", Icon: IconAcademic, label: "Learn", short: "Learn", hint: "Grammar & phrases" },
       { href: "/chat", Icon: IconChat, label: "Siamsil AI", short: "AI", hint: "Retrieval assistant" },
+=======
+      { href: "/learning", Icon: IconAcademic, glyph: "learn", label: "Learn", short: "Learn", hint: "Grammar & phrases" },
+      { href: "/chat", Icon: IconAI, glyph: "ai", label: "Siamsil AI", short: "AI", hint: "Retrieval assistant" },
+>>>>>>> origin/main
     ],
   },
 ];
-const PROFILE_TAB: NavTab = { href: "/profile", Icon: IconUser, label: "Profile", short: "Profile", hint: "Progress & settings" };
+const ABOUT_TABS: NavTab[] = [
+  { href: "/resources", Icon: IconResources, glyph: "resources", label: "Resources", short: "Resources", hint: "Where our data comes from" },
+  { href: "/about", Icon: IconInfo, glyph: "about", label: "About", short: "About", hint: "What Siamsil is" },
+  { href: "/help", Icon: IconHelp, glyph: "help", label: "Help", short: "Help", hint: "Using Siamsil" },
+];
+const PROFILE_TAB: NavTab = { href: "/profile", Icon: IconUser, glyph: "profile", label: "Profile", short: "Profile", hint: "Progress & settings" };
 
 const SIDEBAR_KEY = "siamsil-sidebar-collapsed";
 const DESKTOP_QUERY = "(min-width: 1024px)";
@@ -61,8 +76,10 @@ function MenuIcon() {
   );
 }
 
-function CloseIcon() {
+// The Siamsil Technology Hub lockup (mark, wordmark and tagline in one image). White and gold on a transparent background, for the navy bars. logo-og.png is the same logo on navy for link previews.
+function BrandLockup({ height }: { height: number }) {
   return (
+<<<<<<< HEAD
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
       <path d="M6 6l12 12M18 6 6 18" />
     </svg>
@@ -76,6 +93,12 @@ function BrandLockup({ height }: { height: number }) {
       src="/logo-lockup.png"
       alt="Siamsil, The Art of Literature"
       width={Math.round(height * (1200 / 410))}
+=======
+    <Image
+      src="/logo-lockup.png"
+      alt="Siamsil Technology Hub"
+      width={Math.round(height * (1200 / 272))}
+>>>>>>> origin/main
       height={height}
       className="brand-lockup"
       priority
@@ -90,7 +113,6 @@ function isActive(pathname: string, href: string) {
 
 function NavLink({ tab, pathname, onNavigate }: { tab: NavTab; pathname: string; onNavigate?: () => void }) {
   const active = isActive(pathname, tab.href);
-  const { Icon } = tab;
   return (
     <Link
       href={tab.href}
@@ -99,7 +121,7 @@ function NavLink({ tab, pathname, onNavigate }: { tab: NavTab; pathname: string;
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
     >
-      <span className="side-panel-icon"><Icon size={19} filled={active} /></span>
+      <span className="side-panel-icon"><span className="st-nav-glyph" style={{ ["--glyph" as string]: `url(/theme/nav-${tab.glyph}.png)` }} aria-hidden="true" /></span>
       <span className="side-panel-copy">
         <span className="side-panel-label">{tab.label}</span>
         <span className="side-panel-hint">{tab.hint}</span>
@@ -120,6 +142,11 @@ function Navigation({ pathname, onNavigate }: { pathname: string; onNavigate?: (
           ))}
         </div>
       ))}
+      <div className="side-panel-group side-panel-group-more">
+        {ABOUT_TABS.map((tab) => (
+          <NavLink key={tab.href} tab={tab} pathname={pathname} onNavigate={onNavigate} />
+        ))}
+      </div>
       <div className="side-panel-group side-panel-group-end">
         <NavLink tab={PROFILE_TAB} pathname={pathname} onNavigate={onNavigate} />
       </div>
@@ -177,7 +204,7 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <header className="shell-topbar">
+      <header className={`shell-topbar${collapsed ? " nav-collapsed" : ""}`}>
         <div className="shell-topbar-inner">
           <button
             type="button"
@@ -200,6 +227,18 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
           </form>
           <Link href="/zomidictionary" className="shell-topbar-search-btn" aria-label="Search the dictionary">
             <IconSearch size={18} />
+<<<<<<< HEAD
+=======
+          </Link>
+          <Link
+            href="/profile"
+            className={`shell-user-link${isActive(pathname, "/profile") ? " active" : ""}`}
+            aria-label="Open guest profile"
+            aria-current={isActive(pathname, "/profile") ? "page" : undefined}
+          >
+            <span className="shell-user-copy"><strong>Guest</strong><small>Local profile</small></span>
+            <span className="shell-user-avatar"><IconUser size={20} /></span>
+>>>>>>> origin/main
           </Link>
         </div>
       </header>
@@ -211,6 +250,7 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
 
         <div className={`mobile-drawer-backdrop${mobileOpen ? " visible" : ""}`} onClick={() => setMobileOpen(false)} aria-hidden="true" />
         <aside id="mobile-drawer" className={`mobile-drawer${mobileOpen ? " open" : ""}`} aria-label="Mobile navigation" aria-hidden={!mobileOpen}>
+<<<<<<< HEAD
           <div className="mobile-drawer-head">
             <Link href="/" className="sidebar-brand-link" onClick={() => setMobileOpen(false)}>
               <BrandLockup height={44} />
@@ -219,6 +259,8 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
               <CloseIcon />
             </button>
           </div>
+=======
+>>>>>>> origin/main
           <Navigation pathname={pathname} onNavigate={() => setMobileOpen(false)} />
           <div className="side-panel-foot">Literature in Zomi</div>
         </aside>

@@ -1,0 +1,23 @@
+name: Siamsil data release - safety hold
+
+# SAFETY HOLD: PR #64 exposed restricted source-derived data through public
+# workflow artifacts and omitted required rights/review/holdout release gates.
+# Do not checkout private data, build bundles or use R2 credentials here until
+# the release workflow has been redesigned and independently reviewed.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release_safety_hold:
+    name: Release paused pending data protection checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain mandatory release gates
+        run: |
+          echo "::error::Production data releases are paused pending security and data-rights hardening."
+          echo "::error::Never upload private Siamsil bundles to artifacts in the public application repository."
+          echo "::error::Implement rights-approved-only packaging, private evaluation and review inclusion, and secure R2 publishing in a protected private workflow."
+          exit 1

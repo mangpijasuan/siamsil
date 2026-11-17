@@ -3,7 +3,12 @@ import { Inter, Playfair_Display } from "next/font/google";
 import BottomNav from "@/components/BottomNav";
 import SidebarNav from "@/components/SidebarNav";
 import { PREFERENCES_BOOT_SCRIPT } from "@/lib/bible/preferences";
+<<<<<<< HEAD
+=======
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
+>>>>>>> origin/main
 import "./globals.css";
+import "./siamsil-theme.css";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -21,8 +26,17 @@ export const metadata: Metadata = {
     default: "Siamsil — Zomi Dictionary & Translate",
     template: "%s | Siamsil",
   },
-  description:
-    "Siamsil — Zomi Dictionary, Translate, Bible, and Learning. The digital home for the Zomi language.",
+  description: SITE_DESCRIPTION,
+  // Absolute links (canonical, social previews) need the public address; see lib/site.ts.
+  ...(SITE_URL ? { metadataBase: new URL(SITE_URL) } : {}),
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: "Siamsil — Zomi Dictionary & Translate",
+    description: SITE_DESCRIPTION,
+    ...(SITE_URL ? { images: [{ url: "/logo-og.png", alt: "Siamsil" }] } : {}),
+  },
+  twitter: { card: "summary", title: "Siamsil — Zomi Dictionary & Translate", description: SITE_DESCRIPTION },
   keywords: [
     "Siamsil",
     "Zomi Dictionary",

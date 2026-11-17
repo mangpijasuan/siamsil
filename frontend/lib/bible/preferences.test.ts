@@ -10,6 +10,10 @@ test("missing or broken stored preferences fall back to defaults", () => {
 
 test("bilingual is the default display mode", () => {
   assert.equal(DEFAULT_PREFERENCES.mode, "both");
+<<<<<<< HEAD
+=======
+  assert.equal(DEFAULT_PREFERENCES.typeface, "sans");
+>>>>>>> origin/main
 });
 
 test("font size and line height stay within their ranges", () => {

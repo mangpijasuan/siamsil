@@ -54,7 +54,7 @@ All commands use `ml_pipeline/scripts/mt_eval.py`. Hypothesis files are written 
 |---|---|
 | `retrieval`: best-matching corpus pair, as the app does today, excluding held-out pairs | Implemented |
 | Hosted model, untuned | Not yet: needs a provider-neutral adapter and a decision about sending the hidden sets to an outside service |
-| Siamsil fine-tune | Needs cleared training data, a licensed base model, and GPU training |
+| Siamsil fine-tune | `nllb-zomi-bible-v1` (Bible only, cleared data) trained 2026-10-19; an everyday pilot (2026-10-28) used sources still `needs_review`. Neither has been scored on human sets. May be served only as the labelled experimental mode in [ROADMAP.md](ROADMAP.md) Phase 2 until it passes the gate. |
 
 ## Rules
 

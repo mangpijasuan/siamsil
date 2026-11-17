@@ -55,7 +55,8 @@ class OIDCVerifier:
 
         email = payload.get("email") if payload.get("email_verified") is True else None
         locale = str(payload.get("locale") or "en").lower()
-        if locale not in {"en", "zom", "my"}:
+        locale = {"zom": "ctd"}.get(locale, locale)
+        if locale not in {"en", "ctd", "my"}:
             locale = "en"
 
         return OIDCClaims(

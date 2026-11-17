@@ -18,7 +18,9 @@ import openpyxl  # noqa: E402
 
 from build_language_db import apply_corpus_checks, connect, create_schema, ingest_parallel  # type: ignore  # noqa: E402
 from export_datasets import admitted_sources, export, load_workbook_sources, main, silver_models  # type: ignore  # noqa: E402
+import zolai_standard  # type: ignore  # noqa: E402
 from import_usx_bibles import main as import_bibles  # type: ignore  # noqa: E402
+from import_reference_dictionaries import SCHEMA as REFERENCE_SCHEMA  # type: ignore  # noqa: E402
 
 # Zomi-side strings are placeholders, never real language data.
 
@@ -131,6 +133,14 @@ class ExportTests(unittest.TestCase):
         self.assertNotIn("phrase-1", self.all_rows(rows))
         self.assertEqual(result["skipped"]["evaluation_match"], 1)
 
+    def test_corpus_sample_format_benchmarks_are_not_exported(self) -> None:
+        items = [{"english": "My brother cooks rice!", "zomi": "unrelated"}, {"english": "x", "zomi": "zomi_placeholder_ca"}]
+        result, rows = self.run_export(eval_items=items)
+        ids = set(self.all_rows(rows))
+        self.assertNotIn("corpus-2", ids)
+        self.assertNotIn("corpus-1", ids)
+        self.assertEqual(result["skipped"]["evaluation_match"], 2)
+
     def test_split_counts_add_up(self) -> None:
         result, rows = self.run_export()
         for split, split_rows in rows.items():
@@ -155,6 +165,68 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(set(manifest["files"]), {"train", "validation", "test"})
 
 
+# Placeholder spellings, never real language data.
+STANDARD_RULES = {"version": "1.2.0", "rules": [
+    {"id": "ZS-001", "standard": "ZSTD", "variants": ["ZVAR"], "mode": "replace", "approved_by": ["R01", "E01"],
+     "approved_on": "2026-11-08", "reason": "test"},
+    {"id": "ZS-002", "standard": "ZONE", "variants": ["ZFLAG"], "mode": "flag", "approved_by": ["R01", "E01"],
+     "approved_on": "2026-11-08", "reason": "test"}]}
+
+
+class StandardFormExportTests(ExportTests):
+    def setUp(self) -> None:
+        super().setUp()
+        self.con.close()
+        con = sqlite3.connect(self.database)
+        con.execute("UPDATE parallel_sentences SET normalized_target_text = 'ZOMI ZVAR ZFLAG' WHERE raw_source_text = 'I bought 4 eggs.'")
+        con.commit()
+        con.close()
+        self.con = sqlite3.connect(self.database)
+        self.standard = zolai_standard.parse(STANDARD_RULES)
+
+    def test_corpus_zomi_is_standard_and_the_original_is_kept(self) -> None:
+        result, rows = self.run_export(standard=self.standard)
+        row = next(r for r in self.all_rows(rows).values() if r["english"] == "I bought 4 eggs.")
+        self.assertEqual((row["zomi"], row["zomi_original"]), ("ZOMI ZSTD ZFLAG", "ZOMI ZVAR ZFLAG"))
+        self.assertEqual((row["zomi_standard_rules"], row["zomi_standard_flags"], row["standard_version"]),
+                         (["ZS-001"], ["ZS-002:ZFLAG"], "1.2.0"))
+        other = next(r for r in self.all_rows(rows).values() if r["id"] == "corpus-1")
+        self.assertNotIn("zomi_original", other)  # unchanged text keeps one field only
+        self.assertEqual(result["standard_form"]["applied"], True)
+        self.assertEqual(result["standard_form"]["version"], "1.2.0")
+        self.assertEqual(result["standard_form"]["records_changed"], 1)
+
+    def test_it_is_off_unless_a_standard_is_given(self) -> None:
+        result, rows = self.run_export()
+        row = next(r for r in self.all_rows(rows).values() if r["english"] == "I bought 4 eggs.")
+        self.assertEqual(row["zomi"], "ZOMI ZVAR ZFLAG")
+        self.assertNotIn("zomi_original", row)
+        self.assertEqual(result["standard_form"], {"applied": False})
+
+    def test_published_texts_are_never_rewritten(self) -> None:
+        bible = [dict(BIBLE[0], zomi_original="ZOMI ZVAR")]
+        _, rows = self.run_export(standard=self.standard, bible=bible)
+        gold = next(r for r in self.all_rows(rows).values() if r["source"] == "bible_original")
+        self.assertEqual(gold["zomi"], "ZOMI ZVAR")
+        self.assertNotIn("standard_version", gold)
+
+    def test_evaluation_matching_uses_the_original_text(self) -> None:
+        item = {"direction": "en-zomi", "source_text": "Other text.", "references": ["ZOMI ZVAR ZFLAG"]}
+        _, rows = self.run_export(standard=self.standard, eval_items=[item])
+        self.assertNotIn("I bought 4 eggs.", [r["english"] for r in self.all_rows(rows).values()])
+
+    def test_the_command_applies_the_standard_by_default_and_can_be_turned_off(self) -> None:
+        path = self.dir / "standard.json"
+        path.write_text(json.dumps(STANDARD_RULES), encoding="utf-8")
+        for flags, applied in (([], True), (["--no-standard-form"], False)):
+            out = self.dir / f"cli-{applied}"
+            with redirect_stdout(StringIO()):
+                main(["--db", str(self.database), "--out", str(out), "--allow-uncleared", "--standard", str(path), *flags])
+            manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["standard_form"]["applied"], applied)
+            self.assertEqual("standard_form" in manifest["inputs"], applied)
+
+
 BIBLE_METADATA = """<DBLMetadata><identification><name>{abbr} name</name><abbreviation>{abbr}</abbreviation>
 </identification><language><iso>{iso}</iso><name>x</name></language></DBLMetadata>"""
 BIBLE_BOOK = """<usx version="2.0"><book code="{code}" style="id" /><chapter number="1" style="c" />
@@ -172,7 +244,7 @@ class BibleVersionExportTests(ExportTests):
             for code in ("JHN", "MRK"):
                 (usx / f"{code}.usx").write_text(BIBLE_BOOK.format(code=code, text=f"{text} {code}"), encoding="utf-8")
         config = self.dir / "bible_versions.json"
-        config.write_text(json.dumps({"versions": {"zt": {"name": "Zomi Test", "language_iso": "zom"}}}))
+        config.write_text(json.dumps({"versions": {"zt": {"name": "Zomi Test", "language_iso": "ctd"}}}))
         db = self.dir / "bible_versions.sqlite"
         with redirect_stdout(StringIO()), patch("sys.stderr"):
             import_bibles(["--source", str(source), "--out", str(db), "--manifest", str(self.dir / "m.json"),
@@ -212,6 +284,56 @@ class BibleVersionExportTests(ExportTests):
         by_id = self.all_rows(rows)
         self.assertEqual(by_id["bible-99-1-1"]["split"], by_id["bible-zt-en-41-1-1"]["split"])
         self.assertEqual(result["skipped"]["bible_unknown_book"], 1)
+
+
+class ReferenceExportTests(ExportTests):
+    def setUp(self) -> None:
+        super().setUp()
+        self.reference = self.dir / "reference.sqlite"
+        con = sqlite3.connect(self.reference)
+        con.executescript(REFERENCE_SCHEMA)
+        con.executemany("INSERT INTO entries VALUES (?,?,?,?,?,?,?)", [
+            ("e1", "essential_3000", 1, "a, an", "a, an", "article", None),
+            ("m1", "translation_master_50k", 1, "fear", "fear", "n.", None),
+            ("m2", "translation_master_50k", 2, "untamed", "untamed", "adj.", None),
+        ])
+        con.executemany("INSERT INTO senses VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+            ("s1", "e1", 1, None, "d", "ZOMI_PLACEHOLDER_S1", None, None, None, None, None, None, "[]", "unreviewed"),
+            ("s2", "m1", 1, None, "d", "ZOMI_PLACEHOLDER_A1; ZOMI_PLACEHOLDER_A2", None, None, None, None, "A", None, "[]", "unreviewed"),
+            ("s3", "m2", 1, None, "d", "ZOMI_PLACEHOLDER_B1", None, None, None, None, "B", None, "[]", "unreviewed"),
+        ])
+        con.executemany("INSERT INTO examples VALUES (?,?,?,?,?,?)", [
+            ("x1", "s1", "example", 1, "She bought a book.", "ZOMI_PLACEHOLDER_X1"),
+            ("x2", "s1", "phrase", 2, "a book", "ZOMI_PLACEHOLDER_X2"),
+            ("x3", "s1", "phrase", 3, "a book", "ZOMI_PLACEHOLDER_X2"),
+            ("x4", "s1", "phrase", 4, "an apple", None),
+        ])
+        con.commit()
+        con.close()
+        self.rights = {**ALL_NEEDS_REVIEW, "essential_3000": "needs_review", "translation_master_50k": "needs_review"}
+
+    def test_reference_pairs_are_bronze_and_limited_to_tier_a(self) -> None:
+        result, rows = self.run_export(rights=self.rights, reference_db=self.reference)
+        refs = {r["id"]: r for r in self.all_rows(rows).values() if r["id"].startswith("ref-")}
+        self.assertEqual(set(refs), {"ref-x1", "ref-x2", "ref-s2"})
+        self.assertEqual(refs["ref-s2"]["zomi"], "ZOMI_PLACEHOLDER_A1")
+        self.assertTrue(all(r["tier"] == "bronze" for r in refs.values()))
+        self.assertEqual(result["skipped"]["reference_duplicate"], 1)
+        self.assertEqual(result["skipped"]["reference_empty"], 1)
+
+    def test_reference_sources_need_rights(self) -> None:
+        result, rows = self.run_export(rights=ALL_NEEDS_REVIEW | {"essential_3000": "blocked"}, reference_db=self.reference)
+        self.assertFalse(any(r["id"].startswith("ref-") for r in self.all_rows(rows).values()))
+        self.assertEqual(result["skipped"]["rights:essential_3000"], 2)
+
+    def test_corpus_fraction_is_reproducible(self) -> None:
+        _, full = self.run_export()
+        _, none = self.run_export(corpus_fraction=1e-9)
+        _, again = self.run_export(corpus_fraction=1e-9)
+        corpus = lambda rows: sorted(i for i in self.all_rows(rows) if i.startswith("corpus-"))
+        self.assertTrue(corpus(full))
+        self.assertEqual(corpus(none), [])
+        self.assertEqual(corpus(none), corpus(again))
 
 
 class WorkbookTests(unittest.TestCase):

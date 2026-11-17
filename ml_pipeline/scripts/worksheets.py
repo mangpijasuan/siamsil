@@ -1,10 +1,20 @@
 #!/usr/bin/env python3
 """Move Siamsil's Excel work sheets in and out of the pipeline formats.
 
-Human evaluation set (docs/EVALUATION_SET.md), English -> Zomi:
+Human evaluation set (docs/EVALUATION_SET.md), English -> Zomi or Zomi -> English:
+  testset-sheet SOURCES.csv --out SHEET.xlsx
+      Make the translator's "Translate" sheet from a sources list (columns id,
+      domain, and english or zomi; the column sets the direction), with instructions.
   testset-import SHEET.xlsx --translator T01 --origin TEXT --out DRAFT.jsonl
       Read the translator's "Translate" sheet. Translated rows become draft
       items (review_outcome "pending"); blank rows are counted and skipped.
+  writing-sheet PROMPTS.csv --out SHEET.xlsx
+      For a Zomi -> English set, which must start from Zomi written by native
+      speakers: make the "Write" sheet. Each row gives a situation (a prompt, never a
+      sentence to translate) and a cell for an original Zomi sentence.
+  writing-import SHEET.xlsx --writer W01 --out zomi-en-v1.sources.csv [--append]
+      Read the "Write" sheet into a Zomi sources list (id, domain, zomi, writer) for
+      check-sources and testset-sheet. Blank rows are skipped.
   review-sheet DRAFT.jsonl --out REVIEW.xlsx
       Make the second reader's sheet: accept each translation or correct it.
   review-merge DRAFT.jsonl REVIEW.xlsx --reviewer R01 --out SET.jsonl
@@ -12,8 +22,17 @@ Human evaluation set (docs/EVALUATION_SET.md), English -> Zomi:
       has not decided stay out of the set and are listed.
 
 Corpus spot-check (docs/GENERATOR_REVIEW.md):
+  ratings-sheet review.csv --out SHEET.xlsx
+      Make a reviewer's "Rate" sheet from review.csv, with 0-2 dropdowns.
   ratings-import SHEET.xlsx --out review.csv
-      Read the "Rate" sheet into review.csv for `review_sample.py summarize`.
+      Read the "Rate" sheet into review.csv for `review_sample.py summarize` and `record`.
+
+Corpus corrections (docs/GENERATOR_REVIEW.md, Corrections to the Zomi):
+  corrections-sheet corrections.csv --out SHEET.xlsx
+      Make the lead editor's "Corrections" sheet from `review_sample.py corrections-sheet`, with an
+      approve/decline dropdown.
+  corrections-import SHEET.xlsx --out corrections.csv
+      Read the decisions back into corrections.csv for `review_sample.py revise`.
 
 Contributor IDs (T01, R01) map to names in a private roster, never in these files.
 """
@@ -23,14 +42,25 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import sys
 from pathlib import Path
 
 from eval_set import DOMAINS, validate_items
-from review_sample import REVIEW_COLUMNS
+from review_sample import CORRECTION_COLUMNS, REVIEW_COLUMNS
 
-DIRECTION = "en-zomi"
+# direction -> (source language, target language), as the sheets name them.
+LANGUAGES = {"en-zomi": ("English", "Zomi"), "zomi-en": ("Zomi", "English")}
 DECISIONS = ("Accept", "Correct")
+
+
+def sheet_direction(rows: list[dict[str, str]]) -> str:
+    """A Translate or Review sheet's direction, from its translation column."""
+    columns = set(rows[0]) if rows else set()
+    for direction, (_, target) in LANGUAGES.items():
+        if f"{target} translation" in columns:
+            return direction
+    sys.exit("the sheet has neither a 'Zomi translation' nor an 'English translation' column")
 
 
 def _cell(value) -> str:
@@ -39,6 +69,16 @@ def _cell(value) -> str:
     if isinstance(value, float) and value.is_integer():
         value = int(value)
     return " ".join(str(value).split())
+
+
+def append_text(sheet, values: list) -> None:
+    """Append a row whose text is never run as a formula. openpyxl stores a string
+    starting with '=' as a formula, which Excel would evaluate when the sheet is
+    opened; sentence text and machine-made Zomi must stay plain text."""
+    sheet.append(values)
+    for cell in sheet[sheet.max_row]:
+        if isinstance(cell.value, str) and cell.value.startswith("="):
+            cell.data_type = "s"
 
 
 def read_sheet(path: Path, sheet: str) -> list[dict[str, str]]:
@@ -68,12 +108,80 @@ def write_jsonl(path: Path, items: list[dict]) -> None:
             handle.write(json.dumps(item, ensure_ascii=False) + "\n")
 
 
+def cmd_testset_sheet(args: argparse.Namespace) -> int:
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    from eval_set import read_sources
+
+    items, errors = read_sources(args.sources)
+    if errors:
+        for error in errors[:20]:
+            print(f"error: {error}")
+        sys.exit(f"{args.sources} is not a valid sources list")
+    if not items:
+        sys.exit(f"{args.sources} has no sentences; nothing to translate")
+    direction = items[0]["direction"]
+    source, target = LANGUAGES[direction]
+    wb = Workbook()
+    intro = wb.active
+    intro.title = "Instructions"
+    intro.column_dimensions["A"].width = 110
+    if direction == "en-zomi":
+        guidance = (
+            "For every row, write the Zomi you would naturally use, in the agreed spelling standard.",
+            "• Translate the meaning, not word by word. Keep names, numbers and dates as in the English.",
+            "• Do not use Google Translate, ChatGPT, Gemini or any other machine translation, and do not copy from the Bible.",
+            "• If a sentence is unclear or does not fit Zomi life, write why in Notes and leave the translation blank.",
+        )
+    else:
+        guidance = (
+            "For every row, write the English a fluent speaker would naturally use for what the Zomi says.",
+            "• Translate the meaning, not word by word. Keep names, numbers and dates as in the Zomi.",
+            "• For a saying or simile, give its meaning in plain English; you may add the literal sense in Notes.",
+            "• Do not use Google Translate, ChatGPT, Gemini or any other machine translation, and do not copy from the Bible.",
+            "• If the Zomi is unclear or looks misspelled, write why in Notes and leave the translation blank.",
+        )
+    for line in (
+        f"Siamsil test set: translate {source} into {target}",
+        "",
+        *guidance,
+        f"• Do not change the ID, Topic or {source} columns.",
+        "Keep this file private. Test sentences must never be used for training or shared publicly.",
+    ):
+        intro.append([line])
+    intro["A1"].font = Font(bold=True, size=14, color="1B2A4A")
+
+    sheet = wb.create_sheet("Translate")
+    header = ["ID", "Topic", source, f"{target} translation", "Notes"]
+    widths = [14, 14, 60, 60, 35]
+    sheet.append(header)
+    for index, width in enumerate(widths, 1):
+        cell = sheet.cell(1, index)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="1B2A4A")
+        sheet.column_dimensions[cell.column_letter].width = width
+    sheet.freeze_panes = "A2"
+    for item in items:
+        append_text(sheet, [item["id"], item["domain"], item["source_text"], "", ""])
+        for col in (3, 4, 5):
+            sheet.cell(sheet.max_row, col).alignment = Alignment(wrap_text=True, vertical="top")
+        for col in (4, 5):
+            sheet.cell(sheet.max_row, col).fill = PatternFill("solid", fgColor="F8F6F0")
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    wb.save(args.out)
+    print(f"wrote translation sheet for {len(items)} sentences to {args.out}")
+    return 0
+
+
 def cmd_testset_import(args: argparse.Namespace) -> int:
     rows = read_sheet(args.sheet, "Translate")
+    direction = sheet_direction(rows) if rows else "en-zomi"
+    source, target = LANGUAGES[direction]
     items, blank, bad_topic = [], 0, []
     for row in rows:
-        zomi = row.get("Zomi translation", "")
-        if not zomi:
+        translation = row.get(f"{target} translation", "")
+        if not translation:
             blank += 1
             continue
         topic = row.get("Topic", "")
@@ -81,10 +189,10 @@ def cmd_testset_import(args: argparse.Namespace) -> int:
             bad_topic.append(row.get("ID", "?"))
         items.append({
             "id": row["ID"],
-            "direction": DIRECTION,
+            "direction": direction,
             "domain": topic,
-            "source_text": row["English"],
-            "references": [zomi],
+            "source_text": row[source],
+            "references": [translation],
             "source_origin": args.origin,
             "translator": args.translator,
             "reviewer": "",
@@ -99,22 +207,151 @@ def cmd_testset_import(args: argparse.Namespace) -> int:
     return 0
 
 
+WRITING_LENGTHS = ("short", "medium", "long")
+WRITING_COLUMN = "Zomi sentence(s) you wrote"
+WRITING_ID = re.compile(r"^zomi-en-\d{4,}$")
+
+
+def _norm(text: str) -> str:
+    return " ".join(text.split()).casefold()
+
+
+def cmd_writing_sheet(args: argparse.Namespace) -> int:
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    with args.prompts.open(encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        missing = [c for c in ("id", "domain", "length", "situation") if c not in (reader.fieldnames or [])]
+        if missing:
+            sys.exit(f"{args.prompts.name}: missing columns {', '.join(missing)}")
+        prompts = list(reader)
+    errors, seen = [], set()
+    for line, row in enumerate(prompts, start=2):
+        item_id = (row.get("id") or "").strip()
+        if not WRITING_ID.match(item_id):
+            errors.append(f"line {line}: id must look like zomi-en-0001")
+        elif item_id in seen:
+            errors.append(f"line {line}: duplicate id {item_id}")
+        seen.add(item_id)
+        if row.get("domain") not in DOMAINS:
+            errors.append(f"line {line}: domain must be one of {', '.join(DOMAINS)}")
+        if row.get("length") not in WRITING_LENGTHS:
+            errors.append(f"line {line}: length must be one of {', '.join(WRITING_LENGTHS)}")
+        if not (row.get("situation") or "").strip():
+            errors.append(f"line {line}: situation is required")
+    if errors or not prompts:
+        for error in errors[:20]:
+            print(f"error: {error}")
+        sys.exit(f"{args.prompts} is not a valid prompts list")
+
+    wb = Workbook()
+    intro = wb.active
+    intro.title = "Instructions"
+    intro.column_dimensions["A"].width = 110
+    for line in (
+        "Siamsil test set: write original Zomi",
+        "",
+        "This set measures how well Siamsil translates real Zomi into English, so it must be real Zomi: written by you, the way you would naturally say or write it.",
+        "• Each row gives a situation. Write one to three Zomi sentences that fit it. The situation is only a prompt: do not translate it.",
+        "• If a situation does not fit Zomi life, write a different sentence on the same topic and say so in Notes.",
+        "• Length: short is up to 8 words, medium is 9 to 24 words, long is 25 words or more. Roughly is fine.",
+        "• Use the agreed spelling standard.",
+        "• Write it yourself. Do not use Google Translate, ChatGPT, Gemini or any other machine translation, and do not copy from the Bible, songs, books, dictionaries or social media.",
+        "• Use made-up names and no real phone numbers or addresses.",
+        "• Do not change the ID, Topic, Length or Situation columns.",
+        "Your sentences become part of a private test set. They are never used to train models and are not shared publicly. You are credited by the name you choose, if you wish; tell the project lead if you do not agree.",
+        "Keep this file private.",
+    ):
+        intro.append([line])
+    intro["A1"].font = Font(bold=True, size=14, color="1B2A4A")
+
+    sheet = wb.create_sheet("Write")
+    header = ["ID", "Topic", "Length", "Situation", WRITING_COLUMN, "Notes"]
+    for index, width in enumerate([14, 14, 10, 60, 70, 35], 1):
+        cell = sheet.cell(1, index, header[index - 1])
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="1B2A4A")
+        sheet.column_dimensions[cell.column_letter].width = width
+    sheet.freeze_panes = "A2"
+    for row in prompts:
+        append_text(sheet, [row["id"].strip(), row["domain"], row["length"], row["situation"].strip(), "", ""])
+        for col in (4, 5, 6):
+            sheet.cell(sheet.max_row, col).alignment = Alignment(wrap_text=True, vertical="top")
+        for col in (5, 6):
+            sheet.cell(sheet.max_row, col).fill = PatternFill("solid", fgColor="F8F6F0")
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    wb.save(args.out)
+    print(f"wrote writing sheet with {len(prompts)} situations to {args.out}")
+    return 0
+
+
+def cmd_writing_import(args: argparse.Namespace) -> int:
+    rows = read_sheet(args.sheet, "Write")
+    kept, blank, errors, seen_text = [], 0, [], {}
+    for row in rows:
+        text = row.get(WRITING_COLUMN, "")
+        if not text:
+            blank += 1
+            continue
+        item_id, topic = row.get("ID", ""), row.get("Topic", "")
+        if not WRITING_ID.match(item_id):
+            errors.append(f"{item_id or '(no id)'}: id must look like zomi-en-0001")
+        if topic not in DOMAINS:
+            errors.append(f"{item_id}: topic must be one of {', '.join(DOMAINS)}")
+        if _norm(text) == _norm(row.get("Situation", "")):
+            errors.append(f"{item_id}: the answer repeats the situation; write a Zomi sentence")
+        if _norm(text) in seen_text:
+            errors.append(f"{item_id}: same sentence as {seen_text[_norm(text)]}")
+        seen_text[_norm(text)] = item_id
+        kept.append({"id": item_id, "domain": topic, "zomi": text, "writer": args.writer})
+
+    existing: list[dict[str, str]] = []
+    if args.out.exists():
+        if not args.append:
+            sys.exit(f"{args.out} already exists; use --append to add to it, or choose another file")
+        with args.out.open(encoding="utf-8-sig", newline="") as handle:
+            existing = list(csv.DictReader(handle))
+        have = {r["id"] for r in existing}
+        taken = {_norm(r["zomi"]): r["id"] for r in existing}
+        for item in kept:
+            if item["id"] in have:
+                errors.append(f"{item['id']}: already in {args.out.name}")
+            elif _norm(item["zomi"]) in taken:
+                errors.append(f"{item['id']}: same sentence as {taken[_norm(item['zomi'])]} in {args.out.name}")
+    if errors:
+        for error in errors[:20]:
+            print(f"error: {error}")
+        sys.exit("nothing written; fix the sheet and import again")
+
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    with args.out.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["id", "domain", "zomi", "writer"])
+        writer.writeheader()
+        for item in [{**r, "writer": r.get("writer", "")} for r in existing] + kept:
+            writer.writerow({k: item.get(k, "") for k in ("id", "domain", "zomi", "writer")})
+    print(f"{len(kept)} written, {blank} not yet written; sources list {args.out} now has {len(existing) + len(kept)} sentences")
+    return 0
+
+
 def cmd_review_sheet(args: argparse.Namespace) -> int:
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.worksheet.datavalidation import DataValidation
 
     items = read_jsonl(args.draft)
+    direction = items[0]["direction"] if items else "en-zomi"
+    source, target = LANGUAGES[direction]
     wb = Workbook()
     intro = wb.active
     intro.title = "Instructions"
     intro.column_dimensions["A"].width = 110
     for line in (
-        "Siamsil test set: check each Zomi translation",
+        f"Siamsil test set: check each {target} translation",
         "",
-        "For every row, read the English and the Zomi translation.",
-        "• Decision = Accept if the Zomi is correct, natural, and says the same as the English.",
-        "• Decision = Correct if anything should change; write your full corrected Zomi in 'Corrected Zomi'.",
+        f"For every row, read the {source} and the {target} translation.",
+        f"• Decision = Accept if the {target} is correct, natural, and says the same as the {source}.",
+        f"• Decision = Correct if anything should change; write your full corrected {target} in 'Corrected {target}'.",
         "• Do not use Google Translate, ChatGPT, Gemini, or other machine translation.",
         "• Leave Decision blank if you are unsure; that row stays out of the test set for now.",
         "Keep this file private. Test sentences must never be used for training or shared publicly.",
@@ -123,7 +360,7 @@ def cmd_review_sheet(args: argparse.Namespace) -> int:
     intro["A1"].font = Font(bold=True, size=14, color="1B2A4A")
 
     sheet = wb.create_sheet("Review")
-    header = ["ID", "Topic", "English", "Zomi translation", "Decision", "Corrected Zomi", "Notes"]
+    header = ["ID", "Topic", source, f"{target} translation", "Decision", f"Corrected {target}", "Notes"]
     widths = [14, 14, 55, 55, 12, 55, 35]
     sheet.append(header)
     for index, width in enumerate(widths, 1):
@@ -133,7 +370,7 @@ def cmd_review_sheet(args: argparse.Namespace) -> int:
         sheet.column_dimensions[cell.column_letter].width = width
     sheet.freeze_panes = "A2"
     for item in items:
-        sheet.append([item["id"], item["domain"], item["source_text"], item["references"][0], None, "", ""])
+        append_text(sheet, [item["id"], item["domain"], item["source_text"], item["references"][0], None, "", ""])
         for col in (3, 4, 6, 7):
             sheet.cell(sheet.max_row, col).alignment = Alignment(wrap_text=True, vertical="top")
         for col in (5, 6):
@@ -162,9 +399,10 @@ def cmd_review_merge(args: argparse.Namespace) -> int:
         if decision == "Accept":
             merged["review_outcome"] = "accepted"
         elif decision == "Correct":
-            corrected = row.get("Corrected Zomi", "")
+            target = LANGUAGES.get(item.get("direction"), LANGUAGES["en-zomi"])[1]
+            corrected = row.get(f"Corrected {target}", "")
             if not corrected:
-                problems.append(f"{item_id}: 'Correct' needs the corrected Zomi")
+                problems.append(f"{item_id}: 'Correct' needs the corrected {target}")
                 continue
             merged["review_outcome"] = "corrected"
             merged["references"] = [corrected]
@@ -193,6 +431,59 @@ def cmd_review_merge(args: argparse.Namespace) -> int:
     return 0
 
 
+RATE_HEADER = ["ID", "English", "Zomi (machine-made)", "Meaning (0-2)", "Fluency (0-2)", "Correction (optional)", "Notes"]
+
+
+def cmd_ratings_sheet(args: argparse.Namespace) -> int:
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.worksheet.datavalidation import DataValidation
+
+    with args.review.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    wb = Workbook()
+    intro = wb.active
+    intro.title = "Instructions"
+    intro.column_dimensions["A"].width = 110
+    for line in (
+        "Siamsil corpus review: rate machine-made Zomi",
+        "",
+        "Each row has an English sentence and a Zomi sentence made by a machine. Rate the Zomi; do not edit it.",
+        "Meaning: does the Zomi say what the English says?  0 wrong or missing · 1 partly right · 2 fully right",
+        "Fluency: is it Zomi a speaker would write?  0 not readable as Zomi · 1 understandable, with errors · 2 natural",
+        "Correction (optional): if you know the right Zomi, write it here. It is kept for the lead editor and never",
+        "replaces the original automatically.",
+        "Leave a row blank if you are unsure. Do not use Google Translate, ChatGPT, Gemini or other machine translation.",
+        "Keep this file private.",
+    ):
+        intro.append([line])
+    intro["A1"].font = Font(bold=True, size=14, color="1B2A4A")
+
+    sheet = wb.create_sheet("Rate")
+    widths = [10, 50, 50, 14, 14, 45, 30]
+    sheet.append(RATE_HEADER)
+    for index, width in enumerate(widths, 1):
+        cell = sheet.cell(1, index)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="1B2A4A")
+        sheet.column_dimensions[cell.column_letter].width = width
+    sheet.freeze_panes = "A2"
+    for row in rows:
+        append_text(sheet, [row["sample_id"], row["english"], row["zomi"], None, None, "", ""])
+        for col in (2, 3, 6, 7):
+            sheet.cell(sheet.max_row, col).alignment = Alignment(wrap_text=True, vertical="top")
+        for col in (4, 5, 6, 7):
+            sheet.cell(sheet.max_row, col).fill = PatternFill("solid", fgColor="F8F6F0")
+    score = DataValidation(type="list", formula1='"0,1,2"', allow_blank=True)
+    sheet.add_data_validation(score)
+    if rows:
+        score.add(f"D2:E{sheet.max_row}")
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    wb.save(args.out)
+    print(f"wrote rating sheet for {len(rows)} pairs to {args.out}")
+    return 0
+
+
 def cmd_ratings_import(args: argparse.Namespace) -> int:
     rows = read_sheet(args.sheet, "Rate")
     out_rows, rated = [], 0
@@ -205,6 +496,7 @@ def cmd_ratings_import(args: argparse.Namespace) -> int:
             "zomi": row.get("Zomi (machine-made)", ""),
             "meaning": meaning,
             "fluency": fluency,
+            "correction": row.get("Correction (optional)", ""),
             "notes": row.get("Notes", ""),
         })
     args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -216,16 +508,127 @@ def cmd_ratings_import(args: argparse.Namespace) -> int:
     return 0
 
 
+CORRECTION_HEADER = ["ID", "English", "Zomi now", "Corrected Zomi (a reviewer's fix)", "Proposed by", "Decision", "Notes",
+                     "Pair hash", "Text SHA-256"]
+
+
+def cmd_corrections_sheet(args: argparse.Namespace) -> int:
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.worksheet.datavalidation import DataValidation
+
+    with args.corrections.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    missing = [name for name in CORRECTION_COLUMNS if rows and name not in rows[0]]
+    if missing:
+        sys.exit(f"{args.corrections} is not a corrections file from review_sample.py (missing {', '.join(missing)})")
+    wb = Workbook()
+    intro = wb.active
+    intro.title = "Instructions"
+    intro.column_dimensions["A"].width = 110
+    for line in (
+        "Siamsil corpus corrections: choose between reviewers' fixes",
+        "",
+        "Each row has an English sentence, the Zomi it holds now, and a fix a reviewer wrote for it.",
+        "Decision: choose approve or decline from the list, or leave the row blank to decide later.",
+        "  approve  the reviewer's Zomi becomes the pair's text at the next build. The original is kept.",
+        "  decline  the fix is not used and is not offered again.",
+        "You choose between the reviewers' fixes. Do not edit the English, the Zomi or the corrected Zomi: a row that has been",
+        "changed is refused. You cannot approve a fix you proposed (see 'Proposed by'), and only one fix of a pair can be approved.",
+        "Do not use Google Translate, ChatGPT, Gemini or other machine translation. Keep this file private.",
+        "The last two columns are hidden. They check that the row is the one that was exported. Leave them as they are.",
+    ):
+        intro.append([line])
+    intro["A1"].font = Font(bold=True, size=14, color="1B2A4A")
+
+    sheet = wb.create_sheet("Corrections")
+    widths = [10, 50, 50, 50, 14, 14, 40, 44, 66]
+    sheet.append(CORRECTION_HEADER)
+    for index, width in enumerate(widths, 1):
+        cell = sheet.cell(1, index)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="1B2A4A")
+        sheet.column_dimensions[cell.column_letter].width = width
+    sheet.freeze_panes = "A2"
+    for row in rows:
+        append_text(sheet, [row["item_id"], row["english"], row["zomi"], row["corrected_zomi"], row["proposed_by"],
+                            row.get("decision") or None, row.get("notes") or "", row["pair_hash"], row["text_sha256"]])
+        for col in (2, 3, 4, 7):
+            sheet.cell(sheet.max_row, col).alignment = Alignment(wrap_text=True, vertical="top")
+        for col in (6, 7):
+            sheet.cell(sheet.max_row, col).fill = PatternFill("solid", fgColor="F8F6F0")
+    for letter in "HI":
+        sheet.column_dimensions[letter].hidden = True
+    decision = DataValidation(type="list", formula1='"approve,decline"', allow_blank=True, showErrorMessage=True,
+                              errorTitle="Decision", error="Choose approve or decline, or leave the cell blank to decide later.")
+    sheet.add_data_validation(decision)
+    if rows:
+        decision.add(f"F2:F{sheet.max_row}")
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    wb.save(args.out)
+    print(f"wrote corrections sheet for {len(rows)} fixes to {args.out}")
+    return 0
+
+
+def cmd_corrections_import(args: argparse.Namespace) -> int:
+    rows = read_sheet(args.sheet, "Corrections")
+    out_rows, counts = [], {"approve": 0, "decline": 0, "": 0}
+    problems = []
+    for number, row in enumerate(rows, start=2):
+        decision = row.get("Decision", "").lower()
+        if decision not in counts:
+            problems.append(f"row {number}: decision must be approve or decline, not {decision!r}")
+            continue
+        counts[decision] += 1
+        out_rows.append({
+            "item_id": row.get("ID", ""),
+            "english": row.get("English", ""),
+            "zomi": row.get("Zomi now", ""),
+            "corrected_zomi": row.get("Corrected Zomi (a reviewer's fix)", ""),
+            "proposed_by": row.get("Proposed by", ""),
+            "decision": decision,
+            "notes": row.get("Notes", ""),
+            "pair_hash": row.get("Pair hash", ""),
+            "text_sha256": row.get("Text SHA-256", ""),
+        })
+    if problems:
+        sys.exit("nothing written:\n  " + "\n  ".join(problems))
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    with args.out.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=CORRECTION_COLUMNS)
+        writer.writeheader()
+        writer.writerows(out_rows)
+    print(f"{counts['approve']} approved, {counts['decline']} declined, {counts['']} left for later; wrote {args.out}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
 
+    p = commands.add_parser("testset-sheet")
+    p.add_argument("sources", type=Path, help="CSV with columns id, domain, and english or zomi")
+    p.add_argument("--out", type=Path, required=True)
+    p.set_defaults(func=cmd_testset_sheet)
+
     p = commands.add_parser("testset-import")
     p.add_argument("sheet", type=Path)
     p.add_argument("--translator", required=True, help="contributor ID, e.g. T01")
-    p.add_argument("--origin", required=True, help="where the English sentences came from")
+    p.add_argument("--origin", required=True, help="where the source sentences came from")
     p.add_argument("--out", type=Path, required=True)
     p.set_defaults(func=cmd_testset_import)
+
+    p = commands.add_parser("writing-sheet")
+    p.add_argument("prompts", type=Path, help="CSV with columns id, domain, length, situation")
+    p.add_argument("--out", type=Path, required=True)
+    p.set_defaults(func=cmd_writing_sheet)
+
+    p = commands.add_parser("writing-import")
+    p.add_argument("sheet", type=Path)
+    p.add_argument("--writer", required=True, help="contributor ID, e.g. W01")
+    p.add_argument("--out", type=Path, required=True, help="the Zomi sources list, e.g. zomi-en-v1.sources.csv")
+    p.add_argument("--append", action="store_true", help="add to an existing sources list")
+    p.set_defaults(func=cmd_writing_import)
 
     p = commands.add_parser("review-sheet")
     p.add_argument("draft", type=Path)
@@ -239,10 +642,25 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--out", type=Path, required=True)
     p.set_defaults(func=cmd_review_merge)
 
+    p = commands.add_parser("ratings-sheet")
+    p.add_argument("review", type=Path)
+    p.add_argument("--out", type=Path, required=True)
+    p.set_defaults(func=cmd_ratings_sheet)
+
     p = commands.add_parser("ratings-import")
     p.add_argument("sheet", type=Path)
     p.add_argument("--out", type=Path, required=True)
     p.set_defaults(func=cmd_ratings_import)
+
+    p = commands.add_parser("corrections-sheet")
+    p.add_argument("corrections", type=Path, help="the CSV from review_sample.py corrections-sheet")
+    p.add_argument("--out", type=Path, required=True)
+    p.set_defaults(func=cmd_corrections_sheet)
+
+    p = commands.add_parser("corrections-import")
+    p.add_argument("sheet", type=Path)
+    p.add_argument("--out", type=Path, required=True)
+    p.set_defaults(func=cmd_corrections_import)
 
     args = parser.parse_args(argv)
     return args.func(args)

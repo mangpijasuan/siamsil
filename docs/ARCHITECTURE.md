@@ -234,6 +234,14 @@ question
 
 If generation is later enabled, it must use the retrieved context, identify generated text, preserve citations, pass safety and language checks, and have an immediate retrieval-only fallback. Provider, model, prompt version, latency, and evaluation result are observable metadata.
 
+## 9A. Siamsil Quality Operator (planned)
+
+The OpenAI-assisted Quality Operator is an **optional, human-governed application quality and workflow orchestration layer**, not an autonomous Zomi language authority. Its complete architecture, provider-use boundaries and Claude Code implementation contract live in [QUALITY_OPERATOR_ARCHITECTURE.md](QUALITY_OPERATOR_ARCHITECTURE.md).
+
+It includes deterministic source checks, contextual terminology QA, Chat application evaluation, human review coordination, release evaluation, and inference-cost tracking. The private `siamsil-data` archive remains the source of truth for original and permitted data; PostgreSQL holds mutable editorial state and audit events; only approved/versioned assets enter the read-only SQLite release. Provider-derived outputs and judgments are tagged and **excluded from independent model-training exports by default**, subject to current provider terms and required permission. No operator may auto-approve language, clear rights, merge changes, train models, or deploy releases.
+
+This capability is a **proposal**. Implement first as a bounded, read-only application-QA pilot with a disabled-by-default provider adapter, synthetic fixtures and human-controlled approval.
+
 ## 10. Identity, authorization, and privacy
 
 Initial roles:

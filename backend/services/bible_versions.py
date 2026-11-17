@@ -10,6 +10,8 @@ from settings import get_settings
 
 # Only versions whose display right is cleared in data/rights.json are served.
 VISIBLE_DISPLAY_STATUSES = {"cleared"}
+# Zomi is ctd; databases imported before 2026-10-27 label it zom until they are rebuilt.
+LEGACY_LANGUAGE_ISO = {"zom": "ctd"}
 
 
 class BibleVersions:
@@ -55,7 +57,11 @@ class BibleVersions:
             FROM versions ORDER BY sort_order
             """
         )
-        return [dict(row) for row in rows if row["display_status"] in VISIBLE_DISPLAY_STATUSES]
+        return [
+            {**row, "language_iso": LEGACY_LANGUAGE_ISO.get(row["language_iso"], row["language_iso"])}
+            for row in map(dict, rows)
+            if row["display_status"] in VISIBLE_DISPLAY_STATUSES
+        ]
 
     def version(self, version_id: str) -> dict[str, Any] | None:
         return next((v for v in self.versions() if v["id"] == version_id), None)

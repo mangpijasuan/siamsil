@@ -1,5 +1,9 @@
 "use client";
 
+<<<<<<< HEAD
+=======
+import Link from "next/link";
+>>>>>>> origin/main
 import { FONT_SIZE, LINE_HEIGHT, stepFontSize, stepLineHeight } from "@/lib/bible/preferences";
 import type { DisplayMode, ReadingPreferences } from "@/lib/bible/preferences";
 import Sheet from "./Sheet";
@@ -8,8 +12,16 @@ type Props = {
   prefs: ReadingPreferences;
   update: (change: Partial<ReadingPreferences>) => void;
   onClose: () => void;
+<<<<<<< HEAD
   primaryLanguage: string;
   secondaryLanguage: string | null;
+=======
+  displayModes: Array<{ value: DisplayMode; label: string; href: string | null; active: boolean }>;
+  searchHref: string;
+  onOpenSaved: () => void;
+  focusMode: boolean;
+  onToggleFocus: () => void;
+>>>>>>> origin/main
 };
 
 function Choice<T extends string>({ name, legend, value, options, onChange }: {
@@ -35,6 +47,7 @@ function Choice<T extends string>({ name, legend, value, options, onChange }: {
   );
 }
 
+<<<<<<< HEAD
 export default function ReadingSettings({ prefs, update, onClose, primaryLanguage, secondaryLanguage }: Props) {
   const second = secondaryLanguage ?? "second version";
   const modes: Array<{ value: DisplayMode; label: string; note?: string }> = [
@@ -45,6 +58,27 @@ export default function ReadingSettings({ prefs, update, onClose, primaryLanguag
   return (
     <Sheet title="Reading settings" onClose={onClose}>
       <Choice name="sb-mode" legend="Show" value={prefs.mode} options={modes} onChange={(mode) => update({ mode })} />
+=======
+export default function ReadingSettings({ prefs, update, onClose, displayModes, searchHref, onOpenSaved, focusMode, onToggleFocus }: Props) {
+  return (
+    <Sheet title="Reading settings" onClose={onClose}>
+      <fieldset className="sb-fieldset">
+        <legend className="sb-group-title">Show</legend>
+        <div className="sb-segments" role="group" aria-label="Displayed Bible versions">
+          {displayModes.map((mode) => mode.href ? (
+            <Link key={mode.value} href={mode.href} scroll={false}
+              className={`sb-segment sb-segment-link${mode.active ? " is-on" : ""}`}
+              aria-current={mode.active ? "page" : undefined}
+              onClick={() => { update({ mode: mode.value }); onClose(); }}>
+              {mode.label}
+            </Link>
+          ) : (
+            <span key={mode.value} className="sb-segment is-unavailable" aria-disabled="true">{mode.label} unavailable</span>
+          ))}
+        </div>
+        <p className="sb-muted">The version selection is saved in this page’s link and stays the same after a refresh.</p>
+      </fieldset>
+>>>>>>> origin/main
       <Choice name="sb-theme" legend="Theme" value={prefs.theme} onChange={(theme) => update({ theme })}
         options={[{ value: "system", label: "Device" }, { value: "light", label: "Light" }, { value: "sepia", label: "Sepia" }, { value: "dark", label: "Dark" }]} />
 
@@ -71,11 +105,25 @@ export default function ReadingSettings({ prefs, update, onClose, primaryLanguag
       </div>
 
       <Choice name="sb-face" legend="Typeface" value={prefs.typeface} onChange={(typeface) => update({ typeface })}
+<<<<<<< HEAD
         options={[{ value: "sans", label: "Sans (Inter)" }, { value: "serif", label: "Serif (Playfair)" }]} />
+=======
+        options={[{ value: "sans", label: "Sans (Inter)" }, { value: "serif", label: "Serif (Georgia)" }]} />
+>>>>>>> origin/main
 
       <p className="sb-sample" aria-hidden="true">
         <span className="sb-vnum-sample">1</span> A kipat cilin Pasian in vantung leh leitung a piangsak hi.
       </p>
+<<<<<<< HEAD
+=======
+      <div className="sb-settings-tools">
+        <Link href={searchHref} className="sb-btn sb-btn-quiet" onClick={onClose}>Search scripture</Link>
+        <button type="button" className="sb-btn sb-btn-quiet" onClick={onOpenSaved}>Bookmarks and notes</button>
+        <button type="button" className="sb-btn sb-btn-quiet sb-focus-setting" onClick={() => { onClose(); onToggleFocus(); }}>
+          {focusMode ? "Exit Focus Mode" : "Enter Focus Mode"}
+        </button>
+      </div>
+>>>>>>> origin/main
       <p className="sb-muted">Settings are saved in this browser only.</p>
     </Sheet>
   );
