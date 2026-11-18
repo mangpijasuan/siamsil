@@ -120,7 +120,7 @@ How this is recorded, so the data stays accurate:
 - A person who is both the reviewer and the approver of the same record is allowed only for the owner under this decision, and the validator must say so in its output. Everyone else still needs a different approver.
 - The owner reviews each record in a separate pass from writing it, ideally on another day.
 
-**Not yet built:** `szsf.py`, `corpus_reviews.py` and `eval_set.py validate` still reject a reviewer who is also the translator or approver. A separate PR adds the `owner_sole` mode. Until then, owner-reviewed sets stay in a draft state and are not frozen.
+**Built for evaluation sets:** `eval_set.py validate --owner-code <code>` accepts items marked `"approval": "owner_sole"` where that code is both translator and reviewer, and the manifest records `independently_reviewed: false`. `eval_set.py owner-approve` marks the owner's own translations, only when the owner runs it, and never edits its input. **Not yet built:** the same mode for `szsf.py` and `corpus_reviews.py` (dictionary and corpus records), which still reject a reviewer who is also the approver.
 
 ## Rules every record must meet
 

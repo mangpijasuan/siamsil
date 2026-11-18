@@ -78,7 +78,7 @@ python3 ml_pipeline/scripts/worksheets.py testset-import Siamsil_TestSet_en-zomi
 
 ### Phase D: review and adjudicate
 
-- [ ] R01 (not T01) accepts or corrects each item.
+- [ ] R01 (not T01) accepts or corrects each item. Under the owner's working-phase decision, the owner may do this pass alone, on another day, with `eval_set.py owner-approve` (see EVALUATION_SET.md, "Owner-only review").
 - [ ] A third person resolves disagreements.
 - [ ] Record the share accepted without change per domain. Low agreement in a domain means that guideline needs work.
 

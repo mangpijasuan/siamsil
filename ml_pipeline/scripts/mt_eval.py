@@ -191,11 +191,11 @@ def gate(results_list: list[dict], candidate: str, baselines: list[str]) -> tupl
 # --- commands ----------------------------------------------------------------
 
 
-def load_valid_set(path: Path) -> list[dict]:
+def load_valid_set(path: Path, owner_code: str | None = None) -> list[dict]:
     if not path.exists():
         sys.exit(f"Evaluation set not found: {path}")
     items, parse_errors = load_items(path)
-    errors, _ = validate_items(items)
+    errors, _ = validate_items(items, owner_code)
     if parse_errors or errors or not items:
         for error in (parse_errors + errors)[:10]:
             print(f"error: {error}")
@@ -216,7 +216,7 @@ def read_hypotheses(path: Path) -> tuple[str, dict[str, str]]:
 
 
 def cmd_translate(args: argparse.Namespace) -> int:
-    items = load_valid_set(args.eval)
+    items = load_valid_set(args.eval, args.owner_code)
     if not args.db.exists():
         sys.exit(f"Language database not found: {args.db}")
     con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
@@ -233,7 +233,7 @@ def cmd_translate(args: argparse.Namespace) -> int:
 
 
 def cmd_score(args: argparse.Namespace) -> int:
-    items = load_valid_set(args.eval)
+    items = load_valid_set(args.eval, args.owner_code)
     hypotheses: dict[str, dict[str, str]] = {}
     for path in args.hyp:
         system, by_id = read_hypotheses(path)
@@ -281,12 +281,14 @@ def main(argv: list[str] | None = None) -> int:
     translate = commands.add_parser("translate")
     translate.add_argument("--system", choices=sorted(SYSTEMS), required=True)
     translate.add_argument("--eval", type=Path, required=True)
+    translate.add_argument("--owner-code", help="owner's roster code; allows owner_sole evaluation items")
     translate.add_argument("--db", type=Path, default=ROOT / "data" / "processed" / "language" / "siamsil_language.sqlite")
     translate.add_argument("--out", type=Path, required=True)
     translate.set_defaults(run=cmd_translate)
 
     score = commands.add_parser("score")
     score.add_argument("--eval", type=Path, required=True)
+    score.add_argument("--owner-code", help="owner's roster code; allows owner_sole evaluation items")
     score.add_argument("--hyp", type=Path, action="append", required=True)
     score.add_argument("--out", type=Path, required=True)
     score.add_argument("--resamples", type=int, default=1000)

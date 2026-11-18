@@ -53,6 +53,29 @@ class ValidateTests(unittest.TestCase):
         errors, _ = validate_items([make_item(reviewer="T01")])
         self.assertTrue(any("reviewer must differ" in e for e in errors))
 
+    def test_owner_sole_allows_owner_as_translator_and_reviewer(self) -> None:
+        item = make_item(translator="E01", reviewer="E01", approval="owner_sole")
+        errors, _ = validate_items([item], owner_code="E01")
+        self.assertEqual(errors, [])
+
+    def test_owner_sole_needs_the_owner_code(self) -> None:
+        item = make_item(translator="E01", reviewer="E01", approval="owner_sole")
+        errors, _ = validate_items([item])
+        self.assertTrue(any("roster code" in e for e in errors))
+
+    def test_owner_sole_is_refused_for_anyone_but_the_owner(self) -> None:
+        item = make_item(translator="T01", reviewer="T01", approval="owner_sole")
+        errors, _ = validate_items([item], owner_code="E01")
+        self.assertTrue(any("only for the owner" in e for e in errors))
+
+    def test_self_review_without_the_marker_is_still_refused_for_the_owner(self) -> None:
+        errors, _ = validate_items([make_item(translator="E01", reviewer="E01")], owner_code="E01")
+        self.assertTrue(any("differ from translator" in e for e in errors))
+
+    def test_unknown_approval_value_is_an_error(self) -> None:
+        errors, _ = validate_items([make_item(approval="someone")], owner_code="E01")
+        self.assertTrue(any("approval must be" in e for e in errors))
+
     def test_adjudicated_item_requires_independent_adjudicator(self) -> None:
         errors, _ = validate_items([make_item(review_outcome="adjudicated")])
         self.assertTrue(any("need an adjudicator" in e for e in errors))
@@ -127,6 +150,29 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(manifest["items"], len(DOMAINS))
         self.assertEqual(manifest["direction"], "en-zomi")
         self.assertEqual(manifest, build_manifest(path, full_coverage()))
+
+    def test_owner_approve_marks_only_the_owners_items_and_never_edits_the_input(self) -> None:
+        owner = [make_item(id=f"o{i}", translator="E01", reviewer="", review_outcome="pending") for i in range(2)]
+        other = make_item(id="t1", translator="T01", reviewer="", review_outcome="pending")
+        path = self.write_set([*owner, other])
+        before = path.read_text(encoding="utf-8")
+        out = self.dir / "approved.jsonl"
+        self.assertEqual(self.run_main("owner-approve", str(path), "--owner-code", "E01", "--out", str(out)), 0)
+        self.assertEqual(path.read_text(encoding="utf-8"), before)
+        rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual([r.get("approval") for r in rows], ["owner_sole", "owner_sole", None])
+        self.assertEqual(rows[2]["review_outcome"], "pending")
+        self.assertEqual(self.run_main("owner-approve", str(path), "--owner-code", "E01", "--out", str(path)), 1)
+
+    def test_owner_sole_set_validates_with_the_code_and_the_manifest_is_marked(self) -> None:
+        items = [dict(i, translator="E01", reviewer="E01", approval="owner_sole") for i in full_coverage()]
+        path = self.write_set(items)
+        self.assertEqual(self.run_main("validate", str(path)), 1)
+        self.assertEqual(self.run_main("validate", str(path), "--owner-code", "E01"), 0)
+        self.assertEqual(self.run_main("manifest", str(path), "--owner-code", "E01"), 0)
+        manifest = json.loads(path.with_suffix(".manifest.json").read_text(encoding="utf-8"))
+        self.assertFalse(manifest["independently_reviewed"])
+        self.assertEqual(manifest["by_approval"], {"owner_sole": len(items)})
 
     def test_manifest_refused_for_invalid_set(self) -> None:
         path = self.write_set([make_item(reviewer="T01")])
