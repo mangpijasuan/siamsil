@@ -15,6 +15,8 @@ sys.path.insert(0, str(BACKEND_ROOT / "services"))
 from language_engine import (  # type: ignore  # noqa: E402
     PARALLEL_EXACT_SQL, PARALLEL_FTS_COLUMN, LanguageEngine, exact_forms, fts_match,
 )
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from corpus_switch import serve_corpus  # type: ignore  # noqa: E402
 
 SCHEMA = """
 CREATE TABLE parallel_sentences (
@@ -41,6 +43,9 @@ def build(db: Path, pairs: list[tuple[int, str, str]]) -> None:
 
 
 class ExactLookupTests(unittest.TestCase):
+    def setUp(self) -> None:
+        serve_corpus(self)
+
     def engine(self, pairs: list[tuple[int, str, str]]) -> LanguageEngine:
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
@@ -48,15 +53,14 @@ class ExactLookupTests(unittest.TestCase):
         build(db, pairs)
         return LanguageEngine(db)
 
-    def test_the_corpus_can_be_hidden_by_a_setting(self) -> None:
-        from unittest.mock import patch
-        import language_engine  # type: ignore
+    def test_the_corpus_is_hidden_by_default_and_shown_only_when_switched_on(self) -> None:
         from settings import Settings  # type: ignore
 
+        self.assertFalse(Settings().serve_parallel_corpus)  # the corpus is blocked in data/rights.json
         engine = self.engine([(1, "Thank you.", "ZOMI_PLACEHOLDER_ONE")])
-        self.assertEqual(len(engine.search_parallel("Thank you")), 1)
-        with patch.object(language_engine, "get_settings", return_value=Settings(serve_parallel_corpus=False)):
-            self.assertEqual(engine.search_parallel("Thank you"), [])
+        self.assertEqual(len(engine.search_parallel("Thank you")), 1)  # the setUp switched it on
+        serve_corpus(self, enabled=False)
+        self.assertEqual(engine.search_parallel("Thank you"), [])
 
     def test_a_token_with_no_letter_or_digit_is_left_out_of_the_search(self) -> None:
         self.assertEqual(fts_match("Tom — Mary"), '"Tom" AND "Mary"*')

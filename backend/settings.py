@@ -57,9 +57,9 @@ class Settings(BaseSettings):
     experimental_mt_allow_uncleared: bool = False
 
     # Serve sentence matches from the parallel corpus (Translate, search, Siamsil AI). The corpus is `blocked` in
-    # data/rights.json (2026-11-18); set SIAMSIL_SERVE_PARALLEL_CORPUS=false on the host to hide it. The data
-    # bundle does not carry rights.json, so this switch is what the running API obeys.
-    serve_parallel_corpus: bool = True
+    # data/rights.json (2026-11-18), so it is hidden by default. Set SIAMSIL_SERVE_PARALLEL_CORPUS=true only when
+    # its rights are cleared. The data bundle does not carry rights.json, so this switch is what the running API obeys.
+    serve_parallel_corpus: bool = False
 
     cors_origins: list[str] = Field(
         default_factory=lambda: [
