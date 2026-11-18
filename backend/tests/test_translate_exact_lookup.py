@@ -48,6 +48,16 @@ class ExactLookupTests(unittest.TestCase):
         build(db, pairs)
         return LanguageEngine(db)
 
+    def test_the_corpus_can_be_hidden_by_a_setting(self) -> None:
+        from unittest.mock import patch
+        import language_engine  # type: ignore
+        from settings import Settings  # type: ignore
+
+        engine = self.engine([(1, "Thank you.", "ZOMI_PLACEHOLDER_ONE")])
+        self.assertEqual(len(engine.search_parallel("Thank you")), 1)
+        with patch.object(language_engine, "get_settings", return_value=Settings(serve_parallel_corpus=False)):
+            self.assertEqual(engine.search_parallel("Thank you"), [])
+
     def test_a_token_with_no_letter_or_digit_is_left_out_of_the_search(self) -> None:
         self.assertEqual(fts_match("Tom — Mary"), '"Tom" AND "Mary"*')
         self.assertEqual(fts_match("a & b"), '"a" AND "b"*')

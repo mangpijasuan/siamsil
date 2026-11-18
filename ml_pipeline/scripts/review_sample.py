@@ -7,6 +7,9 @@ model produced which pair; the summary estimates each model's quality.
 
 Commands:
   export DB --out DIR [--per-model N]   write review.csv (for reviewers) and key.csv (kept private)
+  export-queue DB --ids FILE --out DIR [--offset N] [--limit N]
+                                        the same two files for a chosen list of pairs, in the order given
+                                        (the review queue or re-audit sample from filter_szsf_corpus.py)
   summarize REVIEW KEY [--json OUT]     per-model scores from a completed review.csv
   record REVIEW KEY --reviewer R01      save each rated pair to data/reviews/corpus-reviews.jsonl,
                                         which build_language_db.py applies on every rebuild
@@ -33,8 +36,11 @@ import hashlib
 import heapq
 import json
 import math
+import os
+import shutil
 import sqlite3
 import sys
+import tempfile
 from collections import defaultdict
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -122,6 +128,89 @@ def export(database: Path, out_dir: Path, per_model: int, seed: str) -> tuple[Pa
             review_writer.writerow([sample_id, english, zomi, "", "", "", ""])
             key_writer.writerow([sample_id, parallel_id, model, pair_hash, exported_text_digest(english, zomi)])
     return review_path, key_path, len(sample)
+
+
+def read_queue(path: Path) -> list[tuple[int, str | None]]:
+    """(pair number, english fingerprint or None) from a queue file: JSON lines with an "id" like "corpus-123",
+    or one id per line. A fingerprint (`english_sha256`) lets export_queue refuse an id whose sentence has changed."""
+    entries: list[tuple[int, str | None]] = []
+    seen: set[int] = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        fingerprint = None
+        if line.startswith("{"):
+            record = json.loads(line)
+            value, fingerprint = record["id"], record.get("english_sha256")
+        else:
+            value = line
+        text = str(value).removeprefix("corpus-")
+        if not text.isdigit():
+            raise ValueError(f"not a corpus pair id: {value!r}")
+        number = int(text)
+        if number not in seen:
+            seen.add(number)
+            entries.append((number, fingerprint))
+    return entries
+
+
+def read_queue_ids(path: Path) -> list[int]:
+    return [number for number, _ in read_queue(path)]
+
+
+def _private_csv(path: Path):
+    return open(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w", encoding="utf-8", newline="")
+
+
+def export_queue(database: Path, out_dir: Path, ids: list[int], offset: int = 0, limit: int | None = None,
+                 fingerprints: dict[int, str] | None = None) -> tuple[Path, Path, int, list[int], list[int]]:
+    """review.csv and key.csv for the given pair numbers, in the order given.
+
+    Returns (review path, key path, count, ids not found or held out, ids whose sentence no longer matches
+    its fingerprint). Both files are written in a private staging folder and moved into place together."""
+    if offset < 0 or (limit is not None and limit < 0):
+        raise ValueError("offset and limit cannot be negative")
+    chosen = ids[offset:offset + limit] if limit is not None else ids[offset:]
+    fingerprints = fingerprints or {}
+    con = sqlite3.connect(f"file:{database}?mode=ro", uri=True)
+    rows = []
+    missing: list[int] = []
+    stale: list[int] = []
+    try:
+        for parallel_id in chosen:
+            found = con.execute(
+                "SELECT model, normalized_source_text, normalized_target_text, pair_hash, dataset_split"
+                " FROM parallel_sentences WHERE id = ?", (parallel_id,)).fetchone()
+            if found is None or found[4] == "eval_holdout":
+                missing.append(parallel_id)  # human-evaluation holdout pairs are never sent for review
+                continue
+            expected = fingerprints.get(parallel_id)
+            if expected and hashlib.sha256(found[1].strip().encode("utf-8")).hexdigest() != expected:
+                stale.append(parallel_id)  # the database was rebuilt and this id now holds a different sentence
+                continue
+            rows.append((parallel_id, *found[:4]))
+    finally:
+        con.close()
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(prefix=".staging-", dir=out_dir))
+    os.chmod(staging, 0o700)
+    review_path, key_path = out_dir / "review.csv", out_dir / "key.csv"
+    try:
+        with _private_csv(staging / "review.csv") as review, _private_csv(staging / "key.csv") as key:
+            review_writer, key_writer = csv.writer(review), csv.writer(key)
+            review_writer.writerow(REVIEW_COLUMNS)
+            key_writer.writerow(KEY_COLUMNS)
+            for n, (parallel_id, model, english, zomi, pair_hash) in enumerate(rows, start=1):
+                sample_id = f"R{n:05d}"
+                review_writer.writerow([sample_id, english, zomi, "", "", "", ""])
+                key_writer.writerow([sample_id, parallel_id, model, pair_hash, exported_text_digest(english, zomi)])
+        os.replace(staging / "key.csv", key_path)  # the review file last: it is the one reviewers open
+        os.replace(staging / "review.csv", review_path)
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
+    return review_path, key_path, len(rows), missing, stale
 
 
 def wilson_interval(successes: int, total: int, z: float = 1.96) -> tuple[float, float]:
@@ -518,6 +607,28 @@ def cmd_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_export_queue(args: argparse.Namespace) -> int:
+    if not args.database.exists():
+        sys.exit(f"Language database not found: {args.database}")
+    if not args.ids.exists():
+        sys.exit(f"Queue file not found: {args.ids}")
+    try:
+        entries = read_queue(args.ids)
+        review_path, key_path, count, missing, stale = export_queue(
+            args.database, args.out, [number for number, _ in entries], args.offset, args.limit,
+            {number: fingerprint for number, fingerprint in entries if fingerprint})
+    except (ValueError, KeyError, json.JSONDecodeError) as error:
+        sys.exit(f"{args.ids}: {error}")
+    print(f"wrote {count} pairs to {review_path}")
+    print(f"wrote {key_path} (keep this away from reviewers)")
+    if missing:
+        print(f"{len(missing)} ids were not in the database or are held out for evaluation, and were skipped")
+    if stale:
+        print(f"{len(stale)} ids now hold a different sentence than the queue was made from (the database was "
+              "rebuilt); they were skipped. Re-run the filter on the current master.")
+    return 0
+
+
 def cmd_summarize(args: argparse.Namespace) -> int:
     summary, errors = summarize(read_csv(args.review), read_csv(args.key))
     for error in errors:
@@ -669,6 +780,14 @@ def main(argv: list[str] | None = None) -> int:
     export_parser.add_argument("--per-model", type=int, default=200)
     export_parser.add_argument("--seed", default=DEFAULT_SEED)
     export_parser.set_defaults(run=cmd_export)
+
+    queue_parser = commands.add_parser("export-queue", help="review.csv and key.csv for a chosen list of pairs")
+    queue_parser.add_argument("database", type=Path)
+    queue_parser.add_argument("--ids", type=Path, required=True, help="review-queue.jsonl, reaudit-sample.jsonl or one id per line")
+    queue_parser.add_argument("--out", type=Path, required=True)
+    queue_parser.add_argument("--offset", type=int, default=0)
+    queue_parser.add_argument("--limit", type=int, default=None, help="how many pairs for this sitting (for example 100)")
+    queue_parser.set_defaults(run=cmd_export_queue)
 
     summarize_parser = commands.add_parser("summarize")
     summarize_parser.add_argument("review", type=Path)
