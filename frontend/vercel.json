@@ -3,7 +3,7 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "env": {
-    "SIAMSIL_API_URL": "https://api.siamsil.com"
+    "SIAMSIL_API_URL": "https://api.siamsil.org"
   },
   "headers": [
     {

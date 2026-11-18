@@ -2,7 +2,7 @@
  * Search-engine facts about the public site. Pure functions, so they can be unit-tested
  * without Next.js.
  *
- * The public address comes from SIAMSIL_SITE_URL at build time (e.g. https://siamsil.com).
+ * The public address comes from SIAMSIL_SITE_URL at build time (e.g. https://siamsil.org).
  * Without it (local runs, preview builds) the site asks search engines not to index anything,
  * so a half-configured deployment never ends up in search results.
  */

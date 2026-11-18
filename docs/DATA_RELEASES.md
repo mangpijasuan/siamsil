@@ -43,7 +43,7 @@ R2 access remains private; the FastAPI container fetches the selected bundle via
 Run:
 
 ```bash
-python backend/scripts/check_release.py --url https://api.siamsil.com
+python backend/scripts/check_release.py --url https://api.siamsil.org
 ```
 
 This confirms the HTTPS API returns readiness and a language database. The health response alone **cannot** prove the specific release digest. For on-host verification within the API container (with `/data` mounted), run:

@@ -62,7 +62,7 @@ class IdentityConfigurationTests(unittest.TestCase):
                 database_url="postgresql+psycopg://user:password@database/siamsil",
                 oidc_enabled=True,
                 oidc_issuer="http://identity.example",
-                oidc_audience="https://api.siamsil.com",
+                oidc_audience="https://api.siamsil.org",
                 oidc_jwks_url="http://identity.example/jwks.json",
                 _env_file=None,
             )

@@ -6,7 +6,7 @@ How Siamsil tells search engines what to index, and what to do at launch. The co
 
 ## The one setting
 
-Set **`SIAMSIL_SITE_URL`** in the frontend's build environment to the public address, for example `https://siamsil.com`, next to `SIAMSIL_API_URL`.
+Set **`SIAMSIL_SITE_URL`** in the frontend's build environment to the public address, for example `https://siamsil.org`, next to `SIAMSIL_API_URL`.
 
 - **With it set:**
   - `robots.txt` allows the site and names the sitemap.
