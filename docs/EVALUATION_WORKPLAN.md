@@ -15,6 +15,8 @@ A hidden, human-translated test set per direction, so that retrieval, a hosted m
 | Reviewer (R01, R02 ...) | A different native speaker | Accepts or corrects each item. |
 | Adjudicator | A third person | Resolves disagreements. Differs from translator and reviewer. |
 
+**Working-phase exception (owner decision, 2026-11-18):** the owner may be translator, reviewer and approver of an evaluation set. Such a set is labelled "owner-only, single reviewer" in its manifest and cannot be described as independently reviewed. See [SZSF.md](SZSF.md), "Owner-approved records".
+
 IDs map to names in a separate, access-controlled roster. A person never reviews their own translation (`eval_set.py validate` checks this).
 
 ## Translator guidelines (proposed)

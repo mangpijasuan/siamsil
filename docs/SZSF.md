@@ -108,6 +108,20 @@ Any other field is refused. A local addition belongs in a separate file that poi
 `reviewers` and `approver` are roster codes (`R01`, `E01`; the form `corpus_reviews.py` accepts), never names, and nobody is both. With `--roster` (the private roster CSV) every reviewer must be listed as a reviewer and the approver as a lead editor; without it the codes are checked for form only. A `gold` record that came from a machine must be
 `HUMAN_APPROVED`.
 
+## Owner-approved records (working phase)
+
+**Decision (2026-11-18, project owner):** during the working phase the owner is the translator, reviewer and approver of the Zomi they write and review, and the owner's approval is the final editorial decision (human editorial decisions are final). No second person is required for the owner's own work.
+
+How this is recorded, so the data stays accurate:
+
+- A record the owner approved carries the owner's roster codes and an explicit note, `approval: owner_sole`, so anyone reading it knows one person wrote and approved it.
+- "Final" means nobody overrides the owner's editorial decision. It does not claim the record is free of error. If the owner later finds a mistake, they correct it and the record is versioned.
+- Tier: owner-approved records are `silver` until a second Zomi speaker confirms them, then `gold`. A second person may confirm later; nothing is lost if they do not.
+- A person who is both the reviewer and the approver of the same record is allowed only for the owner under this decision, and the validator must say so in its output. Everyone else still needs a different approver.
+- The owner reviews each record in a separate pass from writing it, ideally on another day.
+
+**Not yet built:** `szsf.py`, `corpus_reviews.py` and `eval_set.py validate` still reject a reviewer who is also the translator or approver. A separate PR adds the `owner_sole` mode. Until then, owner-reviewed sets stay in a draft state and are not frozen.
+
 ## Rules every record must meet
 
 1. Text has no spaces at its ends, no line breaks (including U+2028 and U+2029) or control characters, and is Unicode NFC. The character rules apply to every text value in the record, not only the three main fields.
