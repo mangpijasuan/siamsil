@@ -20,7 +20,7 @@ It writes, in `--out-dir`:
 | `reaudit-sample.jsonl` | A ranked sample (default 5,000) of kept rows from `gemini-pro` and unknown models, most in need of review first |
 | `summary.json` | Counts per reason |
 
-A 300,000-row slice took about 7 seconds, so the full file should take under a minute. The rules are in the script's header and in [the review notes](#what-the-filter-decides).
+A 300,000-row slice took about 7 seconds, so the full file should take under a minute. Files are written privately (owner-only permissions) into a staging folder and published together with the manifest last, so a folder without a current manifest is an unfinished run. A lock file stops two runs sharing one output folder, an output path that is the input is refused, and the manifest's `created_at` is the input file's modification time, so the same input gives the same manifest. The rules are in the script's header and in [the review notes](#what-the-filter-decides).
 
 ## 2. Make a review sitting (about 100 pairs)
 
@@ -31,7 +31,7 @@ python3 ml_pipeline/scripts/review_sample.py export-queue \
   --out ../siamsil-data/reviews/queue/batch-001 --offset 0 --limit 100
 ```
 
-It writes `review.csv` for you and `key.csv` (keep away from other reviewers). Pairs held out for evaluation are never exported. For the next sitting use `--offset 100`, then `200`, and so on. To review the soft-flag rows instead, pass `review-queue.jsonl`.
+It writes `review.csv` for you and `key.csv` (keep away from other reviewers). Queue entries carry a fingerprint of the English; if you rebuilt the database and an id now holds a different sentence, that pair is skipped and reported, and you should re-run the filter on the current master. Rows the filter marks excluded or rejected are quarantined and never queued. Pairs held out for evaluation are never exported. For the next sitting use `--offset 100`, then `200`, and so on. To review the soft-flag rows instead, pass `review-queue.jsonl`.
 
 ## 3. Review in Excel
 

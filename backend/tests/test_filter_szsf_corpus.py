@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -100,6 +101,64 @@ class FilterTests(unittest.TestCase):
         source.write_text(json.dumps(row("a", "One.", "ZOMI_J")) + "\n", encoding="utf-8")
         with self.assertRaises(SystemExit):
             f.run(source, ROOT / "data" / "raw" / "filtered-test")
+
+    def test_a_held_out_row_with_a_hard_reason_still_blocks_its_train_twin(self) -> None:
+        rows = [row("tr", "Held out.", "ZOMI_L", split="train"),
+                row("te", "Held out.", "ZOMI_L", split="test", flags=["number_mismatch"])]
+        _, out = self.run_filter(rows)
+        self.assertEqual(self.lines(out, "szsf-filtered.jsonl"), [])
+        reasons = {r["id"]: r["reasons"] for r in self.lines(out, "quarantine.jsonl")}
+        self.assertEqual(reasons, {"tr": ["duplicate_of_held_out_pair"], "te": ["number_mismatch"]})
+
+    def test_excluded_and_rejected_rows_are_quarantined(self) -> None:
+        rejected = row("rej", "Rejected.", "ZOMI_M")
+        rejected["review"] = {"status": "REJECTED", "reviewers": ["R01"], "approver": None}
+        rows = [row("exc", "Excluded.", "ZOMI_N", split="excluded", flags=["extremely_short"]), rejected,
+                row("uni", "Bad char.", "ZOMI_O", flags=["invalid_unicode"])]
+        _, out = self.run_filter(rows)
+        self.assertEqual(self.lines(out, "szsf-filtered.jsonl"), [])
+        self.assertEqual({r["id"]: r["reasons"] for r in self.lines(out, "quarantine.jsonl")},
+                         {"exc": ["excluded_or_rejected"], "rej": ["excluded_or_rejected"], "uni": ["invalid_unicode"]})
+
+    def test_an_output_path_that_is_the_input_is_refused_and_the_input_is_kept(self) -> None:
+        folder = self.dir / "same"
+        folder.mkdir()
+        source = folder / "szsf-filtered.jsonl"
+        source.write_text(json.dumps(row("a", "One.", "ZOMI_P")) + "\n", encoding="utf-8")
+        before = source.read_text(encoding="utf-8")
+        with self.assertRaises(SystemExit):
+            f.run(source, folder)
+        self.assertEqual(source.read_text(encoding="utf-8"), before)
+
+    def test_same_input_gives_the_same_manifest(self) -> None:
+        rows = [row("a", "One.", "ZOMI_Q"), row("b", "Two.", "ZOMI_R")]
+        source = self.dir / "in.jsonl"
+        source.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+        f.run(source, self.dir / "o1")
+        f.run(source, self.dir / "o2")
+        self.assertEqual((self.dir / "o1" / "szsf-filtered.manifest.json").read_text(encoding="utf-8"),
+                         (self.dir / "o2" / "szsf-filtered.manifest.json").read_text(encoding="utf-8"))
+
+    def test_queue_entries_carry_a_fingerprint_and_outputs_are_private(self) -> None:
+        _, out = self.run_filter([row("s", "Yes.", "ZOMI_S", flags=["extremely_short"])])
+        entry = self.lines(out, "review-queue.jsonl")[0]
+        self.assertEqual(len(entry["english_sha256"]), 64)
+        if os.name == "posix":
+            for name in ("szsf-filtered.jsonl", "quarantine.jsonl", "szsf-filtered.manifest.json"):
+                self.assertEqual((out / name).stat().st_mode & 0o077, 0, name)
+
+    def test_a_second_run_cannot_share_the_output_folder_and_the_lock_is_released(self) -> None:
+        source = self.dir / "in.jsonl"
+        source.write_text(json.dumps(row("a", "One.", "ZOMI_T")) + "\n", encoding="utf-8")
+        out = self.dir / "locked"
+        out.mkdir()
+        (out / ".filter.lock").write_text("", encoding="utf-8")
+        with self.assertRaises(SystemExit):
+            f.run(source, out)
+        (out / ".filter.lock").unlink()
+        f.run(source, out)
+        self.assertFalse((out / ".filter.lock").exists())
+        self.assertEqual([p.name for p in out.iterdir() if p.name.startswith(".staging-")], [])
 
     def test_a_crash_leaves_no_partial_output(self) -> None:
         source = self.dir / "in.jsonl"

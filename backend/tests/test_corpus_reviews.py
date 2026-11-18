@@ -254,8 +254,8 @@ class ExportQueueTests(CorpusFixture):
 
     def test_export_queue_keeps_the_given_order_and_matches_the_normal_export_format(self) -> None:
         order = [self.parallel_id(4), self.parallel_id(1), self.parallel_id(3)]
-        review_path, key_path, count, missing = export_queue(self.database, self.dir / "queue", order)
-        self.assertEqual((count, missing), (3, []))
+        review_path, key_path, count, missing, stale = export_queue(self.database, self.dir / "queue", order)
+        self.assertEqual((count, missing, stale), (3, [], []))
         review = self.read(review_path)
         key = self.read(key_path)
         self.assertEqual([r["english"] for r in review],
@@ -270,10 +270,35 @@ class ExportQueueTests(CorpusFixture):
         con.execute("UPDATE parallel_sentences SET dataset_split = 'eval_holdout' WHERE id = ?", (ids[1],))
         con.commit()
         con.close()
-        _, _, count, missing = export_queue(self.database, self.dir / "q2", ids, offset=0, limit=3)
+        _, _, count, missing, _ = export_queue(self.database, self.dir / "q2", ids, offset=0, limit=3)
         self.assertEqual((count, missing), (2, [ids[1]]))
-        _, _, count, missing = export_queue(self.database, self.dir / "q3", ids, offset=4)
+        _, _, count, missing, _ = export_queue(self.database, self.dir / "q3", ids, offset=4)
         self.assertEqual((count, missing), (1, [99999]))
+
+    def test_a_queue_id_whose_sentence_changed_is_skipped_and_reported(self) -> None:
+        import hashlib
+
+        good, other = self.parallel_id(0), self.parallel_id(1)
+        fingerprint = hashlib.sha256("English sentence number 0.".encode("utf-8")).hexdigest()
+        _, _, count, missing, stale = export_queue(
+            self.database, self.dir / "fp", [good, other], fingerprints={good: fingerprint, other: fingerprint})
+        self.assertEqual((count, missing, stale), (1, [], [other]))
+
+    def test_negative_bounds_are_refused(self) -> None:
+        with self.assertRaises(ValueError):
+            export_queue(self.database, self.dir / "neg", [self.parallel_id(0)], offset=-1)
+        with self.assertRaises(ValueError):
+            export_queue(self.database, self.dir / "neg", [self.parallel_id(0)], limit=-1)
+
+    def test_export_files_are_private_and_no_staging_folder_is_left(self) -> None:
+        import os
+
+        out = self.dir / "perm"
+        export_queue(self.database, out, [self.parallel_id(0)])
+        if os.name == "posix":
+            for name in ("review.csv", "key.csv"):
+                self.assertEqual((out / name).stat().st_mode & 0o077, 0, name)
+        self.assertEqual([p.name for p in out.iterdir() if p.name.startswith(".staging-")], [])
 
     def test_queue_ids_are_read_from_jsonl_or_plain_lines_without_repeats(self) -> None:
         path = self.dir / "ids.txt"

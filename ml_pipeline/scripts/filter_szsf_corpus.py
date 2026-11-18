@@ -14,6 +14,12 @@ Outputs, all in --out-dir:
   reaudit-sample.jsonl       a ranked sample of kept rows from older or unknown models, {"id", "model", "priority"}
   summary.json               counts per reason
 
+Queue entries carry an `english_sha256`, so `review_sample.py export-queue` can refuse an id whose sentence has
+changed after a database rebuild. The manifest's `created_at` is the input file's modification time, so the same
+input gives the same manifest. Files are staged in a private folder and published together, manifest last: a
+folder without a current manifest is an unfinished run. Two runs cannot share one output folder (a lock file),
+and an output path that is the input is refused.
+
 Rows are quarantined for a HARD reason: an empty side, English copied as Zomi, or a quality flag that means the
 pair is probably wrong (html_or_script, number_mismatch, possible_language_mismatch, identical, suspicious_repeat).
 SOFT flags (length_ratio_outlier, extremely_short, extremely_long, target_reused) keep the row and add it to the
@@ -33,9 +39,11 @@ import hashlib
 import heapq
 import json
 import os
+import shutil
 import sys
 import tempfile
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
@@ -43,7 +51,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import szsf  # type: ignore  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
-HARD_FLAGS = {"html_or_script", "number_mismatch", "possible_language_mismatch", "identical", "suspicious_repeat"}
+HARD_FLAGS = {"html_or_script", "number_mismatch", "possible_language_mismatch", "identical", "suspicious_repeat",
+              "invalid_unicode"}
 SOFT_FLAGS = {"length_ratio_outlier", "extremely_short", "extremely_long", "target_reused"}
 OLD_MODELS = {"gemini-pro", "unknown", "", None}
 HELD_OUT = {"validation", "test"}
@@ -69,9 +78,17 @@ def texts(row: dict) -> tuple[str, str]:
     return (row.get("english") or "").strip(), (row.get("zomi_standard") or "").strip()
 
 
+def english_sha256(row: dict) -> str:
+    return hashlib.sha256(texts(row)[0].encode("utf-8")).hexdigest()
+
+
 def hard_reasons(row: dict) -> list[str]:
     english, zomi = texts(row)
     reasons = []
+    review = row.get("review")
+    status = review.get("status") if isinstance(review, dict) else None
+    if row.get("split") == "excluded" or status == "REJECTED":
+        reasons.append("excluded_or_rejected")
     if not english:
         reasons.append("empty_english")
     if not zomi:
@@ -98,50 +115,82 @@ def plan(path: Path) -> tuple[dict[tuple[str, bytes], tuple[float, str]], set[by
     stats: Counter = Counter()
     for row in read_rows(path):
         stats["read"] += 1
-        if hard_reasons(row):
-            continue
         split = row.get("split", "")
         key = (split, digest(*texts(row)))
+        if split in HELD_OUT:
+            # Held-out text is recorded even when the row itself is quarantined, so a train twin cannot slip in.
+            held_out.add(key[1])
+        if hard_reasons(row):
+            continue
         current = best.get(key)
         if current is None or score(row) > current[0]:
             best[key] = (score(row), row["id"])
-        if split in HELD_OUT:
-            held_out.add(key[1])
     return best, held_out, stats
 
 
-class AtomicOut:
-    """Write to a temporary file and move it into place only when it is complete."""
+def private_open(path: Path):
+    """A text file only the owner can read (the outputs hold corpus text)."""
+    return os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w", encoding="utf-8")
 
-    def __init__(self, path: Path):
-        self.path = path
-        fd, self.temp = tempfile.mkstemp(prefix=path.name + ".", suffix=".part", dir=path.parent)
-        self.handle = os.fdopen(fd, "w", encoding="utf-8")
+
+class Staged:
+    """Output files written into a private staging folder."""
+
+    def __init__(self, folder: Path, name: str):
+        self.final_name = name
+        self.path = folder / name
+        self.handle = private_open(self.path)
 
     def write(self, obj: dict) -> None:
         self.handle.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
-    def commit(self) -> None:
+    def close(self) -> None:
         self.handle.close()
-        os.replace(self.temp, self.path)
-
-    def abort(self) -> None:
-        self.handle.close()
-        if os.path.exists(self.temp):
-            os.remove(self.temp)
 
 
-def run(input_path: Path, out_dir: Path, sample_size: int = DEFAULT_SAMPLE, rights: dict | None = None) -> dict:
+def input_modified_at(path: Path) -> str:
+    stamp = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+    return stamp.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def run(input_path: Path, out_dir: Path, sample_size: int = DEFAULT_SAMPLE, rights: dict | None = None,
+        created_at: str | None = None) -> dict:
+    if sample_size < 0:
+        raise SystemExit("--sample cannot be negative")
     raw = (ROOT / "data" / "raw").resolve()
-    if raw in out_dir.resolve().parents or out_dir.resolve() == raw:
+    out_dir = out_dir.resolve()
+    if raw in out_dir.parents or out_dir == raw:
         raise SystemExit("refusing to write under data/raw")
+    names = ("szsf-filtered.jsonl", "quarantine.jsonl", "review-queue.jsonl", "reaudit-sample.jsonl",
+             "szsf-filtered.manifest.json", "summary.json")
+    source = input_path.resolve()
+    if any(source == out_dir / name for name in names):
+        raise SystemExit(f"the input {input_path} is one of the output files; use a different --out-dir")
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    lock = out_dir / ".filter.lock"
+    try:
+        os.close(os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600))
+    except FileExistsError:
+        raise SystemExit(f"another filter run is using {out_dir} (or crashed; remove {lock.name} if so)")
+    staging = Path(tempfile.mkdtemp(prefix=".staging-", dir=out_dir))
+    os.chmod(staging, 0o700)
+    try:
+        summary = _filter_into(source, staging, sample_size, rights, created_at or input_modified_at(source))
+        for name in names:  # data files first, the manifest and summary last
+            os.replace(staging / name, out_dir / name)
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
+        lock.unlink(missing_ok=True)
+    return summary
+
+
+def _filter_into(input_path: Path, staging: Path, sample_size: int, rights: dict | None, created_at: str) -> dict:
     best, held_out, stats = plan(input_path)
     seen: set[tuple[str, bytes]] = set()
-    sample: list[tuple[tuple[int, float], str, str]] = []  # a heap of the sample_size best candidates
+    sample: list[tuple[tuple[int, float], str, str, str]] = []  # a heap of the sample_size best candidates
 
-    outs = {name: AtomicOut(out_dir / name) for name in
+    outs = {name: Staged(staging, name) for name in
             ("szsf-filtered.jsonl", "quarantine.jsonl", "review-queue.jsonl", "reaudit-sample.jsonl")}
     try:
         for row in read_rows(input_path):
@@ -165,34 +214,34 @@ def run(input_path: Path, out_dir: Path, sample_size: int = DEFAULT_SAMPLE, righ
             outs["szsf-filtered.jsonl"].write(row)
             stats["kept"] += 1
             if soft:
-                outs["review-queue.jsonl"].write({"id": row["id"], "reasons": soft})
+                outs["review-queue.jsonl"].write({"id": row["id"], "reasons": soft, "english_sha256": english_sha256(row)})
                 stats["review_queue"] += 1
                 for reason in soft:
                     stats[f"soft:{reason}"] += 1
             if row.get("model") in OLD_MODELS and sample_size > 0:
                 # Most in need of review first: more soft flags, then lower quality score.
-                item = ((len(soft), -score(row)), row["id"], str(row.get("model")))
+                item = ((len(soft), -score(row)), row["id"], str(row.get("model")), english_sha256(row))
                 if len(sample) < sample_size:
                     heapq.heappush(sample, item)
                 elif item > sample[0]:
                     heapq.heapreplace(sample, item)
-        for priority, row_id, model in sorted(sample, reverse=True):
-            outs["reaudit-sample.jsonl"].write({"id": row_id, "model": model, "priority": list(priority)})
+        for priority, row_id, model, fingerprint in sorted(sample, reverse=True):
+            outs["reaudit-sample.jsonl"].write({"id": row_id, "model": model, "priority": list(priority),
+                                                "english_sha256": fingerprint})
         stats["reaudit_sample"] = len(sample)
+    finally:
         for out in outs.values():
-            out.commit()
-    except BaseException:
-        for out in outs.values():
-            out.abort()
-        raise
+            out.close()
 
-    filtered = out_dir / "szsf-filtered.jsonl"
-    manifest = szsf.build_manifest(filtered, rights)
+    filtered = staging / "szsf-filtered.jsonl"
+    manifest = szsf.build_manifest(filtered, rights, created_at)
     manifest["note"] = (manifest["note"] + " Filtered from "
                         f"{input_path.name}: rows were sorted, never edited. Filtered does not mean reviewed.")
     summary = dict(sorted(stats.items()))
-    (out_dir / "szsf-filtered.manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    (out_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    with private_open(staging / "szsf-filtered.manifest.json") as handle:
+        handle.write(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
+    with private_open(staging / "summary.json") as handle:
+        handle.write(json.dumps(summary, indent=2) + "\n")
     return summary
 
 
