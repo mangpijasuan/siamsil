@@ -1,0 +1,63 @@
+# Siamsil API on one small server: Caddy (HTTPS) -> API -> PostgreSQL. See docs/DEPLOY_VPS.md.
+# Run from this folder: `docker compose --env-file .env up -d --build`.
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: siamsil
+      POSTGRES_USER: siamsil
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U siamsil -d siamsil"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - siamsil_postgres:/var/lib/postgresql/data
+    # No ports: only the API container can reach the database.
+
+  api:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SIAMSIL_ENVIRONMENT: production
+      SIAMSIL_DATABASE_URL: postgresql+psycopg://siamsil:${POSTGRES_PASSWORD}@postgres:5432/siamsil
+      SIAMSIL_DATABASE_REQUIRED: "true"
+      SIAMSIL_CORS_ORIGINS: ${SIAMSIL_CORS_ORIGINS:?set SIAMSIL_CORS_ORIGINS in .env}
+      SIAMSIL_DATA_BUNDLE_S3_ENDPOINT: ${SIAMSIL_DATA_BUNDLE_S3_ENDPOINT:?}
+      SIAMSIL_DATA_BUNDLE_S3_BUCKET: ${SIAMSIL_DATA_BUNDLE_S3_BUCKET:-siamsil-data-bundle}
+      SIAMSIL_DATA_BUNDLE_S3_ACCESS_KEY_ID: ${SIAMSIL_DATA_BUNDLE_S3_ACCESS_KEY_ID:?}
+      SIAMSIL_DATA_BUNDLE_S3_SECRET_ACCESS_KEY: ${SIAMSIL_DATA_BUNDLE_S3_SECRET_ACCESS_KEY:?}
+      SIAMSIL_DATA_BUNDLE_SHA256: ${SIAMSIL_DATA_BUNDLE_SHA256:?}
+      # The 1.77M-pair parallel corpus is blocked in data/rights.json; keep it hidden.
+      SIAMSIL_SERVE_PARALLEL_CORPUS: ${SIAMSIL_SERVE_PARALLEL_CORPUS:-false}
+    volumes:
+      - siamsil_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # No ports: only Caddy reaches the API.
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - siamsil_caddy_data:/data
+      - siamsil_caddy_config:/config
+    depends_on:
+      - api
+
+volumes:
+  siamsil_postgres:
+  siamsil_data:
+  siamsil_caddy_data:
+  siamsil_caddy_config:
