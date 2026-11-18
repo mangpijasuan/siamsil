@@ -43,22 +43,33 @@ def build(db: Path, pairs: list[tuple[int, str, str]]) -> None:
 
 
 class ExactLookupTests(unittest.TestCase):
-    def setUp(self) -> None:
-        serve_corpus(self)
-
-    def engine(self, pairs: list[tuple[int, str, str]]) -> LanguageEngine:
+    def engine(self, pairs: list[tuple[int, str, str]], serve: bool = True) -> LanguageEngine:
+        if serve:
+            serve_corpus(self)  # the corpus is hidden by default (blocked in data/rights.json); tests opt in
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         db = Path(tmp.name) / "language.sqlite"
         build(db, pairs)
         return LanguageEngine(db)
 
-    def test_the_corpus_is_hidden_by_default_and_shown_only_when_switched_on(self) -> None:
-        from settings import Settings  # type: ignore
+    def test_the_corpus_is_hidden_by_default_whatever_the_developers_environment(self) -> None:
+        import os
+        from unittest.mock import patch
 
-        self.assertFalse(Settings().serve_parallel_corpus)  # the corpus is blocked in data/rights.json
-        engine = self.engine([(1, "Thank you.", "ZOMI_PLACEHOLDER_ONE")])
-        self.assertEqual(len(engine.search_parallel("Thank you")), 1)  # the setUp switched it on
+        from settings import Settings, get_settings  # type: ignore
+
+        # get_settings is cached, so clear it before and after, and drop any override from the environment.
+        with patch.dict(os.environ):
+            os.environ.pop("SIAMSIL_SERVE_PARALLEL_CORPUS", None)
+            get_settings.cache_clear()
+            self.addCleanup(get_settings.cache_clear)
+            self.assertFalse(Settings().serve_parallel_corpus)
+            engine = self.engine([(1, "Thank you.", "ZOMI_PLACEHOLDER_ONE")], serve=False)
+            self.assertEqual(engine.search_parallel("Thank you"), [])  # the real effective default
+
+    def test_the_corpus_is_shown_only_when_switched_on(self) -> None:
+        engine = self.engine([(1, "Thank you.", "ZOMI_PLACEHOLDER_ONE")])  # opts in
+        self.assertEqual(len(engine.search_parallel("Thank you")), 1)
         serve_corpus(self, enabled=False)
         self.assertEqual(engine.search_parallel("Thank you"), [])
 

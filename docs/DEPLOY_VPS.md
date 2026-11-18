@@ -63,7 +63,7 @@ chmod 600 .env
 nano .env
 ```
 
-Fill in every line: the domain, a long random `POSTGRES_PASSWORD` (for example `openssl rand -base64 32`), your R2 endpoint, the **read-only** keys, and the SHA-256. Leave `SIAMSIL_SERVE_PARALLEL_CORPUS=false`: the 1.77M-pair corpus is blocked and must stay hidden. Save with Ctrl+O, Enter, then exit with Ctrl+X.
+Fill in every line: the domain, a long random `POSTGRES_PASSWORD` made of letters and digits only (`openssl rand -hex 32`; symbols such as `/` or `@` break the database URL), your R2 endpoint, the **read-only** keys, and the SHA-256. Leave `SIAMSIL_SERVE_PARALLEL_CORPUS=false`: the 1.77M-pair corpus is blocked and must stay hidden. Save with Ctrl+O, Enter, then exit with Ctrl+X.
 
 ## 5. Point the domain at the server
 
@@ -81,7 +81,7 @@ The first start downloads and unpacks the bundle (several minutes). Wait for lin
 ## 7. Check
 
 - `https://api.siamsil.org/health` reports `"status": "ok"` and the dictionary counts.
-- A dictionary search for "water" works: `https://api.siamsil.org/api/v1/dictionary/search?q=water`.
+- A dictionary search for "water" works: `https://api.siamsil.org/api/v1/dictionary?q=water`.
 - A Translate search returns dictionary results only, with no corpus sentences.
 
 ## 8. Website
@@ -93,7 +93,9 @@ On Vercel (DEPLOY.md, section 4) set `SIAMSIL_API_URL` and `NEXT_PUBLIC_API_URL`
 | Task | Command (in `siamsil/deploy/vps`) |
 |---|---|
 | Update the code | `git pull && docker compose --env-file .env up -d --build` |
-| New data release | Upload the new bundle to R2, change `SIAMSIL_DATA_BUNDLE_SHA256` in `.env`, then `docker compose --env-file .env up -d` |
+| New data release | Upload the new bundle to R2 under a **new dated name** and keep the old one. In `.env` set `SIAMSIL_DATA_BUNDLE_S3_KEY` to the new name and `SIAMSIL_DATA_BUNDLE_SHA256` to its SHA-256, then `docker compose --env-file .env up -d` |
+| Roll back a data release | Put the previous bundle's name in `SIAMSIL_DATA_BUNDLE_S3_KEY` and its SHA-256 in `SIAMSIL_DATA_BUNDLE_SHA256`, then `docker compose --env-file .env up -d`. The server installs one release at a time, so the older bundles live in R2, not on the server |
+| Change the database password | Update the role first, then `.env`: `docker compose exec postgres psql -U siamsil -c "ALTER USER siamsil PASSWORD 'NEWPASSWORD';"`, edit `POSTGRES_PASSWORD` in `.env` to the same value, then `docker compose --env-file .env up -d`. Editing `.env` alone locks the API out, because Postgres keeps the password it was first created with |
 | See logs | `docker compose logs --tail 100 api` |
 | Restart | `docker compose restart` |
 | Disk space | `df -h` and `docker system df` |

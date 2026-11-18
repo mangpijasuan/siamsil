@@ -7,6 +7,7 @@ services:
     environment:
       POSTGRES_DB: siamsil
       POSTGRES_USER: siamsil
+      # Use only letters and digits (openssl rand -hex 32): the password is placed inside a database URL.
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U siamsil -d siamsil"]
@@ -26,9 +27,15 @@ services:
       SIAMSIL_ENVIRONMENT: production
       SIAMSIL_DATABASE_URL: postgresql+psycopg://siamsil:${POSTGRES_PASSWORD}@postgres:5432/siamsil
       SIAMSIL_DATABASE_REQUIRED: "true"
-      SIAMSIL_CORS_ORIGINS: ${SIAMSIL_CORS_ORIGINS:?set SIAMSIL_CORS_ORIGINS in .env}
+      SIAMSIL_CORS_ORIGINS: "${SIAMSIL_CORS_ORIGINS:?set SIAMSIL_CORS_ORIGINS in .env}"
+      # Ask for a limit per client per minute (0 turns it off). Caddy is the only thing that reaches the API
+      # (no ports are published), so trusting its forwarded address is safe and counts each real visitor.
+      SIAMSIL_RATE_LIMIT_PER_MINUTE: ${SIAMSIL_RATE_LIMIT_PER_MINUTE:-120}
+      FORWARDED_ALLOW_IPS: "*"
       SIAMSIL_DATA_BUNDLE_S3_ENDPOINT: ${SIAMSIL_DATA_BUNDLE_S3_ENDPOINT:?}
       SIAMSIL_DATA_BUNDLE_S3_BUCKET: ${SIAMSIL_DATA_BUNDLE_S3_BUCKET:-siamsil-data-bundle}
+      # The object to install. Keep each release under its own dated name in R2 so you can roll back.
+      SIAMSIL_DATA_BUNDLE_S3_KEY: ${SIAMSIL_DATA_BUNDLE_S3_KEY:-siamsil-data.tar.gz}
       SIAMSIL_DATA_BUNDLE_S3_ACCESS_KEY_ID: ${SIAMSIL_DATA_BUNDLE_S3_ACCESS_KEY_ID:?}
       SIAMSIL_DATA_BUNDLE_S3_SECRET_ACCESS_KEY: ${SIAMSIL_DATA_BUNDLE_S3_SECRET_ACCESS_KEY:?}
       SIAMSIL_DATA_BUNDLE_SHA256: ${SIAMSIL_DATA_BUNDLE_SHA256:?}
