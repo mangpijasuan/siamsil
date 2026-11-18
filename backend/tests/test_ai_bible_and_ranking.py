@@ -17,6 +17,8 @@ sys.path.insert(0, str(BACKEND_ROOT / "tests"))
 sys.path.insert(0, str(BACKEND_ROOT.parent / "ml_pipeline" / "scripts"))
 
 from language_engine import LanguageEngine, exact_forms  # type: ignore  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from corpus_switch import serve_corpus  # type: ignore  # noqa: E402
 from main import app  # type: ignore  # noqa: E402
 from services.bible_lookup import BibleLookup  # type: ignore  # noqa: E402
 from services.bible_versions import BibleVersions  # type: ignore  # noqa: E402
@@ -34,6 +36,7 @@ MORE_PAIRS = [
 
 class PhraseRankingTests(unittest.TestCase):
     def setUp(self) -> None:
+        serve_corpus(self)
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         db = Path(tmp.name) / "language.sqlite"
@@ -61,6 +64,7 @@ class PhraseRankingTests(unittest.TestCase):
 
 class BibleLookupTests(unittest.TestCase):
     def setUp(self) -> None:
+        serve_corpus(self)
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         root = Path(tmp.name)

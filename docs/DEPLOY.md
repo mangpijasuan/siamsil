@@ -108,6 +108,6 @@ Add the records that Vercel and Railway showed: `siamsil.org` and `www` for Verc
 
 Tokens, the database address, and the bundle never go in this repository or in a public place. Keep them as Railway and Vercel variables and on the computer that uploads the bundle.
 
-## Hiding the parallel corpus
+## The parallel corpus is hidden by default
 
-The 1.77 million sentence pairs are `blocked` in `data/rights.json` (docs/DATA_RIGHTS.md, 2026-11-18). The data bundle does not carry that file, so the running API obeys a setting instead. On the API host set `SIAMSIL_SERVE_PARALLEL_CORPUS=false` and redeploy. Translate, search and Siamsil AI then return no corpus sentence matches. The dictionary, the Bible and reviewed phrases are not affected. Remove the setting (or set it to `true`) to show the corpus again once its rights are cleared.
+The 1.77 million sentence pairs are `blocked` in `data/rights.json` (docs/DATA_RIGHTS.md, 2026-11-18). The data bundle does not carry that file, so the running API obeys a setting instead: `SIAMSIL_SERVE_PARALLEL_CORPUS` defaults to **false**, and Translate, search and Siamsil AI return no corpus sentence matches. The dictionary, the Bible and reviewed phrases are not affected. Do not set it to `true` on any deployed or shared host until the corpus's rights are cleared and recorded in `docs/DATA_RIGHTS.md`. The only exception is the owner's own computer, for the owner's private review work; the unit tests switch it on themselves.

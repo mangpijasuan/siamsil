@@ -33,6 +33,8 @@ from corpus_reviews import (  # type: ignore  # noqa: E402
 )
 from export_datasets import corpus_records  # type: ignore  # noqa: E402
 from language_engine import LanguageEngine  # type: ignore  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from corpus_switch import serve_corpus  # type: ignore  # noqa: E402
 from review_sample import (  # type: ignore  # noqa: E402
     approval_sheet,
     approve,
@@ -141,6 +143,7 @@ class DecisionTests(unittest.TestCase):
 
 class CorpusFixture(unittest.TestCase):
     def setUp(self) -> None:
+        serve_corpus(self)
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.dir = Path(tmp.name)

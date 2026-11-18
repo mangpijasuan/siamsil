@@ -14,6 +14,8 @@ sys.path.insert(0, str(BACKEND_ROOT))
 sys.path.insert(0, str(BACKEND_ROOT / "services"))
 
 from language_engine import LanguageEngine  # type: ignore  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from corpus_switch import serve_corpus  # type: ignore  # noqa: E402
 from main import app  # type: ignore  # noqa: E402
 from services.data_loader import DataStore  # type: ignore  # noqa: E402
 
@@ -69,6 +71,7 @@ def build_corpus(db: Path) -> None:
 
 class CorpusDirectionTests(unittest.TestCase):
     def setUp(self) -> None:
+        serve_corpus(self)
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         db = Path(tmp.name) / "language.sqlite"
