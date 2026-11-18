@@ -77,10 +77,10 @@ Rules for your answer:
 - If you find no problem, return an empty "flags" list.
 - Return ONLY JSON matching the schema.
 
-Spelling checked by code against standard {STANDARD_VERSION}; names checked against names list {NAMES_VERSION}.
+Spelling checked by code against standard {{STANDARD_VERSION}}; names checked against names list {{NAMES_VERSION}}.
 
 Pairs:
-{PAIRS_JSON}
+{{PAIRS_JSON}}
 ```
 
 ### Output schema (structured output)
