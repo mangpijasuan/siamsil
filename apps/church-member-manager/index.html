@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Church Member Manager — Siamsil Technologies, Inc.</title>
+<meta name="description" content="Church members, households, tithes, donations, attendance and giving summaries. Developed by Siamsil Technologies, Inc.">
+<meta name="author" content="Siamsil Technologies, Inc.">
+<meta name="theme-color" content="#08243b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+<script src="qr.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="app-header">
+  <div class="masthead">
+    <a class="brand" href="#home"><span id="brand-icon" class="brand-icon"></span><span class="brand-text">CHURCH <b>MANAGER</b><small class="byline">by Siamsil Technologies, Inc.</small></span></a>
+    <strong id="screen-title">CHURCH HOME</strong>
+    <div class="session"><span id="sample" class="sample">SAMPLE DATA · FICTIONAL</span><span class="session-date" id="session-date"></span></div>
+  </div>
+  <div class="nav-row"><nav id="navigation" aria-label="Main navigation"></nav><span class="club" id="club"></span></div>
+</header>
+<main id="screen"></main>
+<div class="toast" id="toast" role="status" hidden></div>
+<dialog id="dialog"><div id="dialog-content"></div></dialog>
+<section id="print-sheet"></section>
+<footer id="app-footer" class="app-footer"></footer>
+<script>if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});</script>
+</body>
+</html>
