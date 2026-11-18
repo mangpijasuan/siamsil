@@ -6,8 +6,8 @@ Siamsil runs as three parts:
 
 | Part | Where | What it is |
 | --- | --- | --- |
-| Website | Vercel, from `frontend/` | Next.js pages at `siamsil.com` |
-| API | Railway, from `backend/` | FastAPI at `api.siamsil.com`, with a PostgreSQL database and a volume at `/data` |
+| Website | Vercel, from `frontend/` | Next.js pages at `siamsil.org` |
+| API | Railway, from `backend/` | FastAPI at `api.siamsil.org`, with a PostgreSQL database and a volume at `/data` |
 | Data bundle | A private Cloudflare R2 bucket | The language and Bible databases, which the API downloads into `/data` |
 
 The domain and its DNS are at Cloudflare. Merges to `main` deploy the website and the API automatically. The data bundle changes only when you rebuild and upload it.
@@ -16,11 +16,13 @@ Estimated cost to start: about $20 a month (Vercel Hobby $0, Railway Hobby about
 
 ## 1. Domain (Cloudflare)
 
-Buy `siamsil.com` under **Domain Registration**. Its DNS is then managed in Cloudflare (step 5).
+The domain `siamsil.org` is registered at Cloudflare (**Domain Registration**), so its DNS is managed there (step 5).
 
 ## 2. The data bundle (R2)
 
 The bundle holds Bible text and dictionaries that Siamsil may show but not redistribute (`docs/DATA_RIGHTS.md`), so the bucket stays **private**.
+
+> The GitHub data-release workflow is on a safety hold and fails on purpose. Build and upload from your own computer as below, never as a workflow artifact. See [DATA_RELEASES.md](DATA_RELEASES.md).
 
 1. **R2 → Create bucket**, for example `siamsil-data-bundle`. Do not turn on public access, and do not connect a custom domain to the bucket.
 2. **R2 → Manage API tokens**, then make two tokens limited to that bucket:
@@ -57,7 +59,7 @@ The bundle contains `siamsil_language.sqlite`, `bible_versions.sqlite` and any r
 | `SIAMSIL_ENVIRONMENT` | `production` |
 | `SIAMSIL_DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (Railway fills it in) |
 | `SIAMSIL_DATABASE_REQUIRED` | `true` |
-| `SIAMSIL_CORS_ORIGINS` | `["https://siamsil.com","https://www.siamsil.com"]` |
+| `SIAMSIL_CORS_ORIGINS` | `["https://siamsil.org","https://www.siamsil.org"]` |
 | `SIAMSIL_DATA_BUNDLE_S3_ENDPOINT` | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` |
 | `SIAMSIL_DATA_BUNDLE_S3_BUCKET` | `siamsil-data-bundle` |
 | `SIAMSIL_DATA_BUNDLE_S3_ACCESS_KEY_ID` | the read-only token's Access Key ID |
@@ -66,7 +68,7 @@ The bundle contains `siamsil_language.sqlite`, `bible_versions.sqlite` and any r
 
 The Dockerfile already points the API at `/data` (`SIAMSIL_LANGUAGE_DB`, `SIAMSIL_BIBLE_VERSIONS_DB`, `SIAMSIL_DATA_DIR`). On its first start the API downloads the bundle into the volume. It unpacks the whole bundle before replacing anything, and removes files an earlier bundle had that the new one leaves out. That takes a few minutes, which is why the health check waits up to 10 minutes. It then applies the database migrations and starts. Later restarts skip the download while the SHA-256 is unchanged.
 
-5. **Settings → Networking → Custom domain**: `api.siamsil.com`. Railway shows a CNAME record to add in step 5.
+5. **Settings → Networking → Custom domain**: `api.siamsil.org`. Railway shows a CNAME record to add in step 5.
 
 ## 4. Website (Vercel)
 
@@ -75,22 +77,22 @@ The Dockerfile already points the API at `/data` (`SIAMSIL_LANGUAGE_DB`, `SIAMSI
 
 | Variable | Value |
 | --- | --- |
-| `SIAMSIL_API_URL` | `https://api.siamsil.com` |
-| `NEXT_PUBLIC_API_URL` | `https://api.siamsil.com` |
-| `SIAMSIL_SITE_URL` | `https://siamsil.com` |
+| `SIAMSIL_API_URL` | `https://api.siamsil.org` |
+| `NEXT_PUBLIC_API_URL` | `https://api.siamsil.org` |
+| `SIAMSIL_SITE_URL` | `https://siamsil.org` |
 
-3. **Settings → Domains**: add `siamsil.com` and `www.siamsil.com`. Vercel shows the records to add in step 5.
+3. **Settings → Domains**: add `siamsil.org` and `www.siamsil.org`. Vercel shows the records to add in step 5.
 
 Vercel's free Hobby plan is for non-commercial use. Move to Pro before Siamsil sells anything (Siamsil Docs, `docs/ROADMAP.md`).
 
 ## 5. DNS (Cloudflare)
 
-Add the records that Vercel and Railway showed: `siamsil.com` and `www` for Vercel, `api` as a CNAME for Railway. Set each to **DNS only** (grey cloud). Vercel and Railway issue the HTTPS certificates themselves, and Cloudflare's proxy can interfere with that.
+Add the records that Vercel and Railway showed: `siamsil.org` and `www` for Vercel, `api` as a CNAME for Railway. Set each to **DNS only** (grey cloud). Vercel and Railway issue the HTTPS certificates themselves, and Cloudflare's proxy can interfere with that.
 
 ## 6. Check
 
-- `https://api.siamsil.com/health` reports `"status": "ok"`, the dictionary and corpus counts, and the database check.
-- On `https://siamsil.com`:
+- `https://api.siamsil.org/health` reports `"status": "ok"`, the dictionary and corpus counts, and the database check.
+- On `https://siamsil.org`:
   - the Dictionary finds "water" → *tui*;
   - Translate in Zomi → English offers completions while typing;
   - the Bible shows Genesis 1 in Zomi with English;

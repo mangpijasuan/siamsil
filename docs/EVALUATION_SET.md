@@ -42,6 +42,19 @@ Within each domain, mix short (1–8 words), medium, and long (25+ words) items,
 
 Translators and reviewers are credited by their chosen name and paid or formally acknowledged; record their consent to the use described in [DATA_RIGHTS.md](DATA_RIGHTS.md).
 
+## Owner-only review (working phase)
+
+By the owner's decision of 2026-11-18 (docs/SZSF.md, "Owner-approved records"), the owner may be translator and reviewer. After reading each item, the owner runs:
+
+```bash
+python3 ml_pipeline/scripts/eval_set.py owner-approve data/evaluation/human/en-zomi-v1.draft.jsonl \
+  --owner-code E01 --out data/evaluation/human/en-zomi-v1.jsonl
+python3 ml_pipeline/scripts/eval_set.py validate data/evaluation/human/en-zomi-v1.jsonl --owner-code E01
+python3 ml_pipeline/scripts/eval_set.py manifest data/evaluation/human/en-zomi-v1.jsonl --owner-code E01
+```
+
+Use `--ids` to approve only the items you have reviewed, and `--corrected` if you changed a reference during review. The command never edits its input and skips items that someone else translated. The manifest then says `independently_reviewed: false`, and `mt_eval.py` takes the same `--owner-code`. A set like this is described as owner-only, not as independently reviewed.
+
 ## Keeping the sets hidden
 
 - The JSONL files are excluded from git (`data/evaluation/**/*.jsonl` in `.gitignore`). Store them in restricted storage; commit only the manifest (counts and SHA-256).

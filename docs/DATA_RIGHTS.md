@@ -36,7 +36,7 @@ Uses are checked separately: **display** (show in the app), **train** (model tra
 | Bible, KJV (USX) | 31,102 verses | yes | yes | — (UK) | — (UK) | `restricted` (public domain outside the UK) |
 | Bible, Burmese Judson (BJB), USX | 30,938 verses | yes, with credit | yes | **no** | **no** | `restricted` |
 | Zomi worship songs (songbook, via Zomi Worship Collective) | Song lyrics in Zomi | yes, with credit | yes | — | **no** | `restricted` |
-| English–Zomi–Burmese Translation Master v1.0.1 (private `siamsil-data`) | 50,032 headwords, 50,282 senses; 0 human-reviewed | — | — | — | — | `needs_review` |
+| English–Zomi–Burmese Translation Master v1.0.1 (private `siamsil-data`) | 50,032 headwords, 50,282 senses; compiled by the owner from internet sources, sources being identified; 0 human-reviewed | — | — | — | — | `needs_review` |
 | Essential 3000 English–Zomi Learner's Dictionary, beta (private `siamsil-data`) | 3,000 headwords, 5,342 senses, examples and phrases; 0 human-reviewed | — | — | — | — | `needs_review` |
 | Zomi Ordbog, dansk-[engelsk]-zomi (Johs. Lind, Zomi Innkuan Denmark, 2011), based on Dr. Dal Lian Haokip's English-Zomi Dictionary (private `siamsil-data`) | 15,105 entries: Danish, English, Zomi | reported | reported | **no** | **no** | `needs_review` (written permission reported, awaiting confirmation) |
 | TongDot Zomi–English dictionary (tongdot.com) (private `siamsil-data`, `dictionary/sources/tongdot/`) | About 75,931 English–Zomi entries with Burmese; siamsil-data holds only partial copies until TongDot sends the full file | reported | reported | reported | **no** | `needs_review` (verbal permission reported, awaiting written confirmation) |
@@ -71,6 +71,7 @@ To clear it for training, record in this file: (1) the dataset card as published
 
 **Parallel corpus, English side**
 - Tatoeba publishes sentences under CC-BY 2.0 FR, with some under CC0. Confirm the license of the OPUS release used and record the attribution text required.
+- **Evidence received 2026-11-17 (project owner):** `LICENSE.txt` in the Hugging Face repository `zomi-language-corpora/English-Zomi-OPUS_Tatoeba_v20230412` is the standard CC0 1.0 Universal text. It names no copyright holder or date. What it settles: the uploader waives its own rights in the dataset as a compilation and in any translation work it holds. What it does not settle: CC0 section 4(c) says the affirmer disclaims clearing the rights of other people, so it does not replace Tatoeba's own per-sentence licenses (mostly CC-BY 2.0 FR, which require attribution) or Google's terms for the generated Zomi. Status stays `needs_review` until a second person confirms; see the Zomi side questions below.
 
 **Parallel corpus, Zomi side**
 - Which accounts and terms of service were in force when each Gemini model generated output (`gemini-pro`, `gemini-2.5-flash`, `gemini-3-flash-preview`, `gemini-3-pro-preview`)?
@@ -103,14 +104,26 @@ To clear it for training, record in this file: (1) the dataset card as published
 - Credit each song's songwriter and translator where the source gives them.
 - Many songs are Zomi translations of English songs. The permission covers the Zomi text; it does not grant rights to the original English lyrics, which are not imported.
 
-**Translation Master (50K) and Essential 3000**
-- The project owner reported on 2026-10-25 that they wrote both.
-- **2026-10-26, project owner:** no AI tool drafted any of the text in either dictionary, and the owner signs off their use for model training.
-- Training stays `needs_review` until a second person confirms this entry (see Closing an item). On confirmation, set `train` to `cleared` for `translation_master_50k` and `essential_3000` in `data/rights.json`.
-- Still to record: which other uses the owner grants (display, redistribution, commercial).
-- Both remain unreviewed (0 senses human-reviewed), so a training clearance does not change their tier: exports keep them `bronze` until reviewers approve senses.
+**Translation Master (50K)** (corrected 2026-11-17)
+- **Correction, project owner, 2026-11-17:** the owner **compiled** the 50K Translation Master from internet sources. It was not authored entirely by the owner. The record of 2026-10-25 that the owner wrote it, and the 2026-10-26 statement that no AI tool drafted any of its text, were inaccurate for this dataset and are withdrawn.
+- **Source identification is in progress.** Until each source, its license and its rights holder are listed, the rights holders are unknown. Nothing below treats the dataset as the owner's own work.
+- The owner's 2026-10-26 training sign-off **does not establish rights over third-party material.** It is kept only as a record that the owner accepted the risk; it clears nothing.
+- `display`, `train`, `redistribute` and `commercial` all stay `needs_review` in `data/rights.json`. Do not set any of them to `cleared` until the sources are identified and a second person confirms (see Closing an item).
+- **Still to record:** for each source, the name or URL, the date it was read, its license or terms, what share of the 50K it supplies, and where the evidence is kept. A source with no license stays `needs_review` or is removed from the live dictionary.
+- Where it is referenced (checked 2026-11-17): the live language database (`dictionary_master` source, 50,282 senses, built 2026-10-31), the editorial import (`data/dictionary_sources.json`, `translation_master_50k`), the SZSF dictionary-sense conversion (`szsf_convert.py`), and training export for usage-tier A senses (`export_datasets.py`; blocked unless `train` is `cleared`). No SZSF master file or release manifest in `siamsil-data` includes it. The v1.1.0 master holds only `parallel_corpus` rows. A scratch export from 2026-11-13 listed it as an uncleared source; that was a local test, not a release. No model manifest references it.
+- The original workbook, `50K-English-Zomi-Burmese-Native-Expert-Review-v1.0.xlsx`, is unchanged. Its SHA-256 (`640fea51…c77f`) still matches `data/dictionary_sources.json` and `MANIFEST.sha256`.
 - Burmese in the Translation Master is marked "reference only" in its review workbook.
-- Imported read-only by `import_reference_dictionaries.py` into a separate database, every sense `unreviewed`. Reviewer decisions live in the two `*-Native-Expert-Review*.xlsx` workbooks; none were recorded as of 2026-10-25.
+- Imported read-only by `import_reference_dictionaries.py` into a separate database, every sense `unreviewed`. Reviewer decisions live in the `*-Native-Expert-Review*.xlsx` workbook; none were recorded as of 2026-10-25.
+- It is the live dictionary and is shown with an unreviewed label. Keeping it on the live site while its sources are unknown is the owner's decision; this register does not clear it.
+
+**Essential 3000** (unchanged by the 2026-11-17 correction)
+- The project owner reported on 2026-10-25 that they wrote it.
+- **2026-10-26, project owner:** no AI tool drafted any of its text, and the owner signs off its use for model training.
+- Training stays `needs_review` until a second person confirms this entry (see Closing an item). On confirmation, set `train` to `cleared` for `essential_3000` in `data/rights.json`.
+- Still to record: which other uses the owner grants (display, redistribution, commercial).
+- It remains unreviewed (0 senses human-reviewed), so a training clearance does not change its tier: exports keep it `bronze` until reviewers approve senses.
+- Imported read-only by `import_reference_dictionaries.py` into a separate database, every sense `unreviewed`. Reviewer decisions live in `Essential-3000-English-Zomi-Native-Expert-Review.xlsx`; none were recorded as of 2026-10-25.
+- If the owner's authorship statement for the Essential 3000 also needs correcting, say so and this entry will be corrected the same way.
 
 **TongDot Zomi–English dictionary (tongdot.com)**
 - **2026-10-30, project owner:** TongDot gave permission, by message or in conversation (not yet in writing), for display in the app, model training, and redistribution. Commercial use was not granted.
@@ -175,6 +188,7 @@ To clear it for training, record in this file: (1) the dataset card as published
 **Decision (2026-10-17, project owner):** Siamsil is a non-profit app, offered free of charge.
 
 - Licenses that allow only non-commercial use are acceptable for Siamsil, including NLLB-200 model weights (CC BY-NC 4.0) and the Bible permissions recorded above.
+- **Paid translation: proposed, not decided.** The decision above still stands: no paid feature exists. If a paid `/v1/translate` route is ever added, it must be specified first and may use only components that are `commercial: cleared` in `data/rights.json`: the model and its weights (NLLB-200 is CC BY-NC and cannot be used), every training source, every retrieved example, and any example sent to an outside provider. The Bible versions (`bible_tdb`, `bible_tb77`, FCL, HCL06, BJB), `zomi_worship_songs` and `bible_iso_improved` are not commercial-cleared. The current `POST /api/v1/translate` returns retrieval results from labelled, unreviewed data and stays free; neural translation is a separate experimental route. Today's serving check verifies training clearance only, so it would need a commercial check before any paid use. A second person confirms before anything moves to `cleared`.
 - "Non-commercial" describes how the app is used, not only who runs it. Donations are fine. Paid features, a paid API, advertising, or selling data or models would be commercial use: before adding any of them, review every non-commercial license and permission in this register.
 
 ## Closing an item

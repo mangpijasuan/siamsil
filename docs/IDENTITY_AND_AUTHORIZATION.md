@@ -23,7 +23,7 @@ Configure a mature OIDC provider, then set:
 ```dotenv
 SIAMSIL_OIDC_ENABLED=true
 SIAMSIL_OIDC_ISSUER=https://identity.example.com/
-SIAMSIL_OIDC_AUDIENCE=https://api.siamsil.com
+SIAMSIL_OIDC_AUDIENCE=https://api.siamsil.org
 SIAMSIL_OIDC_JWKS_URL=https://identity.example.com/.well-known/jwks.json
 SIAMSIL_BOOTSTRAP_ADMIN_SUBJECTS=["provider-subject-id"]
 ```

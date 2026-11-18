@@ -63,8 +63,16 @@ def _text(value: object) -> str:
     return value.strip() if isinstance(value, str) else ""
 
 
-def validate_items(items: list[dict]) -> tuple[list[str], list[str]]:
-    """Return (errors, warnings). Errors block freezing; warnings are coverage gaps."""
+OWNER_SOLE = "owner_sole"
+
+
+def validate_items(items: list[dict], owner_code: str | None = None) -> tuple[list[str], list[str]]:
+    """Return (errors, warnings). Errors block freezing; warnings are coverage gaps.
+
+    A translator may also be the reviewer only under the owner's working-phase decision
+    (docs/SZSF.md, "Owner-approved records"): the item says `"approval": "owner_sole"`, the caller
+    names the owner's roster code with `owner_code`, and that code is both translator and reviewer.
+    Anyone else, or any item without the marker, still needs an independent reviewer."""
     errors: list[str] = []
     warnings: list[str] = []
     seen_ids: set[str] = set()
@@ -106,7 +114,15 @@ def validate_items(items: list[dict]) -> tuple[list[str], list[str]]:
         translator = _text(item.get("translator"))
         reviewer = _text(item.get("reviewer"))
         adjudicator = _text(item.get("adjudicator"))
-        if translator and translator == reviewer:
+        approval = item.get("approval")
+        if approval not in (None, OWNER_SOLE):
+            errors.append(f"{where}: approval must be '{OWNER_SOLE}' when present")
+        if approval == OWNER_SOLE:
+            if not owner_code:
+                errors.append(f"{where}: owner_sole approval needs the owner's roster code (--owner-code)")
+            elif translator != owner_code or reviewer != owner_code:
+                errors.append(f"{where}: owner_sole approval is only for the owner ({owner_code}) as translator and reviewer")
+        elif translator and translator == reviewer:
             errors.append(f"{where}: reviewer must differ from translator")
         if outcome == "adjudicated" and not adjudicator:
             errors.append(f"{where}: adjudicated items need an adjudicator")
@@ -239,6 +255,8 @@ def build_manifest(path: Path, items: list[dict]) -> dict:
         "items": len(items),
         "by_domain": {d: sum(1 for i in items if i.get("domain") == d) for d in DOMAINS},
         "by_outcome": dict(sorted(Counter(i.get("review_outcome") for i in items).items(), key=str)),
+        "by_approval": dict(sorted(Counter(i.get("approval") or "independent" for i in items).items())),
+        "independently_reviewed": all(i.get("approval") != OWNER_SOLE for i in items),
     }
 
 
@@ -255,7 +273,9 @@ def _load_or_exit(path: Path) -> list[dict]:
 
 def cmd_validate(args: argparse.Namespace) -> int:
     items = _load_or_exit(args.file)
-    errors, warnings = validate_items(items)
+    errors, warnings = validate_items(items, args.owner_code)
+    if any(i.get("approval") == OWNER_SOLE for i in items):
+        print("note: owner-only review (owner_sole); this set is not independently reviewed")
     for warning in warnings:
         print(f"warning: {warning}")
     for error in errors:
@@ -318,7 +338,7 @@ def cmd_check_sources(args: argparse.Namespace) -> int:
 
 def cmd_manifest(args: argparse.Namespace) -> int:
     items = _load_or_exit(args.file)
-    errors, _ = validate_items(items)
+    errors, _ = validate_items(items, args.owner_code)
     if errors or not items:
         print("error: set does not validate; run 'validate' first")
         return 1
@@ -326,6 +346,37 @@ def cmd_manifest(args: argparse.Namespace) -> int:
     out = args.file.with_suffix(".manifest.json")
     out.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"wrote {out}")
+    return 0
+
+
+def cmd_owner_approve(args: argparse.Namespace) -> int:
+    """Mark the owner's own translations as owner-reviewed. The owner runs this after reading each item."""
+    items = _load_or_exit(args.file)
+    chosen = set(args.ids) if args.ids else None
+    changed = skipped = 0
+    out: list[dict] = []
+    for item in items:
+        item = {k: v for k, v in item.items() if k != "_line"}
+        selected = chosen is None or item.get("id") in chosen
+        if selected and _text(item.get("translator")) == args.owner_code:
+            item["reviewer"] = args.owner_code
+            item["approval"] = OWNER_SOLE
+            item["review_outcome"] = "corrected" if args.corrected else "accepted"
+            changed += 1
+        else:
+            if selected:
+                skipped += 1
+        out.append(item)
+    if chosen:
+        unknown = chosen - {i.get("id") for i in out}
+        if unknown:
+            print(f"error: unknown ids: {', '.join(sorted(unknown))}")
+            return 1
+    if args.out.resolve() == args.file.resolve():
+        print("error: write to a new file with --out; the input is never changed")
+        return 1
+    args.out.write_text("".join(json.dumps(i, ensure_ascii=False) + "\n" for i in out), encoding="utf-8")
+    print(f"marked {changed} items owner-reviewed ({skipped} not the owner's translations, left as they were); wrote {args.out}")
     return 0
 
 
@@ -341,7 +392,16 @@ def main(argv: list[str] | None = None) -> int:
 
     validate = commands.add_parser("validate")
     validate.add_argument("file", type=Path)
+    validate.add_argument("--owner-code", help="the owner's roster code; allows owner_sole items (docs/SZSF.md)")
     validate.set_defaults(run=cmd_validate)
+
+    approve = commands.add_parser("owner-approve", help="the owner marks their own translations reviewed")
+    approve.add_argument("file", type=Path)
+    approve.add_argument("--owner-code", required=True)
+    approve.add_argument("--out", type=Path, required=True)
+    approve.add_argument("--ids", nargs="*", help="only these item ids (default: every item the owner translated)")
+    approve.add_argument("--corrected", action="store_true", help="record the outcome as 'corrected' instead of 'accepted'")
+    approve.set_defaults(run=cmd_owner_approve)
 
     leakage = commands.add_parser("leakage")
     leakage.add_argument("file", type=Path)
@@ -350,6 +410,7 @@ def main(argv: list[str] | None = None) -> int:
 
     manifest = commands.add_parser("manifest")
     manifest.add_argument("file", type=Path)
+    manifest.add_argument("--owner-code", help="the owner's roster code; allows owner_sole items")
     manifest.set_defaults(run=cmd_manifest)
 
     args = parser.parse_args(argv)

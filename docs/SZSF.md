@@ -108,6 +108,20 @@ Any other field is refused. A local addition belongs in a separate file that poi
 `reviewers` and `approver` are roster codes (`R01`, `E01`; the form `corpus_reviews.py` accepts), never names, and nobody is both. With `--roster` (the private roster CSV) every reviewer must be listed as a reviewer and the approver as a lead editor; without it the codes are checked for form only. A `gold` record that came from a machine must be
 `HUMAN_APPROVED`.
 
+## Owner-approved records (working phase)
+
+**Decision (2026-11-18, project owner):** during the working phase the owner is the translator, reviewer and approver of the Zomi they write and review, and the owner's approval is the final editorial decision (human editorial decisions are final). No second person is required for the owner's own work.
+
+How this is recorded, so the data stays accurate:
+
+- A record the owner approved carries the owner's roster codes and an explicit note, `approval: owner_sole`, so anyone reading it knows one person wrote and approved it.
+- "Final" means nobody overrides the owner's editorial decision. It does not claim the record is free of error. If the owner later finds a mistake, they correct it and the record is versioned.
+- Tier: owner-approved records are `silver` until a second Zomi speaker confirms them, then `gold`. A second person may confirm later; nothing is lost if they do not.
+- A person who is both the reviewer and the approver of the same record is allowed only for the owner under this decision, and the validator must say so in its output. Everyone else still needs a different approver.
+- The owner reviews each record in a separate pass from writing it, ideally on another day.
+
+**Built for evaluation sets:** `eval_set.py validate --owner-code <code>` accepts items marked `"approval": "owner_sole"` where that code is both translator and reviewer, and the manifest records `independently_reviewed: false`. `eval_set.py owner-approve` marks the owner's own translations, only when the owner runs it, and never edits its input. **Not yet built:** the same mode for `szsf.py` and `corpus_reviews.py` (dictionary and corpus records), which still reject a reviewer who is also the approver.
+
 ## Rules every record must meet
 
 1. Text has no spaces at its ends, no line breaks (including U+2028 and U+2029) or control characters, and is Unicode NFC. The character rules apply to every text value in the record, not only the three main fields.
@@ -115,7 +129,7 @@ Any other field is refused. A local addition belongs in a separate file that poi
    exports of the parallel corpus have it in about 1% of rows (`siamsil-data/parallel/workbooks/FINDINGS.md`). A record that has it is
    refused.
 3. `zomi` is the source's text. The standard form is a separate field, never a replacement.
-4. A changed standard form names the adopted rules that changed it, and each must be in the adopted rule set (`data/zomi_standard_form/standard.json`) under the `standard_version` the record states. Rules are adopted only by two Zomi reviewers.
+4. A changed standard form names the adopted rules that changed it, and each must be in the adopted rule set (`data/zomi_standard_form/standard.json`) under the `standard_version` the record states. A rule has two separate statuses: **adopted by the creator** (the `governance` block of `standard.json`; version 1.1.0 holds ZS-001 to ZS-018 this way) and **confirmed by two Zomi reviewers** (none yet). Exports apply every creator-adopted rule and record its version in `standard_version`; the confirmed status is not required to apply it, but must be reached before a rule is evaluated for paid translation.
 5. Every `source` is in `data/rights.json`. For a file meant for training, every source of a record not `excluded` must be `cleared`
    for training; for display, for display. `--purpose training|display` checks this, and cannot be combined with `--no-rights`.
 6. The review rules above, including that nobody approves their own review.

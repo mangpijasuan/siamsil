@@ -1,7 +1,7 @@
 """Check a deployed Siamsil API and the expected immutable data bundle release.
 
 Example:
-  python backend/scripts/check_release.py --url https://api.siamsil.com \
+  python backend/scripts/check_release.py --url https://api.siamsil.org \
     --sha256 <expected-bundle-sha> --data-root /data
 
 The HTTP check validates API readiness. The local marker check validates the
