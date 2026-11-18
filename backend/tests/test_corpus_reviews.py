@@ -37,7 +37,9 @@ from review_sample import (  # type: ignore  # noqa: E402
     approval_sheet,
     approve,
     export,
+    export_queue,
     main as review_main,
+    read_queue_ids,
     record,
 )
 
@@ -241,6 +243,53 @@ class ApplyReviewTests(CorpusFixture):
         argv = ["build_language_db.py", "--raw", str(self.dir), "--reviews", str(self.dir / "typo.jsonl")]
         with patch.object(sys, "argv", argv), self.assertRaisesRegex(SystemExit, "Reviews file not found"):
             build_language_db.main()
+
+
+class ExportQueueTests(CorpusFixture):
+    def parallel_id(self, n: int) -> int:
+        con = sqlite3.connect(self.database)
+        found = con.execute("SELECT id FROM parallel_sentences WHERE pair_hash = ?", (self.hash_of(n),)).fetchone()[0]
+        con.close()
+        return found
+
+    def test_export_queue_keeps_the_given_order_and_matches_the_normal_export_format(self) -> None:
+        order = [self.parallel_id(4), self.parallel_id(1), self.parallel_id(3)]
+        review_path, key_path, count, missing = export_queue(self.database, self.dir / "queue", order)
+        self.assertEqual((count, missing), (3, []))
+        review = self.read(review_path)
+        key = self.read(key_path)
+        self.assertEqual([r["english"] for r in review],
+                         ["English sentence number 4.", "English sentence number 1.", "English sentence number 3."])
+        self.assertEqual(list(review[0]), ["sample_id", "english", "zomi", "meaning", "fluency", "correction", "notes"])
+        self.assertEqual(list(key[0]), ["sample_id", "parallel_id", "model", "pair_hash", "text_sha256"])
+        self.assertEqual([k["pair_hash"] for k in key], [self.hash_of(4), self.hash_of(1), self.hash_of(3)])
+
+    def test_offset_and_limit_make_one_sitting_and_unknown_or_held_out_ids_are_skipped(self) -> None:
+        ids = [self.parallel_id(n) for n in range(5)] + [99999]
+        con = sqlite3.connect(self.database)
+        con.execute("UPDATE parallel_sentences SET dataset_split = 'eval_holdout' WHERE id = ?", (ids[1],))
+        con.commit()
+        con.close()
+        _, _, count, missing = export_queue(self.database, self.dir / "q2", ids, offset=0, limit=3)
+        self.assertEqual((count, missing), (2, [ids[1]]))
+        _, _, count, missing = export_queue(self.database, self.dir / "q3", ids, offset=4)
+        self.assertEqual((count, missing), (1, [99999]))
+
+    def test_queue_ids_are_read_from_jsonl_or_plain_lines_without_repeats(self) -> None:
+        path = self.dir / "ids.txt"
+        path.write_text('{"id": "corpus-7", "reasons": ["extremely_short"]}\ncorpus-9\n12\ncorpus-7\n', encoding="utf-8")
+        self.assertEqual(read_queue_ids(path), [7, 9, 12])
+        path.write_text("not-an-id\n", encoding="utf-8")
+        with self.assertRaises(ValueError):
+            read_queue_ids(path)
+
+    def test_export_queue_command_writes_both_files(self) -> None:
+        ids = self.dir / "queue.jsonl"
+        ids.write_text(json.dumps({"id": f"corpus-{self.parallel_id(2)}"}) + "\n", encoding="utf-8")
+        with redirect_stdout(StringIO()):
+            code = review_main(["export-queue", str(self.database), "--ids", str(ids), "--out", str(self.dir / "cmd")])
+        self.assertEqual(code, 0)
+        self.assertEqual(len(self.read(self.dir / "cmd" / "review.csv")), 1)
 
 
 class RecordTests(CorpusFixture):
