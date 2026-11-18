@@ -331,6 +331,8 @@ class LanguageEngine:
 
     def search_parallel(self, query: str, limit: int = 20, direction: str | None = None) -> list[dict[str, Any]]:
         """Corpus pairs matching the query. With a direction, only the side being translated from is searched."""
+        if not get_settings().serve_parallel_corpus:
+            return []
         match = fts_match(query)
         if not match:
             return []

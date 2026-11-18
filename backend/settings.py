@@ -56,6 +56,11 @@ class Settings(BaseSettings):
     # Development only: serve a model trained on sources not yet cleared for training.
     experimental_mt_allow_uncleared: bool = False
 
+    # Serve sentence matches from the parallel corpus (Translate, search, Siamsil AI). The corpus is `blocked` in
+    # data/rights.json (2026-11-18); set SIAMSIL_SERVE_PARALLEL_CORPUS=false on the host to hide it. The data
+    # bundle does not carry rights.json, so this switch is what the running API obeys.
+    serve_parallel_corpus: bool = True
+
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:3002",

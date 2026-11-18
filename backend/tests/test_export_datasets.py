@@ -161,7 +161,8 @@ class ExportTests(unittest.TestCase):
         manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["language_release"], "v2")
         self.assertEqual(manifest["silver_models"], [])
-        self.assertIn("parallel_corpus", manifest["uncleared_sources_included"])
+        # data/rights.json blocks the parallel corpus (2026-11-18): even --allow-uncleared never exports it.
+        self.assertNotIn("parallel_corpus", manifest["uncleared_sources_included"])
         self.assertEqual(set(manifest["files"]), {"train", "validation", "test"})
 
 
