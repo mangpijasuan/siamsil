@@ -58,14 +58,14 @@ Not changed, on purpose: rights clearance ([RIGHTS_POLICY.md](RIGHTS_POLICY.md) 
 | Six linguistic statuses | **Reported in PR 1** (`linguistic_status`); stored values unchanged | 1 |
 | Near-duplicate clustering | **Built in PR 2**: template and near-duplicate clusters ([REVIEW_QUEUES.md](REVIEW_QUEUES.md)) | 2 |
 | Priority queues by impact, uncertainty, frequency, reusable pattern | **Built in PR 2**: cluster priority (frequency, inconsistency, uncertainty), queue for `export-queue` | 2 |
-| Batch approval by cluster, with sampling | per-row sheets; cluster members are adjacent since PR 2. One decision for a whole cluster would approve unread text, so it waits for preview, sampling and rollback | 5 |
+| Batch approval by cluster, with sampling | Decisions stay per pair (cluster members are adjacent since PR 2). Applying decisions in bulk is **built in PR 5** with preview, a random spot-check sample and rollback ([CHANGESETS.md](CHANGESETS.md)). One decision approving a whole cluster's unread pairs is not built, on purpose | 5 |
 | English–Zomi semantic alignment, confidence | heuristic flags and `quality_score` only | 2 (local model) |
 | Terminology conflict, translation consistency | `dictionary_terms.py` drafts per term; PR 2 flags one English template translated several ways | 2, 3 |
 | Dictionary: headword normalization, duplicates, variants, inflected forms | **Built in PR 3** ([DICTIONARY_AUDIT.md](DICTIONARY_AUDIT.md)): findings and owner decisions; applying accepted findings waits for PR 5 | 3, 5 |
 | AI correction suggestions with explanation, stored as `ai_suggested` | **Built in PR 4** ([PROPOSALS.md](PROPOSALS.md)): model adapter, rights-checked, output always `ai_candidate`; the Quality Operator service itself is still not deployed | 4 |
 | Candidate headwords toward 100K+, classified (attested, variant, derived, proposed, AI candidate) | **Built in PR 4**: attested words mined from cleared texts, spelling variants by the adopted rules, owner decisions; applying them waits for PR 5 | 4, 5 |
-| Rule propagation with preview and rollback beyond spelling rules | spelling rules only (versioned, original kept) | 5 |
-| Progress dashboard | `status` counts on the command line | 5 |
+| Rule propagation with preview and rollback beyond spelling rules | **PR 5** applies your accepted decisions (merges, standard form, inflected forms, new Zomi headwords, your definitions) with preview and rollback. Rules other than spelling: none adopted yet | 5 |
+| Progress dashboard | **Built in PR 5**: `changesets.py status` (corpus statuses, findings, proposals, changesets); a web view would come with the review screen | 5 |
 | Web review screen with side-by-side text, keyboard shortcuts, provenance and rights panel | not on `main`; drafts #68, #72 | after 2, built on #72 rather than a new app |
 
 ### Constraints the next PRs must respect
