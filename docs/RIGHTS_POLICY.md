@@ -115,7 +115,7 @@ rights.decision("parallel_corpus", "display").reason     # why not
 rights.usable_ids("parallel_corpus", "display")          # None = whole source, else cleared subset ids
 ```
 
-**Not yet enforced** (recorded, decision needed): Siamsil AI quotes Bible passages as answer context, which is `retrieval`. Every Bible version is `display`-cleared but none has a `retrieval` decision. This change does not gate it, to avoid changing production without a decision; the World English Bible can be cleared for retrieval on Path B today, and the Bible Society versions need the permission letter's wording checked for retrieval.
+**Not yet enforced** (decision needed): Siamsil AI quotes Bible passages as answer context, which is `retrieval`. The World English Bible is cleared for it (Path B, 2026-11-19); the Bible Society versions (TDB, TB77, FCL, HCL06), KJV and Judson are `display`-cleared but have no `retrieval` decision, and the permission letter's wording has to be checked for it. The Bible lookup is not gated yet, so production does not change before that decision; gating it is a one-line `rights.allowed(version["rights_source"], "retrieval")` filter in `services/bible_lookup.py`.
 
 ## Using the checker
 
@@ -154,12 +154,18 @@ python3 ml_pipeline/scripts/rights_policy.py decide bible_web retrieval --path o
 
 ## Eligible now (2026-11-19)
 
-From `report`, against the real register. Nothing below is cleared by this policy change: 18 of 168 source-uses are allowed, the same 18 as before.
+From `report`, against the real register. 22 of 168 source-uses are allowed: the 18 legacy clearances, plus the owner's four decisions of 2026-11-19, the first made under this policy:
+
+| Decided 2026-11-19 by O01 | Path | Effect |
+|---|---|---|
+| Essential 3000 (`essential_3000`, 3,000 headwords): `train` | A | Its example sentences and phrases are admitted to the training export without `--allow-uncleared`, still `bronze`. No second reviewer. Other uses not decided. |
+| World English Bible (`bible_web`, 31,098 verses): `retrieval`, `local_embeddings`, `external_llm` | B | Public domain: usable as retrieval context, for local embeddings, and with outside providers. All seven uses now cleared. |
+
+Still open:
 
 | Source | Path | What is missing |
 |---|---|---|
-| Essential 3000 (`essential_3000`, 3,000 headwords) | A | The owner's `no_third_party_content` attestation (asked because the 50K's authorship record was corrected), then the owner's decision per use. Authorship (2026-10-25), no AI drafting and the training sign-off (2026-10-26) are already recorded. |
-| World English Bible (`bible_web`, 31,098 verses) | B | A decision for `retrieval`, `local_embeddings`, `external_llm`. The public-domain evidence is already recorded; its other four uses are cleared. |
+| Essential 3000, other uses | A | The owner's decision for display, retrieval, embeddings, external LLM, commercial inference, redistribution (`decide`). |
 | Tatoeba English side (`parallel_corpus_english_tatoeba`) | B | The license of the OPUS release and of the sentences used, and the attribution text. On its own it is English only; the pairs also need the Zomi side. |
 | Bible Society versions, TongDot, primer, *Zokam le Zolai*, Haokip-Lind | B | The written grant recorded (grantor, date, wording, where kept, scope). Verbal reports stay leads. |
 | Gemini Zomi side, combined corpus pairs (1,775,043 pairs) | C | Provider terms per use, and an independent verifier. The corpus is not cleared, as a whole or in part. |

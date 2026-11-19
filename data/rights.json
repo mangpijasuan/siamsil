@@ -267,8 +267,61 @@
           "date": "2026-11-19",
           "status": "unchanged",
           "note": "license recorded as public-domain (copr.htm, eBible.org, received 2026-10-17), Path B. Legacy uses unchanged. retrieval, local_embeddings and external_llm have no decision yet."
+        },
+        {
+          "date": "2026-11-19",
+          "status": "cleared",
+          "use": "retrieval",
+          "note": "retrieval: cleared on path open_license by O01",
+          "previous": "needs_review"
+        },
+        {
+          "date": "2026-11-19",
+          "status": "cleared",
+          "use": "local_embeddings",
+          "note": "local_embeddings: cleared on path open_license by O01",
+          "previous": "needs_review"
+        },
+        {
+          "date": "2026-11-19",
+          "status": "cleared",
+          "use": "external_llm",
+          "note": "external_llm: cleared on path open_license by O01",
+          "previous": "needs_review"
         }
-      ]
+      ],
+      "uses": {
+        "retrieval": {
+          "status": "cleared",
+          "path": "open_license",
+          "evidence": "Public-domain dedication in copr.htm of the eBible.org engwebu download (received 2026-10-17); eBible.org is the rights holder. 'World English Bible' is a trademark: the name is used only for unchanged text. docs/DATA_RIGHTS.md, Bible.",
+          "evidence_type": "public_domain",
+          "decided_on": "2026-11-19",
+          "decided_by": "O01",
+          "license": "public-domain",
+          "underlying_rights_checked": true
+        },
+        "local_embeddings": {
+          "status": "cleared",
+          "path": "open_license",
+          "evidence": "Public-domain dedication in copr.htm of the eBible.org engwebu download (received 2026-10-17); eBible.org is the rights holder. 'World English Bible' is a trademark: the name is used only for unchanged text. docs/DATA_RIGHTS.md, Bible.",
+          "evidence_type": "public_domain",
+          "decided_on": "2026-11-19",
+          "decided_by": "O01",
+          "license": "public-domain",
+          "underlying_rights_checked": true
+        },
+        "external_llm": {
+          "status": "cleared",
+          "path": "open_license",
+          "evidence": "Public-domain dedication in copr.htm of the eBible.org engwebu download (received 2026-10-17); eBible.org is the rights holder. 'World English Bible' is a trademark: the name is used only for unchanged text. docs/DATA_RIGHTS.md, Bible.",
+          "evidence_type": "public_domain",
+          "decided_on": "2026-11-19",
+          "decided_by": "O01",
+          "license": "public-domain",
+          "underlying_rights_checked": true
+        }
+      }
     },
     "translation_master_50k": {
       "description": "English–Zomi–Burmese Translation Master Source v1.0.1 (50,032 headwords), compiled by the project owner from internet sources; sources being identified; 0 senses human-reviewed",
@@ -292,18 +345,16 @@
     "essential_3000": {
       "description": "The Essential 3000 English–Zomi Learner's Dictionary, beta (3,000 headwords, 5,342 senses); 0 senses human-reviewed",
       "display": "needs_review",
-      "train": "needs_review",
+      "train": "cleared",
       "redistribute": "needs_review",
       "commercial": "needs_review",
       "evidence": "Project owner reported authoring it on 2026-10-25, and on 2026-10-26 that no AI tool drafted any of its text, and signed off its use for model training. Training stays needs_review until a second person confirms (docs/DATA_RIGHTS.md, Closing an item). Display, redistribution and commercial use are not yet granted.",
       "origin": "owner_original",
       "provenance": {
         "author": "project owner",
-        "attested_on": "2026-10-26",
+        "attested_on": "2026-11-19",
         "attestations": [
-          "sole_author"
-        ],
-        "attestations_pending": [
+          "sole_author",
           "no_third_party_content"
         ],
         "ai_assistance": "none (owner's statement, 2026-10-26: no AI tool drafted any of its text)",
@@ -311,7 +362,8 @@
         "file": "siamsil-data: dictionary/sources/essential-3000-beta/Essential_3000_English_Zomi_Learners_Dictionary.json",
         "statements": [
           "2026-10-25, project owner: wrote it.",
-          "2026-10-26, project owner: no AI tool drafted any of its text; signs off its use for model training."
+          "2026-10-26, project owner: no AI tool drafted any of its text; signs off its use for model training.",
+          "2026-11-19, project owner (O01): copies no third-party content; clears it for training (Path A)."
         ]
       },
       "history": [
@@ -319,8 +371,30 @@
           "date": "2026-11-19",
           "status": "unchanged",
           "note": "Marked owner_original (Path A candidate) from the owner's recorded statements of 2026-10-25 and 2026-10-26. Not cleared: the owner has not yet attested that it copies no third-party content (asked because the 50K Translation Master's authorship record was corrected on 2026-11-17), and no Path A decision is recorded."
+        },
+        {
+          "date": "2026-11-19",
+          "status": "unchanged",
+          "note": "owner attestation no_third_party_content recorded by O01"
+        },
+        {
+          "date": "2026-11-19",
+          "status": "cleared",
+          "use": "train",
+          "note": "train: cleared on path owner_original by O01",
+          "previous": "needs_review"
         }
-      ]
+      ],
+      "uses": {
+        "train": {
+          "status": "cleared",
+          "path": "owner_original",
+          "evidence": "Owner's statements: wrote it (2026-10-25); no AI tool drafted any of its text and signs off training (2026-10-26); copies no third-party content (2026-11-19). File pinned by provenance.sha256. docs/DATA_RIGHTS.md, Essential 3000.",
+          "evidence_type": "owner_authorship",
+          "decided_on": "2026-11-19",
+          "decided_by": "O01"
+        }
+      }
     },
     "haokip_lind_2011": {
       "description": "Zomi Ordbog, dansk-[engelsk]-zomi (Johs. Lind, Zomi Innkuan Denmark, 2011), based on Dr. Dal Lian Haokip's English-Zomi Dictionary; 15,105 entries with Danish, English and Zomi, 220-page PDF (private siamsil-data)",

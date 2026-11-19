@@ -395,10 +395,17 @@ class RegisterTests(unittest.TestCase):
                      "zomi_standard_dictionary"):
             self.assertEqual(rp.eligible_paths(self.sources[name]), ("restricted",), name)
 
-    def test_essential_3000_waits_for_the_owners_attestation(self) -> None:
-        provenance = self.sources["essential_3000"]["provenance"]
-        self.assertIn("no_third_party_content", provenance.get("attestations_pending", []))
-        self.assertFalse(rp.authorize(self.sources, "essential_3000", "train").allowed)
+    def test_the_owners_2026_11_19_decisions_and_nothing_else(self) -> None:
+        allowed = {(n, u) for n in self.sources for u in rp.USE_RISK if rp.authorize(self.sources, n, u).allowed}
+        new = {("essential_3000", "train"), ("bible_web", "retrieval"), ("bible_web", "local_embeddings"),
+               ("bible_web", "external_llm")}
+        self.assertTrue(new <= allowed)
+        self.assertEqual(len(allowed), 22)  # 18 legacy clearances + these 4
+        self.assertEqual(rp.authorize(self.sources, "essential_3000", "train").path, "owner_original")
+        self.assertNotIn("verified_by", self.sources["essential_3000"]["uses"]["train"])
+        self.assertEqual(rp.authorize(self.sources, "bible_web", "retrieval").path, "open_license")
+        for use in ("display", "retrieval", "commercial_inference", "redistribute"):
+            self.assertFalse(rp.authorize(self.sources, "essential_3000", use).allowed, use)
 
     def test_validation_catches_drift_and_rewritten_history(self) -> None:
         sources = rights()
@@ -412,15 +419,20 @@ class RegisterTests(unittest.TestCase):
 
 
 class OwnerDataFlowTests(unittest.TestCase):
-    """The real Essential 3000 record, after the owner's attestation and Path A decision, reaches the training
-    export; before them it does not. Runs on a copy of data/rights.json; the real register is not changed."""
+    """The commands the owner ran on 2026-11-19, replayed on a copy of the register as it stood before: without the
+    attestation and decision Essential 3000 is not exported; with them it is. The real register is not changed."""
 
     def test_owner_decision_admits_essential_3000_to_the_training_export(self) -> None:
         import export_datasets  # type: ignore
 
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "rights.json"
-            path.write_text((ROOT / "data" / "rights.json").read_text(encoding="utf-8"), encoding="utf-8")
+            register = json.loads((ROOT / "data" / "rights.json").read_text(encoding="utf-8"))
+            record = register["sources"]["essential_3000"]  # as it stood before the owner's decision
+            record["train"] = "needs_review"
+            del record["uses"]
+            record["provenance"]["attestations"] = ["sole_author"]
+            path.write_text(json.dumps(register), encoding="utf-8")
             self.assertEqual(export_datasets.load_rights(path)["essential_3000"], "needs_review")
             with redirect_stdout(io.StringIO()):
                 rp.main(["attest", "essential_3000", "no_third_party_content", "--by", "O01", "--on", "2026-11-19",
