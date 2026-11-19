@@ -5,7 +5,8 @@ From the repository root, with SIAMSIL_DATABASE_URL set and the dictionary impor
   export          a sheet of senses for one reviewer (default 500), remembered so no one else gets them;
                   by default only the primary source's senses (data/dictionary_sources.json), with the
                   reference sources shown beside them
-  record          save a reviewer's completed sheet to the decisions file
+  record          save a reviewer's completed sheet to the decisions file; --owner-decides (the owner only)
+                  also approves "correct" rows and approves the owner's own fixes in the same pass
   approval-sheet  senses every reviewer found correct, for a lead editor
   approve         save the lead editor's decisions
   corrections-sheet  reviewers' corrections, for a lead editor to approve or decline
@@ -310,6 +311,44 @@ def cmd_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def owner_decisions(records: list[dict], rows: list[dict], *, owner: str, roster: dict[str, str], approved_on: str,
+                    recorded_at: str, batch: str) -> tuple[list[dict], list[dict], list[str]]:
+    """The owner's decisions on the senses they just reviewed, in the same pass (docs/GOVERNANCE.md).
+
+      correct              -> approve           (approval, owner_sole)
+      fix + corrected Zomi -> edit and approve  (revision, owner_sole; applied by `apply`)
+      not_tedim, wrong     -> rejected by the review itself
+    The text a revision replaces is the "Zomi to check" the owner was shown, checked against the sheet's
+    fingerprint. Returns (approval records, revision records, errors). Only the roster's owner may use it.
+    """
+    if roster.get(owner) != dr.OWNER:
+        return [], [], [f"{owner} is not the owner in the roster; only the owner decides in the same pass"]
+    shown_text = {row.get("Sense ID", ""): row.get("Zomi to check", "") for row in rows}
+    base = {"approver": owner, "approved_on": approved_on, "recorded_at": recorded_at, "batch": batch,
+            "approval": dr.OWNER_SOLE}
+    approvals, revisions, errors = [], [], []
+    for record in records:
+        if record.get("reviewer") != owner:
+            continue
+        sense = record["sense_id"]
+        if record["decision"] == "correct":
+            approvals.append({"kind": "approval", "sense_id": sense, "decision": "approve",
+                              "notes": record.get("notes", ""), **base})
+        elif record["decision"] == "fix":
+            before = shown_text.get(sense, "")
+            if dr.shown_digest(before) != record.get("shown"):
+                errors.append(f"{sense}: the Zomi in the sheet was edited; correct it in 'Corrected Zomi' only")
+                continue
+            revision = {"kind": "revision", "sense_id": sense, "before": before, "after": record["correction"],
+                        "proposed_by": [owner], "notes": record.get("notes", ""), **base}
+            problems = dr.validate(revision)
+            if problems:
+                errors.append(f"{sense}: {'; '.join(problems)}")
+                continue
+            revisions.append(revision)
+    return approvals, revisions, errors
+
+
 def cmd_record(args: argparse.Namespace) -> int:
     rows, about = read_sheet(args.sheet, "Review")
     if about.get("kind") != "dictionary-review":
@@ -332,10 +371,22 @@ def cmd_record(args: argparse.Namespace) -> int:
             problems.append(f"row {number}: {'; '.join(errors)}")
         records.append(record)
     problems += dr.roster_problems(records, roster)
+    approvals: list[dict] = []
+    revisions: list[dict] = []
+    if args.owner_decides and not problems:
+        approvals, revisions, owner_problems = owner_decisions(
+            records, rows, owner=args.reviewer, roster=roster, approved_on=args.date, recorded_at=now_utc(),
+            batch=about.get("batch", ""))
+        problems += owner_problems
     if problems:
         sys.exit("Nothing was saved:\n  " + "\n  ".join(problems))
     if not args.dry_run:
-        dr.append(path, records)
+        dr.append(path, records + approvals)
+        if revisions:
+            dr.append(revisions_path(args.reviews_dir), revisions)
+    if args.owner_decides:
+        print(f"Owner decisions: {len(approvals)} approved, {len(revisions)} edited and approved "
+              "(run apply to write them); not_tedim and wrong are rejections")
     counts = {choice: sum(r["decision"] == choice for r in records) for choice in dr.REVIEW_DECISIONS}
     print(f"{'Would save' if args.dry_run else 'Saved'} {len(records)} decisions from {args.sheet} "
           f"({', '.join(f'{k} {v}' for k, v in counts.items())}); {len(rows) - len(records)} rows left blank")
@@ -618,6 +669,8 @@ def main(argv: list[str] | None = None) -> int:
     record.add_argument("--sheet", type=Path, required=True)
     record.add_argument("--reviewer", required=True)
     record.add_argument("--date", default=date.today().isoformat(), help="day the reviews were made")
+    record.add_argument("--owner-decides", action="store_true",
+                        help="owner only: approve (correct) and edit-and-approve (fix) in this same pass")
     record.add_argument("--dry-run", action="store_true")
 
     sheet = commands.add_parser("approval-sheet", help="senses ready for a lead editor")

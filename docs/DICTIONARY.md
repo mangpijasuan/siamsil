@@ -69,6 +69,8 @@ python backend/scripts/dictionary_review.py apply      # sets review_status in t
 python backend/scripts/dictionary_review.py status
 ```
 
+The owner can approve in the same pass with `record --reviewer O01 --owner-decides` ([DICTIONARY_AUDIT.md](DICTIONARY_AUDIT.md), "Reviewing senses in one pass"). Headword problems (duplicates, spelling variants, inflected forms) are found with `ml_pipeline/scripts/dictionary_audit.py`, described there too.
+
 A batch holds 50K senses only, starting with words that the most sources share, then common words (usage tiers A1 to C2). Next to the Zomi to check it shows what the other sources say and any open flags. Reviewers choose one decision per row:
 
 | Decision | Meaning | Result |
