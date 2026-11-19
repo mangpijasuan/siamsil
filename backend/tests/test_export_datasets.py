@@ -322,6 +322,19 @@ class ReferenceExportTests(ExportTests):
         self.assertEqual(result["skipped"]["reference_duplicate"], 1)
         self.assertEqual(result["skipped"]["reference_empty"], 1)
 
+    def test_the_real_register_admits_essential_3000_and_nothing_uncleared(self) -> None:
+        # The owner's Path A decision of 2026-11-19 (docs/RIGHTS_POLICY.md) in the real data/rights.json, with no
+        # --allow-uncleared: Essential 3000 rows reach training, still bronze; the 50K Master and the corpus do not.
+        from export_datasets import load_rights  # type: ignore
+        real = load_rights(PROJECT_ROOT / "data" / "rights.json")
+        result, rows = self.run_export(rights=real, allow_uncleared=False, reference_db=self.reference)
+        refs = {r["id"]: r for r in self.all_rows(rows).values() if r["id"].startswith("ref-")}
+        self.assertEqual(set(refs), {"ref-x1", "ref-x2"})
+        self.assertTrue(all(r["source"] == "essential_3000" and r["tier"] == "bronze" for r in refs.values()))
+        self.assertGreater(result["skipped"]["rights:translation_master_50k"], 0)
+        self.assertGreater(result["skipped"]["rights:parallel_corpus"], 0)
+        self.assertEqual(result["uncleared_sources_included"], [])
+
     def test_reference_sources_need_rights(self) -> None:
         result, rows = self.run_export(rights=ALL_NEEDS_REVIEW | {"essential_3000": "blocked"}, reference_db=self.reference)
         self.assertFalse(any(r["id"].startswith("ref-") for r in self.all_rows(rows).values()))
