@@ -59,9 +59,10 @@ const LIBRARY_ITEMS: LibraryItem[] = [
     id: "hymns",
     title: "Hymns & Songs Archive",
     zomiTitle: "La leh Phatna Late",
-    description: "A future home for lyrics, notation, recordings, and history.",
+    description: "Browse Zomi hymns and worship song lyrics.",
     category: "Culture",
-    format: "Planned collection",
+    format: "Song reader",
+    href: "/songs",
     accent: "navy",
   },
   {
@@ -109,11 +110,11 @@ export default function LibraryClient() {
       <section className="library-content">
         <div className="library-summary">
           <div>
-            <span className="library-summary-number">3</span>
+            <span className="library-summary-number">4</span>
             <span className="library-summary-label">Available collections</span>
           </div>
           <div>
-            <span className="library-summary-number">3</span>
+            <span className="library-summary-number">2</span>
             <span className="library-summary-label">Planned collections</span>
           </div>
           <div>
