@@ -61,7 +61,7 @@ Not changed, on purpose: rights clearance ([RIGHTS_POLICY.md](RIGHTS_POLICY.md) 
 | Batch approval by cluster, with sampling | per-row sheets; cluster members are adjacent since PR 2. One decision for a whole cluster would approve unread text, so it waits for preview, sampling and rollback | 5 |
 | English–Zomi semantic alignment, confidence | heuristic flags and `quality_score` only | 2 (local model) |
 | Terminology conflict, translation consistency | `dictionary_terms.py` drafts per term; PR 2 flags one English template translated several ways | 2, 3 |
-| Dictionary: headword normalization, duplicates, variants, inflected forms | sources read as written; spelling-variant evidence exists separately | 3 |
+| Dictionary: headword normalization, duplicates, variants, inflected forms | **Built in PR 3** ([DICTIONARY_AUDIT.md](DICTIONARY_AUDIT.md)): findings and owner decisions; applying accepted findings waits for PR 5 | 3, 5 |
 | AI correction suggestions with explanation, stored as `ai_suggested` | none; Quality Operator proposed, not deployed | 4 |
 | Candidate headwords toward 100K+, classified (attested, variant, derived, proposed, AI candidate) | none | 4 |
 | Rule propagation with preview and rollback beyond spelling rules | spelling rules only (versioned, original kept) | 5 |
