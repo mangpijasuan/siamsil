@@ -178,13 +178,13 @@ To clear it for training, record in this file: (1) the dataset card as published
 
 On 2026-11-18 the project owner reported **verbal permission ("partnership agreed")** for the five sources below. These are reports, not evidence: none is in writing, none has been confirmed by a second person, and **no status in `data/rights.json` changes**. Each stays as it is until the permission is in writing, the date, signer and wording are recorded here, and a second person confirms (see Closing an item).
 
-| Source | Status in `data/rights.json` (unchanged) | Needed to close |
-|---|---|---|
-| TongDot Zomi–English dictionary | `needs_review` (commercial `not_permitted`) | Written permission naming display, training and redistribution, and the full file |
-| *Paunam Khenna Leh Kampau Luanzia*, primer by Lia Cingsen | `needs_review` | Written confirmation of display and training; redistribution and commercial were not granted |
-| *Zokam le Zolai* (Rev. Khoi Lam Thang, Zomi Christian Literature Society) | `needs_review` | Written confirmation, with credit; redistribution and commercial were not granted |
-| Daily-use phrases (Ms. Nem) | `needs_review` | Written sign-off |
-| Zomi Bethel Church website text | `not_permitted` | Written permission from the church; until then it must not be used |
+| Source | Reported scope (verbal, 2026-11-18) | Status in `data/rights.json` (unchanged) | Needed to close |
+|---|---|---|---|
+| TongDot Zomi–English dictionary | Digital display and AI training | `needs_review` (commercial `not_permitted`) | Written reply naming display, training and (if wanted) redistribution, plus the full file |
+| *Paunam Khenna Leh Kampau Luanzia*, primer by Lia Cingsen | Display and AI training | `needs_review` | Written reply; redistribution and commercial were not granted |
+| *Zokam le Zolai* (Rev. Khoi Lam Thang and Zomi Christian Literature Society) | Display and AI training | `needs_review` | Written reply, with credit; redistribution and commercial were not granted |
+| Daily-use phrases (Ms. Nem), 62 phrases | Display and AI training | `needs_review` | Written sign-off |
+| Zomi Bethel Church website text (church leadership) | Educational display and **non-commercial** training | `not_permitted` | Written permission from the church. Blocked until then. Because the training scope is non-commercial, text from this source could not train a model used in a paid tier |
 
 The tracker spreadsheet the owner edited on 2026-11-18 also marked every source "Confirmed" with written permission and a second person, and showed every rights column as cleared. Those entries are not recorded here: they do not match this register or the evidence, and the owner will say which, if any, are true.
 
