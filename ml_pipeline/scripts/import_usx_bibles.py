@@ -44,6 +44,7 @@ from pathlib import Path
 import defusedxml.ElementTree as SafeET
 
 from data_repo import DataRepo, SourceError, default_data_repo
+import rights_policy
 
 SCRIPT_VERSION = "1.3.0"
 
@@ -285,9 +286,13 @@ def usx_dir(folder: Path) -> Path:
 
 
 def load_rights(path: Path) -> dict[str, dict[str, str]]:
+    """{source: {"display": status, "train": status}} as the rights policy decides them (docs/RIGHTS_POLICY.md):
+    a use reads "cleared" only when its decision is valid, so an incomplete clearance hides a version."""
     if not path.exists():
         return {}
-    return json.loads(path.read_text(encoding="utf-8")).get("sources", {})
+    sources = json.loads(path.read_text(encoding="utf-8")).get("sources", {})
+    display, train = rights_policy.legacy_statuses(sources, "display"), rights_policy.legacy_statuses(sources, "train")
+    return {name: {"display": display[name], "train": train[name]} for name in display}
 
 
 def import_version(folder: Path, config: dict[str, dict] | None = None) -> dict:

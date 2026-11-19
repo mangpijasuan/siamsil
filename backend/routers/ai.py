@@ -51,7 +51,7 @@ def ask(request: AskRequest):
         intent = "bible"
     # A named passage is answered from the Bible alone; a word or phrase also gets the dictionary and corpus.
     dictionary = [] if found == "reference" else engine.search_dictionary(lookup, limit=5)
-    corpus = [] if intent == "bible" else engine.search_parallel(lookup, limit=5)
+    corpus = [] if intent == "bible" else engine.search_parallel(lookup, limit=5, uses=("display", "retrieval"))
 
     sources: list[dict] = []
     if dictionary:

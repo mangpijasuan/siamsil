@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Standalone static app (plain browser scripts, vendored QR library), not part of the Next.js code.
+    "public/church-manager/**",
   ]),
 ]);
 
