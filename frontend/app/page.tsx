@@ -27,6 +27,21 @@ const RESOURCES = [
   { href: "/resources", title: "Resources", note: "What Siamsil holds", photo: "culture" },
 ];
 const SUGGESTIONS = ["water", "family", "thank you", "school", "love", "God"];
+// What anyone can use without paying or signing in. Every line matches what the app does today (see /about).
+const FREE_TOOLS = [
+  "Dictionary lookup in English and Zomi",
+  "The Zomi Bible versions Siamsil may show",
+  "Translations Siamsil already holds, with their source",
+  "Everyday phrases reviewed by Zomi teachers",
+  "Siamsil AI answers that show where they come from",
+  "Your own workspace of saved words and progress",
+];
+const DATA_PRINCIPLES = [
+  { title: "Labelled honestly", text: "Machine-made translations are marked unreviewed. Siamsil does not approve its own translations." },
+  { title: "People decide", text: "Only people decide what counts as correct Zomi, following the Siamsil Zomi Standard Form." },
+  { title: "Sources respected", text: "Every source has a recorded permission status. Text Siamsil may not show is kept out." },
+  { title: "Your data stays with you", text: "Saved words, searches and progress stay in your browser. There are no accounts yet." },
+];
 function compact(value: number) {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
   if (value >= 10_000) return `${Math.round(value / 1000)}K`;
@@ -59,18 +74,23 @@ export default async function Home() {
     {SITE_URL && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: websiteJsonLd(SITE_URL) }} />}
     <section className="sr-hero" aria-labelledby="sr-title">
       <div className="sr-hero-inner">
-        <p className="sr-eyebrow">The digital home for the Zomi language</p>
-        <h1 id="sr-title" className="font-playfair sr-title">Words, scripture<br/>and learning <em>in Zomi.</em></h1>
-        <p className="sr-summary">Look up words, read the Bible, practice everyday phrases,<br />and find translations Siamsil already holds.</p>
+        <p className="sr-eyebrow">Zomi language, free for everyone</p>
+        <h1 id="sr-title" className="font-playfair sr-title">Preserve the language.<br/><em>Empower the future.</em></h1>
+        <p className="sr-summary">Look up words, read the Bible, practice everyday phrases,{" "}<br />and find translations Siamsil already holds.</p>
         <form className="sr-search" action="/zomidictionary" method="GET" role="search">
           <IconSearch size={20} />
           <input type="search" name="q" placeholder="Search a word in English or Zomi…" aria-label="Search English or Zomi dictionary" required />
           <button type="submit">Search</button>
         </form>
         <div className="sr-quick"><span>Try:</span>{SUGGESTIONS.map(term => <Link className="sr-chip" key={term} href={`/zomidictionary?q=${encodeURIComponent(term)}`}>{term}</Link>)}</div>
+        <div className="sr-ctas">
+          <Link className="sr-cta" href="#free-tools">Explore free tools</Link>
+          <Link className="sr-cta sr-cta-quiet" href="/workspace">Open my workspace</Link>
+        </div>
       </div>
     </section>
     <div className="sr-content">
+      <h2 id="free-tools" className="sr-section-title font-playfair">Everything you need to explore Zomi</h2>
       <nav className="sr-features" aria-label="Explore Siamsil">
         {FEATURES.map(({href,title,subtitle,tile}) => <Link className="sr-feature" href={href} key={href}>
           <Image className="sr-feature-tile" src={`/theme/tile-${tile}.png`} alt="" width={74} height={74} unoptimized />
@@ -94,6 +114,20 @@ export default async function Home() {
               <span><strong>{title}</strong><small>{note}</small></span>
             </Link>)}
           </div>
+        </section>
+      </div>
+      <div className="sr-about">
+        <section className="sr-panel sr-free" aria-labelledby="sr-free-heading">
+          <span className="sr-eyebrow sr-eyebrow-dark">FREE TO USE</span>
+          <h2 id="sr-free-heading">Zomi belongs to everyone</h2>
+          <p className="sr-about-lede">Every tool on Siamsil is free, and no account is needed.</p>
+          <ul className="sr-free-list">{FREE_TOOLS.map(item => <li key={item}>{item}</li>)}</ul>
+          <Link className="sr-cta sr-cta-dark" href="/workspace">Open my workspace</Link>
+        </section>
+        <section className="sr-panel" aria-labelledby="sr-data-heading">
+          <div className="sr-panel-head"><div><span className="sr-eyebrow sr-eyebrow-dark">TRUST</span><h2 id="sr-data-heading">How Siamsil treats language data</h2></div><Link href="/resources">Our sources →</Link></div>
+          <div className="sr-principles">{DATA_PRINCIPLES.map(({ title, text }) => <div key={title}><strong>{title}</strong><p>{text}</p></div>)}</div>
+          <Link className="sr-more" href="/about">About Siamsil →</Link>
         </section>
       </div>
       <p className="sr-note">Siamsil identifies sources and labels unreviewed machine translations. Dictionary, verse and word-of-day data are loaded from the existing API.</p>
