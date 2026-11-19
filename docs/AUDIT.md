@@ -1,4 +1,91 @@
-# Siamsil audit — 2026-08-18
+# Siamsil audit
+
+## Review and governance audit, 2026-11-19
+
+Scope: the application as it stands on `main` (cc03cc2), then in depth the parts the sole-owner governance decision ([GOVERNANCE.md](GOVERNANCE.md)) depends on: review tools, the database, the SZSF validator, the dictionary pipeline and the evaluation tools. Each item was checked in the code, not taken from the docs. The 2026-08-18 audit is kept below.
+
+### Application, in brief
+
+| Area | What is there | State |
+|---|---|---|
+| API | FastAPI under `/api/v1`: ai, bible, dictionary, learning, search, translate, words, identity | Works; 503 passed + 41 skipped tests before this change |
+| Language data | SQLite FTS5 language database (dictionary, 1,775,043 corpus pairs), Bible versions database | Works; the corpus is hidden by default (blocked in `data/rights.json`) |
+| Application data | PostgreSQL with Alembic: users, sessions, roles, corpus review records, dictionary editorial tables, speech consent | Works; review and dictionary records are append-only with audit events |
+| Identity | OIDC (optional), roles learner, contributor, reviewer, editor, moderator, administrator | Works; no `owner` web role yet |
+| Frontend | Next.js: home, dictionary, translate, Bible, chat (Siamsil AI), learning, library, resources, profile, help, about | Works; **no review pages on `main`**. Draft PRs #68 (Review Center RBAC) and #72 (dictionary review form) are not merged |
+| Deploy | Railway / VPS guides, data bundle from private storage | Data-release workflow paused (by design) |
+| Rights | `data/rights.json`, per-use policy in draft PR #96 | Separate from review; unchanged here |
+
+### Review and standardization tools that already work
+
+| Need | Existing tool | Notes |
+|---|---|---|
+| Corpus review queues | `filter_szsf_corpus.py` (quarantine, soft-flag review queue, re-audit sample), `review_sample.py export-queue` | Queues in a given order, 100 at a time |
+| Review in Excel | `worksheets.py ratings-sheet` / `ratings-import` with dropdowns | Meaning and fluency 0–2, corrected Zomi column |
+| Decisions and history | `corpus_reviews.py`, `corpus_revisions.py`: append-only JSONL, latest decision wins, approvals lapse when reviews change; imported to PostgreSQL unchanged | Versioned and reversible by a new decision |
+| Applying decisions | `build_language_db.py --reviews`: approved pairs verified, rejected pairs hidden and never exported, corrections applied only where the text still matches, original kept in `raw_target_text` | Never overwrites the original |
+| Exact deduplication | `build_language_db.py`, `filter_szsf_corpus.py` (within a split; train copies of held-out pairs dropped) | Exact only |
+| Automatic checks | Length ratio, number mismatch, language mismatch, HTML, repeats, identical sides (`quality_flags`) | Heuristics, no semantic alignment |
+| Generator quality | `GENERATOR_REVIEW.md` spot checks per model with 95% intervals; silver tier needs the lower bound to pass | Works |
+| SZSF rules | `zolai_standard.py`: adopted rules (`standard.json`, v1.1.0, ZS-001–ZS-018, creator-adopted), proposals with preview on the corpus, versioned application at export with the original kept | Rule propagation with preview exists for spelling rules |
+| Spelling evidence | `spelling_variants.py`: word forms per source, variant families | Evidence only |
+| SZSF files | `szsf.py` validate and manifest (rights snapshot), `szsf_convert.py`, `sop_quality_gate.py` | Works |
+| Dictionary | Editorial dictionary in PostgreSQL (`dictionary_review.py`): batch sheets per reviewer, approval and corrections sheets, `apply`, `status`; `dictionary_terms.py` terminology drafts | 50K Master is primary; 0 senses reviewed |
+| Evaluation | `eval_set.py` (schema, leakage check, fingerprints, owner-only mode), `mt_eval.py` (translate, score, gate), held-out pairs excluded from every split | Works |
+
+### Where a second person was required (fixed in PR 1, this change)
+
+| Place | Rule | Now |
+|---|---|---|
+| `corpus_reviews.decide` | an approval by one of the pair's reviewers was ignored | counts when marked `owner_sole` (owner only) |
+| `corpus_revisions.validate` | "a lead editor cannot approve their own correction" | the owner may (edit and approve), marked `owner_sole` |
+| `dictionary_reviews.validate` / `decide`, `dictionary_review.py approve` / `revise` | same two rules for dictionary senses | same change |
+| `szsf.py` | "the approver must not also be a reviewer" | allowed with `review.approval: owner_sole`; the roster check confirms the owner |
+| Roster | roles reviewer and lead_editor only; one role per code | adds one `owner` role that acts as both |
+| `review_sample.py approve` / `revise` | refused the approver's own rows | the owner may approve their own rows |
+| Messages in `zolai_standard.py`, `dictionary_terms.py`, `localize_names.py` | said a second person is needed | say a second confirmation is optional |
+| Standard-form rules | already creator-adoptable since 2026-11-13 | unchanged |
+| Evaluation sets | owner-only mode since 2026-11-18 (`independently_reviewed: false`) | unchanged |
+
+Not changed, on purpose: rights clearance ([RIGHTS_POLICY.md](RIGHTS_POLICY.md) in PR #96) still needs an independent verifier on its Path C, because that is a legal question, not a linguistic one. Speech consent records still need what their consent forms say.
+
+### Gaps against the governance plan
+
+| Requested | Today | Planned PR |
+|---|---|---|
+| Owner-only approval with audit trail | **Built in PR 1** | 1 |
+| One-pass approve / edit-and-approve / reject / defer | **Built in PR 1** for corpus sheets | 1 |
+| Six linguistic statuses | **Reported in PR 1** (`linguistic_status`); stored values unchanged | 1 |
+| Near-duplicate clustering | none (exact only) | 2 |
+| Priority queues by impact, uncertainty, frequency, reusable pattern | soft-flag queue in file order | 2 |
+| Batch approval by cluster, with sampling | per-row sheets only | 2, 5 |
+| English–Zomi semantic alignment, confidence | heuristic flags and `quality_score` only | 2 (local model) |
+| Terminology conflict, translation consistency | `dictionary_terms.py` drafts per term only | 2, 3 |
+| Dictionary: headword normalization, duplicates, variants, inflected forms | sources read as written; spelling-variant evidence exists separately | 3 |
+| AI correction suggestions with explanation, stored as `ai_suggested` | none; Quality Operator proposed, not deployed | 4 |
+| Candidate headwords toward 100K+, classified (attested, variant, derived, proposed, AI candidate) | none | 4 |
+| Rule propagation with preview and rollback beyond spelling rules | spelling rules only (versioned, original kept) | 5 |
+| Progress dashboard | `status` counts on the command line | 5 |
+| Web review screen with side-by-side text, keyboard shortcuts, provenance and rights panel | not on `main`; drafts #68, #72 | after 2, built on #72 rather than a new app |
+
+### Constraints the next PRs must respect
+
+- The 1,775,043-pair corpus is `blocked` for every use in `data/rights.json`, and its Zomi side is Gemini output. Review work stays private, uses local models only, and cannot send corpus text to any external provider (`external_llm` is not cleared). Owner approval of a pair does not clear it for display or training.
+- AI output is stored as a proposal with model, version and prompt, never as a review record. Nothing approves without an owner decision.
+- Every bulk operation (cluster approval, rule propagation) is previewed, recorded as one batch decision naming its members, and spot-checked by random sampling against the frozen evaluation set; held-out items never enter review queues used for training.
+- No new services: SQLite and the existing PostgreSQL tables, JSONL decision files, the existing sheets and, later, the review form from #72.
+
+### Proposed PRs
+
+1. **Owner-only review permissions and governance** (this change): roster `owner` role, `owner_sole` approvals across corpus, dictionary and SZSF, one-pass `record --owner-decides`, linguistic statuses, [GOVERNANCE.md](GOVERNANCE.md).
+2. **Sentence-review queues and clustering:** near-duplicate clusters (normalized text and character n-gram similarity, local), a priority score (frequency of the pattern, flag severity, uncertainty, reuse across the corpus), queues ordered by it, and "approve this cluster" as one recorded batch decision.
+3. **Dictionary review improvements:** headword normalization, duplicate and spelling-variant detection using the adopted standard, inflected-form candidates kept apart from headwords, owner sheets with the same one-pass decisions.
+4. **AI candidate generation:** proposal files from local models (and external providers only for data cleared for `external_llm`), each with model, prompt and explanation, status `ai_suggested`; classified headword candidates toward 100K+.
+5. **Batch automation and quality monitoring:** rule-based propagation beyond spelling with preview and rollback, random-sample audits of bulk decisions, an evaluation run per release, and a status dashboard.
+
+---
+
+## Siamsil audit — 2026-08-18
 
 Assessment after locating the updated 20k dictionary and ~1.7M parallel corpus. Numbers below were measured from files, not invented.
 

@@ -37,7 +37,7 @@ This measures the training corpus. It does not replace the human evaluation sets
 
    The summary gives, per model, mean scores and the share of acceptable pairs with a 95% confidence interval. With 200 pairs per model the interval is roughly ±7 percentage points.
 
-4. **Record the ratings** so they outlive the database. Only people in the private roster can be recorded. The roster is a CSV with `code`, `role` (`reviewer` or `lead_editor`) and, optionally, `name`; keep it in the `siamsil-data` repository, never in this one.
+4. **Record the ratings** so they outlive the database. Only people in the private roster can be recorded. The roster is a CSV with `code`, `role` (`reviewer`, `lead_editor` or `owner`) and, optionally, `name`; keep it in the `siamsil-data` repository, never in this one. One code may be the `owner`: it acts as reviewer and lead editor, and may approve its own reviews and corrections, recorded as `owner_sole` ([GOVERNANCE.md](GOVERNANCE.md), 2026-11-19). The owner can rate and decide in one pass with `record --owner-decides`.
 
    ```bash
    python3 ml_pipeline/scripts/review_sample.py record \
@@ -99,7 +99,7 @@ This measures the training corpus. It does not replace the human evaluation sets
 
 ## Corrections to the Zomi
 
-A reviewer's `correction` becomes the pair's Zomi only through a second human step, the same two-person rule as the dictionary's corrections. The approved corrections are kept in their own append-only file next to the reviews, `corpus-revisions.jsonl` (private, with the sentences' Zomi in it):
+A reviewer's `correction` becomes the pair's Zomi only through a second human step, the same two-person rule as the dictionary's corrections. The owner is the exception: the owner may approve their own correction ("edit and approve", `owner_sole`, [GOVERNANCE.md](GOVERNANCE.md)). The approved corrections are kept in their own append-only file next to the reviews, `corpus-revisions.jsonl` (private, with the sentences' Zomi in it):
 
 ```bash
 # 1. the coordinator lists the fixes reviewers wrote for pairs that still need correction

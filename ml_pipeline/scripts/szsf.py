@@ -62,7 +62,8 @@ OPTIONAL = {
     # Lineage a published record needs (docs/ARCHITECTURE.md): checked for form here, required by the release builder.
     "license_status", "verified_at", "prompt_version", "release_version",
 }
-REVIEW_KEYS = {"status", "reviewers", "approver", "batch"}
+REVIEW_KEYS = {"status", "reviewers", "approver", "batch", "approval"}
+OWNER_SOLE = "owner_sole"  # the owner reviewed and approved it alone (docs/GOVERNANCE.md)
 
 
 LINE_BREAKS = ("Cc", "Zl", "Zp")  # control characters and the Unicode line and paragraph separators
@@ -142,8 +143,13 @@ def _review_problems(record: dict[str, Any]) -> list[str]:
         problems.append(f"a {status} record needs at least one reviewer")
     if approver and status not in ("HUMAN_APPROVED", "REJECTED"):
         problems.append(f"a {status} record has no approver yet")
-    if approver and approver in reviewers:
-        problems.append("the approver must not also be a reviewer (two different people)")
+    if review.get("approval") not in (None, OWNER_SOLE):
+        problems.append(f"review.approval, when given, must be {OWNER_SOLE}")
+    elif approver and approver in reviewers and review.get("approval") != OWNER_SOLE:
+        problems.append("the approver must not also be a reviewer (two different people), unless the owner "
+                        "approved alone (review.approval owner_sole)")
+    elif review.get("approval") == OWNER_SOLE and not (approver and approver in reviewers):
+        problems.append("review.approval owner_sole means the approver is also the reviewer")
     if status == "HUMAN_APPROVED" and not approver:
         problems.append("HUMAN_APPROVED needs a lead editor as approver")
     if status == "REJECTED" and record.get("split") != "excluded":
@@ -291,9 +297,11 @@ def validate(path: Path, rights: dict[str, dict] | None = None, purpose: str | N
             review = record["review"]
             if isinstance(review.get("reviewers"), list):
                 problems += [f"line {number}: {code} is not a reviewer in the roster" for code in review["reviewers"]
-                             if isinstance(code, str) and roster.get(code) != "reviewer"]
-            if isinstance(review.get("approver"), str) and roster.get(review["approver"]) != "lead_editor":
+                             if isinstance(code, str) and roster.get(code) not in ("reviewer", "owner")]
+            if isinstance(review.get("approver"), str) and roster.get(review["approver"]) not in ("lead_editor", "owner"):
                 problems.append(f"line {number}: {review['approver']} is not a lead editor in the roster")
+            elif review.get("approval") == OWNER_SOLE and roster.get(review.get("approver")) != "owner":
+                problems.append(f"line {number}: {review.get('approver')} is not the owner; only the owner approves alone")
         if rights is not None:
             for field in ("source", "english_source"):
                 if not isinstance(record.get(field), str):

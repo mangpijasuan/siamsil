@@ -54,7 +54,16 @@ python3 ml_pipeline/scripts/review_sample.py record \
 
 Use your roster code for `R01`. Ratings take effect on the next `build_language_db.py` run. Corrections go to the lead editor's sheet with `review_sample.py corrections-sheet` and `revise`.
 
-**Owner-only limit.** The `owner_sole` mode exists for evaluation sets only. The corpus review rules still need a lead editor who is a different person from the reviewer, so your approvals reach `READY_FOR_APPROVAL` and stop there until the same mode is added for corpus records. Say when you want that built.
+**Owner-only review (built 2026-11-19, [GOVERNANCE.md](GOVERNANCE.md)).** With your code listed as `owner` in the roster, decide in the same pass you rate:
+
+```bash
+python3 ml_pipeline/scripts/review_sample.py record ../siamsil-data/reviews/queue/batch-001/review.csv \
+  ../siamsil-data/reviews/queue/batch-001/key.csv --reviewer O01 --owner-decides \
+  --reviews ../siamsil-data/reviews/corpus-reviews.jsonl --revisions ../siamsil-data/reviews/corpus-revisions.jsonl \
+  --roster ../siamsil-data/reviews/roster.csv
+```
+
+Meaning 2 with fluency 1 or 2 approves; meaning 0 rejects; a corrected Zomi (with meaning 1 or 2) is edit-and-approve; anything else stays open. Each of your approvals is recorded as `owner_sole`. Approving a pair is a linguistic decision only: the corpus stays `blocked` in `data/rights.json` for display and training until its rights are cleared.
 
 ## 5. Rebuild and re-measure
 

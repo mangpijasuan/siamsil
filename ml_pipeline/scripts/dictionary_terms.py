@@ -45,7 +45,8 @@ class Term:
 
     def choices(self) -> str:
         words = "; ".join(f"{word} ({meaning})" for word, meaning in self.zomi)
-        status = "confirmed" if self.confirmed else "not yet confirmed by a second person"
+        # A second person's confirmation is optional (docs/GOVERNANCE.md); the label only says whether one was given.
+        status = "confirmed" if self.confirmed else "owner's decision; no second confirmation"
         return f"{self.english[0]}: {words}. {self.note} [{status}]"
 
 

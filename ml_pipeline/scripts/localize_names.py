@@ -396,7 +396,8 @@ def main(argv: list[str] | None = None) -> int:
     print("Note: this file is derived from the parallel corpus and has its rights status ('train' in data/rights.json, "
           "'parallel_corpus'). It is not cleared for training until that entry is.", file=sys.stderr)
     if not names.confirmed:
-        print("Note: the names list is not yet confirmed by a second person.", file=sys.stderr)
+        print("Note: the names list is the owner's decision; no second person has confirmed it (optional, "
+              "docs/GOVERNANCE.md).", file=sys.stderr)
     return 0
 
 

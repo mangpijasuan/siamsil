@@ -28,7 +28,10 @@ identity; it checks declared metadata and rejects missing authorizations.
 
 - **SOP-07:** Require human approval, distinguish contributor from reviewer
   and approver, and require the approver (lead editor) to be a different person
-  from the reviewer; preserve provenance and version IDs.
+  from the reviewer; preserve provenance and version IDs. **Exception (owner's
+  decision, 2026-11-19, [GOVERNANCE.md](GOVERNANCE.md)):** a row marked
+  `"approval": "owner_sole"` may have the owner as contributor, reviewer and
+  approver, when the gate is run with `--owner-code` and those IDs are that code.
 - **SOP-08:** Validate schema, IDs, UTF-8 input, duplicate bilingual pairs,
   the same English or Zomi sentence in more than one split, split-family
   isolation, and explicit training permission. Reviewer IDs are compared

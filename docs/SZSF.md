@@ -122,6 +122,8 @@ How this is recorded, so the data stays accurate:
 
 **Built for evaluation sets:** `eval_set.py validate --owner-code <code>` accepts items marked `"approval": "owner_sole"` where that code is both translator and reviewer, and the manifest records `independently_reviewed: false`. `eval_set.py owner-approve` marks the owner's own translations, only when the owner runs it, and never edits its input. **Not yet built:** the same mode for `szsf.py` and `corpus_reviews.py` (dictionary and corpus records), which still reject a reviewer who is also the approver.
 
+**Update (2026-11-19, project owner): sole linguistic authority.** The owner is Siamsil's only required linguistic authority for every record, not only during a working phase ([GOVERNANCE.md](GOVERNANCE.md)). The mode is now built for corpus records (`corpus_reviews.py`, `corpus_revisions.py`, `review_sample.py`), dictionary senses (`dictionary_reviews.py`, `dictionary_review.py`), SZSF files (`szsf.py`: `review.approval: "owner_sole"`, and with `--roster` the approver must be the roster's `owner`) and the SOP gate (`sop_quality_gate.py --owner-code`). A second Zomi speaker's confirmation is optional and no longer a step owner-approved records wait for; where this page says otherwise, this update supersedes it. Tiers are unchanged by this update: approved machine-made corpus pairs are still `silver` in SZSF conversion, and the rule that a machine-made `gold` record must be `HUMAN_APPROVED` still holds.
+
 ## Rules every record must meet
 
 1. Text has no spaces at its ends, no line breaks (including U+2028 and U+2029) or control characters, and is Unicode NFC. The character rules apply to every text value in the record, not only the three main fields.

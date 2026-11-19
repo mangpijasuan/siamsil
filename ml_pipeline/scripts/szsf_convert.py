@@ -61,6 +61,13 @@ class ConversionError(Exception):
     """The input contradicts the review records; the run stops instead of writing a wrong master file."""
 
 
+def _review(decision) -> dict:
+    """The SZSF review block for a decision; an owner's approval of their own review says so (docs/GOVERNANCE.md)."""
+    review = {"status": decision.status, "reviewers": list(decision.reviewers), "approver": decision.approver}
+    if getattr(decision, "owner_sole", False):
+        review["approval"] = "owner_sole"
+    return review
+
 def origin_of(source: str) -> str:
     if source in MACHINE_SOURCES:
         return "machine_generated"
@@ -94,7 +101,7 @@ def review_block(record: dict, decision: corpus_reviews.Decision | None) -> dict
             f"{record['id']} is marked human-reviewed but its decision is {decision.status}: "
             "export and reviews are from different runs"
         )
-    return {"status": decision.status, "reviewers": list(decision.reviewers), "approver": decision.approver}
+    return _review(decision)
 
 
 def to_szsf(
@@ -193,7 +200,7 @@ def sense_to_szsf(
     if decision is None or stale:
         review = {"status": "UNREVIEWED", "reviewers": [], "approver": None}
     else:
-        review = {"status": decision.status, "reviewers": list(decision.reviewers), "approver": decision.approver}
+        review = _review(decision)
     result = zolai_standard.standardize(zomi, standard)
     out: dict[str, Any] = {
         "szsf_version": szsf.SZSF_VERSION,

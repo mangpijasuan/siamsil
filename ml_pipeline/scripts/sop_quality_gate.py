@@ -36,7 +36,10 @@ def person(value: Any) -> str:
     return value.strip().casefold() if isinstance(value, str) else ""
 
 
-def check_records(records: list[dict[str, Any]]) -> dict[str, Any]:
+OWNER_SOLE = "owner_sole"
+
+
+def check_records(records: list[dict[str, Any]], owner_code: str | None = None) -> dict[str, Any]:
     errors: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
     pair_split: dict[str, str] = {}
@@ -85,6 +88,11 @@ def check_records(records: list[dict[str, Any]]) -> dict[str, Any]:
         approver = row.get("approver_id")
         if not all(isinstance(v, str) and v.strip() for v in (contributor, reviewer, approver)):
             reject(index, record_id, "missing_review_identity")
+        elif row.get("approval") == OWNER_SOLE:
+            # The owner's sole linguistic authority (docs/GOVERNANCE.md): one person may write, review and approve,
+            # only when the row says so and the caller names the owner's code. Anyone else is still refused.
+            if not owner_code or person(approver) != person(owner_code) or person(reviewer) != person(owner_code):
+                reject(index, record_id, "owner_sole_not_owner")
         elif person(contributor) in (person(reviewer), person(approver)):
             reject(index, record_id, "self_approval")
         elif person(reviewer) == person(approver):
@@ -137,6 +145,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path, help="Candidate JSONL export")
     parser.add_argument("--report", type=Path, help="Write deterministic JSON quality report")
+    parser.add_argument("--owner-code", help="the owner's roster code; allows rows marked approval owner_sole "
+                                             "(docs/GOVERNANCE.md)")
     args = parser.parse_args(argv)
     rows = []
     try:
@@ -151,7 +161,7 @@ def main(argv: list[str] | None = None) -> int:
                               "errors": [{"line": line_number, "code": "invalid_json"}]}
                     break
             else:
-                report = check_records(rows)
+                report = check_records(rows, args.owner_code)
     except (OSError, UnicodeError) as exc:
         parser.error(f"Unable to read candidate dataset: {type(exc).__name__}")
     result = json.dumps(report, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
