@@ -227,6 +227,27 @@ class TranslationSearchResponse(ApiModel):
     count: int
     results: list[TranslateMatch]
     note: str | None = None
+    source_language: str | None = None
+    target_language: str | None = None
+
+
+class CatalogLanguage(ApiModel):
+    code: str
+    name: str
+    role: str
+    note: str | None = None
+
+
+class TranslationPair(ApiModel):
+    source_language: str
+    target_language: str
+    direction: str
+    available: bool
+
+
+class LanguageCatalogResponse(ApiModel):
+    languages: list[CatalogLanguage]
+    translation_pairs: list[TranslationPair]
 
 
 class TranslationResponse(ApiModel):

@@ -13,7 +13,7 @@ from database import check_application_database
 from http_contract import install_http_contract
 from identity import router as identity
 from speech import router as speech
-from routers import ai, bible, dictionary, learning, search, translate, words
+from routers import ai, bible, dictionary, languages, learning, search, translate, words
 from services.data_loader import get_store
 from services.language_engine import get_engine
 from services.word_suggest import get_zomi_words
@@ -51,7 +51,7 @@ app.add_middleware(
     expose_headers=["X-Request-ID"],
 )
 
-for module in (dictionary, bible, translate, learning, search, ai, words, identity, speech):
+for module in (dictionary, bible, translate, learning, search, ai, words, languages, identity, speech):
     app.include_router(module.router, prefix="/api/v1")
 
 

@@ -802,6 +802,41 @@
         "title": "BibleVersionsResponse",
         "type": "object"
       },
+      "CatalogLanguage": {
+        "additionalProperties": true,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "role"
+        ],
+        "title": "CatalogLanguage",
+        "type": "object"
+      },
       "ConsentChoices": {
         "additionalProperties": false,
         "description": "The six separate answers on the consent form. Each must be given; none defaults to yes.",
@@ -1644,6 +1679,31 @@
           "roles"
         ],
         "title": "IdentityResponse",
+        "type": "object"
+      },
+      "LanguageCatalogResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "languages": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogLanguage"
+            },
+            "title": "Languages",
+            "type": "array"
+          },
+          "translation_pairs": {
+            "items": {
+              "$ref": "#/components/schemas/TranslationPair"
+            },
+            "title": "Translation Pairs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "languages",
+          "translation_pairs"
+        ],
+        "title": "LanguageCatalogResponse",
         "type": "object"
       },
       "LearningEntry": {
@@ -2543,6 +2603,35 @@
         "title": "TranslateRequest",
         "type": "object"
       },
+      "TranslationPair": {
+        "additionalProperties": true,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "direction": {
+            "title": "Direction",
+            "type": "string"
+          },
+          "source_language": {
+            "title": "Source Language",
+            "type": "string"
+          },
+          "target_language": {
+            "title": "Target Language",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_language",
+          "target_language",
+          "direction",
+          "available"
+        ],
+        "title": "TranslationPair",
+        "type": "object"
+      },
       "TranslationResponse": {
         "additionalProperties": true,
         "properties": {
@@ -2639,6 +2728,28 @@
             },
             "title": "Results",
             "type": "array"
+          },
+          "source_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Language"
+          },
+          "target_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Language"
           }
         },
         "required": [
@@ -3641,6 +3752,28 @@
         ]
       }
     },
+    "/api/v1/languages": {
+      "get": {
+        "description": "The languages Siamsil shows and the translation pairs it can search. Zomi is `ctd`.",
+        "operationId": "language_catalog_api_v1_languages_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LanguageCatalogResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Language Catalog",
+        "tags": [
+          "languages"
+        ]
+      }
+    },
     "/api/v1/learning/groups": {
       "get": {
         "operationId": "learning_groups_api_v1_learning_groups_get",
@@ -4526,6 +4659,44 @@
               ],
               "description": "Search only the side translated from: English for en-ctd, Zomi for ctd-en. Omit to search both. The older names en-zom and zom-en are still accepted.",
               "title": "Direction"
+            }
+          },
+          {
+            "description": "With target_language, instead of direction: en or ctd (zom is read as ctd). See GET /api/v1/languages.",
+            "in": "query",
+            "name": "source_language",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "With target_language, instead of direction: en or ctd (zom is read as ctd). See GET /api/v1/languages.",
+              "title": "Source Language"
+            }
+          },
+          {
+            "description": "With source_language.",
+            "in": "query",
+            "name": "target_language",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "With source_language.",
+              "title": "Target Language"
             }
           }
         ],
