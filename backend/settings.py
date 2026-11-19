@@ -58,8 +58,12 @@ class Settings(BaseSettings):
 
     # Serve sentence matches from the parallel corpus (Translate, search, Siamsil AI). The corpus is `blocked` in
     # data/rights.json (2026-11-18), so it is hidden by default. Set SIAMSIL_SERVE_PARALLEL_CORPUS=true only when
-    # its rights are cleared. The data bundle does not carry rights.json, so this switch is what the running API obeys.
+    # its rights are cleared. The switch is necessary, not sufficient: corpus pairs are served only when the rights
+    # register also clears them (services/rights.py), as a whole or as a verified subset.
     serve_parallel_corpus: bool = False
+    # The rights register the API's checker reads (services/rights.py). Unset: data_dir/rights.json, then the
+    # repository's data/rights.json. With none found, every gated use is denied.
+    rights_file: Path | None = None
 
     cors_origins: list[str] = Field(
         default_factory=lambda: [

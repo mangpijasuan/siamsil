@@ -72,7 +72,8 @@ class BundleTests(unittest.TestCase):
         bundle, _ = self.package()
         with tarfile.open(bundle) as tar:
             self.assertEqual(sorted(tar.getnames()),
-                             ["bible_versions.sqlite", "json/daily_use_pairs.json", "siamsil_language.sqlite"])
+                             ["bible_versions.sqlite", "json/daily_use_pairs.json", "json/rights.json",
+                              "siamsil_language.sqlite"])
 
     def test_a_missing_database_stops_packaging(self) -> None:
         (self.root / "bible_versions.sqlite").unlink()
@@ -140,7 +141,7 @@ class BundleTests(unittest.TestCase):
             fetch_data.main()
         self.assertEqual(sorted(p.relative_to(data).as_posix() for p in data.rglob("*")),
                          [f".bundle-{sha256}", ".fetch.lock", "bible_versions.sqlite", "json",
-                          "json/daily_use_pairs.json", "siamsil_language.sqlite"])
+                          "json/daily_use_pairs.json", "json/rights.json", "siamsil_language.sqlite"])
 
 
 if __name__ == "__main__":

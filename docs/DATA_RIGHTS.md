@@ -1,6 +1,6 @@
 # Siamsil data rights register
 
-Updated: 2026-11-19
+Updated: 2026-11-19 (clearance paths)
 Phase: [ROADMAP.md](ROADMAP.md) Phase 0
 
 One row per source Siamsil holds or plans to use. Nothing here is legal advice; every `needs_review` must be closed by the rights holder's written answer or by counsel, not by an engineer's reading.
@@ -10,7 +10,7 @@ One row per source Siamsil holds or plans to use. Nothing here is legal advice; 
 | Status | Meaning |
 |---|---|
 | `needs_review` | Rights unknown. Not allowed for any use. Live displays that already existed (with an unreviewed label) continue until the source is reviewed; the policy does not extend them to any new use. |
-| `cleared` | Written permission or a verified open license covers the listed uses. Record the evidence. |
+| `cleared` | Written permission or a verified open license covers the listed uses, or (for the owner's own work) the owner's documented decision. Record the evidence. Which path a clearance takes, and whether it needs a second person, is set by [RIGHTS_POLICY.md](RIGHTS_POLICY.md). |
 | `restricted` | Some uses allowed, others not. List both. |
 | `blocked` | Must not be used until cleared. A verified subset may be cleared on its own evidence ([RIGHTS_POLICY.md](RIGHTS_POLICY.md)). |
 
@@ -158,6 +158,7 @@ Compare the two JSON files (`sha`, `lastModified`, `siblings` with file sizes an
 - The project owner reported on 2026-10-25 that they wrote it.
 - **2026-10-26, project owner:** no AI tool drafted any of its text, and the owner signs off its use for model training.
 - Training stays `needs_review` until a second person confirms this entry (see Closing an item). On confirmation, set `train` to `cleared` for `essential_3000` in `data/rights.json`.
+- **2026-11-19, policy revision (three clearance paths):** the Essential 3000 is recorded as `origin: owner_original` (Path A). A second person is no longer required for the owner's own work. What remains before any use clears: the owner's attestation that it copies no third-party content (asked because the 50K Translation Master's authorship record was corrected on 2026-11-17), then the owner's decision for each use (`rights_policy.py attest` and `decide`). Its file is pinned in `provenance.sha256`. Nothing is cleared by this entry; it stays `bronze` and unreviewed whatever the rights decision.
 - Still to record: which other uses the owner grants (display, redistribution, commercial).
 - It remains unreviewed (0 senses human-reviewed), so a training clearance does not change its tier: exports keep it `bronze` until reviewers approve senses.
 - Imported read-only by `import_reference_dictionaries.py` into a separate database, every sense `unreviewed`. Reviewer decisions live in `Essential-3000-English-Zomi-Native-Expert-Review.xlsx`; none were recorded as of 2026-10-25.
@@ -248,3 +249,5 @@ The tracker spreadsheet the owner edited on 2026-11-18 also marked every source 
 1. Record the evidence (email, signed agreement, license URL and version) in this file with the date.
 2. Update the matching `data/raw/**/provenance.json` `license` field, and the `train` status in `data/rights.json`, which `export_datasets.py` enforces.
 3. Update the table above. A change to `cleared` needs a second person to confirm.
+
+**2026-11-19, policy revision (project owner's instruction):** step 3 now depends on the clearance path ([RIGHTS_POLICY.md](RIGHTS_POLICY.md)). Path A (the owner's own work, documented provenance) and Path B (a verified open license, public-domain dedication, or a written grant whose recorded scope names the use) need no second person. Path C (disputed, flagged, provider-derived, combined or uncertain data, and verbal reports) still does. Record decisions with `python3 ml_pipeline/scripts/rights_policy.py decide`, which appends to the source's history and keeps the legacy column in step. Entries above that say "a second person confirms" were written under the earlier rule; for a written grant from the rights holder, Path B now applies once the grant's grantor, date, wording, scope and storage are recorded. Verbal permissions remain leads, not grants.

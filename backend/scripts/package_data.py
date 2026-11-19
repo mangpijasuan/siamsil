@@ -6,7 +6,8 @@ Prints the SHA-256 to set as SIAMSIL_DATA_BUNDLE_SHA256.
 The bundle unpacks into the API's data volume (/data) as:
   siamsil_language.sqlite   dictionary, corpus and search indexes (build_language_db.py)
   bible_versions.sqlite     the Bible versions cleared for display (import_usx_bibles.py)
-  json/                     the reviewed phrase lists, when present in backend/data
+  json/                     the reviewed phrase lists, when present in backend/data, and rights.json (the rights
+                            register the API's rights checker reads: backend/services/rights.py)
 It holds text Siamsil may show but not redistribute: keep the uploaded file private.
 """
 from __future__ import annotations
@@ -22,6 +23,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 LANGUAGE_DB = PROJECT_ROOT / "data" / "processed" / "language" / "siamsil_language.sqlite"
 BIBLE_DB = PROJECT_ROOT / "data" / "processed" / "bible" / "bible_versions.sqlite"
 JSON_DIR = PROJECT_ROOT / "backend" / "data"
+RIGHTS_FILE = PROJECT_ROOT / "data" / "rights.json"
 # bible_verses.json, the workbook's "ISO Improved Text" (data/rights.json: bible_iso_improved), is left out:
 # its authorship is unknown and it is not cleared for display. The Bible comes from bible_versions.sqlite.
 JSON_FILES = ["daily_use_pairs.json", "dictionary.json", "metadata.json", "translation_pairs.json"]
@@ -38,7 +40,7 @@ def snapshot(source: Path, target: Path) -> None:
 
 
 def package(out_dir: Path, language_db: Path = LANGUAGE_DB, bible_db: Path = BIBLE_DB,
-            json_dir: Path = JSON_DIR) -> tuple[Path, str]:
+            json_dir: Path = JSON_DIR, rights_file: Path | None = RIGHTS_FILE) -> tuple[Path, str]:
     missing = [path for path in (language_db, bible_db) if not path.exists()]
     if missing:
         raise FileNotFoundError(
@@ -55,6 +57,9 @@ def package(out_dir: Path, language_db: Path = LANGUAGE_DB, bible_db: Path = BIB
             for name in JSON_FILES:
                 if (json_dir / name).exists():
                     tar.add(json_dir / name, arcname=f"json/{name}")
+            # Without it the API's rights checker denies every gated use (default deny).
+            if rights_file is not None and rights_file.exists():
+                tar.add(rights_file, arcname="json/rights.json")
 
     digest = hashlib.sha256()
     with bundle.open("rb") as handle:

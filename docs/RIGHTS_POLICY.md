@@ -1,16 +1,56 @@
-# Siamsil rights policy: per source, per purpose
+# Siamsil rights policy: three clearance paths, per source and per use
 
-Status: in force from 2026-11-19, on the project owner's instruction. Nothing here is legal advice. The register is [DATA_RIGHTS.md](DATA_RIGHTS.md) and `data/rights.json`; the checker is `ml_pipeline/scripts/rights_policy.py`.
+Status: in force from 2026-11-19, on the project owner's instruction. Revised the same day to replace the universal second-verifier rule with three proportionate paths. Nothing here is legal advice. The register is [DATA_RIGHTS.md](DATA_RIGHTS.md) and `data/rights.json`; the checker is `backend/services/rights_policy.py` (command line: `ml_pipeline/scripts/rights_policy.py`).
 
-## What changed, and what did not
+The policy exists to make legitimate use of data possible, with a record that shows why each use is allowed. It asks for the evidence a use actually needs: an owner-written dictionary entry does not need the same process as machine-generated text under a provider's terms.
 
-The blanket "block the whole corpus" approach is replaced by a decision for each **source**, each **use** and, where evidence supports it, each verified **subset**. Risk decides how much evidence a use needs; it never lowers the bar to "none".
+## Three separate questions
 
-Not changed:
-- The four states stay: `cleared`, `needs_review`, `blocked`, `not_permitted`.
-- Every earlier decision and its audit text stays. New decisions are appended (`history`), never rewritten.
-- **Production behavior is unchanged.** No decision in the register has been changed to `cleared` by this policy. The parallel corpus is still blocked and hidden by default. The checker is a library and a validator; no serving, export or training path calls it yet. Wiring a path to it needs its own explicit, documented decision.
-- Unknown or disputed rights are never cleared automatically. Default is deny.
+Siamsil keeps three kinds of approval apart. One never stands in for another.
+
+| Question | Who answers | Where it is recorded |
+|---|---|---|
+| **Legal rights**: may Siamsil use this text for this purpose? | The owner, on the path below | `data/rights.json` (`uses`), this policy |
+| **Linguistic quality**: is the Zomi correct? | Zomi reviewers and editors ([SOP_QUALITY_GATE.md](SOP_QUALITY_GATE.md)) | review records, tiers |
+| **Engineering**: does the code enforce the decision? | Code review | this repository |
+
+A rights clearance never changes a record's review status or training tier (Essential 3000 stays `bronze` when cleared for training), and the checker rejects review fields in a rights decision. A reviewed, accurate sentence is not thereby cleared, and a cleared one is not thereby accurate.
+
+## The three paths
+
+| Path | For | Who decides | Second reviewer |
+|---|---|---|---|
+| **A, `owner_original`** | Data the project owner created: dictionary entries, sentences, lists the owner wrote | The owner (owner roster code, `O01`…) | Optional |
+| **B, `open_license`** | Third-party data under a verified open license or public-domain dedication, or a **written** grant whose recorded scope names the use | The owner, citing the evidence | Optional |
+| **C, `restricted`** | Disputed, flagged, provider-derived, combined or otherwise uncertain data, and anything resting on a verbal report or a publisher's claim | The owner | **Required**: `verified_by` names someone other than the decider |
+
+### Path A: owner-original data
+
+The source (or subset) carries `origin: "owner_original"` and a `provenance` record. Before any use can clear, the checker confirms automatically, every time it runs:
+
+- `attestations` include `sole_author` and `no_third_party_content` (the owner states they wrote it and copied nothing from others);
+- `ai_assistance` says whether an AI tool drafted text (`none`, or what). It is a disclosure, not a bar;
+- `sha256` pins the exact file the attestation covers;
+- the decision is dated on or after `attested_on`, and `decided_by` is an owner roster code;
+- the source has no Path C trait (below).
+
+### Path B: verified open license or written grant
+
+- `license` is one the checker knows (`public-domain`, `CC0-1.0`, `CC-BY-2.0-FR`, `CC-BY-3.0`, `CC-BY-4.0`, `CC-BY-SA-4.0`, `CC-BY-NC-4.0`, `MIT`) and permits the use: CC BY-NC cannot clear `commercial_inference` or `redistribute`. A license not on the list (NoDerivatives, custom terms, "see website") goes through Path C.
+- Attribution is recorded where the license or source requires it (CC BY permits commercial use, with attribution); obligations such as share-alike are recorded.
+- `underlying_rights_checked: true`: the licensor or grantor holds the rights it grants. A re-upload's license, or a CC0 label on someone else's sentences (CC0 section 4(c)), does not.
+- A written grant records `grant.grantor`, `grant.date`, `grant.wording`, `grant.kept_at` (private storage, by pointer) and `grant.scope`; only the uses in `scope` clear. A verbal permission is not a grant: it stays a lead until it is in writing.
+
+### Path C: restricted or uncertain
+
+A decision is escalated to Path C automatically, and an A or B decision on it authorizes nothing, when:
+
+- the text is `provider_derived` (for example the Gemini-generated Zomi side of the parallel corpus): the provider terms in force when it was generated are recorded per use (`provider_terms`), and provider-derived output stays out of competitive-model training unless those terms explicitly permit it;
+- the source is `disputed`, or has `risk_flags` (for example the 50K Translation Master, whose authorship record was corrected on 2026-11-17);
+- the source combines `components` with separate rights (the combined corpus pairs);
+- the evidence is an `owner_report` (a verbal permission) or a `publisher_permission` that needs confirming.
+
+Path C needs evidence, `underlying_rights_checked` where the evidence is someone else's grant or license, and an independent verifier.
 
 ## The seven uses
 
@@ -24,82 +64,103 @@ Not changed:
 | `train` | Training or fine-tuning a model | high | `train` |
 | `redistribute` | Publishing the text, a dataset or derived weights | high | `redistribute` |
 
-A use with no explicit decision and no legacy column is `needs_review`, which means not allowed. Clearing `display` does not clear `retrieval`; clearing `retrieval` does not clear `external_llm`. Sending private-corpus text to an external provider still needs scoped rights, consent, access controls and an authorized purpose.
-
-The Quality Operator (OpenAI-assisted lane) stays separate from Siamsil's independent model training. Provider-derived outputs and labels stay out of competitive-model training unless the provider's current terms explicitly permit it.
+Each use is decided separately. A use with no explicit decision and no legacy column is `needs_review`: not allowed. Sending private-corpus text to an external provider still needs scoped rights, consent, access controls and an authorized purpose. The Quality Operator (OpenAI-assisted lane) stays separate from Siamsil's independent model training.
 
 ## The four states
 
 | State | Meaning for a use |
 |---|---|
-| `cleared` | Allowed, on recorded and independently verified evidence (below). |
+| `cleared` | Allowed, on a decision that is valid on its path. |
 | `needs_review` | Not allowed. The rights are unknown or being checked. |
 | `blocked` | Not allowed. The owner has stopped it until it is cleared. A verified subset may still be cleared on its own evidence. |
 | `not_permitted` | Not allowed. The rights holder refused or no permission exists. A subset cannot override it. |
 
 Existing live behavior on `needs_review` sources (for example the dictionary shown with an unreviewed label) is kept as it is until that source is reviewed. It is not extended to any new use.
 
-## Evidence, and what it does not prove
+## What a `cleared` decision records
 
-| Evidence | What it supports |
-|---|---|
-| `written_permission` | The rights holder's own written grant, within its stated scope. |
-| `publisher_permission` | The publisher's grant; clears only once `underlying_rights_checked` is true. |
-| `open_license` | An open license (for example CC BY 2.0 FR). **CC BY can permit commercial use** with the attribution and conditions it names; record the attribution text owed. Clears only once `underlying_rights_checked` is true. |
-| `cc0_declaration` | The uploader waives its own rights. It does not clear other people's rights (CC0 section 4(c)) or contract terms. Clears only once `underlying_rights_checked` is true. |
-| `owner_report` | The project owner's report of a permission. It is a lead, not a clearance on its own. |
+In `uses.<use>` on a source, or on a subset:
 
-CC0 declarations, publisher permissions and open licenses are evidence **supporting** a clearance, subject to the underlying rights.
+- `status: "cleared"`, `path`, `evidence` (what it is and where it is kept; private material by pointer only), `evidence_type`, `decided_on`, `decided_by` (a roster code, never a name).
+- Path-specific fields above (`license`, `attribution`, `grant`, `underlying_rights_checked`, `provider_terms`, `verified_by`).
+- If the use has a legacy column, it changes in the same decision; `decide` does this, and `validate` rejects a mismatch.
 
-## What a `cleared` decision must record
-
-In `uses.<use>` on a source (or in a subset):
-
-- `status: "cleared"`, `evidence` (what, where it is kept; private material by pointer only), `evidence_type`, `decided_on` (date).
-- `decided_by` and `verified_by`: roster codes (for example `O01`, `R02`), never names. **The person who decided cannot be the one who verified.** At least one independent verifier is required for every use, whatever its risk.
-- `underlying_rights_checked: true` when the evidence is a CC0 declaration, an open license or a publisher permission.
-- `attribution` when the source has `attribution_required` (for example CC BY text).
-- `provider_terms` (`product`, `terms_reference`, `reviewed_on`) when the source is `provider_derived`, such as the Gemini-generated Zomi side. Provider terms are checked per use: training another model is a different question from retrieval or commercial inference.
-- If a legacy column exists for the use, change it in the same decision. The validator rejects a `cleared` use whose legacy column says otherwise.
-
-A clearance that fails these checks does not authorize anything, and `validate` reports it.
-
-## English and Zomi are separate
-
-Rights in the English source (Tatoeba sentences, mostly CC BY 2.0 FR with some CC0) are separate from rights in the Gemini-derived Zomi text. A combined record (`components`) can be cleared for a use only after **every** component is. The English side may be cleared before the Zomi side; the pairs follow only when both are.
+A decision that fails its path's checks does not authorize anything, and `validate` reports it.
 
 ## Verified subsets
 
-A part of a blocked or unreviewed source can be used before the whole source is cleared, if it has its own entry under `subsets`:
+Part of a blocked or uncleared source can be used before the whole source is cleared, if it has an entry under `subsets`:
 
-- `members_sha256`: the SHA-256 of the sorted record ids it was verified on (`membership_digest`). If the members change, the clearance stops applying until it is re-verified.
-- `uses`: the specific uses cleared for the subset, each fully evidenced as above. Anything not listed is not cleared.
+- `members_sha256`: the SHA-256 of the sorted record ids it was cleared for (`membership_digest`). If the members change, the clearance stops applying.
+- `members_file` (optional): a file of member ids, one per line, relative to `data/`. Code that reads a source record by record (`usable_ids`) serves only the ids in it, and only while it matches `members_sha256`.
+- `uses`: the uses cleared for the subset. A subset may carry its own `origin`/`provenance` (for example owner-written rows inside a larger file, Path A), but inherits every Path C trait of its source.
 - `component_clearances`: for a subset of a combined source, a valid clearance for the same use on **each** component.
 - A subset cannot override `not_permitted`.
 
-At run time, `select_usable(records, rights, use, members={subset: ids})` returns the usable records and counts why the rest were excluded. A record that only claims a subset, without being in the supplied membership, is judged as the source alone.
+## Where the decisions are enforced
 
-Example (a fixture, not a real decision): 3,000 sentences whose English text is verified as CC BY and whose Zomi translation was written or corrected by a human reviewer, cleared for `retrieval` only. The other 1.77 million pairs stay out.
+| Code path | Use checked | Behavior |
+|---|---|---|
+| Training export, `ml_pipeline/scripts/export_datasets.py` | `train` | A source is exported only if the policy clears `train` (the earlier code read the legacy column only). `--allow-uncleared` still admits `needs_review`, never `blocked`. |
+| Bible import, `ml_pipeline/scripts/import_usx_bibles.py` | `display`, `train` | The statuses written into `bible_versions.sqlite`, which the API filters on, come from the policy. |
+| API corpus search, `backend/services/language_engine.py` | `display`; Siamsil AI also `retrieval` | Served only when `SIAMSIL_SERVE_PARALLEL_CORPUS` is on **and** the register clears the corpus, as a whole or as verified subsets (then only their pairs). The switch alone no longer exposes the corpus. |
+| Deploy bundle, `backend/scripts/package_data.py` | — | Carries `rights.json` so the running API can read the register. With none found, the API denies every gated use. |
 
-## Audit
+Application code asks the register through `backend/services/rights.py`:
 
-- `history` on a source lists dated decisions in order: append, never edit.
-- `validate` fails if history is out of order or undated, a `cleared` use lacks evidence, a combined record is cleared before its components, or a subset's members hash is malformed.
-- Rights changes go through a reviewed change to this repository; the git history is the audit log.
+```python
+from services import rights
+rights.allowed("bible_web", "retrieval")                 # bool
+rights.decision("parallel_corpus", "display").reason     # why not
+rights.usable_ids("parallel_corpus", "display")          # None = whole source, else cleared subset ids
+```
+
+**Not yet enforced** (recorded, decision needed): Siamsil AI quotes Bible passages as answer context, which is `retrieval`. Every Bible version is `display`-cleared but none has a `retrieval` decision. This change does not gate it, to avoid changing production without a decision; the World English Bible can be cleared for retrieval on Path B today, and the Bible Society versions need the permission letter's wording checked for retrieval.
 
 ## Using the checker
 
-```
+```bash
 python3 ml_pipeline/scripts/rights_policy.py validate
-python3 ml_pipeline/scripts/rights_policy.py check parallel_corpus retrieval
 ```
 
-The first reports problems in the register (it runs in the test suite). The second prints ALLOWED or DENIED with the reason; today every corpus use is DENIED.
+```bash
+python3 ml_pipeline/scripts/rights_policy.py report essential_3000
+```
 
-## Closing a use, in practice
+```bash
+python3 ml_pipeline/scripts/rights_policy.py check bible_web retrieval
+```
 
-1. Collect the evidence for **one use** of one source or subset (DATA_RIGHTS.md "Closing an item").
-2. Add the entry with the fields above; leave other uses as they are.
-3. A second person confirms and is recorded in `verified_by`.
-4. Run `validate` and the tests; record the decision in DATA_RIGHTS.md in the same change.
-5. Only then may a code path opt in to the decision. That wiring is reviewed separately.
+`validate` reports problems in the register (it runs in the test suite). `report` lists, for every source and use, whether it is allowed and, if not, the path it needs and what is missing. `check` prints ALLOWED or DENIED with the reason.
+
+Recording a decision (the person deciding runs it; the tool only records what it is given and refuses a decision that does not validate):
+
+```bash
+python3 ml_pipeline/scripts/rights_policy.py attest essential_3000 no_third_party_content --by O01
+```
+
+```bash
+python3 ml_pipeline/scripts/rights_policy.py decide essential_3000 train --path owner_original --by O01 \
+  --evidence "Owner's authorship statements, 2026-10-25 and 2026-10-26; attestation of no third-party content"
+```
+
+```bash
+python3 ml_pipeline/scripts/rights_policy.py decide bible_web retrieval --path open_license --by O01 \
+  --evidence-type public_domain --license public-domain --underlying-rights-checked \
+  --evidence "Public-domain dedication, copr.htm in the eBible.org engwebu download, received 2026-10-17"
+```
+
+`decide` replaces the per-use entry, changes the legacy column with it, and appends a dated `history` line that keeps the previous status. Add `--dry-run` to see the result without writing. Record the decision in DATA_RIGHTS.md in the same change; the git history is the audit log.
+
+## Eligible now (2026-11-19)
+
+From `report`, against the real register. Nothing below is cleared by this policy change: 18 of 168 source-uses are allowed, the same 18 as before.
+
+| Source | Path | What is missing |
+|---|---|---|
+| Essential 3000 (`essential_3000`, 3,000 headwords) | A | The owner's `no_third_party_content` attestation (asked because the 50K's authorship record was corrected), then the owner's decision per use. Authorship (2026-10-25), no AI drafting and the training sign-off (2026-10-26) are already recorded. |
+| World English Bible (`bible_web`, 31,098 verses) | B | A decision for `retrieval`, `local_embeddings`, `external_llm`. The public-domain evidence is already recorded; its other four uses are cleared. |
+| Tatoeba English side (`parallel_corpus_english_tatoeba`) | B | The license of the OPUS release and of the sentences used, and the attribution text. On its own it is English only; the pairs also need the Zomi side. |
+| Bible Society versions, TongDot, primer, *Zokam le Zolai*, Haokip-Lind | B | The written grant recorded (grantor, date, wording, where kept, scope). Verbal reports stay leads. |
+| Gemini Zomi side, combined corpus pairs (1,775,043 pairs) | C | Provider terms per use, and an independent verifier. The corpus is not cleared, as a whole or in part. |
+| 50K Translation Master, Zomi Standard Dictionary, ISO Improved Bible text | C | Sources identified (50K), compiler and copyright holder (Standard Dictionary), authorship of the changes (ISO Improved). |
