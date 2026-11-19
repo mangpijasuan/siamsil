@@ -10,6 +10,11 @@ from typing import Any
 
 from settings import get_settings
 
+try:
+    from services import rights
+except ModuleNotFoundError:  # scripts that put backend/services itself on sys.path
+    import rights  # type: ignore[no-redef]
+
 FTS_UNSAFE = re.compile(r'["\'*:^(){}[\]~-]')
 
 
@@ -329,13 +334,24 @@ class LanguageEngine:
         ).fetchall()
         return [dict(row) for row in rows]
 
-    def search_parallel(self, query: str, limit: int = 20, direction: str | None = None) -> list[dict[str, Any]]:
-        """Corpus pairs matching the query. With a direction, only the side being translated from is searched."""
+    def search_parallel(self, query: str, limit: int = 20, direction: str | None = None,
+                        uses: tuple[str, ...] = ("display",)) -> list[dict[str, Any]]:
+        """Corpus pairs matching the query. With a direction, only the side being translated from is searched.
+
+        Served only when the switch is on AND the rights register clears the corpus for every use in `uses`, as a
+        whole or as verified subsets (then only their pairs). Siamsil AI also passes "retrieval"."""
         if not get_settings().serve_parallel_corpus:
+            return []
+        cleared_ids = rights.usable_ids("parallel_corpus", *uses)
+        if cleared_ids is not None and not cleared_ids:
             return []
         match = fts_match(query)
         if not match:
             return []
+        return self._search_parallel_rows(query, match, limit, direction, cleared_ids)
+
+    def _search_parallel_rows(self, query: str, match: str, limit: int, direction: str | None,
+                              cleared_ids: frozenset[str] | None) -> list[dict[str, Any]]:
         con = self.connect()
         limit = min(max(limit, 1), 50)
         forms = exact_forms(query)
@@ -343,9 +359,16 @@ class LanguageEngine:
         whole_words = fts_match(query, prefix=False)
         exact_expression = f"{PARALLEL_FTS_COLUMN[direction]} : ({whole_words})" if direction else whole_words
         exact_forms_params = (*forms, *forms) if direction is None else tuple(forms)
-        exact = con.execute(
-            PARALLEL_EXACT_SQL[direction], (exact_expression, *exact_forms_params, limit)
-        ).fetchall()
+        if cleared_ids is None:
+            exact = con.execute(
+                PARALLEL_EXACT_SQL[direction], (exact_expression, *exact_forms_params, limit)
+            ).fetchall()
+        else:
+            exact = con.execute(
+                PARALLEL_EXACT_SQL[direction].replace(
+                    " ORDER BY", " AND CAST(p.id AS TEXT) IN (SELECT value FROM json_each(?)) ORDER BY", 1),
+                (exact_expression, *exact_forms_params, json.dumps(sorted(cleared_ids)), limit),
+            ).fetchall()
         remaining = limit - len(exact)
         fts_rows: list[sqlite3.Row] = []
         if remaining > 0:
@@ -362,6 +385,9 @@ class LanguageEngine:
             if exact_ids:
                 sql += f" AND p.id NOT IN ({placeholders})"
                 params.extend(exact_ids)
+            if cleared_ids is not None:
+                sql += " AND CAST(p.id AS TEXT) IN (SELECT value FROM json_each(?))"
+                params.append(json.dumps(sorted(cleared_ids)))
             # Closest first: the shortest sentence on the searched side, then the best text match.
             sql += f" ORDER BY length(p.{PARALLEL_LENGTH_COLUMN[direction]}), bm25(parallel_fts), p.id LIMIT ?"
             params.append(remaining)

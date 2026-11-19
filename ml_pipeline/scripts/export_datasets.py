@@ -19,8 +19,8 @@ Tiers:
 --corpus-fraction keeps a fixed, reproducible share of machine-made corpus pairs
 (by id hash) so a run fits local training time; human-accepted pairs are always kept.
 
-Rights gate: only sources whose training status in data/rights.json is
-"cleared" are exported. --allow-uncleared also admits "needs_review" sources
+Rights gate: only sources the rights policy (rights_policy.py, docs/RIGHTS_POLICY.md)
+clears for `train` are exported. --allow-uncleared also admits "needs_review" sources
 for internal experiments and records that in the manifest; "blocked" sources
 are never exported. A Bible version pair needs both versions admitted. Pairs
 matching a human evaluation item (--eval) are never exported.
@@ -59,6 +59,7 @@ from build_language_db import (
     template_key,
 )
 from import_usx_bibles import BOOKS
+import rights_policy
 import zolai_standard
 
 BIBLE_TEST_BOOKS = frozenset({"RUT", "MRK", "1JN"})
@@ -74,8 +75,10 @@ DEFAULT_OUT = ROOT / "data" / "datasets"
 
 
 def load_rights(path: Path) -> dict[str, str]:
+    """{source: training status} as the rights policy decides it (docs/RIGHTS_POLICY.md): "cleared" only when the
+    train decision is valid on its path (A, B or C) and every component is cleared; otherwise the recorded state."""
     data = json.loads(path.read_text(encoding="utf-8"))
-    return {name: entry["train"] for name, entry in data["sources"].items()}
+    return rights_policy.legacy_statuses(data["sources"], "train")
 
 
 def admitted_sources(rights: dict[str, str], allow_uncleared: bool) -> set[str]:

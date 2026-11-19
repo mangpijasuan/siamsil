@@ -14,6 +14,7 @@ Before changing Siamsil AI, Chat, translation, datasets, quality control, review
 - `docs/ARCHITECTURE.md`
 - `docs/QUALITY_OPERATOR_ARCHITECTURE.md` (**OpenAI-assisted Quality Operator: design, provider-use rules, human review, cost caps and milestones**)
 - `docs/DATA_RIGHTS.md`
+- `docs/RIGHTS_POLICY.md` (**three clearance paths: owner-original (A), verified open license or written grant (B), restricted/uncertain (C, independent verifier); per-use decisions; where the checker is enforced**)
 - `docs/GOVERNANCE.md` (**the project owner is Siamsil's sole linguistic authority; AI agents propose, the owner decides; `owner_sole` approvals; linguistic approval is not rights clearance**)
 - `docs/EVALUATION_SET.md`
 - `docs/DATA_RELEASES.md`
