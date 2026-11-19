@@ -83,7 +83,7 @@ What a first Pro release can use without new permissions: the SZSF rules, the us
 ## Conditions before any Pro feature ships
 
 1. The owner signs the commercial-use decision in [DATA_RIGHTS.md](DATA_RIGHTS.md), with its date and the legal operator.
-2. Every component of a paid route is `commercial: cleared` in `data/rights.json`: the model and its weights, each training source, every retrieved example and any text sent to an outside provider. Paid routes check this in code (the `commercial_inference` check of the rights policy, PR #96), separately from the free routes' `display` check.
+2. Every component of a paid route is `commercial: cleared` in `data/rights.json`: the model and its weights, each training source, every retrieved example and any text sent to an outside provider. Paid routes check this in code (`commercial_inference` in [RIGHTS_POLICY.md](RIGHTS_POLICY.md)), separately from the free routes' `display` check.
 3. The outside provider's current terms allow the paid use, recorded with the product, terms reference and review date.
 4. A privacy policy, a consent step and account deletion exist before sign-in launches. Document translation also needs a file retention and deletion policy.
 5. Paid output is labelled as machine translation unless the owner approved the text.
