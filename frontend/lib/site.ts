@@ -51,7 +51,7 @@ export const PUBLIC_PAGES: { path: string; changeFrequency: ChangeFrequency; pri
 export function robotsPolicy(site: string | null): RobotsPolicy {
   if (!site) return { rules: { userAgent: "*", disallow: "/" } };
   return {
-    rules: { userAgent: "*", allow: "/", disallow: ["/profile", "/api/"] },
+    rules: { userAgent: "*", allow: "/", disallow: ["/profile", "/workspace", "/api/"] },
     sitemap: `${site}/sitemap.xml`,
     host: site,
   };

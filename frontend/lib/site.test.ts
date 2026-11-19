@@ -25,9 +25,9 @@ test("without a site address, nothing is indexed and there is no sitemap", () =>
   assert.deepEqual(sitemapEntries(null, [{ id: "tdb", books: [{ book_id: 1, chapters: [1] }] }]), []);
 });
 
-test("with a site address, robots allows the site, keeps profile out, and names the sitemap", () => {
+test("with a site address, robots allows the site, keeps personal pages out, and names the sitemap", () => {
   assert.deepEqual(robotsPolicy("https://siamsil.org"), {
-    rules: { userAgent: "*", allow: "/", disallow: ["/profile", "/api/"] },
+    rules: { userAgent: "*", allow: "/", disallow: ["/profile", "/workspace", "/api/"] },
     sitemap: "https://siamsil.org/sitemap.xml",
     host: "https://siamsil.org",
   });
@@ -39,7 +39,7 @@ test("the sitemap lists every public page with absolute addresses, never the pro
   assert.equal(urls[0], "https://siamsil.org");
   assert.ok(urls.includes("https://siamsil.org/zomidictionary"));
   assert.ok(urls.every((url) => url.startsWith("https://siamsil.org")));
-  assert.ok(!urls.some((url) => url.includes("/profile")));
+  assert.ok(!urls.some((url) => url.includes("/profile") || url.includes("/workspace")));
 });
 
 test("Bible chapters get one stable address each, without the companion version", () => {

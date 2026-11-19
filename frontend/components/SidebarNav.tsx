@@ -63,7 +63,7 @@ const ABOUT_TABS: NavTab[] = [
   { href: "/about", Icon: IconInfo, glyph: "about", label: "About", short: "About", hint: "What Siamsil is" },
   { href: "/help", Icon: IconHelp, glyph: "help", label: "Help", short: "Help", hint: "Using Siamsil" },
 ];
-const PROFILE_TAB: NavTab = { href: "/profile", Icon: IconUser, glyph: "profile", label: "Profile", short: "Profile", hint: "Progress & settings" };
+const PROFILE_TAB: NavTab = { href: "/workspace", Icon: IconUser, glyph: "profile", label: "Workspace", short: "Workspace", hint: "Saved words, history & progress" };
 
 const SIDEBAR_KEY = "siamsil-sidebar-collapsed";
 const DESKTOP_QUERY = "(min-width: 1024px)";
@@ -222,12 +222,12 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
             <IconSearch size={18} />
           </Link>
           <Link
-            href="/profile"
-            className={`shell-user-link${isActive(pathname, "/profile") ? " active" : ""}`}
-            aria-label="Open guest profile"
-            aria-current={isActive(pathname, "/profile") ? "page" : undefined}
+            href="/workspace"
+            className={`shell-user-link${isActive(pathname, "/workspace") ? " active" : ""}`}
+            aria-label="Open my workspace"
+            aria-current={isActive(pathname, "/workspace") ? "page" : undefined}
           >
-            <span className="shell-user-copy"><strong>Guest</strong><small>Local profile</small></span>
+            <span className="shell-user-copy"><strong>My Workspace</strong><small>On this device</small></span>
             <span className="shell-user-avatar"><IconUser size={20} /></span>
           </Link>
         </div>
