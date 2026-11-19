@@ -22,6 +22,8 @@ const nextConfig: NextConfig = {
       { source: "/dictionary/:path*", destination: "/zomidictionary/:path*", permanent: true },
       { source: "/translate", destination: "/zomitranslate", permanent: true },
       { source: "/translate/:path*", destination: "/zomitranslate/:path*", permanent: true },
+      // The Church Hub is a static app in public/church-manager/; the bare folder address is not a page.
+      { source: "/church-manager", destination: "/church-manager/index.html", permanent: false },
     ];
   },
   async rewrites() {
