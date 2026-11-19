@@ -56,7 +56,7 @@ const NAV_GROUPS: Array<{ title: string; tabs: NavTab[] }> = [
   },
 ];
 const COMMUNITY_TABS: NavTab[] = [
-  { href: "/church-manager/index.html", Icon: IconHome, glyph: "church", label: "Church", short: "Church", hint: "Members, giving & events", plain: true },
+  { href: "/church-manager/index.html", Icon: IconHome, glyph: "church", label: "Church", short: "Church", hint: "People, giving & learning", plain: true },
 ];
 const ABOUT_TABS: NavTab[] = [
   { href: "/resources", Icon: IconResources, glyph: "resources", label: "Resources", short: "Resources", hint: "Where our data comes from" },

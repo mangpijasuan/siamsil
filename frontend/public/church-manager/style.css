@@ -264,3 +264,14 @@ dialog .fields{margin-top:15px}
   .plain-list li{border-color:#243746}
   select{background-color:#0f1c26}
 }
+/* Discipleship (Church Hub 2.1) */
+.checks{border:1px solid #aebfc1;border-radius:4px;padding:8px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px 14px;margin:0;min-width:0}
+.checks legend{font-weight:700;font-size:14px;padding:0 6px}
+.fields .checks label{display:flex;align-items:center;gap:8px;font-weight:500}
+.fields .checks input{width:auto;min-height:0;width:17px;height:17px;accent-color:#103954}
+.certificate{border:6px double #c7ac57;padding:40px 30px;text-align:center;display:grid;gap:10px}
+.certificate h2{font-size:34px;margin:6px 0}
+.certificate h3{font-size:22px;text-transform:none}
+.certificate .signatures{display:flex;justify-content:space-between;gap:30px;margin-top:40px}
+.certificate .signatures span{flex:1;border-top:1px solid #444;padding-top:6px;font-size:13px}
+@media(prefers-color-scheme:dark){.checks{border-color:#35505f}}

@@ -1,7 +1,7 @@
 {
-  "name": "Church Member Manager by Siamsil Technologies, Inc.",
-  "short_name": "Church Manager",
-  "description": "Members, households, giving, attendance and events. Developed by Siamsil Technologies, Inc.",
+  "name": "Church Hub by Siamsil Technologies, Inc.",
+  "short_name": "Church Hub",
+  "description": "Members, giving, attendance, events and discipleship classes. Developed by Siamsil Technologies, Inc.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

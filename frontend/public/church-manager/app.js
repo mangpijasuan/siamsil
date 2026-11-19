@@ -6,7 +6,7 @@ const currentYear=new Date().getFullYear();
 let savedSnapshot=null;
 const uid=()=>crypto.randomUUID();
 const sum=(rows,key)=>rows.reduce((s,r)=>s+Number(r[key]||0),0);
-const COMPANY={name:'Siamsil Technologies, Inc.',short:'Siamsil',product:'Church Member Manager',version:'2.0.0',year:2026};
+const COMPANY={name:'Siamsil Technologies, Inc.',short:'Siamsil',product:'Church Hub',version:'2.1.0',year:2026};
 let currencyCode='USD';
 const money=cents=>{try{return new Intl.NumberFormat('en-US',{style:'currency',currency:currencyCode}).format(cents/100);}catch{return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(cents/100);}};
 const date=value=>value?new Date(value+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';
@@ -27,6 +27,7 @@ const icon=name=>'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="curr
   check:'<path d="m4 12 5 5L20 6"/>',add:'<path d="M12 5v14M5 12h14"/>',
   settings:'<circle cx="12" cy="12" r="3"/><path d="m9 3-1 3-3 1-2 4 2 2v4l4 2 3-1 3 1 4-2v-4l2-2-2-4-3-1-1-3z"/>',
   print:'<path d="M7 8V3h10v5m0 9h4V8H3v9h4m0-4h10v8H7z"/>',
+  book:'<path d="M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z"/>',
   mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/>'
 }[name]||'<path d="M4 6h16M4 12h16M4 18h16"/>')+'</svg>';
 const btn=(text,action,key='',style='secondary',glyph)=>'<button type="button" class="btn '+style+'" data-action="'+action+'" data-key="'+esc(key)+'">'+(glyph?icon(glyph):'')+esc(text)+'</button>';
@@ -39,7 +40,7 @@ const field=(label,name,value='',opts={})=>{
   return '<label class="'+(opts.full?'full':'')+'">'+esc(label)+(opts.required?' *':'')+input+'</label>';
 };
 const form=(kind,fields,button='Save Record',extra='')=>'<form data-form="'+kind+'"><div class="fields">'+fields+'</div><div class="actions spaced">'+submit(button)+extra+'</div></form>';
-const delBtn=(kind,id)=>id?'<button type="button" class="btn danger" data-action="delete" data-kind="'+kind+'" data-key="'+esc(id)+'">Delete</button>':'';
+const delBtn=(kind,id,small)=>id?'<button type="button" class="btn danger'+(small?' small':'')+'" data-action="delete" data-kind="'+kind+'" data-key="'+esc(id)+'">Delete</button>':'';
 const title=(heading,note,actions='')=>'<div class="title-row"><div><h1>'+esc(heading)+'</h1><small>'+esc(note)+'</small></div><div class="actions">'+actions+'</div></div>';
 const panel=(heading,body)=>'<section class="card"><h3>'+esc(heading)+'</h3>'+body+'</section>';
 const stat=(label,value,note,tone='')=>'<div class="stat"><span class="label">'+esc(label)+'</span><strong class="'+tone+'">'+esc(value)+'</strong><small>'+esc(note)+'</small></div>';
@@ -66,12 +67,12 @@ function seed(){
   const attendance=members.slice(0,29).map((m,i)=>({id:'A-'+i,member:m.id,date:today(),service:'Sunday Worship'}));
   const expenses=[['Facilities','Building maintenance',42500],['Utilities','Electricity and water',18600],['Ministry Programs','Children’s ministry materials',9300],['Missions','Community outreach supplies',25000]].map(([category,description,amount],i)=>({id:'E-'+i,date:year+'-'+String(mm).padStart(2,'0')+'-01',category,description,vendor:'Sample Vendor '+(i+1),cents:amount,method:'Bank Transfer',reference:'',notes:''}));
   const events=[{id:'EV-1',name:'Sunday Worship',date:today(),time:'10:00',location:'Main Sanctuary',capacity:200,notes:'',registrations:[]},{id:'EV-2',name:'Community Thanksgiving Dinner',date:year+'-11-26',time:'17:30',location:'Fellowship Hall',capacity:80,notes:'Bring your family and invite a neighbor.',registrations:members.slice(0,16).map(m=>m.id)}];
-  return {version:2,sample:true,settings,households,members,gifts,attendance,expenses,events};
+  return {version:2,sample:true,settings,households,members,gifts,attendance,expenses,events,...seedLearning(members)};
 }
 const storageKey='church-member-manager-v2';
-function readData(){try{savedSnapshot=localStorage.getItem(storageKey);const data=JSON.parse(savedSnapshot);return validBackup(data)?data:seed();}catch{return seed();}}
+function readData(){try{savedSnapshot=localStorage.getItem(storageKey);const data=JSON.parse(savedSnapshot);return validBackup(data)?normalize(data):seed();}catch{return seed();}}
 let db=readData();
-const state={page:'home',search:'',selected:{members:'M-1001',households:'HH-001',gifts:null,events:'EV-2',expenses:null},year:String(currentYear),month:'',fund:'',household:'HH-001',donor:'',memberFilter:'',voided:false};
+const state={page:'home',search:'',selected:{members:'M-1001',households:'HH-001',gifts:null,events:'EV-2',expenses:null,classes:db.classes[0]?.id||null,lessons:null},classKind:'',year:String(currentYear),month:'',fund:'',household:'HH-001',donor:'',memberFilter:'',voided:false};
 const get=(kind,id)=>db[kind].find(r=>r.id===id);
 const fullName=m=>m?m.first+' '+m.last:'Anonymous';
 const activeMembers=()=>db.members.filter(m=>m.status==='Active');
@@ -120,7 +121,7 @@ function home(){
     ].join('')+'</div><div class="church-home-grid">'+
     panel('Household at a glance','<div class="filters">'+selector('household',h?.id||'',db.households.map(h=>[h.id,h.name]),'Household')+'</div>'+(h?'<div class="family-heading"><span class="family-emblem">'+icon('home')+'</span><div><h2>'+esc(h.name)+'</h2><small>'+esc(h.id)+' · '+householdMembers(h.id).length+' members</small></div></div><div class="facts"><div><span class="label">Tithe · '+state.year+'</span><strong>'+money(sum(hr.filter(g=>g.fund==='Tithe'),'cents'))+'</strong></div><div><span class="label">Total giving · '+state.year+'</span><strong>'+money(sum(hr,'cents'))+'</strong></div></div>'+table(['Member','Role'],householdMembers(h.id).map(m=>[recordLink(fullName(m),'members',m.id),esc(m.role)]))+'<div class="actions spaced">'+btn('Open Household','open-household',h.id,'secondary','home')+btn('Giving Statement','statement',h.id,'secondary','file')+'</div>':note('Add your first household to get started.')))+
     panel('Giving by fund · '+state.year,barChart(totals(rows))+'<h3 class="spaced">Birthdays · next 30 days</h3>'+(birthdays.length?'<ul class="plain-list">'+birthdays.map(({m,left,next})=>'<li><span>'+recordLink(fullName(m),'members',m.id)+'</span><small>'+(left===0?'Today 🎂':next.toLocaleDateString('en-US',{month:'short',day:'numeric'}))+'</small></li>').join('')+'</ul>':note('No birthdays recorded for the next 30 days.')))+
-    panel('Church life','<div class="facts"><div><span class="label">Children & youth</span><strong>'+people.filter(m=>['Child','Youth'].includes(m.stage)).length+'</strong></div><div><span class="label">Upcoming events</span><strong>'+upcoming.length+'</strong></div></div>'+table(['Event','Date'],upcoming.slice(0,4).map(e=>[recordLink(e.name,'events',e.id),date(e.date)]))+'<div class="actions spaced">'+btn('Take Attendance','navigate','attendance','secondary','check')+'</div>')+
+    panel('Church life','<div class="facts"><div><span class="label">Children & youth</span><strong>'+people.filter(m=>['Child','Youth'].includes(m.stage)).length+'</strong></div><div><span class="label">Upcoming events</span><strong>'+upcoming.length+'</strong></div><div><span class="label">Active classes</span><strong>'+db.classes.filter(c=>c.status==='Active').length+'</strong></div></div>'+table(['Event','Date'],upcoming.slice(0,4).map(e=>[recordLink(e.name,'events',e.id),date(e.date)]))+'<div class="actions spaced">'+btn('Take Attendance','navigate','attendance','secondary','check')+'</div>')+
     '<section class="card recent-giving"><div class="title-row"><h3>Recent contributions</h3>'+btn('View Giving Ledger','navigate','giving','secondary small')+'</div>'+table(['Date','Household','Donor','Fund','Amount','Method'],recent.map(g=>[date(g.date),esc(g.householdName||'Unassigned'),esc(g.donorName),esc(g.fund),'<strong>'+money(g.cents)+'</strong>',esc(g.method)]))+'</section></div>';
 }
 function memberFields(m={}){
@@ -130,7 +131,7 @@ function members(){
   const m=get('members',state.selected.members);
   const list=filterList([...db.members].sort((a,b)=>fullName(a).localeCompare(fullName(b))),m=>[fullName(m),m.id,m.household,m.ministry,m.status].join(' '));
   return title('Members','Church directory, household links and ministry involvement',btn('Export CSV','members-csv','','secondary','file')+btn('New Member','new','members','gold','add'))+
-    '<div class="workspace"><section>'+search('Name, member ID, ministry or status')+table(['Member','Household','Status'],list.map(m=>[recordLink(fullName(m),'members',m.id),esc(get('households',m.household)?.name||'—'),badge(m.status,m.status==='Active'?'good':'')]))+'</section><section class="editor">'+panel(m?'Member details · '+m.id:'New member',form('members',memberFields(m),'Save Record',delBtn('members',m?.id)))+'</section><aside class="sheet">'+(m?memberCard(m)+'<div class="actions spaced">'+btn('Membership Card','card',m.id,'secondary','print')+btn('Household','open-household',m.household,'secondary','home')+'</div><h3 class="spaced">Attendance</h3>'+table(['Date','Service'],db.attendance.filter(a=>a.member===m.id).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8).map(a=>[date(a.date),esc(a.service)])):note('Create a member to link them to a household.'))+'</aside></div>';
+    '<div class="workspace"><section>'+search('Name, member ID, ministry or status')+table(['Member','Household','Status'],list.map(m=>[recordLink(fullName(m),'members',m.id),esc(get('households',m.household)?.name||'—'),badge(m.status,m.status==='Active'?'good':'')]))+'</section><section class="editor">'+panel(m?'Member details · '+m.id:'New member',form('members',memberFields(m),'Save Record',delBtn('members',m?.id)))+'</section><aside class="sheet">'+(m?memberCard(m)+'<div class="actions spaced">'+btn('Membership Card','card',m.id,'secondary','print')+btn('Household','open-household',m.household,'secondary','home')+'</div><h3 class="spaced">Classes</h3>'+table(['Class','Status'],db.enrollments.filter(e=>e.member===m.id&&e.status!=='Withdrawn').map(e=>[esc(get('classes',e.class)?.name||'—'),badge(e.status,statusTone(e.status))]))+'<h3 class="spaced">Attendance</h3>'+table(['Date','Service'],db.attendance.filter(a=>a.member===m.id).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8).map(a=>[date(a.date),esc(a.service)])):note('Create a member to link them to a household.'))+'</aside></div>';
 }
 function monthlyGiving(rows){
   return table(['Month','Tithe','Total'],Array.from({length:12},(_,i)=>{
@@ -218,8 +219,8 @@ function settings(){
     panel('Backup & restore',note('Records are saved in this browser. Download a backup to keep a copy or transfer your records to another browser.')+'<div class="actions spaced">'+btn('Download Backup','backup','','gold','file')+btn('Restore Backup','restore','','secondary')+'</div>')+
     panel('Start your church records',note(db.sample?'You are viewing fictional church records. Start an empty register when you are ready to enter your own.':'Your church register is active.')+'<div class="actions spaced">'+(db.sample?btn('Start Empty Register','empty-confirm','','secondary'):'')+btn('Load Sample Church','sample-confirm','','secondary')+'</div><p class="muted spaced">Your original Membership Manager data uses a separate browser store. Church records use their own backup format.</p>')+'</div>';
 }
-const pages={home,members,households,giving,statements,attendance,events,ministries,expenses,settings};
-const navigation=[['home','Home','home'],['members','Members','people'],['households','Households','home'],['giving','Giving','giving'],['statements','Statements','file'],['attendance','Attendance','check'],['events','Events','calendar'],['ministries','Ministries','people'],['expenses','Expenses','giving'],['settings','Settings','settings']];
+const pages={home,members,households,giving,statements,attendance,discipleship,events,ministries,expenses,settings};
+const navigation=[['home','Home','home'],['members','Members','people'],['households','Households','home'],['giving','Giving','giving'],['statements','Statements','file'],['attendance','Attendance','check'],['discipleship','Discipleship','book'],['events','Events','calendar'],['ministries','Ministries','people'],['expenses','Expenses','giving'],['settings','Settings','settings']];
 function hydrate(root){root.querySelectorAll('[data-qr]').forEach(node=>{node.innerHTML=window.makeMemberQR(node.dataset.qr);});}
 function render(){
   currencyCode=db.settings.currency||'USD';
@@ -252,7 +253,7 @@ function saveDB(next,message){
     const stored=localStorage.getItem(storageKey);
     if(stored!==savedSnapshot){
       const fresh=JSON.parse(stored);
-      if(validBackup(fresh)){db=fresh;savedSnapshot=stored;render();}
+      if(validBackup(fresh)){db=normalize(fresh);savedSnapshot=stored;render();}
       notice('Another tab updated these records. Review the refreshed values and try again.');
       return false;
     }
@@ -277,7 +278,7 @@ function upsert(next,kind,record){
   return id;
 }
 function selectedHousehold(){return get('households',state.household)||db.households[0];}
-function print(titleText,body){
+function printSheet(titleText,body){
   $('print-sheet').innerHTML='<h1>'+esc(titleText)+'</h1><div class="spaced">'+body+'</div><p class="print-credit">Prepared with '+esc(COMPANY.product)+' · Developed by '+esc(COMPANY.name)+'</p>';hydrate($('print-sheet'));window.print();
 }
 function download(text,name,type){
@@ -306,7 +307,7 @@ function validBackup(data){
     records(data.gifts,g=>text(g,['household','donor','householdName','donorName','date','fund','method','reference','notes','status','recordedAt'])&&isDate(g.date)&&amount(g.cents)&&['Posted','Voided'].includes(g.status)&&Number.isFinite(Date.parse(g.recordedAt))&&(g.status!=='Voided'||text(g,['voidReason','voidedAt'])&&g.voidReason.trim()&&Number.isFinite(Date.parse(g.voidedAt))))&&
     records(data.attendance,a=>text(a,['member','date','service'])&&isDate(a.date))&&
     records(data.expenses,e=>text(e,['date','category','description','vendor','method','reference','notes'])&&isDate(e.date)&&amount(e.cents))&&
-    records(data.events,e=>text(e,['name','date','time','location','notes'])&&isDate(e.date)&&Number.isSafeInteger(e.capacity)&&e.capacity>0&&Array.isArray(e.registrations)&&e.registrations.every(id=>typeof id==='string')&&new Set(e.registrations).size===e.registrations.length&&e.registrations.length<=e.capacity);
+    records(data.events,e=>text(e,['name','date','time','location','notes'])&&isDate(e.date)&&Number.isSafeInteger(e.capacity)&&e.capacity>0&&Array.isArray(e.registrations)&&e.registrations.every(id=>typeof id==='string')&&new Set(e.registrations).size===e.registrations.length&&e.registrations.length<=e.capacity)&&learningValid(data,records,text,isDate);
 }
 function postGift(next,data){
   if(!isDate(data.date))throw new Error('Choose a valid contribution date.');
@@ -350,12 +351,13 @@ function exportMembers(){
   download('\uFEFF'+data.map(row=>row.map(csvValue).join(',')).join('\r\n'),'church-members-'+today()+'.csv','text/csv;charset=utf-8');
 }
 const actions={
-  about(){modal('About '+COMPANY.product,'<div class="about"><div class="about-mark">'+icon('church')+'</div><h3>'+esc(COMPANY.product)+'</h3><p>Version '+COMPANY.version+'</p><p class="spaced">Developed by <strong>'+esc(COMPANY.name)+'</strong>.</p><p class="muted spaced">Members, households, giving, attendance, events, ministries and expenses for your congregation. Records are stored privately in this browser — nothing is sent to any server.</p><p class="muted spaced">&copy; '+COMPANY.year+' '+esc(COMPANY.name)+'. All rights reserved.</p><p class="muted spaced">QR codes use QRCode for JavaScript &copy; 2009 Kazuhiko Arase (MIT License).</p></div>');},
+  ...learningActions,
+  about(){modal('About '+COMPANY.product,'<div class="about"><div class="about-mark">'+icon('church')+'</div><h3>'+esc(COMPANY.product)+'</h3><p>Version '+COMPANY.version+'</p><p class="spaced">Developed by <strong>'+esc(COMPANY.name)+'</strong>.</p><p class="muted spaced">Members, households, giving, attendance, events, ministries, discipleship classes and expenses for your congregation. Records are stored privately in this browser — nothing is sent to any server.</p><p class="muted spaced">&copy; '+COMPANY.year+' '+esc(COMPANY.name)+'. All rights reserved.</p><p class="muted spaced">QR codes use QRCode for JavaScript &copy; 2009 Kazuhiko Arase (MIT License).</p></div>');},
   'members-csv':exportMembers,
   delete(id,el){
     const kind=el.dataset.kind,rec=get(kind,id);if(!rec)return;
-    const label={members:'member',households:'household',events:'event',expenses:'expense'}[kind];
-    const name=rec.name||rec.description||fullName(rec);
+    const label={members:'member',households:'household',events:'event',expenses:'expense',classes:'class',lessons:'lesson',classSessions:'class session'}[kind];
+    const name=rec.name||rec.title||rec.description||(rec.first?fullName(rec):'Session · '+rec.date);
     state.deleteTarget={kind,id};
     modal('Delete '+label,note('Delete “'+name+'”? This cannot be undone. Download a backup first if you may need it.')+form('delete','','Delete '+label));
   },
@@ -365,12 +367,12 @@ const actions={
   'new-gift'(){openGift();},
   'household-gift':openGift,
   'gift-view':givingDetail,
-  'gift-print'(id){const g=get('gifts',id);if(g)print('Contribution entry · '+g.id,'<h2>'+esc(db.settings.church)+'</h2>'+table(['Date','Donor','Household','Fund','Amount','Method','Status'],[[date(g.date),esc(g.donorName),esc(g.householdName),esc(g.fund),money(g.cents),esc(g.method),esc(g.status)]])+(g.voidReason?'<p>Void reason · '+esc(g.voidReason)+'</p>':''));},
+  'gift-print'(id){const g=get('gifts',id);if(g)printSheet('Contribution entry · '+g.id,'<h2>'+esc(db.settings.church)+'</h2>'+table(['Date','Donor','Household','Fund','Amount','Method','Status'],[[date(g.date),esc(g.donorName),esc(g.householdName),esc(g.fund),money(g.cents),esc(g.method),esc(g.status)]])+(g.voidReason?'<p>Void reason · '+esc(g.voidReason)+'</p>':''));},
   'gift-void'(id){const g=get('gifts',id);if(g?.status==='Posted'){state.voidId=id;modal('Void contribution · '+id,note('The entry will stay visible in the ledger and be excluded from giving totals and statements.')+form('void',field('Reason','reason','',{area:true,full:true,required:true}),'Void Entry'));}},
   statement(id){state.household=id;state.fund='';navigate('statements');},
   'open-household'(id){if(!get('households',id)){notice('Assign a household to this member first.');return;}state.selected.households=id;navigate('households');},
-  card(id){const m=get('members',id);if(m)print('Member Card',memberCard(m));},
-  'print-statement'(){const h=selectedHousehold();if(h)print('Household giving statement · '+state.year,statementContent(h,giftRows({household:h.id,fund:state.fund})));},
+  card(id){const m=get('members',id);if(m)printSheet('Member Card',memberCard(m));},
+  'print-statement'(){const h=selectedHousehold();if(h)printSheet('Household giving statement · '+state.year,statementContent(h,giftRows({household:h.id,fund:state.fund})));},
   'statement-csv'(){const h=selectedHousehold();if(h)exportGiving(giftRows({household:h.id,fund:state.fund}),'giving-'+h.id+'-'+state.year+'.csv');},
   'giving-csv'(){exportGiving(giftRows({month:state.month,fund:state.fund,includeVoided:state.voided}).filter(g=>!state.search||[g.id,g.donorName,g.householdName,g.reference].join(' ').toLowerCase().includes(state.search.toLowerCase())),'church-giving-'+state.year+'.csv');},
   'cancel-registration'(id){const next=structuredClone(db);const e=next.events.find(e=>e.id===state.selected.events);if(e){e.registrations=e.registrations.filter(m=>m!==id);saveDB(next,'Registration cancelled.');}},
@@ -380,7 +382,8 @@ const actions={
   'sample-confirm'(){modal('Load sample church',note('This replaces the church register in this browser with fictional sample records. Download a backup first to keep your records.')+form('sample','','Load Sample Church'));}
 };
 function resetState(){
-  state.selected={members:db.members[0]?.id,households:db.households[0]?.id,gifts:null,events:db.events[0]?.id,expenses:null};
+  state.selected={members:db.members[0]?.id,households:db.households[0]?.id,gifts:null,events:db.events[0]?.id,expenses:null,classes:db.classes[0]?.id||null,lessons:null};
+  state.classKind='';
   state.household=db.households[0]?.id||'';state.search='';state.fund='';state.year=String(currentYear);state.month='';state.voided=false;
 }
 async function handleSubmit(event){
@@ -393,6 +396,7 @@ async function handleSubmit(event){
       if(data.backup.size>20000000)throw new Error('Choose a backup smaller than 20 MB.');
       const candidate=JSON.parse(await data.backup.text());
       if(!validBackup(candidate))throw new Error('Choose a valid church records backup.');
+      normalize(candidate);
       if(saveDB(candidate,'Church backup restored.')){resetState();close();render();}
       return;
     }
@@ -435,6 +439,8 @@ async function handleSubmit(event){
       if(e.registrations.length>=e.capacity)throw new Error('This event has reached capacity.');
       if(e.registrations.includes(data.member))throw new Error('This member is already registered.');
       e.registrations.push(data.member);message='Member registered.';
+    }else if(learningForms[kind]){
+      const r=learningForms[kind](next,data,f);message=r?.message||message;
     }else if(kind==='delete'){
       const {kind:k,id:rid}=state.deleteTarget||{};
       if(!k||!get(k,rid))throw new Error('This record is no longer available.');
@@ -448,8 +454,9 @@ async function handleSubmit(event){
         next.events.forEach(e=>{e.registrations=e.registrations.filter(x=>x!==rid);});
         next.households.forEach(h=>{if(h.contact===rid)h.contact='';});
       }
+      learningCleanup(next,k,rid);
       next[k]=next[k].filter(r=>r.id!==rid);
-      state.selected[k]=next[k][0]?.id||null;
+      state.selected[k]=['lessons','classSessions'].includes(k)?null:next[k][0]?.id||null;
       state.deleteTarget=null;message='Record deleted.';
     }else if(kind==='settings'){
       if(data.currency&&!/^[A-Z]{3}$/.test(data.currency))throw new Error('Choose a valid currency.');
@@ -463,7 +470,7 @@ async function handleSubmit(event){
       }
     }else if(kind==='empty'){
       if(!db.sample)throw new Error('The register is already active.');
-      for(const key of ['members','households','gifts','events','expenses','attendance'])next[key]=[];
+      for(const key of ['members','households','gifts','events','expenses','attendance','classes','lessons','enrollments','classSessions'])next[key]=[];
       next.sample=false;message='Empty church register ready.';
     }else if(kind==='sample'){
       if(saveDB(seed(),'Sample church loaded.')){resetState();close();render();}
@@ -496,7 +503,7 @@ document.addEventListener('input',event=>{
 window.addEventListener('hashchange',route);
 window.addEventListener('storage',event=>{
   if(event.key===storageKey){
-    try{const fresh=JSON.parse(event.newValue);if(validBackup(fresh)){db=fresh;savedSnapshot=event.newValue;render();notice('Records refreshed from another tab.');}}catch{}
+    try{const fresh=JSON.parse(event.newValue);if(validBackup(fresh)){db=normalize(fresh);savedSnapshot=event.newValue;render();notice('Records refreshed from another tab.');}}catch{}
   }
 });
 $('brand-icon').innerHTML=icon('church');
