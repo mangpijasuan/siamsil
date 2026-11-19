@@ -13,6 +13,7 @@ from rate_limit import rate_limited
 from services.bible_lookup import BibleLookup
 from services.bible_versions import get_bible_versions
 from services.data_loader import get_store
+from services.language_catalog import canonical_code, direction_for
 from services import experimental_mt
 from services.language_engine import DIRECTION_PATTERN, canonical_direction, entry_zomi, get_engine
 from services.translation import active_system
@@ -55,8 +56,23 @@ def search_matches(
         description="Search only the side translated from: English for en-ctd, Zomi for ctd-en. Omit to search both."
         " The older names en-zom and zom-en are still accepted.",
     ),
+    source_language: str | None = Query(None, max_length=8, description="With target_language, instead of direction: "
+                                        "en or ctd (zom is read as ctd). See GET /api/v1/languages."),
+    target_language: str | None = Query(None, max_length=8, description="With source_language."),
 ):
     direction = canonical_direction(direction)
+    pair: tuple[str, str] | None = None
+    if (source_language is None) != (target_language is None):
+        raise HTTPException(status_code=422, detail="Give both source_language and target_language, or neither.")
+    if source_language is not None and target_language is not None:
+        pair = (canonical_code(source_language) or "", canonical_code(target_language) or "")
+        pair_direction = direction_for(*pair)
+        if pair_direction is None:
+            raise HTTPException(status_code=409, detail=f"Translation from {pair[0]} to {pair[1]} is not available. "
+                                                        "See GET /api/v1/languages for the pairs Siamsil can search.")
+        if direction is not None and direction != pair_direction:
+            raise HTTPException(status_code=422, detail="direction and the language pair disagree; give one of them.")
+        direction = pair_direction
     engine = get_engine()
     if not engine.available:
         raise HTTPException(status_code=503, detail="Language database is not built yet.")
@@ -116,12 +132,15 @@ def search_matches(
         "count": len(results[:limit]),
         "results": results[:limit],
         "note": "Parallel corpus matches are machine-translated; only those marked verified were approved by Zomi reviewers.",
+        "source_language": pair[0] if pair else ({"en-ctd": "en", "ctd-en": "ctd"}.get(direction or "")),
+        "target_language": pair[1] if pair else ({"en-ctd": "ctd", "ctd-en": "en"}.get(direction or "")),
     }
 
 
 @router.post("", response_model=TranslationResponse)
 def translate(request: TranslateRequest):
-    payload = search_matches(request.text, limit=8, direction=request.direction)
+    payload = search_matches(request.text, limit=8, direction=request.direction, source_language=None,
+                             target_language=None)
     exact = next((item for item in payload["results"] if item.get("exact") or item.get("source") == "dictionary"), None)
     system = active_system()
     return {

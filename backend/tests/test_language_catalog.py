@@ -22,7 +22,9 @@ class LanguageCatalogTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertEqual({(p["source_language"], p["target_language"]) for p in payload["translation_pairs"]},
-                         {("en", "zom"), ("zom", "en")})
+                         {("en", "ctd"), ("ctd", "en")})
+        # Zomi is ctd (docs/DATA_RIGHTS.md, "Language code"); zom is Zou and is never returned.
+        self.assertNotIn("zom", {lang["code"] for lang in payload["languages"]})
         self.assertEqual(next(lang for lang in payload["languages"] if lang["code"] == "my")["role"],
                          "learning_content")
 
@@ -41,6 +43,7 @@ class LanguageCatalogTests(unittest.TestCase):
         self.assertEqual(response.status_code, 422)
 
     def test_reverse_pair_is_sent_to_dictionary_engine(self) -> None:
+        # Older links say zom; it is read as ctd (Zomi), the code Siamsil uses.
         engine = Mock(available=True)
         engine.search_dictionary.return_value = []
         engine.search_parallel.return_value = []
@@ -54,8 +57,8 @@ class LanguageCatalogTests(unittest.TestCase):
                 params={"q": "ka", "source_language": "zom", "target_language": "en"},
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["source_language"], "zom")
-        engine.search_dictionary.assert_called_once_with("ka", direction="zom-en", limit=8)
+        self.assertEqual(response.json()["source_language"], "ctd")
+        engine.search_dictionary.assert_called_once_with("ka", direction="ctd-en", limit=8)
 
 
 if __name__ == "__main__":

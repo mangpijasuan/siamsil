@@ -279,6 +279,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/languages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Language Catalog
+         * @description The languages Siamsil shows and the translation pairs it can search. Zomi is `ctd`.
+         */
+        get: operations["language_catalog_api_v1_languages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/learning/groups": {
         parameters: {
             query?: never;
@@ -898,6 +918,19 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** CatalogLanguage */
+        CatalogLanguage: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Note */
+            note?: string | null;
+            /** Role */
+            role: string;
+        } & {
+            [key: string]: unknown;
+        };
         /**
          * ConsentChoices
          * @description The six separate answers on the consent form. Each must be given; none defaults to yes.
@@ -1206,6 +1239,15 @@ export interface components {
              */
             user_id: string;
         };
+        /** LanguageCatalogResponse */
+        LanguageCatalogResponse: {
+            /** Languages */
+            languages: components["schemas"]["CatalogLanguage"][];
+            /** Translation Pairs */
+            translation_pairs: components["schemas"]["TranslationPair"][];
+        } & {
+            [key: string]: unknown;
+        };
         /** LearningEntry */
         LearningEntry: {
             /** Category */
@@ -1472,6 +1514,19 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** TranslationPair */
+        TranslationPair: {
+            /** Available */
+            available: boolean;
+            /** Direction */
+            direction: string;
+            /** Source Language */
+            source_language: string;
+            /** Target Language */
+            target_language: string;
+        } & {
+            [key: string]: unknown;
+        };
         /** TranslationResponse */
         TranslationResponse: {
             /** Direction */
@@ -1504,6 +1559,10 @@ export interface components {
             query: string;
             /** Results */
             results: components["schemas"]["TranslateMatch"][];
+            /** Source Language */
+            source_language?: string | null;
+            /** Target Language */
+            target_language?: string | null;
         } & {
             [key: string]: unknown;
         };
@@ -2086,6 +2145,26 @@ export interface operations {
             };
         };
     };
+    language_catalog_api_v1_languages_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LanguageCatalogResponse"];
+                };
+            };
+        };
+    };
     learning_groups_api_v1_learning_groups_get: {
         parameters: {
             query?: never;
@@ -2631,6 +2710,10 @@ export interface operations {
                 limit?: number;
                 /** @description Search only the side translated from: English for en-ctd, Zomi for ctd-en. Omit to search both. The older names en-zom and zom-en are still accepted. */
                 direction?: string | null;
+                /** @description With target_language, instead of direction: en or ctd (zom is read as ctd). See GET /api/v1/languages. */
+                source_language?: string | null;
+                /** @description With source_language. */
+                target_language?: string | null;
             };
             header?: never;
             path?: never;
