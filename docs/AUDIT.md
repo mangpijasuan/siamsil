@@ -56,11 +56,11 @@ Not changed, on purpose: rights clearance ([RIGHTS_POLICY.md](RIGHTS_POLICY.md) 
 | Owner-only approval with audit trail | **Built in PR 1** | 1 |
 | One-pass approve / edit-and-approve / reject / defer | **Built in PR 1** for corpus sheets | 1 |
 | Six linguistic statuses | **Reported in PR 1** (`linguistic_status`); stored values unchanged | 1 |
-| Near-duplicate clustering | none (exact only) | 2 |
-| Priority queues by impact, uncertainty, frequency, reusable pattern | soft-flag queue in file order | 2 |
-| Batch approval by cluster, with sampling | per-row sheets only | 2, 5 |
+| Near-duplicate clustering | **Built in PR 2**: template and near-duplicate clusters ([REVIEW_QUEUES.md](REVIEW_QUEUES.md)) | 2 |
+| Priority queues by impact, uncertainty, frequency, reusable pattern | **Built in PR 2**: cluster priority (frequency, inconsistency, uncertainty), queue for `export-queue` | 2 |
+| Batch approval by cluster, with sampling | per-row sheets; cluster members are adjacent since PR 2. One decision for a whole cluster would approve unread text, so it waits for preview, sampling and rollback | 5 |
 | English–Zomi semantic alignment, confidence | heuristic flags and `quality_score` only | 2 (local model) |
-| Terminology conflict, translation consistency | `dictionary_terms.py` drafts per term only | 2, 3 |
+| Terminology conflict, translation consistency | `dictionary_terms.py` drafts per term; PR 2 flags one English template translated several ways | 2, 3 |
 | Dictionary: headword normalization, duplicates, variants, inflected forms | sources read as written; spelling-variant evidence exists separately | 3 |
 | AI correction suggestions with explanation, stored as `ai_suggested` | none; Quality Operator proposed, not deployed | 4 |
 | Candidate headwords toward 100K+, classified (attested, variant, derived, proposed, AI candidate) | none | 4 |
