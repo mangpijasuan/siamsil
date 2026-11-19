@@ -24,6 +24,8 @@ A 300,000-row slice took about 7 seconds, so the full file should take under a m
 
 ## 2. Make a review sitting (about 100 pairs)
 
+To review by cluster and priority instead (the same English pattern together, the most useful pairs first), build a cluster queue with `review_clusters.py` and pass its `cluster-queue.jsonl` as `--ids` below ([REVIEW_QUEUES.md](REVIEW_QUEUES.md)).
+
 ```bash
 python3 ml_pipeline/scripts/review_sample.py export-queue \
   data/processed/language/siamsil_language.sqlite \
