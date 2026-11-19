@@ -62,8 +62,8 @@ Not changed, on purpose: rights clearance ([RIGHTS_POLICY.md](RIGHTS_POLICY.md) 
 | English–Zomi semantic alignment, confidence | heuristic flags and `quality_score` only | 2 (local model) |
 | Terminology conflict, translation consistency | `dictionary_terms.py` drafts per term; PR 2 flags one English template translated several ways | 2, 3 |
 | Dictionary: headword normalization, duplicates, variants, inflected forms | **Built in PR 3** ([DICTIONARY_AUDIT.md](DICTIONARY_AUDIT.md)): findings and owner decisions; applying accepted findings waits for PR 5 | 3, 5 |
-| AI correction suggestions with explanation, stored as `ai_suggested` | none; Quality Operator proposed, not deployed | 4 |
-| Candidate headwords toward 100K+, classified (attested, variant, derived, proposed, AI candidate) | none | 4 |
+| AI correction suggestions with explanation, stored as `ai_suggested` | **Built in PR 4** ([PROPOSALS.md](PROPOSALS.md)): model adapter, rights-checked, output always `ai_candidate`; the Quality Operator service itself is still not deployed | 4 |
+| Candidate headwords toward 100K+, classified (attested, variant, derived, proposed, AI candidate) | **Built in PR 4**: attested words mined from cleared texts, spelling variants by the adopted rules, owner decisions; applying them waits for PR 5 | 4, 5 |
 | Rule propagation with preview and rollback beyond spelling rules | spelling rules only (versioned, original kept) | 5 |
 | Progress dashboard | `status` counts on the command line | 5 |
 | Web review screen with side-by-side text, keyboard shortcuts, provenance and rights panel | not on `main`; drafts #68, #72 | after 2, built on #72 rather than a new app |
