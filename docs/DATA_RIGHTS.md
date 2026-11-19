@@ -174,6 +174,20 @@ To clear it for training, record in this file: (1) the dataset card as published
 **Daily-use phrases**
 - Confirm the teacher who reviewed them agrees to their use in training and redistribution, and how they want to be credited.
 
+## Reports of verbal permission, 2026-11-18
+
+On 2026-11-18 the project owner reported **verbal permission ("partnership agreed")** for the five sources below. These are reports, not evidence: none is in writing, none has been confirmed by a second person, and **no status in `data/rights.json` changes**. Each stays as it is until the permission is in writing, the date, signer and wording are recorded here, and a second person confirms (see Closing an item).
+
+| Source | Status in `data/rights.json` (unchanged) | Needed to close |
+|---|---|---|
+| TongDot Zomi–English dictionary | `needs_review` (commercial `not_permitted`) | Written permission naming display, training and redistribution, and the full file |
+| *Paunam Khenna Leh Kampau Luanzia*, primer by Lia Cingsen | `needs_review` | Written confirmation of display and training; redistribution and commercial were not granted |
+| *Zokam le Zolai* (Rev. Khoi Lam Thang, Zomi Christian Literature Society) | `needs_review` | Written confirmation, with credit; redistribution and commercial were not granted |
+| Daily-use phrases (Ms. Nem) | `needs_review` | Written sign-off |
+| Zomi Bethel Church website text | `not_permitted` | Written permission from the church; until then it must not be used |
+
+The tracker spreadsheet the owner edited on 2026-11-18 also marked every source "Confirmed" with written permission and a second person, and showed every rights column as cleared. Those entries are not recorded here: they do not match this register or the evidence, and the owner will say which, if any, are true.
+
 ## Language code
 
 **Decision (2026-10-27, project owner):** Siamsil labels Zomi **`ctd`**, the ISO 639-3 code for Tedim, the language Zolai/Zomi writing is based on. This replaces the 2026-10-04 decision to label it `zom`, which ISO 639-3 assigns to **Zou**, a different Kuki-Chin language.
