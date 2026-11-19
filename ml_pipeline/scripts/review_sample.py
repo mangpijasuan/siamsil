@@ -20,8 +20,12 @@ Commands:
                                         (data/reviews/corpus-revisions.jsonl; build_language_db.py applies them)
 
 Reviewer and lead-editor codes must be in the private roster (data/reviews/roster.csv:
-columns code, role = reviewer or lead_editor, optional name). A pair is HUMAN_APPROVED
-only after a reviewer rated it acceptable and a different lead editor approved it.
+columns code, role = reviewer, lead_editor or owner, optional name). A pair is HUMAN_APPROVED
+only after a reviewer rated it acceptable and a different lead editor approved it, or the
+owner approved it (approval owner_sole, docs/GOVERNANCE.md).
+
+  record REVIEW KEY --reviewer O01 --owner-decides
+                                        owner only: approve, edit-and-approve or reject in the same pass
 
 Rating scale (see docs/GENERATOR_REVIEW.md):
   meaning  0 wrong or missing · 1 partly right · 2 fully right
@@ -299,7 +303,7 @@ def record(
     records: list[dict] = []
     errors: list[str] = []
     unchanged = 0
-    if roster.get(reviewer) != "reviewer":
+    if not corpus_reviews.acts_as(roster, reviewer, "reviewer"):
         return [], [f"{reviewer!r} is not listed as a reviewer in the roster"], 0
 
     for row in review_rows:
@@ -357,6 +361,61 @@ def record(
     return records, errors, unchanged
 
 
+def owner_decisions(
+    review_records: list[dict],
+    review_rows: list[dict],
+    key_rows: list[dict],
+    *,
+    owner: str,
+    roster: dict[str, str],
+    approved_on: str,
+    batch: str,
+    recorded_at: str = "",
+) -> tuple[list[dict], list[dict], list[str]]:
+    """The owner's decisions on the pairs they just rated, in the same pass (docs/GOVERNANCE.md).
+
+    For each new review by the owner:
+      acceptable (meaning 2, fluency >= 1), no correction  -> approve        (approval, owner_sole)
+      meaning 0, no correction                              -> reject         (the review alone rejects it)
+      a correction, meaning 1 or 2                          -> edit and approve (revision, owner_sole)
+      a correction with meaning 0                           -> error: 0 rejects the pair, so a fix would not apply
+      anything else (for example meaning 1, no correction)  -> stays open for a later decision (needs_recheck)
+    Returns (approval records, revision records, errors). Only the roster's owner may use it. The text a revision
+    replaces is the Zomi the owner was shown, checked against the key's fingerprint by `record`.
+    """
+    if roster.get(owner) != corpus_reviews.OWNER:
+        return [], [], [f"{owner!r} is not the owner in the roster; only the owner decides in the same pass"]
+    shown = {}
+    key_of = {row["sample_id"]: row for row in key_rows}
+    for row in review_rows:
+        key = key_of.get((row.get("sample_id") or "").strip())
+        if key and (key.get("pair_hash") or "").strip():
+            shown[key["pair_hash"].strip()] = " ".join((row.get("zomi") or "").split())
+    approvals, revisions, errors = [], [], []
+    base = {"approver": owner, "approved_on": approved_on, "recorded_at": recorded_at, "batch": batch,
+            "approval": corpus_reviews.OWNER_SOLE}
+    for review in review_records:
+        if review["reviewer"] != owner:
+            continue
+        pair_hash, fix = review["pair_hash"], " ".join(str(review.get("correction") or "").split())
+        if fix:
+            if review["meaning"] == 0:
+                errors.append(f"{pair_hash[:10]}: meaning 0 rejects the pair, so the correction would not apply; "
+                              "rate meaning 1 or 2 to edit and approve, or clear the correction to reject")
+                continue
+            revision = {"kind": "revision", "pair_hash": pair_hash, "before": shown.get(pair_hash, ""),
+                        "after": fix, "proposed_by": [owner], "notes": review.get("notes", ""), **base}
+            problems = corpus_revisions.validate(revision)
+            if problems:
+                errors.append(f"{pair_hash[:10]}: {'; '.join(problems)}")
+                continue
+            revisions.append(revision)
+        elif corpus_reviews.acceptable(review["meaning"], review["fluency"]):
+            approvals.append({"kind": "approval", "pair_hash": pair_hash, "decision": "approve",
+                              "notes": review.get("notes", ""), **base})
+    return approvals, revisions, errors
+
+
 def approval_sheet(records: list[dict], con: sqlite3.Connection, min_reviewers: int = 1) -> list[dict]:
     """Rows for the lead editor: every pair reviewers found acceptable and nobody has approved yet."""
     decisions = corpus_reviews.decide(records, min_reviewers)
@@ -406,11 +465,13 @@ def approve(
     """Turn the lead editor's approval sheet into approval records. Returns (new records, errors).
 
     Blank decisions are skipped. The approver must be a roster lead editor and must
-    not have reviewed the pair; the pair must still be READY_FOR_APPROVAL; the
-    English and Zomi must be exactly what the sheet was made with.
+    not have reviewed the pair, unless the approver is the owner (docs/GOVERNANCE.md): the
+    owner's approval of their own review is marked approval owner_sole. The pair must still
+    be READY_FOR_APPROVAL; the English and Zomi must be exactly what the sheet was made with.
     """
-    if roster.get(approver) != "lead_editor":
+    if not corpus_reviews.acts_as(roster, approver, "lead_editor"):
         return [], [f"{approver!r} is not listed as a lead_editor in the roster"]
+    is_owner = roster.get(approver) == corpus_reviews.OWNER
     decisions = corpus_reviews.decide(existing, min_reviewers)
     records, errors = [], []
     for row in rows:
@@ -431,21 +492,22 @@ def approve(
             status = current.status if current else "not reviewed"
             errors.append(f"{item_id}: not ready for approval (now {status}); make a new approval sheet")
             continue
-        if approver in current.reviewers:
+        if approver in current.reviewers and not is_owner:
             errors.append(f"{item_id}: {approver} reviewed this pair; a different lead editor must approve it")
             continue
-        records.append(
-            {
-                "kind": "approval",
-                "pair_hash": pair_hash,
-                "decision": decision,
-                "approver": approver,
-                "approved_on": approved_on,
-                "recorded_at": recorded_at,
-                "batch": batch,
-                "notes": (row.get("notes") or "").strip(),
-            }
-        )
+        record_ = {
+            "kind": "approval",
+            "pair_hash": pair_hash,
+            "decision": decision,
+            "approver": approver,
+            "approved_on": approved_on,
+            "recorded_at": recorded_at,
+            "batch": batch,
+            "notes": (row.get("notes") or "").strip(),
+        }
+        if approver in current.reviewers:
+            record_["approval"] = corpus_reviews.OWNER_SOLE
+        records.append(record_)
     return records, errors
 
 
@@ -506,13 +568,15 @@ def revise(
 ) -> tuple[list[dict], list[str]]:
     """Turn the lead editor's corrections sheet into revision and declined records. Returns (records, errors).
 
-    Blank decisions are skipped. The approver must be a roster lead editor and must not have proposed the fix.
+    Blank decisions are skipped. The approver must be a roster lead editor and must not have proposed the fix,
+    unless the approver is the owner: the owner approving their own fix is marked approval owner_sole.
     The English and Zomi must be exactly what the sheet was made with, and the corrected Zomi must be one a
     reviewer wrote: it is matched against the saved reviews, and the proposers come from them, never from the
     sheet. The pair must still need correction, and only one fix of a pair can be approved.
     """
-    if roster.get(approver) != "lead_editor":
+    if not corpus_reviews.acts_as(roster, approver, "lead_editor"):
         return [], [f"{approver!r} is not listed as a lead_editor in the roster"]
+    is_owner = roster.get(approver) == corpus_reviews.OWNER
     decisions = corpus_reviews.decide(review_records, min_reviewers)
     written = corpus_revisions.proposals(review_records)
     records: list[dict] = []
@@ -553,7 +617,7 @@ def revise(
         if decision == "decline":
             records.append({"kind": "declined", **base})
             continue
-        if approver in proposers:
+        if approver in proposers and not is_owner:
             errors.append(f"{item_id}: {approver} proposed this fix; a different lead editor must approve it")
             continue
         if pair_hash in approved:
@@ -561,6 +625,8 @@ def revise(
             continue
         approved.add(pair_hash)
         record = {"kind": "revision", **base, "before": " ".join(zomi.split()), "proposed_by": list(proposers)}
+        if approver in proposers:
+            record["approval"] = corpus_reviews.OWNER_SOLE
         problems = corpus_revisions.validate(record)
         if problems:
             errors.append(f"{item_id}: {'; '.join(problems)}")
@@ -669,8 +735,24 @@ def cmd_record(args: argparse.Namespace) -> int:
     if errors:
         print("nothing saved; fix the rows above and run again")
         return 1
-    corpus_reviews.append(args.reviews, records)
+    approvals: list[dict] = []
+    revisions: list[dict] = []
+    if args.owner_decides:
+        approvals, revisions, errors = owner_decisions(
+            records, read_csv(args.review), read_csv(args.key), owner=args.reviewer, roster=roster,
+            approved_on=args.date, batch=args.batch or args.key.parent.name, recorded_at=utc_timestamp())
+        for error in errors:
+            print(f"error: {error}")
+        if errors:
+            print("nothing saved; fix the rows above and run again")
+            return 1
+    corpus_reviews.append(args.reviews, records + approvals)
+    if revisions:
+        corpus_revisions.append(args.revisions, revisions)
     print(f"saved {len(records)} new ratings by {args.reviewer} to {args.reviews} ({unchanged} already saved)")
+    if args.owner_decides:
+        print(f"owner decisions: {len(approvals)} approved, {len(revisions)} edited and approved "
+              f"({args.revisions}); ratings of 0 are rejections; the rest stay open")
     print("they take effect on the next build_language_db.py run")
     return 0
 
@@ -804,6 +886,10 @@ def main(argv: list[str] | None = None) -> int:
     record_parser.add_argument("--date", default=date.today().isoformat(), help="day the ratings were made")
     record_parser.add_argument("--batch", help="name of this review batch (default: the key file's folder)")
     record_parser.add_argument("--database", type=Path, help="only for key files without a pair_hash column")
+    record_parser.add_argument("--owner-decides", action="store_true",
+                               help="owner only: approve, edit-and-approve or reject in this same pass (docs/GOVERNANCE.md)")
+    record_parser.add_argument("--revisions", type=Path, default=DEFAULT_REVISIONS,
+                               help="where --owner-decides saves edit-and-approve corrections")
     record_parser.set_defaults(run=cmd_record)
 
     sheet_parser = commands.add_parser("approval-sheet", help="pairs reviewers found acceptable, for the lead editor")

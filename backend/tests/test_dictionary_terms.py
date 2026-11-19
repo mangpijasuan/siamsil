@@ -47,7 +47,7 @@ class TermTests(unittest.TestCase):
     def test_choices_say_whether_a_second_person_confirmed_it(self) -> None:
         choices = self.load(TERMS)["qazz"].choices()
         self.assertIn("ZQNEW (qazz); ZQOTHER (qazz, in another context)", choices)
-        self.assertIn("not yet confirmed by a second person", choices)
+        self.assertIn("owner's decision; no second confirmation", choices)
 
     def test_a_term_must_say_who_decided_it(self) -> None:
         data = json.loads(json.dumps(TERMS))

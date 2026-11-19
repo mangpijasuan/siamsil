@@ -87,8 +87,8 @@ class RuleTests(unittest.TestCase):
         revision = {"kind": "revision", "sense_id": "ZD-000001", "before": "QA VO", "after": "QA VU",
                     "proposed_by": ["R01"], "approver": "E01", "approved_on": "2026-11-03"}
         self.assertEqual(dr.validate(revision), [])
-        self.assertIn("a lead editor cannot approve their own correction",
-                      dr.validate({**revision, "approver": "R01"}))
+        self.assertTrue(any(e.startswith("a lead editor cannot approve their own correction")
+                            for e in dr.validate({**revision, "approver": "R01"})))
         self.assertIn("the correction does not change the Zomi", dr.validate({**revision, "after": " QA  VO "}))
         self.assertTrue(dr.validate({**revision, "proposed_by": "R01"}))
         newer = {**revision, "after": "QA VA"}

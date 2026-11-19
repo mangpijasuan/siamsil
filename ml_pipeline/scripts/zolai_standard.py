@@ -398,7 +398,8 @@ def main(argv: list[str] | None = None) -> int:
             report = preview_changes(((f"corpus-{i}", e, z) for i, e, z in rows), preview, records, args.examples)
         finally:
             con.close()
-        print("Proposed rules are NOT adopted and change nothing. Two reviewers must adopt a rule (docs/ZOMI_STANDARD_FORM.md).")
+        print("Proposed rules are NOT adopted and change nothing. The owner adopts a rule in standard.json (adopted_by "
+              "creator), or two reviewers do (docs/GOVERNANCE.md, docs/ZOMI_STANDARD_FORM.md).")
         for name, result in report.items():
             record = records[name]
             print(f"\n{name}: {', '.join(record['variants'])} -> {record['standard']} ({record.get('mode', 'replace')}), "

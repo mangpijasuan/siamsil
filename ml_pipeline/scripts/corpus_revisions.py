@@ -10,7 +10,9 @@ reviews (data/reviews/corpus-revisions.jsonl), the same two-person rule as the d
     "batch": "corrections-1", "notes": ""}
 
 A lead editor who did not propose the fix approves it, and only a fix a reviewer actually wrote can be approved
-(the lead editor chooses between proposals; they do not type new Zomi here). A declined fix is recorded
+(the lead editor chooses between proposals; they do not type new Zomi here). The exception is the project owner
+(docs/GOVERNANCE.md): the owner may approve their own correction, which is "edit and approve"; the revision then
+carries `"approval": "owner_sole"` and the roster check confirms that the approver is the owner. A declined fix is recorded
 as {"kind": "declined", "pair_hash", "after", "approver", ...} so it is not offered again.
 
 Records are never edited or deleted, and hold the Zomi text of one sentence each, so this file stays private
@@ -23,7 +25,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from corpus_reviews import CODE, append, dumps, kind_of, load_roster, roster_problems
+from corpus_reviews import CODE, OWNER_SOLE, append, dumps, kind_of, load_roster, roster_problems
 
 # Callers use these through this module, as they do for dictionary_reviews.py.
 __all__ = ["CODE", "append", "dumps", "kind_of", "load_roster", "roster_problems", "validate", "load",
@@ -53,14 +55,18 @@ def validate(record: dict) -> list[str]:
         errors.append("pair_hash must be the 40-character hash from the language database")
     if not CODE.match(str(record["approver"])):
         errors.append("approver must be a roster code such as E01, not a name")
+    if record.get("approval") not in (None, OWNER_SOLE):
+        errors.append(f"approval, when given, must be {OWNER_SOLE}")
     if not str(record["after"]).strip() or LINE_BREAKS.search(str(record["after"])):
         errors.append("the corrected Zomi must be one line of text")
     if kind == "revision":
         proposers = record["proposed_by"]
         if not isinstance(proposers, list) or not all(CODE.match(str(code)) for code in proposers):
             errors.append("proposed_by must be a list of roster codes")
-        elif record["approver"] in proposers:
-            errors.append("a lead editor cannot approve their own correction")
+        elif record["approver"] in proposers and record.get("approval") != OWNER_SOLE:
+            errors.append("a lead editor cannot approve their own correction (only the owner can, as owner_sole)")
+        elif record.get("approval") == OWNER_SOLE and record["approver"] not in proposers:
+            errors.append("owner_sole marks the owner approving their own correction; the owner did not propose this")
         if same_text(record["before"], record["after"]):
             errors.append("the correction does not change the Zomi")
     return errors
@@ -114,3 +120,18 @@ def proposals(review_records: list[dict]) -> dict[str, dict[str, list[str]]]:
         if fix:
             found.setdefault(pair_hash, {}).setdefault(fix, []).append(reviewer)
     return found
+
+
+def linguistic_statuses(decisions: dict, revision_records: list[dict]) -> dict[str, str]:
+    """The governance status of each reviewed pair (docs/GOVERNANCE.md), counting approved corrections.
+
+    A pair whose correction was approved ("edit and approve") is `owner_approved` unless a review rejected it, which
+    is also when build_language_db.py applies the correction. Everything else follows its review decision.
+    """
+    from corpus_reviews import REJECTED, linguistic_status
+
+    revised = latest_revisions(revision_records)
+    return {
+        pair: "owner_approved" if pair in revised and decision.status != REJECTED else linguistic_status(decision.status)
+        for pair, decision in decisions.items()
+    }

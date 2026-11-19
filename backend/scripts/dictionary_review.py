@@ -246,7 +246,7 @@ def cmd_export(args: argparse.Namespace) -> int:
 
     reviews_dir = args.reviews_dir
     roster = dr.load_roster(reviews_dir / "roster.csv") if (reviews_dir / "roster.csv").exists() else None
-    if roster is not None and roster.get(args.reviewer) != "reviewer":
+    if roster is not None and not dr.acts_as(roster, args.reviewer, "reviewer"):
         sys.exit(f"{args.reviewer} is not listed as a reviewer in {reviews_dir / 'roster.csv'}")
     batches = load_batches(reviews_dir / "dictionary-batches.jsonl")
     reviewed = {record["sense_id"] for record in dr.load(reviews_dir / "dictionary-reviews.jsonl")}
@@ -401,9 +401,12 @@ def cmd_approve(args: argparse.Namespace) -> int:
         record = {"kind": "approval", "sense_id": sense, "decision": decision, "approver": args.approver,
                   "approved_on": args.date, "recorded_at": now_utc(), "batch": about.get("batch", ""),
                   "notes": row.get("Notes", "")}
-        errors = dr.validate(record)
         if args.approver in reviewers.get(sense, set()):
-            errors.append(f"{args.approver} reviewed this sense and cannot also approve it")
+            if roster.get(args.approver) == dr.OWNER:
+                record["approval"] = dr.OWNER_SOLE  # the owner approving their own review (docs/GOVERNANCE.md)
+            else:
+                problems.append(f"row {number}: {args.approver} reviewed this sense and cannot also approve it")
+        errors = dr.validate(record)
         if errors:
             problems.append(f"row {number}: {'; '.join(errors)}")
         records.append(record)
@@ -489,6 +492,8 @@ def cmd_revise(args: argparse.Namespace) -> int:
         approved.add(sense)
         proposers = [code.strip() for code in row.get("Proposed by", "").split(",") if code.strip()]
         record = {"kind": "revision", **base, "before": row.get("Zomi now", ""), "proposed_by": proposers}
+        if args.approver in proposers and roster.get(args.approver) == dr.OWNER:
+            record["approval"] = dr.OWNER_SOLE  # edit and approve, by the owner (docs/GOVERNANCE.md)
         errors = dr.validate(record)
         if errors:
             problems.append(f"row {number}: {'; '.join(errors)}")
@@ -544,7 +549,8 @@ def apply_revisions(db, revisions: dict[str, dict]) -> dict[str, int]:
         else:
             counts["changed_since"] += 1
             continue
-        # A reviewer wrote the correction and a different lead editor approved it: two people.
+        # A reviewer wrote the correction and a lead editor approved it: two people, or the owner alone
+        # (approval owner_sole in the revision record).
         db.execute(text("UPDATE dictionary_senses SET review_status = 'approved', status = 'approved' WHERE id = :id"),
                    {"id": sense})
     db.flush()

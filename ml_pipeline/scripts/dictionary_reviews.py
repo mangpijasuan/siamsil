@@ -29,6 +29,9 @@ and never replace the stored text automatically. Status per sense:
 
 Reviewer and approver codes are checked against the private roster (corpus_reviews.load_roster).
 
+The project owner (roster role `owner`, docs/GOVERNANCE.md) may approve their own review or correction; such an
+approval or revision carries `"approval": "owner_sole"`. Nobody else may.
+
 Corrections become text only through a third record, in reviews/dictionary-revisions.jsonl: a lead
 editor who did not propose it approves one reviewer's fix, and the revision records the Zomi before
 and after, who proposed it, and who approved it.
@@ -52,6 +55,9 @@ from corpus_reviews import (  # noqa: F401  (re-exported for callers)
     CODE,
     HUMAN_APPROVED,
     NEEDS_CORRECTION,
+    OWNER,
+    OWNER_SOLE,
+    acts_as,
     READY_FOR_APPROVAL,
     REJECTED,
     STATUSES,
@@ -105,6 +111,8 @@ def validate(record: dict) -> list[str]:
     errors = [f"missing {name}" for name in REQUIRED[kind] if record.get(name) in (None, "")]
     if errors:
         return errors
+    if kind != "review" and record.get("approval") not in (None, OWNER_SOLE):
+        errors.append(f"approval, when given, must be {OWNER_SOLE}")
     if not SENSE_ID.match(str(record["sense_id"])):
         errors.append("sense_id must look like ZD-000123 or ZS-000123")
     if kind == "review":
@@ -118,8 +126,10 @@ def validate(record: dict) -> list[str]:
         proposers = record["proposed_by"]
         if not isinstance(proposers, list) or not all(CODE.match(str(code)) for code in proposers):
             errors.append("proposed_by must be a list of roster codes")
-        elif record["approver"] in proposers:
-            errors.append("a lead editor cannot approve their own correction")
+        elif record["approver"] in proposers and record.get("approval") != OWNER_SOLE:
+            errors.append("a lead editor cannot approve their own correction (only the owner can, as owner_sole)")
+        elif record.get("approval") == OWNER_SOLE and record["approver"] not in proposers:
+            errors.append("owner_sole marks the owner approving their own correction; the owner did not propose this")
         if not CODE.match(str(record["approver"])):
             errors.append("approver must be a roster code such as E01, not a name")
         if same_text(record["before"], record["after"]):
@@ -163,25 +173,27 @@ class Decision:
     reviewers: tuple[str, ...]
     approver: str | None = None
     corrections: dict[str, str] = field(default_factory=dict)
+    owner_sole: bool = False
 
 
 def decide(records: list[dict], min_reviewers: int = 1) -> dict[str, Decision]:
     """One status per sense id, from the records in file order."""
     reviews: dict[str, dict[str, tuple[str, str, int]]] = {}
-    approvals: dict[str, tuple[int, str, str]] = {}
+    approvals: dict[str, tuple[int, str, str, bool]] = {}
     for position, record in enumerate(records):
         sense = record["sense_id"]
         if kind_of(record) == "review":
             reviews.setdefault(sense, {})[record["reviewer"]] = (
                 record["decision"], str(record.get("correction") or "").strip(), position)
         elif kind_of(record) == "approval":
-            approvals[sense] = (position, record["decision"], record["approver"])
+            approvals[sense] = (position, record["decision"], record["approver"],
+                                record.get("approval") == OWNER_SOLE)
 
     decisions = {}
     for sense, by_reviewer in reviews.items():
         latest_review = max(position for _, _, position in by_reviewer.values())
         approval = approvals.get(sense)
-        if approval and (approval[0] < latest_review or approval[2] in by_reviewer):
+        if approval and (approval[0] < latest_review or (approval[2] in by_reviewer and not approval[3])):
             approval = None
         choices = [choice for choice, _, _ in by_reviewer.values()]
         ready = len(by_reviewer) >= min_reviewers and all(choice == "correct" for choice in choices)
@@ -194,5 +206,6 @@ def decide(records: list[dict], min_reviewers: int = 1) -> dict[str, Decision]:
         else:
             status = NEEDS_CORRECTION
         corrections = {code: fix for code, (choice, fix, _) in by_reviewer.items() if choice == "fix"}
-        decisions[sense] = Decision(status, tuple(sorted(by_reviewer)), approval[2] if approval else None, corrections)
+        decisions[sense] = Decision(status, tuple(sorted(by_reviewer)), approval[2] if approval else None, corrections,
+                                    bool(approval and approval[3] and approval[2] in by_reviewer))
     return decisions

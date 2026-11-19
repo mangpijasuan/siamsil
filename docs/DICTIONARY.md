@@ -57,7 +57,7 @@ Every file's checksum is checked before anything is written, and all selected so
 
 ## Reviewing
 
-Senses are reviewed in batches with `backend/scripts/dictionary_review.py`, in the same two human steps as corpus reviews (SOP-07): a reviewer judges each sense, then a lead editor who did not review it approves it. Nothing is approved automatically. Decisions are appended to `reviews/dictionary-reviews.jsonl` in the private siamsil-data repository and never edited. Each exported batch is recorded in `reviews/dictionary-batches.jsonl`, so no two reviewers get the same senses. Reviewer codes are checked against `reviews/roster.csv` (`code,role`, roles `reviewer` and `lead_editor`). Names never appear in the decisions.
+Senses are reviewed in batches with `backend/scripts/dictionary_review.py`, in the same two human steps as corpus reviews (SOP-07): a reviewer judges each sense, then a lead editor who did not review it approves it. Nothing is approved automatically. Decisions are appended to `reviews/dictionary-reviews.jsonl` in the private siamsil-data repository and never edited. Each exported batch is recorded in `reviews/dictionary-batches.jsonl`, so no two reviewers get the same senses. Reviewer codes are checked against `reviews/roster.csv` (`code,role`, roles `reviewer`, `lead_editor` and one `owner`). Names never appear in the decisions. **Owner-only review (2026-11-19, [GOVERNANCE.md](GOVERNANCE.md)):** the owner is Siamsil's sole linguistic authority and may approve their own reviews and corrections; `approve` and `revise` record those as `owner_sole`. Nobody else may approve their own work.
 
 ```bash
 python backend/scripts/dictionary_review.py export --reviewer R01 --out batch-R01-1.xlsx   # 500 senses

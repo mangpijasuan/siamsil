@@ -62,6 +62,16 @@ class SopQualityGateTests(unittest.TestCase):
         self.assertIn("reviewer_is_approver", self.codes([approved(approver_id="reviewer-2")]))
         self.assertIn("reviewer_is_approver", self.codes([approved(approver_id=" Reviewer-2 ")]))
 
+    def test_owner_sole_rows_pass_only_for_the_named_owner(self):
+        own = approved(contributor_id="O01", reviewer_id="O01", approver_id="O01", approval="owner_sole")
+        self.assertTrue(check_records([own], owner_code="O01")["passed"])
+        self.assertIn("owner_sole_not_owner", self.codes([own]))  # no owner code given
+        report = check_records([approved(reviewer_id="E01", approver_id="E01", approval="owner_sole")], owner_code="O01")
+        self.assertIn("owner_sole_not_owner", {e["code"] for e in report["errors"]})
+        # Unmarked self-approval is still refused, even for the owner.
+        unmarked = approved(contributor_id="O01", reviewer_id="O01", approver_id="O01")
+        self.assertIn("self_approval", {e["code"] for e in check_records([unmarked], owner_code="O01")["errors"]})
+
     def test_self_approval_ignores_case_and_spaces(self):
         self.assertIn("self_approval", self.codes([approved(reviewer_id=" AUTHOR-1 ")]))
         self.assertIn("self_approval", self.codes([approved(approver_id="Author-1")]))

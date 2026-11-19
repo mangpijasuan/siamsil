@@ -136,8 +136,14 @@ class DecisionTests(unittest.TestCase):
             path = Path(tmp) / "roster.csv"
             path.write_text("code,role,name\nR01,reviewer,\nE01,lead_editor,\n", encoding="utf-8")
             self.assertEqual(corpus_reviews.load_roster(path), {"R01": "reviewer", "E01": "lead_editor"})
-            path.write_text("code,role\nR01,owner\n", encoding="utf-8")
+            path.write_text("code,role\nR01,administrator\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "role"):
+                corpus_reviews.load_roster(path)
+            # One owner may be listed (docs/GOVERNANCE.md, 2026-11-19); a second is refused.
+            path.write_text("code,role\nO01,owner\n", encoding="utf-8")
+            self.assertEqual(corpus_reviews.load_roster(path), {"O01": "owner"})
+            path.write_text("code,role\nO01,owner\nO02,owner\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "only one code"):
                 corpus_reviews.load_roster(path)
 
 
