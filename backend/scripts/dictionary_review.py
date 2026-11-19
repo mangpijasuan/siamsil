@@ -13,6 +13,12 @@ From the repository root, with SIAMSIL_DATABASE_URL set and the dictionary impor
   apply           write approved corrections into the database, then set each sense's review status
   status          counts per status
 
+Owner-only review (working phase; docs/DICTIONARY.md): add --owner-code E01 (the owner's own code) to
+export, record, approval-sheet, approve, corrections-sheet, revise, apply and status. The owner may then
+review, approve and correct as the only person. Each record says "approval": "owner_sole", the sense becomes
+OWNER_APPROVED (shown as in_review in the database, never as an independent approval), and nothing is
+marked owner-only without the flag.
+
   export --term refugee  only senses whose headword uses a term in data/dictionary_terms.json, with the
                   term's Zomi words beside each row and a suggested rewrite marked as a draft
 
@@ -87,6 +93,11 @@ CORRECTION_INSTRUCTIONS = (
     "You cannot approve a correction you proposed. If a sense has two different corrections, approve at most one.",
     "Do not change the Sense ID or Shown columns. Keep this file private.",
 )
+
+
+def owner_acts(args: argparse.Namespace, code: str) -> bool:
+    """True when `code` is the owner and the caller asked for owner-only mode."""
+    return bool(getattr(args, "owner_code", None)) and code == args.owner_code
 
 
 def now_utc() -> str:
@@ -246,10 +257,10 @@ def cmd_export(args: argparse.Namespace) -> int:
 
     reviews_dir = args.reviews_dir
     roster = dr.load_roster(reviews_dir / "roster.csv") if (reviews_dir / "roster.csv").exists() else None
-    if roster is not None and roster.get(args.reviewer) != "reviewer":
+    if roster is not None and roster.get(args.reviewer) != "reviewer" and not owner_acts(args, args.reviewer):
         sys.exit(f"{args.reviewer} is not listed as a reviewer in {reviews_dir / 'roster.csv'}")
     batches = load_batches(reviews_dir / "dictionary-batches.jsonl")
-    reviewed = {record["sense_id"] for record in dr.load(reviews_dir / "dictionary-reviews.jsonl")}
+    reviewed = {record["sense_id"] for record in dr.load(reviews_dir / "dictionary-reviews.jsonl", args.owner_code)}
     taken = set() if args.again else {sense for batch in batches for sense in batch["sense_ids"]}
 
     where = ["s.review_status = 'unreviewed'", "s.status NOT IN ('rejected', 'deferred')",
@@ -296,6 +307,8 @@ def cmd_export(args: argparse.Namespace) -> int:
         return 0
     name = args.batch or next_batch_name(batches, f"dict-{args.reviewer}")
     about = {"kind": "dictionary-review", "batch": name, "reviewer": args.reviewer, "exported_at": now_utc()}
+    if owner_acts(args, args.reviewer):
+        about["owner_sole"] = "1"
     if term:
         about["term"] = term.key
     at = REVIEW_COLUMNS.index("Decision")
@@ -327,7 +340,9 @@ def cmd_record(args: argparse.Namespace) -> int:
                   "correction": row.get("Corrected Zomi", ""), "shown": row.get("Shown", ""),
                   "reviewer": args.reviewer, "reviewed_on": args.date, "recorded_at": now_utc(),
                   "batch": about.get("batch", ""), "notes": row.get("Notes", "")}
-        errors = dr.validate(record)
+        if owner_acts(args, args.reviewer):
+            record["approval"] = dr.OWNER_SOLE
+        errors = dr.validate(record, args.owner_code)
         if errors:
             problems.append(f"row {number}: {'; '.join(errors)}")
         records.append(record)
@@ -357,10 +372,10 @@ def usable_records(db, records: list[dict]) -> tuple[list[dict], int]:
 def cmd_approval_sheet(args: argparse.Namespace) -> int:
     from sqlalchemy import text
 
-    records = dr.load(args.reviews_dir / "dictionary-reviews.jsonl")
+    records = dr.load(args.reviews_dir / "dictionary-reviews.jsonl", args.owner_code)
     with session() as db:
         records, stale = usable_records(db, records)
-        decisions = dr.decide(records, args.min_reviewers)
+        decisions = dr.decide(records, args.min_reviewers, args.owner_code)
         ready = sorted(sense for sense, d in decisions.items() if d.status == dr.READY_FOR_APPROVAL)
         rows = []
         if ready:
@@ -391,7 +406,8 @@ def cmd_approve(args: argparse.Namespace) -> int:
         sys.exit(f"{args.sheet} is not a dictionary approval sheet")
     path = args.reviews_dir / "dictionary-reviews.jsonl"
     roster = dr.load_roster(args.reviews_dir / "roster.csv")
-    reviewers = {sense: set(d.reviewers) for sense, d in dr.decide(dr.load(path)).items()}
+    reviewers = {sense: set(d.reviewers) for sense, d in dr.decide(dr.load(path, args.owner_code)).items()}
+    owner = owner_acts(args, args.approver)
     records, problems = [], []
     for number, row in enumerate(rows, start=2):
         decision = row.get("Decision", "").strip().lower()
@@ -401,8 +417,10 @@ def cmd_approve(args: argparse.Namespace) -> int:
         record = {"kind": "approval", "sense_id": sense, "decision": decision, "approver": args.approver,
                   "approved_on": args.date, "recorded_at": now_utc(), "batch": about.get("batch", ""),
                   "notes": row.get("Notes", "")}
-        errors = dr.validate(record)
-        if args.approver in reviewers.get(sense, set()):
+        if owner:
+            record["approval"] = dr.OWNER_SOLE
+        errors = dr.validate(record, args.owner_code)
+        if args.approver in reviewers.get(sense, set()) and not owner:
             errors.append(f"{args.approver} reviewed this sense and cannot also approve it")
         if errors:
             problems.append(f"row {number}: {'; '.join(errors)}")
@@ -423,12 +441,12 @@ def revisions_path(reviews_dir: Path) -> Path:
 def cmd_corrections_sheet(args: argparse.Namespace) -> int:
     from sqlalchemy import text
 
-    records = dr.load(args.reviews_dir / "dictionary-reviews.jsonl")
-    declined = {(r["sense_id"], " ".join(r["after"].split())) for r in dr.load(revisions_path(args.reviews_dir))
-                if dr.kind_of(r) == "declined"}
+    records = dr.load(args.reviews_dir / "dictionary-reviews.jsonl", args.owner_code)
+    declined = {(r["sense_id"], " ".join(r["after"].split()))
+                for r in dr.load(revisions_path(args.reviews_dir), args.owner_code) if dr.kind_of(r) == "declined"}
     with session() as db:
         records, stale = usable_records(db, records)
-        decisions = dr.decide(records, args.min_reviewers)
+        decisions = dr.decide(records, args.min_reviewers, args.owner_code)
         wanted = sorted(sense for sense, d in decisions.items() if d.status == dr.NEEDS_CORRECTION and d.corrections)
         found = {row.id: row for row in db.execute(text(SENSE_SQL + " WHERE s.id = ANY(:ids)"), {"ids": wanted})}
         rows = []
@@ -489,7 +507,9 @@ def cmd_revise(args: argparse.Namespace) -> int:
         approved.add(sense)
         proposers = [code.strip() for code in row.get("Proposed by", "").split(",") if code.strip()]
         record = {"kind": "revision", **base, "before": row.get("Zomi now", ""), "proposed_by": proposers}
-        errors = dr.validate(record)
+        if owner_acts(args, args.approver) and proposers == [args.approver]:
+            record["approval"] = dr.OWNER_SOLE  # the owner's own correction, approved by the owner
+        errors = dr.validate(record, args.owner_code)
         if errors:
             problems.append(f"row {number}: {'; '.join(errors)}")
         records.append(record)
@@ -544,9 +564,11 @@ def apply_revisions(db, revisions: dict[str, dict]) -> dict[str, int]:
         else:
             counts["changed_since"] += 1
             continue
-        # A reviewer wrote the correction and a different lead editor approved it: two people.
-        db.execute(text("UPDATE dictionary_senses SET review_status = 'approved', status = 'approved' WHERE id = :id"),
-                   {"id": sense})
+        # A reviewer wrote the correction and a different lead editor approved it: two people. An owner-only
+        # correction is one person's final decision, so it is not recorded as an independent approval.
+        state = "in_review" if revision.get("approval") == dr.OWNER_SOLE else "approved"
+        db.execute(text("UPDATE dictionary_senses SET review_status = :state, status = :state WHERE id = :id"),
+                   {"state": state, "id": sense})
     db.flush()
     return counts
 
@@ -554,13 +576,13 @@ def apply_revisions(db, revisions: dict[str, dict]) -> dict[str, int]:
 def cmd_apply(args: argparse.Namespace) -> int:
     from sqlalchemy import text
 
-    records = dr.load(args.reviews_dir / "dictionary-reviews.jsonl")
-    revisions = dr.latest_revisions(dr.load(revisions_path(args.reviews_dir)))
+    records = dr.load(args.reviews_dir / "dictionary-reviews.jsonl", args.owner_code)
+    revisions = dr.latest_revisions(dr.load(revisions_path(args.reviews_dir), args.owner_code))
     with session() as db:
         revised = apply_revisions(db, revisions)
         # Reviews of text a correction replaced no longer match, so they drop out here.
         records, stale = usable_records(db, records)
-        decisions = dr.decide(records, args.min_reviewers)
+        decisions = dr.decide(records, args.min_reviewers, args.owner_code)
         counts: dict[str, int] = {}
         for sense, decision in decisions.items():
             review_status = dr.REVIEW_STATUS[decision.status]
@@ -587,6 +609,18 @@ def cmd_status(args: argparse.Namespace) -> int:
         rows = db.execute(text("SELECT review_status, count(*) FROM dictionary_senses GROUP BY 1 ORDER BY 1")).all()
     for review_status, count in rows:
         print(f"{review_status:18} {count:,}")
+    path = args.reviews_dir / "dictionary-reviews.jsonl"
+    try:
+        decisions = dr.decide(dr.load(path, args.owner_code), owner_code=args.owner_code)
+    except ValueError as error:
+        print(f"decisions file not summarised: {error}")
+        return 0
+    by_status: dict[str, int] = {}
+    for decision in decisions.values():
+        by_status[decision.status] = by_status.get(decision.status, 0) + 1
+    print("saved decisions (the file is the record; owner-only decisions are counted apart):")
+    for status in dr.STATUSES:
+        print(f"  {status:20} {by_status.get(status, 0):,}")
     return 0
 
 
@@ -594,6 +628,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--reviews-dir", type=Path, default=None,
                         help="private folder with roster.csv and the decisions files (default: ../siamsil-data/reviews)")
+    parser.add_argument("--owner-code", default=None,
+                        help="the owner's own roster code (e.g. E01): turns on owner-only review, where the owner is "
+                        "reviewer, approver and corrector (docs/DICTIONARY.md). Off unless given.")
     commands = parser.add_subparsers(dest="command", required=True)
 
     export = commands.add_parser("export", help="a review sheet for one reviewer")

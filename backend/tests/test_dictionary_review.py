@@ -105,6 +105,147 @@ class RuleTests(unittest.TestCase):
         self.assertNotEqual(dr.shown_digest("qa vo"), dr.shown_digest("qa vu"))
 
 
+OWNER = "E01"
+
+
+def owner(record: dict) -> dict:
+    return {**record, "approval": dr.OWNER_SOLE}
+
+
+class OwnerOnlyTests(unittest.TestCase):
+    """The owner may review and approve alone, only when asked, and the result is never HUMAN_APPROVED."""
+
+    def test_default_off_every_owner_record_is_refused_without_the_code(self) -> None:
+        self.assertTrue(dr.validate(owner(review("ZD-000001", "correct", reviewer=OWNER))))
+        self.assertEqual(dr.validate(owner(review("ZD-000001", "correct", reviewer=OWNER)), OWNER), [])
+
+    def test_the_marker_is_only_for_the_owner(self) -> None:
+        self.assertTrue(dr.validate(owner(review("ZD-000001", "correct", reviewer="R01")), OWNER))
+        self.assertTrue(dr.validate(owner(approval("ZD-000001", approver="E02")), OWNER))
+        self.assertTrue(dr.validate({**review("ZD-000001", "correct", reviewer=OWNER), "approval": "yes"}, OWNER))
+
+    def test_without_the_marker_the_owner_cannot_approve_their_own_review(self) -> None:
+        records = [review("ZD-000001", "correct", reviewer=OWNER), approval("ZD-000001", approver=OWNER)]
+        self.assertEqual(dr.decide(records, owner_code=OWNER)["ZD-000001"].status, dr.READY_FOR_APPROVAL)
+
+    def test_owner_review_and_approval_make_owner_approved(self) -> None:
+        records = [owner(review("ZD-000001", "correct", reviewer=OWNER)), owner(approval("ZD-000001", approver=OWNER))]
+        decision = dr.decide(records, owner_code=OWNER)["ZD-000001"]
+        self.assertEqual((decision.status, decision.approver), (dr.OWNER_APPROVED, OWNER))
+        self.assertNotEqual(decision.status, dr.HUMAN_APPROVED)
+        # Without the owner code the same records do not become approved at all.
+        self.assertEqual(dr.decide(records)["ZD-000001"].status, dr.READY_FOR_APPROVAL)
+
+    def test_an_independent_lead_editor_still_gives_human_approved(self) -> None:
+        records = [owner(review("ZD-000001", "correct", reviewer=OWNER)), approval("ZD-000001", approver="E02")]
+        self.assertEqual(dr.decide(records, owner_code=OWNER)["ZD-000001"].status, dr.HUMAN_APPROVED)
+
+    def test_owner_approval_must_follow_the_review_and_cannot_hide_a_rejection(self) -> None:
+        old = [owner(approval("ZD-000001", approver=OWNER)), owner(review("ZD-000001", "correct", reviewer=OWNER))]
+        self.assertEqual(dr.decide(old, owner_code=OWNER)["ZD-000001"].status, dr.READY_FOR_APPROVAL)
+        rejected = [owner(review("ZD-000002", "wrong", reviewer=OWNER)), owner(approval("ZD-000002", approver=OWNER))]
+        self.assertEqual(dr.decide(rejected, owner_code=OWNER)["ZD-000002"].status, dr.REJECTED)
+        declined = [owner(review("ZD-000003", "correct", reviewer=OWNER)),
+                    owner(approval("ZD-000003", "reject", approver=OWNER))]
+        self.assertEqual(dr.decide(declined, owner_code=OWNER)["ZD-000003"].status, dr.REJECTED)
+
+    def test_owner_correction_only_when_the_owner_alone_proposed_and_approved(self) -> None:
+        revision = {"kind": "revision", "sense_id": "ZD-000001", "before": "QA VO", "after": "QA VU",
+                    "proposed_by": [OWNER], "approver": OWNER, "approved_on": "2026-11-20"}
+        self.assertIn("a lead editor cannot approve their own correction", dr.validate(revision, OWNER))
+        self.assertEqual(dr.validate(owner(revision), OWNER), [])
+        self.assertTrue(dr.validate(owner(revision)))  # no owner code: refused
+        mixed = owner({**revision, "proposed_by": [OWNER, "R01"]})
+        self.assertTrue(dr.validate(mixed, OWNER))
+
+    def test_load_refuses_owner_records_without_the_code(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "r.jsonl"
+            path.write_text(json.dumps(owner(review("ZD-000001", "correct", reviewer=OWNER))) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "owner"):
+                dr.load(path)
+            self.assertEqual(len(dr.load(path, OWNER)), 1)
+
+    def test_roster_exempts_only_marked_owner_records(self) -> None:
+        roster = {"R01": "reviewer", "E02": "lead_editor"}
+        self.assertEqual(dr.roster_problems([owner(review("ZD-000001", "correct", reviewer=OWNER))], roster), [])
+        self.assertTrue(dr.roster_problems([review("ZD-000001", "correct", reviewer=OWNER)], roster))
+
+    def test_status_names_keep_owner_approvals_apart(self) -> None:
+        self.assertIn(dr.OWNER_APPROVED, dr.STATUSES)
+        self.assertEqual(dr.REVIEW_STATUS[dr.OWNER_APPROVED], "in_review")  # never "approved" in the database
+
+
+class OwnerSheetTests(unittest.TestCase):
+    """record and approve write owner_sole records only with --owner-code, from sheets made by the tool."""
+
+    def setUp(self) -> None:
+        import dictionary_review
+
+        self.tool = dictionary_review
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+        with (self.dir / "roster.csv").open("w", newline="", encoding="utf-8") as handle:
+            csv.writer(handle).writerows([["code", "role"], ["R01", "reviewer"], ["E02", "lead_editor"]])
+
+    def tearDown(self) -> None:
+        self.tmp.cleanup()
+
+    def run_tool(self, *args: str) -> int:
+        return self.tool.main(["--reviews-dir", str(self.dir), *args])
+
+    def sheet(self, name: str, title: str, columns: list[str], rows: list[list], decisions: tuple[str, ...],
+              about: dict, editable: tuple[str, ...]) -> Path:
+        path = self.dir / name
+        self.tool.write_sheet(path, title, columns, rows, decisions, about, "Decision", editable)
+        return path
+
+    def review_sheet(self, who: str) -> Path:
+        row = ["ZD-000001", "word", "n.", "meaning", "QA VO", "", "", "", "src", "", "correct", "", "",
+               dr.shown_digest("QA VO")]
+        return self.sheet("review.xlsx", "Review", self.tool.REVIEW_COLUMNS, [row], dr.REVIEW_DECISIONS,
+                          {"kind": "dictionary-review", "batch": "dict-E01-0001", "reviewer": who},
+                          ("Decision", "Corrected Zomi", "Notes"))
+
+    def test_record_refuses_the_owner_without_the_flag_and_marks_with_it(self) -> None:
+        sheet = self.review_sheet(OWNER)
+        with self.assertRaises(SystemExit):  # not a roster reviewer, no --owner-code
+            self.run_tool("record", "--sheet", str(sheet), "--reviewer", OWNER)
+        self.assertFalse((self.dir / "dictionary-reviews.jsonl").exists())
+        self.assertEqual(self.run_tool("--owner-code", OWNER, "record", "--sheet", str(sheet), "--reviewer", OWNER), 0)
+        saved = dr.load(self.dir / "dictionary-reviews.jsonl", OWNER)
+        self.assertEqual([r["approval"] for r in saved], [dr.OWNER_SOLE])
+
+    def test_a_roster_reviewer_is_unaffected_by_the_flag(self) -> None:
+        sheet = self.review_sheet("R01")
+        self.assertEqual(self.run_tool("--owner-code", OWNER, "record", "--sheet", str(sheet), "--reviewer", "R01"), 0)
+        self.assertNotIn("approval", dr.load(self.dir / "dictionary-reviews.jsonl", OWNER)[0])
+
+    def approve_sheet(self) -> Path:
+        return self.sheet("approve.xlsx", "Approve", self.tool.APPROVE_COLUMNS,
+                          [["ZD-000001", "word", "n.", "meaning", "QA VO", OWNER, "approve", ""]],
+                          dr.APPROVAL_DECISIONS, {"kind": "dictionary-approval", "batch": "dict-approval-0001"},
+                          ("Decision", "Notes"))
+
+    def test_owner_approves_their_own_review_only_with_the_flag(self) -> None:
+        self.run_tool("--owner-code", OWNER, "record", "--sheet", str(self.review_sheet(OWNER)), "--reviewer", OWNER)
+        sheet = self.approve_sheet()
+        with self.assertRaises(SystemExit):  # no flag: cannot approve their own review
+            self.run_tool("approve", "--sheet", str(sheet), "--approver", OWNER)
+        self.assertEqual(self.run_tool("--owner-code", OWNER, "approve", "--sheet", str(sheet), "--approver", OWNER), 0)
+        decisions = dr.decide(dr.load(self.dir / "dictionary-reviews.jsonl", OWNER), owner_code=OWNER)
+        self.assertEqual(decisions["ZD-000001"].status, dr.OWNER_APPROVED)
+
+    def test_the_flag_does_not_let_a_roster_reviewer_approve_their_own_review(self) -> None:
+        self.run_tool("record", "--sheet", str(self.review_sheet("R01")), "--reviewer", "R01")
+        sheet = self.sheet("approve.xlsx", "Approve", self.tool.APPROVE_COLUMNS,
+                           [["ZD-000001", "word", "n.", "meaning", "QA VO", "R01", "approve", ""]],
+                           dr.APPROVAL_DECISIONS, {"kind": "dictionary-approval", "batch": "dict-approval-0001"},
+                           ("Decision", "Notes"))
+        with self.assertRaises(SystemExit):
+            self.run_tool("--owner-code", OWNER, "approve", "--sheet", str(sheet), "--approver", "R01")
+
+
 @unittest.skipUnless(os.getenv("SIAMSIL_DATABASE_URL"), "application database is not configured")
 class WorkflowTests(unittest.TestCase):
     """Export, record, approve and apply against the database, inside a rolled-back transaction."""

@@ -252,7 +252,12 @@ def convert_senses(
             left_out["matches a human evaluation item"] += 1
         else:
             split = split_for_key(template_key(row["headword"], set()))
-            converted, stale = sense_to_szsf(row, standard, decisions.get(row["sense_id"]), shown.get(row["sense_id"]), split)
+            decision = decisions.get(row["sense_id"])
+            if decision is not None and decision.status == dictionary_reviews.OWNER_APPROVED:
+                # SZSF 1.0 has no owner-only review field (docs/SZSF.md), so the sense is not exported as reviewed.
+                left_out["owner-approved (owner_sole): exported as UNREVIEWED until SZSF has an owner field"] += 1
+                decision = None
+            converted, stale = sense_to_szsf(row, standard, decision, shown.get(row["sense_id"]), split)
             if stale:
                 left_out["reviews of since-changed Zomi not counted (sense kept as UNREVIEWED)"] += 1
             yield converted, szsf.check_record(converted, standard_check)
@@ -288,6 +293,8 @@ def add_common(command: argparse.ArgumentParser) -> None:
     command.add_argument("--reviews", type=Path, help="saved review records")
     command.add_argument("--roster", type=Path, help="private reviewer roster; checks every reviewer and approver")
     command.add_argument("--min-reviewers", type=int, default=1)
+    command.add_argument("--owner-code", help="the owner's roster code, for dictionary senses only: reads owner_sole "
+                         "reviews (docs/DICTIONARY.md); those senses are exported UNREVIEWED, never as reviewed")
     command.add_argument("--standard", type=Path, default=zolai_standard.DEFAULT_STANDARD)
     command.add_argument("--rights", type=Path, default=szsf.DEFAULT_RIGHTS)
     command.add_argument("--rejects", type=Path, help="write records that fail the format here, with their problems")
@@ -380,11 +387,15 @@ def main(argv: list[str] | None = None) -> int:
     sense_decisions: dict[str, dictionary_reviews.Decision] = {}
     shown: dict[str, dict[str, str]] = {}
     if args.reviews:
-        review_records = dictionary_reviews.load(args.reviews)
-        if roster is not None and (bad := corpus_reviews.roster_problems(review_records, roster)):
+        try:
+            review_records = dictionary_reviews.load(args.reviews, args.owner_code)
+        except ValueError as error:
+            print(f"The dictionary reviews are not usable: {error}", file=sys.stderr)
+            return 1
+        if roster is not None and (bad := dictionary_reviews.roster_problems(review_records, roster)):
             print("The review records do not match the roster:\n  " + "\n  ".join(bad[:20]), file=sys.stderr)
             return 1
-        sense_decisions = dictionary_reviews.decide(review_records, args.min_reviewers)
+        sense_decisions = dictionary_reviews.decide(review_records, args.min_reviewers, args.owner_code)
         shown = stale_reviews(review_records)
     eval_items = load_eval_items(args.eval if args.eval else default_eval_paths())
     eval_keys = eval_match_keys(eval_items, set())

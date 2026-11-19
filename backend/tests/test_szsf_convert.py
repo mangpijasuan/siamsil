@@ -300,6 +300,24 @@ class SenseFileTests(unittest.TestCase):
                 code = int(stop.code or 0)
         return code, out.getvalue(), err.getvalue()
 
+    def test_owner_only_reviews_are_never_exported_as_reviewed(self) -> None:
+        shown = dictionary_reviews.shown_digest("ZOMI_PLACEHOLDER_1")
+        records = [
+            {"kind": "review", "sense_id": "ZD-000001", "decision": "correct", "correction": "", "shown": shown,
+             "reviewer": "E02", "reviewed_on": "2026-11-01", "approval": "owner_sole"},
+            {"kind": "approval", "sense_id": "ZD-000001", "decision": "approve", "approver": "E02",
+             "approved_on": "2026-11-02", "approval": "owner_sole"},
+        ]
+        self.reviews.write_text("".join(json.dumps(r) + "\n" for r in records), encoding="utf-8")
+        code, _, error = self.run_main()
+        self.assertNotEqual(code, 0)  # without the owner code the file is refused
+        code, _, error = self.run_main("--owner-code", "E02")
+        self.assertEqual(code, 0, error)
+        rows = {r["id"]: r for r in (json.loads(l) for l in self.out.read_text(encoding="utf-8").splitlines())}
+        self.assertEqual(rows["ZD-000001"]["review"]["status"], "UNREVIEWED")
+        self.assertEqual(rows["ZD-000001"]["tier"], "bronze")
+        self.assertIn("owner_sole", error)
+
     def test_a_master_file_of_senses(self) -> None:
         code, shown, error = self.run_main()
         self.assertEqual(code, 0, error)

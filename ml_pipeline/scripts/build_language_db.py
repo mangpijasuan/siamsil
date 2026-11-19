@@ -981,6 +981,11 @@ def main() -> None:
         "reviews/dictionary-revisions.jsonl in siamsil-data is applied if present",
     )
     parser.add_argument(
+        "--owner-code",
+        help="the owner's roster code; accepts the owner's own owner_sole dictionary corrections "
+        "(docs/DICTIONARY.md, owner-only review). Without it a file holding any is refused",
+    )
+    parser.add_argument(
         "--min-reviewers",
         type=int,
         default=1,
@@ -1046,10 +1051,14 @@ def main() -> None:
             import dictionary_reviews
 
             try:
-                revisions = dictionary_reviews.latest_revisions(dictionary_reviews.load(revisions_path))
+                revisions = dictionary_reviews.latest_revisions(
+                    dictionary_reviews.load(revisions_path, args.owner_code))
             except ValueError as error:
                 sys.exit(f"Dictionary revisions are not usable, nothing was built: {error}")
             print(f"Applying {len(revisions):,} approved dictionary corrections from {revisions_path}…")
+            owner_only = sum(1 for r in revisions.values() if r.get("approval") == dictionary_reviews.OWNER_SOLE)
+            if owner_only:
+                print(f"  {owner_only:,} of them are the owner's own decisions (owner_sole), not independent reviews")
         print("Ingesting the 50K Translation Master…")
         dict_stats = ingest_translation_master(con, dictionary_xlsx, created_at, revisions)
         if revisions:

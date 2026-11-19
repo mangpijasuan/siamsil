@@ -118,6 +118,35 @@ A term sheet holds every unreviewed 50K sense whose headword uses the term: 348 
 
 The draft is only a starting point: the reviewer chooses `fix` and writes the right wording (the draft, or another word if the context needs it), or `correct` if the Zomi is already right. Corrections then follow the steps above. Nothing is replaced in bulk.
 
+## Owner-only review (working phase)
+
+**Decision (2026-11-18, project owner; docs/SZSF.md "Owner-approved records"):** the owner may review, approve and correct the dictionary alone. It is the owner's final editorial decision; it is not an independent review and is never labelled one.
+
+Switch it on with `--owner-code E01` (the owner's own roster code) before the command name. Without the flag nothing changes: the owner is refused as reviewer and approver, and a decisions file holding owner-only records is refused.
+
+```
+python backend/scripts/dictionary_review.py --owner-code E01 export --reviewer E01 --size 300 --out owner-1.xlsx
+python backend/scripts/dictionary_review.py --owner-code E01 record --sheet owner-1.xlsx --reviewer E01
+python backend/scripts/dictionary_review.py --owner-code E01 approval-sheet --out owner-approve-1.xlsx
+python backend/scripts/dictionary_review.py --owner-code E01 approve --sheet owner-approve-1.xlsx --approver E01
+python backend/scripts/dictionary_review.py --owner-code E01 corrections-sheet --out owner-fixes-1.xlsx
+python backend/scripts/dictionary_review.py --owner-code E01 revise --sheet owner-fixes-1.xlsx --approver E01
+python backend/scripts/dictionary_review.py --owner-code E01 apply
+python backend/scripts/dictionary_review.py --owner-code E01 status
+```
+
+Work in two passes, review first and approval another day (the `approval-sheet` lists only senses you found correct). Sheets hold dictionary text: keep them private.
+
+What is recorded and how it is labelled:
+- Every record the owner makes this way carries `"approval": "owner_sole"` and the owner's code. It is valid only for that code, and a correction only when the owner is its only proposer.
+- A sense the owner reviewed as correct and then approved is **`OWNER_APPROVED`**. A sense approved by a different lead editor stays `HUMAN_APPROVED`, even if the owner also reviewed it. Rejections (`not_tedim`, `wrong`) stay `REJECTED`.
+- In the editorial database an `OWNER_APPROVED` sense is shown as `in_review`, and an owner-only correction as `in_review` too. The database has no owner state, and `approved` would read as an independent review. `status` prints the decisions-file counts, where `OWNER_APPROVED` has its own line.
+- `szsf_convert.py senses --owner-code E01` reads these reviews and exports the senses as `UNREVIEWED` (bronze) and counts them, because SZSF 1.0 has no owner-review field. Nothing owner-only reaches an "independently reviewed" count.
+- `build_language_db.py --owner-code E01` applies the owner's own corrections to the language database and prints how many are the owner's decisions. Without the flag it refuses a revisions file that has any.
+- The 50K's rights stay `needs_review`. Reviewing the Zomi does not clear anyone's rights over the underlying text (docs/DATA_RIGHTS.md).
+
+If a second Zomi speaker later confirms senses, their review and a different lead editor's approval make those senses `HUMAN_APPROVED`. Nothing is lost.
+
 ## Next steps
 
 1. New headwords: candidates from the corpus and community, matched against existing entries before they are added.
