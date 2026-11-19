@@ -70,6 +70,10 @@ Rights are decided per source, per use and per verified subset: see [RIGHTS_POLI
 
 To clear it for training, record in this file: (1) the dataset card as published, with date; (2) Tatoeba's license and attribution text for the sentences used; (3) who generated the Zomi side, under which accounts and Gemini terms, and whether those terms allow training another translation model, non-commercially and commercially. Then change `train` in `data/rights.json`, citing this record.
 
+**TongDot headword list: candidate English words only (2026-11-19, project owner's decision)**
+
+The owner agreed to use the English headwords in the partial TongDot list (`tongdot_headwords.txt`, 27,784 words) as a checklist of English words missing from the 50K, to translate **by hand**. Only the English words are used; no TongDot Zomi or Burmese text is copied, and the owner writes every Zomi meaning. The list came through a third party's upload and TongDot's permission is verbal, so this is a candidate list for the owner's own work, not a use of TongDot's definitions. `tongdot` stays `needs_review` for every use; nothing is cleared. 10,075 single words, 1,758 phrases, 749 forms of existing words and 296 names were found missing; the sheet is private (it is not in this repository).
+
 **Parallel corpus: rights split, 2026-11-19** (project owner's instruction)
 
 The English and Zomi sides have different provenance and may carry different restrictions, so each has its own record in `data/rights.json`. Nothing was unblocked.
