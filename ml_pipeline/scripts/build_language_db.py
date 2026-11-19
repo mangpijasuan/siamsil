@@ -477,6 +477,118 @@ def ingest_translation_master(con: sqlite3.Connection, path: Path, created_at: s
     return dict(stats)
 
 
+OWNER_HEADWORDS = "Siamsil owner's Zomi headwords"
+REFERENCE_MASTER_ID = "translation_master_50k"
+
+
+def apply_applied_dictionary(con: sqlite3.Connection, applied_db: Path, created_at: str) -> dict:
+    """The owner's applied decisions (changesets.py build, docs/CHANGESETS.md) on the live 50K dictionary.
+
+    The applied copy is built from the Translation Master's JSON, the live dictionary from its review workbook,
+    and their ids differ, so a change is matched by content: the headword, and the exact text the change expects
+    to find. It applies only where exactly one live row matches; anything else is counted, never guessed.
+
+      standardize_zomi  the sense's Zomi, rewritten by the owner's adopted Standard Form
+      set_definition    the sense's English definition, the owner's own words
+      mark_inflected    a usage note: an inflected form of its base word
+      merge_entries     nothing to do: the live dictionary already lists senses one per row
+      annotate_sense    not shown: a model's suggestion accepted as it stands stays out of the dictionary
+    New Zomi headwords the owner accepted with a meaning they wrote are added as rows of their own, marked
+    verified (the owner's decision is final, docs/GOVERNANCE.md), unless they came from an outside provider.
+    """
+    import dictionary_reviews
+
+    src = sqlite3.connect(f"file:{applied_db}?mode=ro", uri=True)
+    counts: Counter[str] = Counter()
+
+    def alternatives(text: str | None) -> list[str]:
+        # The live dictionary joins alternatives as "a ; b", the reference copy keeps them as written ("a; b").
+        return [" ".join(part.split()) for part in (text or "").split(";") if part.strip()]
+
+    def headword_of(sense_or_entry: str) -> str | None:
+        row = src.execute(
+            "SELECT e.headword FROM entries e LEFT JOIN senses s ON s.entry_id = e.id "
+            "WHERE (s.id = ? OR e.id = ?) AND e.source_id = ? LIMIT 1",
+            (sense_or_entry, sense_or_entry, REFERENCE_MASTER_ID)).fetchone()
+        return row[0] if row else None
+
+    def live_rows(headword: str) -> list[tuple]:
+        return con.execute(
+            "SELECT id, zomi, definition_en, usage_notes FROM dictionary_entries WHERE normalized_word = ? AND source = ?",
+            (normalize_word(normalize_text(headword)), TRANSLATION_MASTER)).fetchall()
+
+    try:
+        changes = src.execute("SELECT op, target, before, after FROM applied_changes ORDER BY rowid").fetchall()
+        for op, target, before, after in changes:
+            if op in ("merge_entries", "annotate_sense", "add_zomi_headword"):
+                counts[{"merge_entries": "merged_already_one_row_per_sense", "annotate_sense": "annotations_not_shown",
+                        "add_zomi_headword": "zomi_headwords_seen"}[op]] += 1
+                continue
+            first = target.split(",")[0]
+            headword = headword_of(first)
+            if headword is None:
+                counts["not_in_the_live_dictionary"] += 1  # for example an Essential 3000 sense
+                continue
+            rows = live_rows(headword)
+            if op == "standardize_zomi":
+                matches = [r for r in rows if r[1] and alternatives(r[1]) == alternatives(before)]
+                if len(matches) != 1:
+                    counts["skipped_no_single_match"] += 1
+                    continue
+                written = " ; ".join(alternatives(after))
+                con.execute("UPDATE dictionary_entries SET zomi = ?, definition = ? WHERE id = ?",
+                            (written, written, matches[0][0]))
+                counts["zomi_standardized"] += 1
+            elif op == "set_definition":
+                matches = [r for r in rows if dictionary_reviews.same_text(r[2] or "", before or "")]
+                if len(matches) != 1:
+                    counts["skipped_no_single_match"] += 1
+                    continue
+                con.execute("UPDATE dictionary_entries SET definition_en = ? WHERE id = ?", (after, matches[0][0]))
+                counts["definitions_set"] += 1
+            elif op == "mark_inflected":
+                note = (after or "").replace("inflected form", "Inflected form", 1)
+                touched = 0
+                for row_id, _, _, notes in rows:
+                    if note and note not in (notes or ""):
+                        con.execute("UPDATE dictionary_entries SET usage_notes = ? WHERE id = ?",
+                                    ("; ".join(filter(None, [notes, note])), row_id))
+                        touched += 1
+                counts["inflected_forms_noted"] += touched
+                if not touched:
+                    counts["skipped_no_single_match"] += 1
+        next_id = (con.execute("SELECT COALESCE(MAX(id), 0) FROM dictionary_entries").fetchone()[0] or 0) + 1
+        headwords = src.execute(
+            "SELECT zomi, meaning_en, provider_derived FROM zomi_headwords ORDER BY rowid").fetchall()
+        for zomi, meaning, provider_derived in headwords:
+            if provider_derived:
+                counts["zomi_headwords_from_provider_not_shown"] += 1
+                continue
+            if not (meaning or "").strip():
+                counts["zomi_headwords_waiting_for_a_meaning"] += 1
+                continue
+            word = normalize_text(meaning)
+            con.execute(
+                """
+                INSERT INTO dictionary_entries (
+                    id, source_word, normalized_word, language, source, source_reference, confidence,
+                    verification_status, flagged, letter, version, created_at, zomi, definition, definition_en
+                ) VALUES (?, ?, ?, 'en', ?, ?, 1.0, 'verified', 0, ?, ?, ?, ?, ?, ?)
+                """,
+                (next_id, word, normalize_word(word), OWNER_HEADWORDS, zomi, word[:1].upper(), DATASET_VERSION,
+                 created_at, zomi, zomi, word))
+            next_id += 1
+            counts["zomi_headwords_added"] += 1
+    finally:
+        src.close()
+    # Search follows the changed text.
+    con.execute("DELETE FROM dictionary_fts")
+    con.execute("INSERT INTO dictionary_fts (rowid, source_word, definition, part_of_speech) "
+                "SELECT id, source_word, COALESCE(definition, ''), COALESCE(part_of_speech, '') FROM dictionary_entries")
+    con.commit()
+    return dict(counts)
+
+
 def ingest_parallel(con: sqlite3.Connection, path: Path | ParallelParts, created_at: str) -> dict:
     """Ingest the corpus from a CSV file, or from siamsil-data's parts (ParallelParts)."""
     if isinstance(path, Path) and not path.exists():
@@ -981,6 +1093,12 @@ def main() -> None:
         "reviews/dictionary-revisions.jsonl in siamsil-data is applied if present",
     )
     parser.add_argument(
+        "--applied-dictionary",
+        type=Path,
+        help="The applied copy from changesets.py build (docs/CHANGESETS.md): the owner's applied decisions are "
+        "shown in the live 50K dictionary, matched by content. Only with --dictionary 50k",
+    )
+    parser.add_argument(
         "--min-reviewers",
         type=int,
         default=1,
@@ -1059,6 +1177,15 @@ def main() -> None:
         print("Ingesting the Zomi Standard Dictionary…")
         dict_stats = ingest_master_dictionary(con, dictionary_xlsx, created_at)
     print(f"  master entries: {dict_stats.get('ingested', 0):,}")
+    applied_stats: dict = {}
+    if args.applied_dictionary is not None:
+        if args.dictionary != "50k":
+            sys.exit("--applied-dictionary applies to the 50K Translation Master only (--dictionary 50k)")
+        if not args.applied_dictionary.exists():
+            sys.exit(f"Applied dictionary not found: {args.applied_dictionary}")
+        print(f"Applying the owner's applied dictionary changes from {display_path(args.applied_dictionary)}…")
+        applied_stats = apply_applied_dictionary(con, args.applied_dictionary, created_at)
+        print("  " + "  ".join(f"{name}: {count:,}" for name, count in sorted(applied_stats.items())))
 
     print("Ingesting parallel corpus (this can take a few minutes)…")
     parallel_stats = ingest_parallel(con, parallel, created_at)
@@ -1093,6 +1220,8 @@ def main() -> None:
         "dictionary_master": dictionary_record["path"] if isinstance(dictionary_record, dict) else display_path(dictionary_record),
         "parallel_csv": parallel_record["path"] if isinstance(parallel_record, dict) else display_path(parallel_record),
     }
+    if args.applied_dictionary is not None:
+        source_files["applied_dictionary"] = display_path(args.applied_dictionary)
     con.execute(
         """
         INSERT INTO dataset_versions (name, version, created_at, script_version, source_files)
@@ -1121,9 +1250,11 @@ def main() -> None:
             "empty_definition": dict_stats.get("empty_definition", 0),
             "approved_corrections": dict_stats.get("revisions_applied", 0),
             "corrections_skipped_changed_source": dict_stats.get("revisions_skipped_changed_source", 0),
+            "owner_applied_changes": applied_stats,
             "source": TRANSLATION_MASTER if args.dictionary == "50k" else "Zomi Standard Dictionary",
             "note": "Sole dictionary source shown in the app; every entry unreviewed except approved corrections "
-            "(reviewed and approved by two people), which are verified.",
+            "(reviewed and approved, by two people or by the owner alone), which are verified, and the owner's own "
+            "Zomi headwords (owner_applied_changes, docs/CHANGESETS.md).",
         },
         "parallel": {
             "source_rows": parallel_stats["counts"].get("source_rows"),
@@ -1166,6 +1297,7 @@ def main() -> None:
             "parallel_csv": parallel_record,
             **({"corpus_reviews": args.reviews} if review_records else {}),
             **({"corpus_revisions": args.revisions} if revision_records else {}),
+            **({"applied_dictionary": args.applied_dictionary} if args.applied_dictionary is not None else {}),
         },
         eval_files=args.eval,
         counts=release_counts(dict_total, parallel_total, review_records),

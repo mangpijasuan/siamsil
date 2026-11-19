@@ -64,7 +64,30 @@ python3 ml_pipeline/scripts/changesets.py build --base-db data/processed/referen
 
 To undo a changeset, run `rollback` with the same arguments as `apply`, then `build` again. The ledger keeps both entries.
 
-The training export can use the applied copy with `export_datasets.py --reference-db data/processed/reference/reference_dictionaries.applied.sqlite`. The live dictionary on the website is built separately (`build_language_db.py`) and does not read the applied copy yet; connecting it is a separate change.
+The training export can use the applied copy with `export_datasets.py --reference-db data/processed/reference/reference_dictionaries.applied.sqlite`.
+
+## Showing your changes on the website
+
+The website's dictionary is built by `build_language_db.py` from the 50K Translation Master's review workbook. Give it the applied copy and it shows your applied changes:
+
+```bash
+python3 ml_pipeline/scripts/build_language_db.py \
+  --applied-dictionary data/processed/reference/reference_dictionaries.applied.sqlite
+```
+
+The applied copy comes from the Master's JSON file and the website from its workbook, and the two number their senses differently, so each change is matched by content: the headword and the exact text the change expects to find. It applies only where exactly one website row matches; anything else is skipped and counted in the build report (`quality_report.json`, `dictionary.owner_applied_changes`), never guessed.
+
+| Applied change | On the website |
+|---|---|
+| Standard-form Zomi | That sense's Zomi (and search) |
+| Your own definition | That sense's English definition |
+| Inflected form | A usage note: "Inflected form of 'book'" |
+| Merged duplicates | Nothing to do: the website already lists senses one per row |
+| A new Zomi headword with your meaning | A new row, "Siamsil owner's Zomi headwords", marked verified |
+| A new Zomi headword with no meaning yet | Waits until you write one |
+| Anything from an outside provider, or a model's suggestion accepted as it stands | Not shown |
+
+Changes to the Essential 3000 are counted as "not in the live dictionary": the website does not show it. The release manifest records the applied copy's checksum, so each release says which decisions it shows. Rebuild the data bundle (`backend/scripts/package_data.py`) and deploy to put the result online.
 
 ## Where things stand
 

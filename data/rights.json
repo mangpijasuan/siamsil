@@ -478,6 +478,22 @@
       "commercial": "not_permitted",
       "evidence": "A capture of the church's public website, included in paumkim/zomi-dataset; the project owner uploaded the same file on 2026-10-29. A public website, or a CC0 label on a collection that copied it, is not the church's permission. Nothing is permitted until the church gives written permission; ask its lead pastor, Rev. Muana Khuptong. The capture also holds members' names, a phone number, and a visitor's prayer request about health and immigration: never use or show those.",
       "origin": "third_party"
+    },
+    "owner_zomi_headwords": {
+      "description": "Zomi headwords the project owner accepted with an English meaning they wrote, shown in the live dictionary as \"Siamsil owner's Zomi headwords\" (build_language_db.py --applied-dictionary, docs/CHANGESETS.md). Each word is quoted from a Bible version cleared for train (docs/PROPOSALS.md, mine-words); the meaning is the owner's own.",
+      "origin": "owner_original",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "needs_review",
+      "commercial": "needs_review",
+      "evidence": "Recorded 2026-11-19 when the live dictionary was connected to the owner's applied decisions. The Zomi word forms are quoted from Tedim Bible versions (bible_tdb, bible_tb77: display and train cleared, redistribution and commercial use not permitted); the English meanings are written by the owner. No use is cleared by this record: the owner decides each use (docs/RIGHTS_POLICY.md, Path A for the meanings; the Bible permissions for the word forms). Shown labelled in the dictionary, like the other dictionary sources.",
+      "history": [
+        {
+          "date": "2026-11-19",
+          "status": "needs_review",
+          "note": "Created when the live dictionary was connected to the applied changes; nothing cleared."
+        }
+      ]
     }
   }
 }
