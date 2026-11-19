@@ -27,6 +27,8 @@ type NavTab = {
   label: string;
   short: string;
   hint: string;
+  /** A static page outside the Next.js app: opened with a plain link so the browser loads it normally. */
+  plain?: boolean;
 };
 
 const NAV_GROUPS: Array<{ title: string; tabs: NavTab[] }> = [
@@ -53,12 +55,15 @@ const NAV_GROUPS: Array<{ title: string; tabs: NavTab[] }> = [
     ],
   },
 ];
+const COMMUNITY_TABS: NavTab[] = [
+  { href: "/church-manager/index.html", Icon: IconHome, glyph: "church", label: "Church", short: "Church", hint: "People, giving & learning", plain: true },
+];
 const ABOUT_TABS: NavTab[] = [
   { href: "/resources", Icon: IconResources, glyph: "resources", label: "Resources", short: "Resources", hint: "Where our data comes from" },
   { href: "/about", Icon: IconInfo, glyph: "about", label: "About", short: "About", hint: "What Siamsil is" },
   { href: "/help", Icon: IconHelp, glyph: "help", label: "Help", short: "Help", hint: "Using Siamsil" },
 ];
-const PROFILE_TAB: NavTab = { href: "/profile", Icon: IconUser, glyph: "profile", label: "Profile", short: "Profile", hint: "Progress & settings" };
+const PROFILE_TAB: NavTab = { href: "/workspace", Icon: IconUser, glyph: "profile", label: "Workspace", short: "Workspace", hint: "Saved words, history & progress" };
 
 const SIDEBAR_KEY = "siamsil-sidebar-collapsed";
 const DESKTOP_QUERY = "(min-width: 1024px)";
@@ -71,13 +76,15 @@ function MenuIcon() {
   );
 }
 
-// The Siamsil Technology Hub lockup (mark, wordmark and tagline in one image). White and gold on a transparent background, for the navy bars. logo-og.png is the same logo on navy for link previews.
+// The Siamsil Technology Hub lockup: the quill-and-books mark with the SIAMSIL wordmark and tagline, white and gold on a
+// transparent background, for the navy bars. logo-lockup-light.png is the version for light backgrounds; logo-og.png is the
+// lockup on navy for link previews. All are built by scripts/build-brand.py (design/brand/README.md).
 function BrandLockup({ height }: { height: number }) {
   return (
     <Image
       src="/logo-lockup.png"
       alt="Siamsil Technology Hub"
-      width={Math.round(height * (1200 / 272))}
+      width={Math.round(height * (1162 / 340))}
       height={height}
       className="brand-lockup"
       priority
@@ -91,9 +98,10 @@ function isActive(pathname: string, href: string) {
 }
 
 function NavLink({ tab, pathname, onNavigate }: { tab: NavTab; pathname: string; onNavigate?: () => void }) {
-  const active = isActive(pathname, tab.href);
+  const active = !tab.plain && isActive(pathname, tab.href);
+  const Anchor = tab.plain ? "a" : Link;
   return (
-    <Link
+    <Anchor
       href={tab.href}
       className={`side-panel-item${active ? " active" : ""}`}
       title={`${tab.label} — ${tab.hint}`}
@@ -106,7 +114,7 @@ function NavLink({ tab, pathname, onNavigate }: { tab: NavTab; pathname: string;
         <span className="side-panel-hint">{tab.hint}</span>
       </span>
       <span className="side-panel-short" aria-hidden="true">{tab.short}</span>
-    </Link>
+    </Anchor>
   );
 }
 
@@ -121,6 +129,12 @@ function Navigation({ pathname, onNavigate }: { pathname: string; onNavigate?: (
           ))}
         </div>
       ))}
+      <div className="side-panel-group">
+        <div className="side-panel-group-title">Community</div>
+        {COMMUNITY_TABS.map((tab) => (
+          <NavLink key={tab.href} tab={tab} pathname={pathname} onNavigate={onNavigate} />
+        ))}
+      </div>
       <div className="side-panel-group side-panel-group-more">
         {ABOUT_TABS.map((tab) => (
           <NavLink key={tab.href} tab={tab} pathname={pathname} onNavigate={onNavigate} />
@@ -208,12 +222,12 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
             <IconSearch size={18} />
           </Link>
           <Link
-            href="/profile"
-            className={`shell-user-link${isActive(pathname, "/profile") ? " active" : ""}`}
-            aria-label="Open guest profile"
-            aria-current={isActive(pathname, "/profile") ? "page" : undefined}
+            href="/workspace"
+            className={`shell-user-link${isActive(pathname, "/workspace") ? " active" : ""}`}
+            aria-label="Open my workspace"
+            aria-current={isActive(pathname, "/workspace") ? "page" : undefined}
           >
-            <span className="shell-user-copy"><strong>Guest</strong><small>Local profile</small></span>
+            <span className="shell-user-copy"><strong>My Workspace</strong><small>On this device</small></span>
             <span className="shell-user-avatar"><IconUser size={20} /></span>
           </Link>
         </div>
