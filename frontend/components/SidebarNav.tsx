@@ -71,13 +71,15 @@ function MenuIcon() {
   );
 }
 
-// The Siamsil Technology Hub lockup (mark, wordmark and tagline in one image). White and gold on a transparent background, for the navy bars. logo-og.png is the same logo on navy for link previews.
+// The Siamsil Technology Hub lockup: the quill-and-books mark with the SIAMSIL wordmark and tagline, white and gold on a
+// transparent background, for the navy bars. logo-lockup-light.png is the version for light backgrounds; logo-og.png is the
+// lockup on navy for link previews. All are built by scripts/build-brand.py (design/brand/README.md).
 function BrandLockup({ height }: { height: number }) {
   return (
     <Image
       src="/logo-lockup.png"
       alt="Siamsil Technology Hub"
-      width={Math.round(height * (1200 / 272))}
+      width={Math.round(height * (1162 / 340))}
       height={height}
       className="brand-lockup"
       priority
