@@ -4298,7 +4298,7 @@ body, body::before { background: var(--page); }
 .shell-topbar-inner { gap: 18px; padding: 0 22px 0 16px !important; }
 .shell-brand-mobile { margin-left: 0 !important; }
 .brand-lockup { height: 46px; width: auto; display: block; }
-.mobile-drawer-head .brand-lockup { height: 44px; }
+.mobile-drawer-head .brand-lockup { height: 50px; }
 .shell-menu-btn,
 .shell-menu-btn[aria-expanded="true"] {
   width: 46px !important;
