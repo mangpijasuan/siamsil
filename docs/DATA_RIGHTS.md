@@ -191,6 +191,28 @@ To clear it for training, record in this file: (1) the dataset card as published
 - **Paid translation: proposed, not decided.** The decision above still stands: no paid feature exists. If a paid `/v1/translate` route is ever added, it must be specified first and may use only components that are `commercial: cleared` in `data/rights.json`: the model and its weights (NLLB-200 is CC BY-NC and cannot be used), every training source, every retrieved example, and any example sent to an outside provider. The Bible versions (`bible_tdb`, `bible_tb77`, FCL, HCL06, BJB), `zomi_worship_songs` and `bible_iso_improved` are not commercial-cleared. The current `POST /api/v1/translate` returns retrieval results from labelled, unreviewed data and stays free; neural translation is a separate experimental route. Today's serving check verifies training clearance only, so it would need a commercial check before any paid use. A second person confirms before anything moves to `cleared`.
 - "Non-commercial" describes how the app is used, not only who runs it. Donations are fine. Paid features, a paid API, advertising, or selling data or models would be commercial use: before adding any of them, review every non-commercial license and permission in this register.
 
+### Commercial use: draft decision (not in force)
+
+**Status: DRAFT, prepared 2026-11-19 at the project owner's request. It has no effect until the owner fills in the date and operator below and signs it.** Until then the 2026-10-17 decision above stands, and no paid feature may ship. When it is signed, the 2026-10-17 decision is kept above as history, marked superseded, and not deleted.
+
+> **Decision (date: ______, project owner):** From ______, Siamsil, operated by ______ [the registered legal operator], offers paid features ("Siamsil Pro" and later paid services) on `siamsil.org`, alongside the free service. This supersedes the 2026-10-17 decision that Siamsil is a non-profit app offered free of charge.
+>
+> 1. **Free stays free.** Dictionary lookup, the Bible reader, the worship songs, Library and Learning, stored translations and the on-device workspace remain free, with no account required. No paid feature gates them.
+> 2. **Two lanes.** The free lane may keep using material licensed or permitted for non-commercial use only, within its terms. The paid lane uses only components cleared for `commercial` (`commercial_inference` in the per-use rights policy, `docs/RIGHTS_POLICY.md`, proposed in PR #96). Non-commercial material never reaches a paid route, its prompts, its examples or its training data.
+> 3. **Non-commercial items are reviewed, not assumed.** Before the first paid feature, each item listed in [PRO_PLAN.md](PRO_PLAN.md), "Commercial-use checklist", is either kept free-only, cleared for commercial use with new written permission or a verified license, or removed from the paid lane.
+> 4. **Separate permission for paid use.** A permission given for a non-profit, free app does not extend to paid features. Each rights holder whose work a paid feature would use is asked in writing first, with the template in PRO_PLAN.md.
+> 5. **Machine output is labelled.** Paid translation is labelled as machine translation unless the owner has approved the text.
+> 6. **Legal and tax.** The operator's legal status, and the tax treatment of subscription income, are confirmed with a qualified adviser before charging. The footer names the operator once that is verified.
+>
+> Signed: ______________________ (project owner)
+
+What signing it changes, and what it does not:
+- It changes the business model: paid features become possible.
+- It clears no source for commercial use. The `commercial` column in `data/rights.json` changes only through the clearance rules in force, source by source.
+- It does not change the free service, or any permission that covers it.
+- NLLB-200 (CC BY-NC 4.0), and every model fine-tuned from it (the experimental `nllb-zomi-bible-v1`), stay free-lane only.
+- The 2026-10-17 bullet "Licenses that allow only non-commercial use are acceptable for Siamsil" then applies to the free lane only.
+
 ## Closing an item
 
 1. Record the evidence (email, signed agreement, license URL and version) in this file with the date.
