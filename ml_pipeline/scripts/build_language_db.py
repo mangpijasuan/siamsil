@@ -1148,6 +1148,15 @@ def main() -> None:
     if not dictionary_xlsx.exists():
         sys.exit(f"Dictionary workbook not found: {dictionary_xlsx}")
 
+    # Checked before connect(), which deletes the previous database.
+    if args.dictionary_revisions is not None and not args.dictionary_revisions.exists():
+        sys.exit(f"Dictionary revisions file not found, nothing was built: {args.dictionary_revisions}")
+    if args.applied_dictionary is not None:
+        if args.dictionary != "50k":
+            sys.exit("--applied-dictionary applies to the 50K Translation Master only (--dictionary 50k)")
+        if not args.applied_dictionary.exists():
+            sys.exit(f"Applied dictionary not found, nothing was built: {args.applied_dictionary}")
+
     created_at = utc_now()
     print("Building Siamsil language database…")
     con = connect(args.out)
@@ -1155,8 +1164,6 @@ def main() -> None:
 
     if args.dictionary == "50k":
         revisions_path = args.dictionary_revisions
-        if revisions_path is not None and not revisions_path.exists():
-            sys.exit(f"Dictionary revisions file not found: {revisions_path}")
         if revisions_path is None and repo is not None:
             revisions_path = repo.root / "reviews" / "dictionary-revisions.jsonl"
         revisions: dict[str, dict] = {}
@@ -1179,10 +1186,6 @@ def main() -> None:
     print(f"  master entries: {dict_stats.get('ingested', 0):,}")
     applied_stats: dict = {}
     if args.applied_dictionary is not None:
-        if args.dictionary != "50k":
-            sys.exit("--applied-dictionary applies to the 50K Translation Master only (--dictionary 50k)")
-        if not args.applied_dictionary.exists():
-            sys.exit(f"Applied dictionary not found: {args.applied_dictionary}")
         print(f"Applying the owner's applied dictionary changes from {display_path(args.applied_dictionary)}…")
         applied_stats = apply_applied_dictionary(con, args.applied_dictionary, created_at)
         print("  " + "  ".join(f"{name}: {count:,}" for name, count in sorted(applied_stats.items())))
