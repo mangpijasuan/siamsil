@@ -9,12 +9,12 @@ One row per source Siamsil holds or plans to use. Nothing here is legal advice; 
 
 | Status | Meaning |
 |---|---|
-| `needs_review` | Rights unknown. May be used internally for retrieval with labels; not for training, redistribution, or commercial use. |
+| `needs_review` | Rights unknown. Not allowed for any use. Live displays that already existed (with an unreviewed label) continue until the source is reviewed; the policy does not extend them to any new use. |
 | `cleared` | Written permission or a verified open license covers the listed uses. Record the evidence. |
 | `restricted` | Some uses allowed, others not. List both. |
-| `blocked` | Must not be used. |
+| `blocked` | Must not be used until cleared. A verified subset may be cleared on its own evidence ([RIGHTS_POLICY.md](RIGHTS_POLICY.md)). |
 
-Uses are checked separately: **display** (show in the app), **train** (model training), **redistribute** (publish datasets or weights), **commercial** (paid API or product).
+Rights are decided per source, per use and per verified subset: see [RIGHTS_POLICY.md](RIGHTS_POLICY.md) (display, retrieval, local embeddings, external LLM, commercial inference, training, redistribution). The columns below are the legacy four; uses are checked separately: **display** (show in the app), **train** (model training), **redistribute** (publish datasets or weights), **commercial** (paid API or product).
 
 ## Register
 
@@ -76,13 +76,13 @@ The English and Zomi sides have different provenance and may carry different res
 
 | Record | Status | Meaning |
 |---|---|---|
-| `parallel_corpus_english_tatoeba` | `needs_review`, all four uses | No use of any kind, not even internal retrieval, until the evidence below closes it. (For these records `needs_review` is non-permissive; the general table above allows internal labeled retrieval for other sources.) |
+| `parallel_corpus_english_tatoeba` | `needs_review`, all four uses | No use of any kind, not even internal retrieval, until the evidence below closes it. (`needs_review` is non-permissive for every use, as in the status table above.) |
 | `parallel_corpus_zomi_gemini` | `needs_review`, all four uses | Same. |
 | `parallel_corpus` (combined pairs) | `blocked`, all four uses | Unchanged since 2026-11-18. Stays blocked until **both** components are cleared for the use in question. The 2026-11-18 decision and its evidence text are kept as recorded. |
 
 Rules for closing either component:
 - A CC0 declaration is recorded as evidence of the publisher's intent, never as proof of unrestricted rights. CC0 section 4(c) leaves other people's rights uncleared.
-- Review each use separately, and record each decision here: display, retrieval/RAG, embeddings, external LLM processing, model training, redistribution, commercial. `data/rights.json` keeps its four columns; the other three are decided and recorded in this file and take the stricter of the related columns until they have their own entry. None is decided yet.
+- Review each use separately, and record each decision here: display, retrieval/RAG, embeddings, external LLM processing, model training, redistribution, commercial. Each use now has its own entry under `uses` in `data/rights.json` (see [RIGHTS_POLICY.md](RIGHTS_POLICY.md)); none is cleared.
 - Embeddings and external LLM processing must not send corpus text to an outside provider without scoped rights, consent and an authorized purpose. Provider-derived output stays out of competitive-model training unless the terms explicitly permit it.
 - A status changes to `cleared` only after independent verification (see "Closing an item"). The English side may be cleared before the Zomi side; the combined pairs follow only when both are.
 - Earlier decisions are not overwritten; add a dated entry here and keep the previous text.

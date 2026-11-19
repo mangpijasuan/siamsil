@@ -9,9 +9,64 @@
       "display": "blocked",
       "redistribute": "blocked",
       "commercial": "blocked",
-      "components": ["parallel_corpus_english_tatoeba", "parallel_corpus_zomi_gemini"],
+      "components": [
+        "parallel_corpus_english_tatoeba",
+        "parallel_corpus_zomi_gemini"
+      ],
       "rule": "The combined pairs stay blocked until BOTH components are cleared for the use in question. Split 2026-11-19 on the project owner's instruction; this record's earlier decision is kept unchanged.",
-      "evidence": "Blocked 2026-11-18 on the project owner's instruction: do not display, train on, redistribute or sell this corpus until its rights are cleared. Previous status: needs_review. English side: Tatoeba sentences via OPUS (OPUS_Tatoeba_v20230412). Zomi side: machine-generated; 1,769,117 of 1,775,043 unique pairs name a Gemini model in the file's model column (gemini-3-flash-preview, gemini-pro, gemini-2.5-flash, gemini-3-pro-preview), 5,926 name none. A CC0 label from the uploader does not by itself settle Tatoeba's attribution terms or the terms under which the Gemini output was generated; train stays needs_review until those are verified. See docs/DATA_RIGHTS.md."
+      "evidence": "Blocked 2026-11-18 on the project owner's instruction: do not display, train on, redistribute or sell this corpus until its rights are cleared. Previous status: needs_review. English side: Tatoeba sentences via OPUS (OPUS_Tatoeba_v20230412). Zomi side: machine-generated; 1,769,117 of 1,775,043 unique pairs name a Gemini model in the file's model column (gemini-3-flash-preview, gemini-pro, gemini-2.5-flash, gemini-3-pro-preview), 5,926 name none. A CC0 label from the uploader does not by itself settle Tatoeba's attribution terms or the terms under which the Gemini output was generated; train stays needs_review until those are verified. See docs/DATA_RIGHTS.md.",
+      "uses": {
+        "display": {
+          "status": "blocked",
+          "note": "Blocked with the combined pairs on 2026-11-18; no per-use decision has cleared any use."
+        },
+        "retrieval": {
+          "status": "blocked",
+          "note": "Blocked with the combined pairs on 2026-11-18; no per-use decision has cleared any use."
+        },
+        "local_embeddings": {
+          "status": "blocked",
+          "note": "Blocked with the combined pairs on 2026-11-18; no per-use decision has cleared any use."
+        },
+        "external_llm": {
+          "status": "blocked",
+          "note": "Blocked with the combined pairs on 2026-11-18; no per-use decision has cleared any use."
+        },
+        "commercial_inference": {
+          "status": "blocked",
+          "note": "Blocked with the combined pairs on 2026-11-18; no per-use decision has cleared any use."
+        },
+        "train": {
+          "status": "blocked",
+          "note": "Blocked with the combined pairs on 2026-11-18; no per-use decision has cleared any use."
+        },
+        "redistribute": {
+          "status": "blocked",
+          "note": "Blocked with the combined pairs on 2026-11-18; no per-use decision has cleared any use."
+        }
+      },
+      "history": [
+        {
+          "date": "2026-10-25",
+          "status": "needs_review",
+          "note": "Obtained from Hugging Face; CC0 label reported by the project owner, not independently verified."
+        },
+        {
+          "date": "2026-11-17",
+          "status": "needs_review",
+          "note": "CC0 1.0 LICENSE.txt received from the zomi-language-corpora repository; evidence only, underlying rights not settled."
+        },
+        {
+          "date": "2026-11-18",
+          "status": "blocked",
+          "note": "Blocked on the project owner's instruction until rights are cleared."
+        },
+        {
+          "date": "2026-11-19",
+          "status": "blocked",
+          "note": "Split into English (Tatoeba) and Zomi (Gemini) component records; the combined pairs stay blocked until both are cleared for a use. Per-use decisions added (docs/RIGHTS_POLICY.md); nothing cleared."
+        }
+      ]
     },
     "parallel_corpus_english_tatoeba": {
       "description": "Parallel corpus, English side: Tatoeba sentences distributed by OPUS as OPUS_Tatoeba_v20230412, as carried in the Hugging Face dataset",
@@ -21,7 +76,45 @@
       "display": "needs_review",
       "redistribute": "needs_review",
       "commercial": "needs_review",
-      "evidence": "Created 2026-11-19 by splitting parallel_corpus on the project owner's instruction. needs_review here means no use at all, not even internal retrieval, until the evidence in docs/DATA_RIGHTS.md closes it; the combined pairs stay blocked. To verify: the licence of the OPUS release held and of the sentences used, and the attribution text owed (CC BY needs attribution; commercial reuse is allowed on those terms). Uses still to be decided separately: display, retrieval/RAG, embeddings, external LLM processing, training, redistribution, commercial. See docs/DATA_RIGHTS.md."
+      "evidence": "Created 2026-11-19 by splitting parallel_corpus on the project owner's instruction. needs_review here means no use at all, not even internal retrieval, until the evidence in docs/DATA_RIGHTS.md closes it; the combined pairs stay blocked. To verify: the licence of the OPUS release held and of the sentences used, and the attribution text owed (CC BY needs attribution; commercial reuse is allowed on those terms). Uses still to be decided separately: display, retrieval/RAG, embeddings, external LLM processing, training, redistribution, commercial. See docs/DATA_RIGHTS.md.",
+      "attribution_required": true,
+      "uses": {
+        "display": {
+          "status": "needs_review",
+          "note": "Not decided. CC BY 2.0 FR permits commercial reuse with attribution; the license of the OPUS release held and of the sentences used is still to be checked."
+        },
+        "retrieval": {
+          "status": "needs_review",
+          "note": "Not decided. CC BY 2.0 FR permits commercial reuse with attribution; the license of the OPUS release held and of the sentences used is still to be checked."
+        },
+        "local_embeddings": {
+          "status": "needs_review",
+          "note": "Not decided. CC BY 2.0 FR permits commercial reuse with attribution; the license of the OPUS release held and of the sentences used is still to be checked."
+        },
+        "external_llm": {
+          "status": "needs_review",
+          "note": "Not decided. CC BY 2.0 FR permits commercial reuse with attribution; the license of the OPUS release held and of the sentences used is still to be checked."
+        },
+        "commercial_inference": {
+          "status": "needs_review",
+          "note": "Not decided. CC BY 2.0 FR permits commercial reuse with attribution; the license of the OPUS release held and of the sentences used is still to be checked."
+        },
+        "train": {
+          "status": "needs_review",
+          "note": "Not decided. CC BY 2.0 FR permits commercial reuse with attribution; the license of the OPUS release held and of the sentences used is still to be checked."
+        },
+        "redistribute": {
+          "status": "needs_review",
+          "note": "Not decided. CC BY 2.0 FR permits commercial reuse with attribution; the license of the OPUS release held and of the sentences used is still to be checked."
+        }
+      },
+      "history": [
+        {
+          "date": "2026-11-19",
+          "status": "needs_review",
+          "note": "Created by splitting parallel_corpus; no use permitted until a use is cleared with verified evidence."
+        }
+      ]
     },
     "parallel_corpus_zomi_gemini": {
       "description": "Parallel corpus, Zomi side: machine-generated by Gemini models (1,769,117 of 1,775,043 unique pairs name a Gemini model; 5,926 name none), as carried in the Hugging Face dataset",
@@ -31,7 +124,45 @@
       "display": "needs_review",
       "redistribute": "needs_review",
       "commercial": "needs_review",
-      "evidence": "Created 2026-11-19 by splitting parallel_corpus on the project owner's instruction. needs_review here means no use at all, not even internal retrieval, until the evidence in docs/DATA_RIGHTS.md closes it; the combined pairs stay blocked. Siamsil did not generate this text; it was downloaded as published. To verify: which Gemini product, account and terms applied when each model generated the output, and what they allow (training another model, retrieval, translation memory, commercial inference). Provider-derived output stays out of competitive-model training unless the terms explicitly permit it. See docs/DATA_RIGHTS.md."
+      "evidence": "Created 2026-11-19 by splitting parallel_corpus on the project owner's instruction. needs_review here means no use at all, not even internal retrieval, until the evidence in docs/DATA_RIGHTS.md closes it; the combined pairs stay blocked. Siamsil did not generate this text; it was downloaded as published. To verify: which Gemini product, account and terms applied when each model generated the output, and what they allow (training another model, retrieval, translation memory, commercial inference). Provider-derived output stays out of competitive-model training unless the terms explicitly permit it. See docs/DATA_RIGHTS.md.",
+      "provider_derived": true,
+      "uses": {
+        "display": {
+          "status": "needs_review",
+          "note": "Not decided. The provider terms in force when each Gemini model generated the text are still to be established."
+        },
+        "retrieval": {
+          "status": "needs_review",
+          "note": "Not decided. The provider terms in force when each Gemini model generated the text are still to be established."
+        },
+        "local_embeddings": {
+          "status": "needs_review",
+          "note": "Not decided. The provider terms in force when each Gemini model generated the text are still to be established."
+        },
+        "external_llm": {
+          "status": "needs_review",
+          "note": "Not decided. The provider terms in force when each Gemini model generated the text are still to be established."
+        },
+        "commercial_inference": {
+          "status": "needs_review",
+          "note": "Not decided. The provider terms in force when each Gemini model generated the text are still to be established."
+        },
+        "train": {
+          "status": "needs_review",
+          "note": "Not decided. The provider terms in force when each Gemini model generated the text are still to be established."
+        },
+        "redistribute": {
+          "status": "needs_review",
+          "note": "Not decided. The provider terms in force when each Gemini model generated the text are still to be established."
+        }
+      },
+      "history": [
+        {
+          "date": "2026-11-19",
+          "status": "needs_review",
+          "note": "Created by splitting parallel_corpus; no use permitted until a use is cleared with verified evidence."
+        }
+      ]
     },
     "bible_original": {
       "description": "KJV English with the 'Original ZSF Text' Zomi column",
