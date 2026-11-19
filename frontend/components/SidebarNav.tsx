@@ -27,6 +27,8 @@ type NavTab = {
   label: string;
   short: string;
   hint: string;
+  /** A static page outside the Next.js app: opened with a plain link so the browser loads it normally. */
+  plain?: boolean;
 };
 
 const NAV_GROUPS: Array<{ title: string; tabs: NavTab[] }> = [
@@ -52,6 +54,9 @@ const NAV_GROUPS: Array<{ title: string; tabs: NavTab[] }> = [
       { href: "/chat", Icon: IconAI, glyph: "ai", label: "Siamsil AI", short: "AI", hint: "Retrieval assistant" },
     ],
   },
+];
+const COMMUNITY_TABS: NavTab[] = [
+  { href: "/church-manager/index.html", Icon: IconHome, glyph: "church", label: "Church", short: "Church", hint: "People, giving & learning", plain: true },
 ];
 const ABOUT_TABS: NavTab[] = [
   { href: "/resources", Icon: IconResources, glyph: "resources", label: "Resources", short: "Resources", hint: "Where our data comes from" },
@@ -93,9 +98,10 @@ function isActive(pathname: string, href: string) {
 }
 
 function NavLink({ tab, pathname, onNavigate }: { tab: NavTab; pathname: string; onNavigate?: () => void }) {
-  const active = isActive(pathname, tab.href);
+  const active = !tab.plain && isActive(pathname, tab.href);
+  const Anchor = tab.plain ? "a" : Link;
   return (
-    <Link
+    <Anchor
       href={tab.href}
       className={`side-panel-item${active ? " active" : ""}`}
       title={`${tab.label} — ${tab.hint}`}
@@ -108,7 +114,7 @@ function NavLink({ tab, pathname, onNavigate }: { tab: NavTab; pathname: string;
         <span className="side-panel-hint">{tab.hint}</span>
       </span>
       <span className="side-panel-short" aria-hidden="true">{tab.short}</span>
-    </Link>
+    </Anchor>
   );
 }
 
@@ -123,6 +129,12 @@ function Navigation({ pathname, onNavigate }: { pathname: string; onNavigate?: (
           ))}
         </div>
       ))}
+      <div className="side-panel-group">
+        <div className="side-panel-group-title">Community</div>
+        {COMMUNITY_TABS.map((tab) => (
+          <NavLink key={tab.href} tab={tab} pathname={pathname} onNavigate={onNavigate} />
+        ))}
+      </div>
       <div className="side-panel-group side-panel-group-more">
         {ABOUT_TABS.map((tab) => (
           <NavLink key={tab.href} tab={tab} pathname={pathname} onNavigate={onNavigate} />
