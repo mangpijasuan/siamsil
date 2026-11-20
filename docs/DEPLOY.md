@@ -35,10 +35,14 @@ Build and upload the bundle on the computer that holds `siamsil-data` (beside th
 ```bash
 python3 ml_pipeline/scripts/build_language_db.py     # dictionary, corpus, approved corrections
 python3 ml_pipeline/scripts/import_usx_bibles.py     # Bible versions cleared for display
-python3 backend/scripts/package_data.py              # writes dist/siamsil-data.tar.gz and prints its SHA-256
+python3 backend/scripts/package_data.py              # LEAN by default: writes dist/siamsil-data.tar.gz and prints its SHA-256
 ```
 
-The bundle (about 600 MB; 1.7 GB unpacked) is too large for the dashboard's upload button. Upload it with the AWS command-line tool and the **read-and-write** token:
+The default bundle is **lean**: it holds the dictionary (50,282 entries) and its search index with empty corpus tables, the Bible versions and the reviewed phrase lists, plus a `bundle.json` that says so. It is about 20 MB (about 75 MB unpacked), measured on 2026-11-20; the earlier full bundle, with the 1.77 million corpus pairs, was about 590 MB (1.7 GB unpacked). `--include-corpus` builds the full one, and refuses unless `data/rights.json` clears the parallel corpus for display. A lean bundle is small enough for the dashboard's upload button, but the command below works for either.
+
+If you uploaded a full bundle earlier, replace it: upload the lean one under a new dated name, point the API at it, then delete the old object from the bucket (it holds the corpus).
+
+The upload below is for the older, larger case: Upload it with the AWS command-line tool and the **read-and-write** token:
 
 ```bash
 aws s3 cp dist/siamsil-data.tar.gz s3://siamsil-data-bundle/siamsil-data.tar.gz \

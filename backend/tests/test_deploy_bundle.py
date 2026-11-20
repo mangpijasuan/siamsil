@@ -48,6 +48,111 @@ class PresignTests(unittest.TestCase):
         self.assertEqual(fetch_data.bundle_url({}), "")
 
 
+def make_language_db(path: Path) -> None:
+    """A tiny database with the real schema, a dictionary, and a corpus that must not travel."""
+    sys.path.insert(0, str(BACKEND_ROOT.parent / "ml_pipeline" / "scripts"))
+    from build_language_db import create_schema  # type: ignore
+
+    con = sqlite3.connect(path)
+    create_schema(con)
+    for number in range(1, 4):
+        con.execute(
+            "INSERT INTO dictionary_entries (id, source_word, normalized_word, verification_status, letter, version, "
+            "created_at, zomi, definition) VALUES (?, ?, ?, 'unreviewed', 'w', 'v2', 'now', ?, ?)",
+            (number, f"word{number}", f"word{number}", f"ZOMI_PLACEHOLDER_{number}", f"ZOMI_PLACEHOLDER_{number}"))
+        con.execute("INSERT INTO dictionary_fts (rowid, source_word, definition, part_of_speech) VALUES (?, ?, ?, 'n.')",
+                    (number, f"word{number}", f"ZOMI_PLACEHOLDER_{number}"))
+    for number in range(1, 6):
+        con.execute(
+            "INSERT INTO parallel_sentences (id, raw_source_text, raw_target_text, normalized_source_text, "
+            "normalized_target_text, dataset_split, pair_hash, family_hash, version, created_at) "
+            "VALUES (?, 'en', 'zo', 'en', 'zo', 'train', ?, ?, 'v2', 'now')", (number, f"h{number}", f"f{number}"))
+        con.execute("INSERT INTO parallel_fts (rowid, normalized_source_text, normalized_target_text) VALUES (?, 'en', 'zo')",
+                    (number,))
+    con.execute("INSERT INTO dataset_versions (name, version, created_at, script_version, source_files) "
+                "VALUES ('siamsil-language', 'v2', 'now', '1.4.0', ?)",
+                ('{"dictionary_master": "d.xlsx", "parallel_csv": "parallel (9 parts)"}',))
+    con.commit()
+    con.close()
+
+
+class LeanBundleTests(unittest.TestCase):
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        self.language = self.root / "siamsil_language.sqlite"
+        make_language_db(self.language)
+        bible = sqlite3.connect(self.root / "bible_versions.sqlite")
+        bible.execute("CREATE TABLE t (x TEXT)")
+        bible.commit()
+        bible.close()
+
+    def test_the_lean_copy_keeps_the_dictionary_and_empties_the_corpus(self) -> None:
+        target = self.root / "lean.sqlite"
+        stats = package_data.lean_snapshot(self.language, target)
+        self.assertEqual(stats, {"dictionary_entries": 3, "parallel_sentences": 0})
+        con = sqlite3.connect(target)
+        self.assertEqual(con.execute("SELECT COUNT(*) FROM dictionary_entries").fetchone()[0], 3)
+        self.assertEqual(con.execute("SELECT COUNT(*) FROM parallel_sentences").fetchone()[0], 0)
+        self.assertEqual(con.execute("SELECT COUNT(*) FROM parallel_fts").fetchone()[0], 0)
+        # Search still works, and the full-text index still points at the same rows.
+        self.assertEqual(con.execute("SELECT rowid FROM dictionary_fts WHERE dictionary_fts MATCH 'word2'").fetchall(), [(2,)])
+        self.assertEqual(con.execute("SELECT zomi FROM dictionary_entries WHERE id = 2").fetchone()[0], "ZOMI_PLACEHOLDER_2")
+        files = con.execute("SELECT source_files FROM dataset_versions").fetchone()[0]
+        self.assertIn("not included", files)
+        self.assertNotIn("parallel (9 parts)", files)
+        self.assertEqual(con.execute("PRAGMA integrity_check").fetchone()[0], "ok")
+        con.close()
+
+    def test_the_source_database_is_untouched(self) -> None:
+        package_data.lean_snapshot(self.language, self.root / "lean.sqlite")
+        con = sqlite3.connect(self.language)
+        self.assertEqual(con.execute("SELECT COUNT(*) FROM parallel_sentences").fetchone()[0], 5)
+        con.close()
+
+    def test_an_unknown_database_is_refused(self) -> None:
+        con = sqlite3.connect(self.language)
+        con.execute("CREATE TABLE something_new (x TEXT)")
+        con.commit()
+        con.close()
+        with self.assertRaisesRegex(ValueError, "something_new"):
+            package_data.lean_snapshot(self.language, self.root / "lean.sqlite")
+
+    def test_a_lean_bundle_carries_no_corpus_and_says_so(self) -> None:
+        bundle, _ = package_data.package(self.root / "dist", self.language, self.root / "bible_versions.sqlite",
+                                         self.root / "no-json", lean=True)
+        with tarfile.open(bundle) as tar:
+            self.assertEqual(sorted(tar.getnames()), ["bible_versions.sqlite", "bundle.json", "siamsil_language.sqlite"])
+            tar.extractall(self.root / "out")
+        info = __import__("json").loads((self.root / "out" / "bundle.json").read_text(encoding="utf-8"))
+        self.assertEqual((info["lean"], info["corpus_rows"], info["dictionary_entries"]), (True, 0, 3))
+        con = sqlite3.connect(self.root / "out" / "siamsil_language.sqlite")
+        self.assertEqual(con.execute("SELECT COUNT(*) FROM parallel_sentences").fetchone()[0], 0)
+        con.close()
+
+    def test_the_full_bundle_still_carries_the_corpus_when_asked(self) -> None:
+        bundle, _ = package_data.package(self.root / "dist", self.language, self.root / "bible_versions.sqlite",
+                                         self.root / "no-json", lean=False)
+        with tarfile.open(bundle) as tar:
+            tar.extractall(self.root / "out")
+        con = sqlite3.connect(self.root / "out" / "siamsil_language.sqlite")
+        self.assertEqual(con.execute("SELECT COUNT(*) FROM parallel_sentences").fetchone()[0], 5)
+        con.close()
+
+    def test_the_command_is_lean_unless_the_corpus_is_cleared(self) -> None:
+        with mock.patch.object(package_data, "package", return_value=(self.root / "b.tar.gz", "x" * 64)) as packaged, \
+                mock.patch.object(Path, "stat", return_value=mock.Mock(st_size=1_000_000)), redirect_stdout(io.StringIO()):
+            package_data.main([str(self.root / "dist")])
+            self.assertTrue(packaged.call_args.kwargs["lean"])
+        # The real register blocks the corpus, so asking for it is refused and nothing is packaged.
+        with mock.patch.object(package_data, "package") as packaged:
+            with self.assertRaises(SystemExit) as stop:
+                package_data.main([str(self.root / "dist"), "--include-corpus"])
+            self.assertIn("may not be shown", str(stop.exception))
+            packaged.assert_not_called()
+
+
 class BundleTests(unittest.TestCase):
     def setUp(self) -> None:
         tmp = tempfile.TemporaryDirectory()

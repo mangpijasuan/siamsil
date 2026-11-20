@@ -6,7 +6,7 @@ The website stays on Vercel. This server runs three containers: Caddy (HTTPS), t
 
 ## What you need
 
-- The data bundle already uploaded to the private R2 bucket (DEPLOY.md, step 2), with its 64-character SHA-256.
+- The data bundle already uploaded to the private R2 bucket (DEPLOY.md, step 2), with its 64-character SHA-256. Use the **lean** bundle (`package_data.py` without `--include-corpus`): it holds no corpus, so the server needs about 75 MB of language data instead of 1.7 GB, and a 2 vCPU, 4 GB server is more than enough. The 8 GB server is only needed if you add model work later.
 - The **read-only** R2 token's Access Key ID and Secret Access Key (never the upload token).
 - Your R2 endpoint: `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`.
 - The domain `siamsil.org` in Cloudflare.
