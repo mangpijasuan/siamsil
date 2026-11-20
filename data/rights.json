@@ -320,6 +320,14 @@
       "redistribute": "not_permitted",
       "commercial": "not_permitted",
       "evidence": "A capture of the church's public website, included in paumkim/zomi-dataset; the project owner uploaded the same file on 2026-10-29. A public website, or a CC0 label on a collection that copied it, is not the church's permission. Nothing is permitted until the church gives written permission; ask its lead pastor, Rev. Muana Khuptong. The capture also holds members' names, a phone number, and a visitor's prayer request about health and immigration: never use or show those."
+    },
+    "owner_additions": {
+      "description": "New headwords the project owner translates by hand from a list of English words (Siamsil_New_Headwords_To_Translate.xlsx), imported in batches with import_owner_additions.py",
+      "display": "needs_review",
+      "train": "needs_review",
+      "redistribute": "needs_review",
+      "commercial": "needs_review",
+      "evidence": "Created 2026-11-20. The Zomi is the project owner's own writing; the owner's authorship is the owner's report and a second person has not confirmed it. The English words come from the TongDot headword list (English words only; its permission is verbal and unconfirmed, see tongdot) and the English meanings are Princeton WordNet 3.0 glosses (open license), AI-drafted text (unreviewed, provider-derived, kept out of competitive-model training unless the provider's terms allow it) or the owner's own meaning; each sense records which in meaning_source. Every sense is imported unreviewed. See docs/DATA_RIGHTS.md and docs/DICTIONARY.md."
     }
   }
 }

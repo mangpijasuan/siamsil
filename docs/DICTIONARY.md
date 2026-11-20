@@ -118,6 +118,26 @@ A term sheet holds every unreviewed 50K sense whose headword uses the term: 348 
 
 The draft is only a starting point: the reviewer chooses `fix` and writes the right wording (the draft, or another word if the context needs it), or `correct` if the Zomi is already right. Corrections then follow the steps above. Nothing is replaced in bulk.
 
+## Adding your own headwords (owner's translations)
+
+The project owner can add new headwords by translating English words by hand. The candidate list is the private workbook `Siamsil_New_Headwords_To_Translate.xlsx` (English words only, with part of speech and an English meaning drafted by an AI assistant or taken from Princeton WordNet). The workbook is not in this repository.
+
+1. In the workbook, for each row you want, set **Decision** to `Add (draft is fine)` or `Add (I change the meaning)` (for forms: `Add as own entry`), and write **Your Zomi**. If you change the meaning, write it in **Your meaning if you change it**. Rows left blank, `Skip`, `Later` or `Discuss` are not added.
+2. Turn the filled workbook into a source file (nothing is written if any row has a problem):
+
+```
+python3 ml_pipeline/scripts/import_owner_additions.py --workbook filled.xlsx --batch 2026-12-a \
+    --out-dir ../siamsil-data/dictionary/sources/owner-additions --owner-code E01 --dry-run
+```
+   Run it again without `--dry-run`. Use a new `--batch` name each time, and `--skip-existing` with an earlier batch file so a headword is not added twice. It writes one private file (permissions 0600) and prints the entry to add to `data/dictionary_sources.json` (or add it yourself with `--register-config`). The entry pins the file's SHA-256, so a changed file stops its import until you update the entry on purpose.
+3. Commit the file to the private `siamsil-data` repository and the config entry to this one, then import: `python backend/scripts/import_dictionary_sources.py`. Each headword becomes a sense with a new `ZS-` ID, joined to an existing entry when the headword and part of speech already exist.
+
+What the import checks per row: a recognised decision, present and clean Zomi that is not a copy of the English, the changed meaning when you chose it, and no headword and part of speech added twice. It warns (does not change) when your Zomi uses a spelling an adopted SZSF rule would change, or when a draft marked `check source` is added.
+
+What it does **not** do: it records no review and no approval. Every sense arrives unreviewed, even though you wrote the Zomi. Review them later, in a separate sitting, with the owner-only mode above (`--owner-code`). The Zomi is stored exactly as you wrote it.
+
+How each English meaning is labelled (`meaning_source` on the sense): `owner` (you wrote it), `wordnet` (Princeton WordNet 3.0, open license) or `ai_draft` (an AI assistant). A sense with an AI-drafted meaning gets an open `AI_DRAFT_MEANING` issue, so a reviewer can see it; those meanings stay out of competitive-model training unless the provider's terms explicitly permit it (docs/DATA_RIGHTS.md). The source's rights entry, `owner_additions`, is `needs_review` for every use: your authorship is your own report until a second person confirms it, and the English words came from a partial third-party copy of TongDot's list.
+
 ## Owner-only review (working phase)
 
 **Decision (2026-11-18, project owner; docs/SZSF.md "Owner-approved records"):** the owner may review, approve and correct the dictionary alone. It is the owner's final editorial decision; it is not an independent review and is never labelled one.

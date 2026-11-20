@@ -10,6 +10,7 @@ Formats (data/dictionary_sources.json):
   standard_workbook  Zomi Standard Dictionary workbook (Master Data sheet)
   ordbog_pdf         Zomi Ordbog, dansk-[engelsk]-zomi PDF (needs poppler's pdftotext)
   tongdot_tsv        TongDot dictionary lines: headword, headword as shown, "(pos) definition"
+  owner_additions_jsonl  headwords the owner translated by hand (import_owner_additions.py)
 """
 
 from __future__ import annotations
@@ -383,10 +384,48 @@ def read_tongdot_tsv(path: Path) -> SourceRead:
     return SourceRead(records, skipped)
 
 
+def read_owner_additions_jsonl(path: Path) -> SourceRead:
+    """The owner's own new headwords, one JSON object per line (ml_pipeline/scripts/import_owner_additions.py).
+
+    The Zomi is the owner's own words, stored as written. Where the English meaning is an AI draft, the sense
+    gets an open AI_DRAFT_MEANING issue so a reviewer sees that the English was not written by a person.
+    Every sense arrives unreviewed: the owner reviews it later, in a separate sitting.
+    """
+    import json
+
+    records: list[SourceRecord] = []
+    skipped: dict[str, int] = {}
+    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        headword, zomi = clean(row.get("headword")), clean(row.get("zomi"))
+        if not headword or not zomi:
+            skipped["no_headword_or_zomi"] = skipped.get("no_headword_or_zomi", 0) + 1
+            continue
+        record_id = str(row["id"])
+        issues: list[Issue] = []
+        if row.get("meaning_source") == "ai_draft":
+            issues.append(Issue(f"{record_id}:ai-meaning", "English meaning drafted by an AI assistant", "AI_DRAFT_MEANING",
+                                "The English meaning was drafted by an AI assistant and not yet checked by a person.",
+                                None, None, {}))
+        records.append(SourceRecord(
+            record_id=record_id,
+            headword=headword,
+            part_of_speech=normalize_pos(row.get("part_of_speech")),
+            definition_en=clean(row.get("definition_en")),
+            equivalents=[("ctd", "equivalent", t) for t in split_alternatives(zomi)],
+            issues=issues,
+            raw={k: row.get(k) for k in ("id", "meaning_source", "sheet", "row", "batch", "owner_code", "note") if k in row},
+        ))
+    return SourceRead(records, skipped)
+
+
 READERS = {
     "master_workbook": read_master_workbook,
     "learners_json": read_learners_json,
     "standard_workbook": read_standard_workbook,
     "ordbog_pdf": read_ordbog_pdf,
     "tongdot_tsv": read_tongdot_tsv,
+    "owner_additions_jsonl": read_owner_additions_jsonl,
 }
