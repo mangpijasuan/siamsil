@@ -25,7 +25,7 @@ export default function ServicesPage() {
       <p>From a modern website to a connected application, Siamsil explores practical digital solutions for businesses, churches, and communities.</p>
       <div className="svc-actions"><Link href="/products" className="svc-primary">Explore products</Link><Link href="/about" className="svc-secondary">About Siamsil</Link></div>
     </header>
-    <main className="svc-content">
+    <div className="svc-content">
       <div className="svc-section-head"><p className="svc-eyebrow">WHAT WE CAN BUILD</p><h2>Services & solutions</h2><p>These are service areas, not claims of completed client engagements or guaranteed availability.</p></div>
       <div className="svc-grid">{services.map((service, index) => <article className="svc-card" key={service.title}>
         <span className="svc-number">{String(index + 1).padStart(2, "0")}</span>
@@ -33,6 +33,6 @@ export default function ServicesPage() {
       </article>)}</div>
       <section className="svc-feature"><div><p className="svc-eyebrow">ONE CONNECTED ECOSYSTEM</p><h2>Services supported by products</h2><p>Our Zomi language tools, learning resources, and community applications inform how we design software. Explore what exists today and what is planned next.</p></div><Link href="/products" className="svc-primary">View Siamsil products</Link></section>
       <section className="svc-end"><h2>Have a project in mind?</h2><p>Explore our approach and project background. A public project intake form and service booking workflow are not yet available.</p><Link href="/about">Learn about Siamsil →</Link></section>
-    </main>
+    </div>
   </div>;
 }
