@@ -37,6 +37,7 @@ import sqlite3
 import sys
 import xml.etree.ElementTree as ET
 from collections import Counter
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -359,7 +360,14 @@ def write_db(
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
     tmp.unlink(missing_ok=True)
-    con = sqlite3.connect(tmp)
+    with closing(sqlite3.connect(tmp)) as con:
+        _populate_db(con, versions, rights, config)
+    tmp.replace(path)
+
+
+def _populate_db(
+    con: sqlite3.Connection, versions: list[dict], rights: dict[str, dict[str, str]], config: dict[str, dict]
+) -> None:
     con.executescript(
         """
         CREATE TABLE versions (
@@ -412,8 +420,6 @@ def write_db(
         )
     con.commit()
     con.execute("VACUUM")
-    con.close()
-    tmp.replace(path)
 
 
 def main(argv: list[str] | None = None) -> int:

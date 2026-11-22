@@ -138,13 +138,13 @@ class BibleLookup:
         zomi, english = self._chosen()
         if zomi is None:
             return None
-        con = self.versions.connect()
-        count = con.execute("SELECT COUNT(*) FROM verses WHERE version_id = ?", (zomi["id"],)).fetchone()[0]
-        if not count:
-            return None
-        row = con.execute(
-            "SELECT book_id, chapter, verse FROM verses WHERE version_id = ? ORDER BY book_id, chapter, verse "
-            "LIMIT 1 OFFSET ?", (zomi["id"], seed % count)).fetchone()
+        with self.versions.connect() as con:
+            count = con.execute("SELECT COUNT(*) FROM verses WHERE version_id = ?", (zomi["id"],)).fetchone()[0]
+            if not count:
+                return None
+            row = con.execute(
+                "SELECT book_id, chapter, verse FROM verses WHERE version_id = ? ORDER BY book_id, chapter, verse "
+                "LIMIT 1 OFFSET ?", (zomi["id"], seed % count)).fetchone()
         return self._verse(zomi, english, row["book_id"], row["chapter"], row["verse"])
 
     def search_words(self, query: str, limit: int = MAX_VERSES) -> list[dict[str, Any]]:

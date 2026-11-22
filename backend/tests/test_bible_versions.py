@@ -140,6 +140,17 @@ class ImportUsxTests(unittest.TestCase):
         self.assertEqual(self.build(self.source, self.db), 0)
         self.assertEqual([v["id"] for v in self.versions.versions()], ["tst"])
 
+    def test_database_uri_escapes_path_and_closes_after_read(self) -> None:
+        db = self.db.with_name("Bible #100%.sqlite")
+        self.db.rename(db)
+        versions = BibleVersions(db)
+        with versions.connect() as con:
+            self.assertGreater(con.execute("SELECT COUNT(*) FROM verses").fetchone()[0], 0)
+        with self.assertRaises(sqlite3.ProgrammingError):
+            con.execute("SELECT 1")
+        self.assertEqual(versions.chapter("tst", 43, 1)[1]["label"], "2-3")
+        db.rename(self.db)
+
     def test_blocked_versions_are_hidden_and_order_puts_english_last(self) -> None:
         self.assertEqual([v["id"] for v in self.versions.versions()], ["tst", "eng", "teb"])
 

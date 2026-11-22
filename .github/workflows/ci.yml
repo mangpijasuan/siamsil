@@ -65,6 +65,27 @@ jobs:
           python backend/scripts/export_openapi.py frontend/openapi.json
           git diff --exit-code -- frontend/openapi.json
 
+  bible-windows:
+    name: SQLite language databases on Windows
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+            ml_pipeline/requirements.txt
+      - run: python -m pip install -r backend/requirements-dev.txt -r ml_pipeline/requirements.txt
+      - name: Test Bible and language database reads
+        working-directory: backend/tests
+        run: >-
+          python -m unittest test_bible_versions test_ai_bible_and_ranking test_word_suggest
+          test_translate_direction test_translate_exact_lookup test_language_engine
+
   frontend:
     name: Frontend checks
     runs-on: ubuntu-latest
