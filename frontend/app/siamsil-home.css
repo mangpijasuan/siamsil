@@ -118,3 +118,31 @@
 @media(max-width:1190px){.sr-about{grid-template-columns:1fr}}
 @media(max-width:767px){.sr-ctas{margin-top:18px;gap:8px}.sr-cta{flex:1 1 auto;font-size:14px;padding:11px 14px}
   .sr-principles{grid-template-columns:1fr}.sr-about{gap:11px;margin-top:11px}.sr-section-title{margin:4px 2px 10px}}
+
+/* Landing redesign: centred hero over the Zomi hills, white product cards in two rows of three. */
+.sr-hero{display:block;text-align:center;min-height:470px;padding:clamp(52px,7vw,92px) clamp(20px,5vw,72px) clamp(44px,6vw,76px);
+  background:
+    linear-gradient(180deg,rgba(11,31,59,.95) 0%,rgba(11,31,59,.88) 55%,rgba(11,31,59,.72) 100%),
+    url("/hero-zomi-hills.webp") center / cover no-repeat,#0b1f3b}
+.sr-hero-inner{max-width:780px;margin:0 auto}
+.sr-hero .sr-title{margin-left:auto;margin-right:auto}
+.sr-hero .sr-summary{margin-left:auto;margin-right:auto}
+.sr-hero .sr-search{margin-left:auto;margin-right:auto}
+.sr-hero .sr-quick,.sr-hero .sr-ctas{justify-content:center}
+.sr-features{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;max-width:1080px;margin-left:auto;margin-right:auto}
+.sr-feature{flex-direction:row;align-items:center;gap:16px;min-height:0;padding:20px;background:#fff!important;border:1px solid #e3e9f2;
+  display:grid;grid-template-columns:56px 1fr;grid-template-rows:auto auto;column-gap:16px;row-gap:2px}
+.sr-feature-tile{grid-row:1 / span 2;width:56px;height:56px;object-fit:contain;align-self:center}
+.sr-feature-title{align-self:end}.sr-feature-copy{align-self:start}
+.sr-feature-arrow{display:none}
+.sr-section-title{text-align:center}
+@media(max-width:1190px){.sr-features{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:767px){
+  .sr-hero{min-height:0;padding:32px 18px 34px;background:
+    linear-gradient(180deg,rgba(11,31,59,.9) 0%,rgba(11,31,59,.78) 100%),
+    url("/hero-zomi-hills-sm.webp") center / cover no-repeat,#0b1f3b}
+  .sr-features{grid-template-columns:1fr;gap:10px}
+  .sr-feature{padding:15px;grid-template-columns:48px 1fr}.sr-feature-tile{width:48px;height:48px}
+}
+.sr-feature-tile[src*="nav-church"]{background:#fff3d6;border-radius:14px;padding:9px}
+@media(max-width:767px){.sr-feature{padding:15px!important;min-height:0}}
