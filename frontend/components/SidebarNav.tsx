@@ -221,6 +221,8 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
 
   const menuExpanded = isDesktop ? !collapsed : mobileOpen;
 
+  if (pathname === "/") return <div className="public-landing"><header className="public-header"><Link href="/" aria-label="Siamsil home"><BrandLockup height={42} /></Link><nav aria-label="Public navigation"><Link href="/zomidictionary">Dictionary</Link><Link href="/zomitranslate">Translate</Link><Link href="/resources">Resources</Link><Link href="/about">About</Link></nav><div className="public-actions"><AppearanceSelect /><Link className="public-start" href="/workspace">Workspace</Link></div></header><main>{children}</main></div>;
+
   return (
     <>
       <header className={`shell-topbar${collapsed ? " nav-collapsed" : ""}`}>
