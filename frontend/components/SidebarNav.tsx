@@ -118,6 +118,31 @@ function NavLink({ tab, pathname, onNavigate }: { tab: NavTab; pathname: string;
   );
 }
 
+function AppearanceSelect() {
+  const [mode, setMode] = useState("light");
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const sync = () => {
+      let saved = "light";
+      try { saved = localStorage.getItem("siamsil-app-theme") || "light"; } catch {}
+      if (!["light", "dark", "system"].includes(saved)) saved = "light";
+      setMode(saved);
+      document.documentElement.dataset.appTheme = saved === "system" ? (media.matches ? "dark" : "light") : saved;
+    };
+    const frame = requestAnimationFrame(sync);
+    media.addEventListener("change", sync);
+    window.addEventListener("siamsil:appearance", sync);
+    return () => { cancelAnimationFrame(frame); media.removeEventListener("change", sync); window.removeEventListener("siamsil:appearance", sync); };
+  }, []);
+  return <select className="app-theme-select" aria-label="Application appearance" value={mode} onChange={(event) => {
+    const value = event.target.value;
+    setMode(value);
+    try { localStorage.setItem("siamsil-app-theme", value); } catch {}
+    document.documentElement.dataset.appTheme = value === "system" ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : value;
+    window.dispatchEvent(new Event("siamsil:appearance"));
+  }}><option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option></select>;
+}
+
 function Navigation({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   return (
     <nav className="side-panel-nav" aria-label="Primary navigation">
@@ -142,6 +167,7 @@ function Navigation({ pathname, onNavigate }: { pathname: string; onNavigate?: (
       </div>
       <div className="side-panel-group side-panel-group-end">
         <NavLink tab={PROFILE_TAB} pathname={pathname} onNavigate={onNavigate} />
+        <AppearanceSelect />
       </div>
     </nav>
   );
