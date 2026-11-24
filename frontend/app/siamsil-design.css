@@ -183,3 +183,9 @@ html body .sr-home .sr-more { color: var(--ds-gold-ink); }
 .public-brand .brand-wordmark { --wm-h: 38px; }
 @media (max-width: 767px) { .brand-wordmark, .public-brand .brand-wordmark { --wm-h: 32px; } }
 html[data-app-theme="dark"] .wm-light-only, html:not([data-app-theme="dark"]) .wm-dark-only { display: none; }
+
+/* ── Tap targets: standalone links and the search clear button are at least 32px tall ── */
+.public-header nav a, html body .sr-home .sr-panel-head a, html body .sr-home .sr-more { display: inline-flex; align-items: center; min-height: 32px; }
+.dict-search-clear { min-width: 32px; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; }
+html body .sr-home .sr-note { color: var(--ds-ink-2); }
+.dict-az-letter { min-height: 24px; min-width: 24px; display: inline-flex; align-items: center; justify-content: center; }
