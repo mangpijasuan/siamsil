@@ -270,3 +270,26 @@ body .desktop-sidebar .side-panel-icon, body .mobile-drawer .side-panel-icon { w
 @media (max-width: 1023px) {
   .ai-chat-shell { min-height: calc(100vh - 160px - 104px - env(safe-area-inset-bottom, 0px)); }
 }
+
+/* Design System v1 foundation: solid workspace, decorative landing only. */
+:root { --st-navy-0:#051b3b; --st-navy-1:#051b3b; --st-navy-2:#102746; --st-gold-0:#f4ce65; --st-gold-1:#e5b522; --st-gold-2:#946b10; --st-bg:#f8fafc; --st-card:#fff; --st-ink:#051b3b; --st-red:#e00000; }
+body .shell-topbar, body .desktop-sidebar, body .mobile-drawer { background:#051b3b !important; }
+body .desktop-sidebar .side-panel-nav, body .mobile-drawer .side-panel-nav { background:transparent !important; }
+body .desktop-sidebar .side-panel-label, body .mobile-drawer .side-panel-label { font-family:var(--font-inter),system-ui,sans-serif; }
+body .desktop-sidebar .side-panel-item.active, body .mobile-drawer .side-panel-item.active { background:#e5b522; box-shadow:none; }
+body .dict-header, body .tr-header { background:#051b3b !important; }
+body .bottom-nav { background:#051b3b !important; backdrop-filter:none; }
+.sr-home .sr-title, .sr-home .sr-section-title, .sr-home .sr-feature-title, .sr-home .sr-panel h2, .sr-home .sr-metric strong { font-family:var(--font-inter),system-ui,sans-serif; }
+.sr-home .sr-feature, .sr-home .sr-panel { background:#fff; border:1px solid #dce3ec; border-radius:12px; box-shadow:none; }
+.sr-home .sr-feature-tile { box-shadow:none; }
+.sr-home .sr-feature-copy { color:#475569; }
+.sr-home .sr-feature:hover { border-color:#946b10; box-shadow:none; transform:none; }
+.sr-home .sr-hero { background:radial-gradient(ellipse at 100% 120%, #244a76 0%, transparent 55%),linear-gradient(150deg,#051b3b,#050d19) !important; text-align:center; }
+.sr-home .sr-hero-inner { margin-inline:auto; max-width:780px; }
+.sr-home .sr-title, .sr-home .sr-summary, .sr-home .sr-search { margin-inline:auto; }
+.sr-home .sr-quick, .sr-home .sr-ctas { justify-content:center; }
+.sr-home .sr-hero::after { display:block; right:-20%; bottom:-65%; width:100%; height:85%; border:2px solid #e5b522; opacity:.5; }
+.sr-home .sr-search button, .sr-home .sr-cta:not(.sr-cta-quiet):not(.sr-cta-dark) { background:#e5b522; color:#051b3b!important; box-shadow:none; }
+.sr-home .sr-verse-box { padding:14px 0; }
+.sr-home .sr-verse-box::after { display:none; }
+@media(prefers-reduced-motion:reduce){.sr-home .sr-feature,.sr-home .sr-chip{transition:none}}
