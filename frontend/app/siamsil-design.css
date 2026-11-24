@@ -177,3 +177,9 @@ html body .sr-home .sr-more { color: var(--ds-gold-ink); }
 .citizenship-learning-card .gold-label, .citizenship-hero .gold-label { color: var(--ds-gold-soft); }
 .citizenship-learning-copy span { color: #fff; }
 .tr-submit:disabled { background: var(--ds-surface-2); color: var(--ds-ink-3) !important; opacity: 1; }
+
+/* ── Wordmark (owner's logo, unmodified; cropped by CSS only) ── */
+.brand-wordmark { --wm-h: 40px; position: relative; display: block; height: var(--wm-h); overflow: hidden; flex: none; }
+.public-brand .brand-wordmark { --wm-h: 38px; }
+@media (max-width: 767px) { .brand-wordmark, .public-brand .brand-wordmark { --wm-h: 32px; } }
+html[data-app-theme="dark"] .wm-light-only, html:not([data-app-theme="dark"]) .wm-dark-only { display: none; }
