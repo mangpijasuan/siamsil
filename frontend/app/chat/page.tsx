@@ -78,7 +78,7 @@ export default function ChatPage() {
               onClick={() => setInput(prompt)}
               style={{
                 border: "1px solid var(--border)", background: "var(--surface)", borderRadius: 20,
-                padding: "5px 12px", fontSize: 12, fontWeight: 600, color: "var(--navy)", cursor: "pointer",
+                padding: "5px 12px", fontSize: 12, fontWeight: 600, color: "var(--ds-ink)", cursor: "pointer",
               }}
             >
               {prompt}
@@ -96,7 +96,7 @@ export default function ChatPage() {
             <div key={msg.id} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start", padding: "0 16px" }}>
               <div style={{
                 maxWidth: "80%",
-                background: msg.role === "user" ? "var(--navy)" : "var(--white)",
+                background: msg.role === "user" ? "var(--navy)" : "var(--surface)",
                 color: msg.role === "user" ? "var(--white)" : "var(--text)",
                 border: msg.role === "user" ? "none" : "1px solid var(--border)",
                 borderRadius: 16,
@@ -118,7 +118,7 @@ export default function ChatPage() {
                     {msg.sources.map((source, index) => (
                       <li key={index} style={{ borderTop: "1px solid var(--border)", paddingTop: 8 }}>
                         {source.zomi && (
-                          <div lang="ctd" style={{ fontWeight: 700, color: "var(--navy)" }}>{source.zomi}</div>
+                          <div lang="ctd" style={{ fontWeight: 700, color: "var(--ds-ink)" }}>{source.zomi}</div>
                         )}
                         {source.english && (
                           <div lang="en" style={{ color: "var(--text-soft)", fontSize: 14 }}>{source.english}</div>

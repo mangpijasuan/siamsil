@@ -35,8 +35,8 @@ export default function SongsClient() {
   const active = songs.find(song => song.id === selected);
 
   return (
-    <main style={{ maxWidth: 960, margin: "0 auto", padding: "32px 20px 100px", color: "var(--navy)" }}>
-      <Link href="/library" style={{ color: "var(--navy)", fontSize: 14 }}>← Zomi Library</Link>
+    <main style={{ maxWidth: 960, margin: "0 auto", padding: "32px 20px 100px", color: "var(--ds-ink)" }}>
+      <Link href="/library" style={{ color: "var(--ds-ink)", fontSize: 14 }}>← Zomi Library</Link>
       <header style={{ margin: "28px 0", padding: 28, borderRadius: 20, background: "linear-gradient(125deg,#14233e,#243d60)", color: "white" }}>
         <p style={{ color: "#d5b66c", fontWeight: 700, letterSpacing: 2, fontSize: 12 }}>SIAMSIL LIBRARY · FREE</p>
         <h1 className="font-playfair" style={{ fontSize: "clamp(28px,5vw,42px)", margin: "10px 0" }}>Zomi Songs & Hymns</h1>
@@ -57,14 +57,14 @@ export default function SongsClient() {
       ) : (
         <section>
           <label htmlFor="song-search" style={{ display: "block", fontWeight: 600, marginBottom: 8 }}>Search songs</label>
-          <input id="song-search" type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Song title, number, or lyrics…" style={{ width: "100%", padding: 15, border: "1px solid #b5bdc8", borderRadius: 12, background: "var(--surface)", color: "var(--navy)" }} />
+          <input id="song-search" type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Song title, number, or lyrics…" style={{ width: "100%", padding: 15, border: "1px solid #b5bdc8", borderRadius: 12, background: "var(--surface)", color: "var(--ds-ink)" }} />
           {status === "loading" && <p role="status" style={{ marginTop: 24 }}>Loading song catalog…</p>}
           {status === "unavailable" && <p role="status" style={{ marginTop: 24 }}>The song catalog is not connected yet. Please try again later.</p>}
           {status === "ready" && <p style={{ margin: "18px 0" }}>{filtered.length} songs</p>}
           {status === "ready" && songs.length === 0 && <p>Song lyrics are awaiting import from the authorized songbook.</p>}
           <div style={{ display: "grid", gap: 10 }}>
             {filtered.map(song => (
-              <button key={song.id} type="button" onClick={() => setSelected(song.id)} style={{ textAlign: "left", background: "var(--surface)", color: "var(--navy)", border: "1px solid #d7dce3", borderRadius: 12, padding: 18, cursor: "pointer" }}>
+              <button key={song.id} type="button" onClick={() => setSelected(song.id)} style={{ textAlign: "left", background: "var(--surface)", color: "var(--ds-ink)", border: "1px solid #d7dce3", borderRadius: 12, padding: 18, cursor: "pointer" }}>
                 <strong>{song.number ? `${song.number}. ` : ""}{song.title}</strong>
                 {song.author && <div style={{ fontSize: 13, opacity: .65, marginTop: 5 }}>{song.author}</div>}
               </button>

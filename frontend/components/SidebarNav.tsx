@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import AppearanceSelect from "@/components/AppearanceSelect";
 import { usePathname } from "next/navigation";
 import {
   IconAI,
@@ -142,6 +143,7 @@ function Navigation({ pathname, onNavigate }: { pathname: string; onNavigate?: (
       </div>
       <div className="side-panel-group side-panel-group-end">
         <NavLink tab={PROFILE_TAB} pathname={pathname} onNavigate={onNavigate} />
+        <AppearanceSelect />
       </div>
     </nav>
   );
@@ -194,6 +196,30 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
   }
 
   const menuExpanded = isDesktop ? !collapsed : mobileOpen;
+
+  // The public landing page has its own simple header: no application rail, top bar or bottom navigation.
+  if (pathname === "/") {
+    return (
+      <div className="public-landing">
+        <header className="public-header">
+          <Link href="/" aria-label="Siamsil home" className="public-brand">
+            <BrandLockup height={42} />
+          </Link>
+          <nav aria-label="Public navigation">
+            <Link href="/zomidictionary">Dictionary</Link>
+            <Link href="/zomitranslate">Translate</Link>
+            <Link href="/resources">Resources</Link>
+            <Link href="/about">About</Link>
+          </nav>
+          <div className="public-actions">
+            <AppearanceSelect />
+            <Link className="public-start" href="/workspace">Workspace</Link>
+          </div>
+        </header>
+        <main>{children}</main>
+      </div>
+    );
+  }
 
   return (
     <>

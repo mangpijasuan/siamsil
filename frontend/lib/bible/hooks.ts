@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useLayoutEffect, useSyncExternalStore } from "react";
+import { APPEARANCE_EVENT } from "../appearance";
 import { DEFAULT_PREFERENCES, normalizePreferences, PREFERENCES_KEY, resolveTheme } from "./preferences";
 import type { ReadingPreferences } from "./preferences";
 import { emptySavedData, parseSavedData, SAVED_DATA_KEY } from "./savedData";
@@ -13,7 +14,9 @@ const DARK_QUERY = "(prefers-color-scheme: dark)";
 /** Mirror preferences onto <html> (the same attributes the boot script sets before paint). */
 function applyPreferences(prefs: ReadingPreferences) {
   const root = document.documentElement;
-  const theme = resolveTheme(prefs.theme, window.matchMedia?.(DARK_QUERY).matches ?? false);
+  // "System" follows the application appearance when one is set, otherwise the device.
+  const app = root.getAttribute("data-app-theme");
+  const theme = resolveTheme(prefs.theme, app ? app === "dark" : (window.matchMedia?.(DARK_QUERY).matches ?? false));
   root.setAttribute("data-bible-theme", theme);
   root.setAttribute("data-bible-face", prefs.typeface);
   root.style.setProperty("--sb-font-size", `${prefs.fontSize}px`);
@@ -47,11 +50,17 @@ function subscribePreferences(listener: () => void) {
   const onStorage = (event: StorageEvent) => {
     if (event.key === PREFERENCES_KEY) listener();
   };
+  const onAppearance = () => {
+    applyPreferences(readPreferences()); // a "System" reading theme follows the new appearance
+    listener();
+  };
   media?.addEventListener("change", listener);
+  window.addEventListener(APPEARANCE_EVENT, onAppearance);
   window.addEventListener(PREFERENCES_EVENT, listener);
   window.addEventListener("storage", onStorage);
   return () => {
     media?.removeEventListener("change", listener);
+    window.removeEventListener(APPEARANCE_EVENT, onAppearance);
     window.removeEventListener(PREFERENCES_EVENT, listener);
     window.removeEventListener("storage", onStorage);
   };

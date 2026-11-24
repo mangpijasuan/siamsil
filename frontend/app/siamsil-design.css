@@ -1,0 +1,179 @@
+/* Siamsil Design System v1.0 — the final layer. Loaded last, so it wins over globals.css, siamsil-theme.css and siamsil-home.css.
+   Palette: French navy, midnight navy, white, gold, and the logo's red (used only as a small accent).
+   Rules: flat surfaces, no purple, no decorative artwork outside the public landing page, shadows only for floating layers.
+   Appearance: html[data-app-theme="light" | "dark"] is the resolved Light / Dark / System choice (see lib/appearance.ts). */
+
+:root {
+  --ds-midnight: #051b3b;
+  --ds-french: #123a6b;
+  --ds-french-2: #1b4d8f;
+  --ds-gold: #e5b522;
+  --ds-gold-soft: #f4ce65;
+  --ds-gold-ink: #7a5600;   /* gold-family text on white (7:1) */
+  --ds-red: #e00000;
+  --ds-bg: #f6f8fb;
+  --ds-surface: #ffffff;
+  --ds-surface-2: #eef2f8;
+  --ds-ink: #0b1f3b;
+  --ds-ink-2: #3b4d68;
+  --ds-ink-3: #55657d;
+  --ds-line: #d5dde9;
+  --ds-link: #1b4d8f;
+  --ds-focus: #1b4d8f;
+  color-scheme: light;
+}
+html[data-app-theme="dark"] {
+  --ds-bg: #07101f;
+  --ds-surface: #0f1d33;
+  --ds-surface-2: #14263f;
+  --ds-ink: #eef3fb;
+  --ds-ink-2: #c3cfe0;
+  --ds-ink-3: #a3b2c7;
+  --ds-line: #2a3d5a;
+  --ds-link: #8fb8ec;
+  --ds-focus: #f4ce65;
+  --ds-gold-ink: #f4ce65;
+  color-scheme: dark;
+}
+
+/* Map every legacy token onto the system tokens, so rules written against them follow the appearance. */
+html:root {
+  --bg: var(--ds-bg); --cream: var(--ds-bg); --surface: var(--ds-surface); --white: #ffffff;
+  --text: var(--ds-ink); --text-soft: var(--ds-ink-2); --gray: var(--ds-ink-3);
+  --gray2: var(--ds-line); --gray3: var(--ds-surface-2); --border: var(--ds-line);
+  --glass: var(--ds-surface);
+  --st-bg: var(--ds-bg); --st-card: var(--ds-surface); --st-ink: var(--ds-ink);
+  --shadow-sm: none; --shadow-md: none; --shadow-lg: 0 10px 30px rgba(5, 27, 59, .18);
+}
+html[data-app-theme="dark"] { --shadow-lg: 0 10px 30px rgba(0, 0, 0, .5); }
+html, body { background: var(--ds-bg) !important; color: var(--ds-ink); }
+:focus-visible { outline: 3px solid var(--ds-focus); outline-offset: 2px; }
+
+/* ── Shell: flat midnight navy, no artwork ───────────────── */
+body .shell-topbar, body .desktop-sidebar, body .mobile-drawer, body .bottom-nav {
+  background: var(--ds-midnight) !important; background-image: none !important;
+  box-shadow: none !important; backdrop-filter: none !important;
+}
+body .shell-topbar { border-bottom: 1px solid rgba(255, 255, 255, .08); }
+body .desktop-sidebar, body .mobile-drawer { border-right: 1px solid rgba(255, 255, 255, .08) !important; }
+body .bottom-nav { border-top: 1px solid rgba(255, 255, 255, .1); }
+body .shell-topbar-search { box-shadow: none; background: #fff; }
+body .desktop-sidebar .side-panel-nav, body .mobile-drawer .side-panel-nav { background: transparent !important; }
+body .desktop-sidebar .side-panel-item.active, body .mobile-drawer .side-panel-item.active { background: var(--ds-gold); color: var(--ds-midnight); box-shadow: none; }
+.app-theme-select { width: 100%; min-height: 44px; border: 1px solid #5d7190; border-radius: 10px; color: var(--ds-gold-soft); background: var(--ds-midnight); font: inherit; font-size: 13px; padding: 0 8px; }
+.app-theme-select:focus-visible { outline: 3px solid var(--ds-gold-soft); outline-offset: 2px; }
+.desktop-sidebar.collapsed .app-theme-select { font-size: 10px; padding: 0 2px; }
+
+/* ── Tool headers (Dictionary, Translate, Home search band): flat navy ── */
+body .dict-header, body .tr-header, body .hx-hero {
+  background: var(--ds-midnight) !important; background-image: none !important; border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+.dict-header .dict-search-form { box-shadow: none; }
+
+/* ── Public landing page: the only place with artwork ── */
+.public-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 14px var(--st-gutter); background: var(--ds-midnight); color: #fff; flex-wrap: wrap; }
+.public-header nav, .public-actions { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.public-header a { color: #fff; text-decoration: none; }
+.public-header a:focus-visible { outline: 3px solid var(--ds-gold-soft); outline-offset: 4px; }
+.public-header .public-start { background: var(--ds-gold); color: var(--ds-midnight); padding: 10px 16px; border-radius: 9px; font-weight: 600; }
+.public-actions .app-theme-select { width: auto; }
+.public-landing .sr-hero { padding: 56px var(--st-gutter); }
+.public-landing .sr-hero {
+  background:
+    linear-gradient(90deg, rgba(5, 27, 59, .96) 0%, rgba(5, 27, 59, .84) 40%, rgba(5, 27, 59, .25) 78%, rgba(5, 27, 59, .08) 100%),
+    url("/hero-zomi-hills.webp") right center / cover no-repeat, var(--ds-midnight) !important;
+  text-align: left;
+}
+.public-landing .sr-hero-inner { margin-inline: 0; max-width: 680px; }
+.public-landing .sr-title, .public-landing .sr-summary, .public-landing .sr-search { margin-inline: 0; }
+.public-landing .sr-quick, .public-landing .sr-ctas { justify-content: flex-start; }
+.public-landing .sr-hero::after { display: none; }
+@media (max-width: 767px) {
+  .public-header { gap: 12px; } .public-header nav { order: 3; width: 100%; gap: 16px; font-size: 13px; }
+  .public-landing .sr-hero { padding: 32px 16px;
+    background: linear-gradient(180deg, rgba(5, 27, 59, .72), rgba(5, 27, 59, .9)), url("/hero-zomi-hills-sm.webp") 62% center / cover no-repeat, var(--ds-midnight) !important; }
+}
+@media (min-width: 1024px) { .public-landing .sr-content { max-width: 1440px; margin-inline: auto; } }
+
+/* ── Home (in-app) ── */
+html body .sr-home { background: var(--ds-bg); color: var(--ds-ink); }
+html body .sr-home .sr-hero:not(.public-landing .sr-hero) { background: var(--ds-midnight) !important; background-image: none !important; }
+html body .sr-home .sr-title, .sr-home .sr-section-title, .sr-home .sr-feature-title, .sr-home .sr-panel h2, .sr-home .sr-metric strong { font-family: var(--font-inter), system-ui, sans-serif; }
+html body .sr-home .sr-feature, .sr-home .sr-panel, .sr-home .sr-verse-box, .sr-home .sr-resources-grid .sr-resource {
+  background: var(--ds-surface); border: 1px solid var(--ds-line); border-radius: 12px; box-shadow: none; color: var(--ds-ink);
+}
+html body .sr-home .sr-feature:hover { border-color: var(--ds-gold); box-shadow: none; transform: none; }
+html body .sr-home .sr-feature-tile { box-shadow: none; }
+html body .sr-home .sr-feature-title, .sr-home .sr-panel h2, .sr-home .sr-section-title { color: var(--ds-ink); }
+html body .sr-home .sr-feature-copy, .sr-home .sr-panel p { color: var(--ds-ink-2); }
+html body .sr-home .sr-metrics { background: var(--ds-midnight); box-shadow: none; }
+html body .sr-home .sr-eyebrow.sr-eyebrow-dark, .sr-home .sr-panel-head a { color: var(--ds-gold-ink); }
+html body .sr-home .sr-verse-box { padding: 14px 16px; }
+html body .sr-home .sr-verse-box::after { display: none; }
+html body .sr-home .sr-resources-grid .sr-resource-icon { background: var(--ds-surface-2); color: var(--ds-link); }
+html body .sr-home .sr-search button, .sr-home .sr-cta:not(.sr-cta-quiet):not(.sr-cta-dark) { background: var(--ds-gold); color: var(--ds-midnight) !important; box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .sr-home .sr-feature, .sr-home .sr-chip { transition: none; } }
+
+/* ── Reading pages (About, Help, Resources) ── */
+.st-doc { color: var(--ds-ink); }
+.st-doc-head { border-bottom-color: var(--ds-line); }
+.st-doc-eyebrow { color: var(--ds-gold-ink); }
+.st-doc-head h1, .st-doc-body h2 { color: var(--ds-ink); }
+.st-doc-head p:last-child, .st-doc-body p, .st-doc-body li { color: var(--ds-ink-2); }
+.st-doc-list li { background: var(--ds-surface); border-color: var(--ds-line); }
+
+/* ── Bible reader: quiet solid surround ── */
+.sb-root { background-image: none !important; }
+
+/* ── Elements that hard-code light colours ── */
+html body .sr-home .sr-principles div, .sr-home .sr-verse-box { background: var(--ds-surface-2); color: var(--ds-ink-2); }
+html body .sr-home .sr-principles p, .sr-home .sr-free-list li, .sr-home .sr-resource strong, .sr-home .sr-resource small, .sr-home .sr-verse-box small,
+html body .sr-home .sr-resources-grid .sr-resource-photo small, .sr-home .sr-resources-grid .sr-resource-photo strong { color: var(--ds-ink-2) !important; }
+html body .sr-home .sr-resource { color: var(--ds-ink) !important; border-color: var(--ds-line); }
+html body .sr-home .sr-section-title { color: var(--ds-ink); }
+.st-doc-body a, .st-doc-list a { color: var(--ds-link); }
+.st-doc-list span { color: var(--ds-ink-2); }
+.badge.badge-cream { background: var(--ds-surface-2); color: var(--ds-ink-2); }
+.word-item, .dict-detail, .cat-card, .library-card, .library-card-disabled { background: var(--ds-surface); color: var(--ds-ink); border-color: var(--ds-line); }
+.word-section-label, .tr-empty-text, .library-result-count { color: var(--ds-ink-3); }
+.tr-empty-title, .section-title, .library-card-copy, .library-card-copy p, .cat-card div { color: var(--ds-ink); }
+.gold-label { color: var(--ds-gold-ink); }
+.library-card-disabled .soon { color: var(--ds-gold-ink); }
+.library-card-disabled .library-card-action { color: var(--ds-link); }
+.library-card-disabled .library-card-meta span, .library-card-disabled p { color: var(--ds-ink-3); }
+.library-cover-category { color: #fff !important; opacity: 1; }
+.tr-submit { background: var(--ds-gold); color: var(--ds-midnight); }
+
+.gold-label, .ws-eyebrow, .learn-gold, header.page-header span, header.page-header div { }
+html[data-app-theme="dark"] .tr-count, html[data-app-theme="dark"] .dict-search-form ::placeholder { color: #55657d; }
+.dict-search-form, .tr-input-card { background: #fff; color: #0b1f3b; }
+.dict-az-letter { color: var(--ds-ink-2); }
+.library-card-meta .available { color: var(--ds-link); }
+.library-summary, .library-summary-label { color: var(--ds-ink-3); }
+.library-summary { background: var(--ds-surface); }
+html[data-app-theme="dark"] .library-card, html[data-app-theme="dark"] .cat-card, html[data-app-theme="dark"] .dict-word-btn { --gold: #f4ce65; }
+html[data-app-theme="dark"] .library-card-action, html[data-app-theme="dark"] .dict-detail-zomi { color: var(--ds-link); }
+.library-cover.gold, .library-cover.sage, .library-cover.navy, .library-cover.blue { color: #fff; }
+.library-cover.gold { background: #8a6508; } .library-cover.sage { background: #3f6b58; }
+.page-header, .ws-header { background: var(--ds-midnight); }
+.page-header :is(div, span), .ws-eyebrow { color: #fff; }
+.page-header .gold-label { color: var(--ds-gold-ink); }
+.tr-submit { color: var(--ds-midnight) !important; }
+
+html body .sr-home .sr-feature, .sr-home .sr-feature:nth-child(n) { background: var(--ds-surface) !important; }
+html body .sr-home .sr-principles strong { color: var(--ds-ink); }
+.word-item.featured, .dict-word-btn.featured { background: var(--ds-surface-2); }
+.library-cover.plum { background: #2c4a72; } .library-cover.gold { background: #8a6508; }
+.library-card-disabled { opacity: 1; }
+.library-card-disabled .library-cover { filter: grayscale(.4); }
+.ws-header, .page-header { background: var(--ds-french) !important; background-image: none !important; }
+.page-header .gold-label, .page-header :is(div, span)[style*="gold"] { color: var(--ds-gold-soft); }
+.ws-header .ws-eyebrow { color: var(--ds-gold-soft); }
+html body .sr-home .sr-content { background: transparent; }
+html body .sr-home .sr-more { color: var(--ds-gold-ink); }
+.page-header .gold-label, .citizenship-learning-card .gold-label, .ws-header .gold-label, [style*="var(--ds-french)"] .gold-label { color: var(--ds-gold-soft); }
+/* Flat navy blocks instead of gradients */
+.citizenship-learning-card, .citizenship-hero, .hm-feature { background: var(--ds-french) !important; background-image: none !important; box-shadow: none !important; }
+.citizenship-learning-card .gold-label, .citizenship-hero .gold-label { color: var(--ds-gold-soft); }
+.citizenship-learning-copy span { color: #fff; }
+.tr-submit:disabled { background: var(--ds-surface-2); color: var(--ds-ink-3) !important; opacity: 1; }

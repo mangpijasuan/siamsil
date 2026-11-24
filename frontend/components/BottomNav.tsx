@@ -26,6 +26,8 @@ export default function BottomNav() {
   // so an unknown address (a 404) highlights nothing.
   const onMorePage = MORE_PAGES.some((href) => pathname.startsWith(href));
 
+  if (pathname === "/") return null;
+
   return (
     <nav className="bottom-nav" aria-label="Main sections">
       {TABS.map(({ href, Icon, label }) => {
