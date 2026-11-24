@@ -293,3 +293,12 @@ body .bottom-nav { background:#051b3b !important; backdrop-filter:none; }
 .sr-home .sr-verse-box { padding:14px 0; }
 .sr-home .sr-verse-box::after { display:none; }
 @media(prefers-reduced-motion:reduce){.sr-home .sr-feature,.sr-home .sr-chip{transition:none}}
+
+html[data-app-theme="dark"] { --bg:#0b1424; --cream:#0b1424; --surface:#142238; --white:#142238; --text:#eef3fb; --text-soft:#bdc9db; --gray:#aab8cb; --gray2:#304057; --gray3:#1b2a40; --border:#304057; --st-bg:#0b1424; --st-card:#142238; --st-ink:#eef3fb; color-scheme:dark; }
+html[data-app-theme="dark"] .sr-home :is(.sr-feature,.sr-panel,.sr-verse-box,.sr-resource-photo) { background:#142238; border-color:#304057; color:#eef3fb; }
+html[data-app-theme="dark"] .sr-home :is(.sr-feature-title,.sr-feature-copy,.sr-panel h2,.sr-section-title,.sr-verse-box p,.sr-resource-photo strong,.sr-resource-photo small) { color:#dce6f5; }
+html[data-app-theme="dark"] .st-doc :is(h1,h2,p,li,span) { color:#dce6f5; }
+html[data-app-theme="dark"] .st-doc-list li { background:#142238; border-color:#304057; }
+.app-theme-select { width:100%; min-height:44px; border:1px solid #53637a; border-radius:10px; color:#f4ce65; background:#051b3b; font:inherit; font-size:13px; }
+.app-theme-select:focus-visible { outline:3px solid #f4ce65; outline-offset:2px; }
+.desktop-sidebar.collapsed .app-theme-select { font-size:10px; }
