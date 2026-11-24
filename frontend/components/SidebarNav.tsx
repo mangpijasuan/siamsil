@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import Image from "next/image";
 import Link from "next/link";
+import BrandWordmark from "@/components/BrandWordmark";
 import AppearanceSelect from "@/components/AppearanceSelect";
 import { usePathname } from "next/navigation";
 import {
@@ -80,20 +80,6 @@ function MenuIcon() {
 // The Siamsil Technology Hub lockup: the quill-and-books mark with the SIAMSIL wordmark and tagline, white and gold on a
 // transparent background, for the navy bars. logo-lockup-light.png is the version for light backgrounds; logo-og.png is the
 // lockup on navy for link previews. All are built by scripts/build-brand.py (design/brand/README.md).
-function BrandLockup({ height }: { height: number }) {
-  return (
-    <Image
-      src="/logo-lockup.png"
-      alt="Siamsil Technology Hub"
-      width={Math.round(height * (1162 / 340))}
-      height={height}
-      className="brand-lockup"
-      priority
-      unoptimized
-    />
-  );
-}
-
 function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
@@ -203,7 +189,7 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
       <div className="public-landing">
         <header className="public-header">
           <Link href="/" aria-label="Siamsil home" className="public-brand">
-            <BrandLockup height={42} />
+            <BrandWordmark />
           </Link>
           <nav aria-label="Public navigation">
             <Link href="/zomidictionary">Dictionary</Link>
@@ -237,7 +223,7 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
           </button>
 
           <Link href="/" className="shell-brand shell-brand-mobile" aria-label="Siamsil home">
-            <BrandLockup height={46} />
+            <BrandWordmark />
           </Link>
 
           <form action="/zomidictionary" method="GET" className="shell-topbar-search" role="search">
