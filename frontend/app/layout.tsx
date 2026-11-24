@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import BottomNav from "@/components/BottomNav";
 import SidebarNav from "@/components/SidebarNav";
+import { APPEARANCE_BOOT_SCRIPT } from "@/lib/appearance";
 import { PREFERENCES_BOOT_SCRIPT } from "@/lib/bible/preferences";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 import "./siamsil-theme.css";
+import "./siamsil-design.css";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -17,6 +19,11 @@ const playfair = Playfair_Display({
   variable: "--font-playfair",
   weight: ["400", "600", "700"],
 });
+
+export const viewport: Viewport = {
+  colorScheme: "light dark",
+  themeColor: "#0b1f3b",
+};
 
 export const metadata: Metadata = {
   title: {
@@ -53,6 +60,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} h-full`} suppressHydrationWarning>
       <head>
+        {/* Application appearance (Light, Dark or System) applied while the page is parsed, before first paint, and before the
+            Bible reading settings below, whose "System" theme follows it. Static script with no user input. */}
+        <script id="app-appearance" dangerouslySetInnerHTML={{ __html: APPEARANCE_BOOT_SCRIPT }} />
         {/* Bible reading settings (theme, text size) applied while the page is parsed, before first paint.
             Static script with no user input; the root layout is not re-rendered on client navigation. */}
         <script id="bible-preferences" dangerouslySetInnerHTML={{ __html: PREFERENCES_BOOT_SCRIPT }} />

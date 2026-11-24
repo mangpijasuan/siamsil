@@ -63,7 +63,7 @@ export function stepLineHeight(current: number, direction: 1 | -1) {
   return clamp(round1(current + direction * LINE_HEIGHT.step), LINE_HEIGHT.min, LINE_HEIGHT.max);
 }
 
-/** The theme actually shown: "system" follows the device's dark-mode setting. */
+/** The theme actually shown: "system" follows the application appearance (Light, Dark or System), as set in <html data-app-theme>. */
 export function resolveTheme(theme: ReadingPreferences["theme"], prefersDark: boolean): ReadingTheme {
   if (theme === "system") return prefersDark ? "dark" : "light";
   return theme;
@@ -74,7 +74,7 @@ export function resolveTheme(theme: ReadingPreferences["theme"], prefersDark: bo
  * It only reads localStorage and sets data attributes and CSS variables on <html>.
  */
 export const PREFERENCES_BOOT_SCRIPT = `(function(){try{var d=${JSON.stringify(DEFAULT_PREFERENCES)};var s={};try{s=JSON.parse(localStorage.getItem(${JSON.stringify(PREFERENCES_KEY)})||"{}")||{}}catch(e){}
-var t=["light","sepia","dark"].indexOf(s.theme)>=0?s.theme:(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+var a=document.documentElement.getAttribute("data-app-theme");var t=["light","sepia","dark"].indexOf(s.theme)>=0?s.theme:(a?a:(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
 var f=typeof s.fontSize==="number"?Math.min(24,Math.max(14,Math.round(s.fontSize))):d.fontSize;
 var l=typeof s.lineHeight==="number"?Math.min(2.1,Math.max(1.4,s.lineHeight)):d.lineHeight;var y=s.typeface==="sans"?"sans":d.typeface;
 var h=document.documentElement;h.setAttribute("data-bible-theme",t);h.setAttribute("data-bible-face",y);

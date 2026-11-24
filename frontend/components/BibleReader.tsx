@@ -53,7 +53,7 @@ export default function BibleReader({ books, activeTestament, bookId: initialBoo
       {verses.length > 0 && (
         <div className="bible-current" style={{ marginTop: 14 }}>
           <div className="gold-label" style={{ marginBottom: 6 }}>Khat Zang in Na Dawng</div>
-          <div className="font-playfair" style={{ fontSize: 18, fontWeight: 700, color: "var(--navy)" }}>
+          <div className="font-playfair" style={{ fontSize: 18, fontWeight: 700, color: "var(--ds-ink)" }}>
             {selectedBook?.book_english}
           </div>
           <div style={{ fontSize: 12, color: "var(--gray)", marginBottom: 10 }}>Chapter {selectedChapter} · {verses.length} verses</div>
@@ -69,7 +69,7 @@ export default function BibleReader({ books, activeTestament, bookId: initialBoo
                   style={{
                     flex: 1, padding: 7, borderRadius: 8,
                     fontSize: 12, fontWeight: 600,
-                    background: activeLang === i ? "var(--navy)" : "var(--white)",
+                    background: activeLang === i ? "var(--navy)" : "var(--surface)",
                     color: activeLang === i ? "var(--white)" : "var(--navy)",
                     border: "1px solid var(--gray2)",
                     cursor: "pointer",
@@ -88,13 +88,13 @@ export default function BibleReader({ books, activeTestament, bookId: initialBoo
                 <span style={{ fontSize: 11, fontWeight: 700, color: "var(--gold)", minWidth: 18, marginTop: 3 }}>{v.verse}</span>
                 <div>
                   {(activeLang === 0 || activeLang === 3) && (
-                    <p style={{ fontSize: 14, color: "var(--navy)", lineHeight: 1.6, margin: 0 }}>{v.zomi_iso}</p>
+                    <p style={{ fontSize: 14, color: "var(--ds-ink)", lineHeight: 1.6, margin: 0 }}>{v.zomi_iso}</p>
                   )}
                   {(activeLang === 2 || activeLang === 3) && v.english && (
                     <p style={{ fontSize: 13, color: "var(--gray)", lineHeight: 1.5, margin: activeLang === 3 ? "2px 0 0" : 0 }}>{v.english}</p>
                   )}
                   {activeLang === 1 && (
-                    <p style={{ fontSize: 14, color: "var(--navy)", lineHeight: 1.6, margin: 0 }}>{v.zomi_original || v.zomi_iso}</p>
+                    <p style={{ fontSize: 14, color: "var(--ds-ink)", lineHeight: 1.6, margin: 0 }}>{v.zomi_original || v.zomi_iso}</p>
                   )}
                 </div>
               </div>
@@ -105,7 +105,7 @@ export default function BibleReader({ books, activeTestament, bookId: initialBoo
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             <button
               onClick={() => setSelectedChapter(c => Math.max(1, c - 1))}
-              style={{ flex: 1, padding: 8, borderRadius: 10, fontSize: 12, fontWeight: 600, background: "var(--cream)", color: "var(--navy)", border: "none", cursor: "pointer" }}
+              style={{ flex: 1, padding: 8, borderRadius: 10, fontSize: 12, fontWeight: 600, background: "var(--cream)", color: "var(--ds-ink)", border: "none", cursor: "pointer" }}
             >← Prev</button>
             <button
               onClick={() => setSelectedChapter(c => c + 1)}
@@ -127,7 +127,7 @@ export default function BibleReader({ books, activeTestament, bookId: initialBoo
             key={`${b.book_id}-${b.book_english}`}
             onClick={() => { setSelectedBookId(b.book_id); setSelectedChapter(1); }}
             className={`book-chip${selectedBookId === b.book_id ? " active" : ""}`}
-            style={{ textAlign: "left", background: selectedBookId === b.book_id ? "var(--navy)" : "var(--white)" }}
+            style={{ textAlign: "left", background: selectedBookId === b.book_id ? "var(--navy)" : "var(--surface)" }}
           >
             <div style={{ fontSize: 12, fontWeight: 700, color: selectedBookId === b.book_id ? "var(--white)" : "var(--navy)", marginBottom: 2 }}>
               {b.book_english}

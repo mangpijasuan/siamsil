@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import AppearanceSelect from "@/components/AppearanceSelect";
 import { usePathname } from "next/navigation";
 import {
   IconAI,
@@ -118,31 +119,6 @@ function NavLink({ tab, pathname, onNavigate }: { tab: NavTab; pathname: string;
   );
 }
 
-function AppearanceSelect() {
-  const [mode, setMode] = useState("light");
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const sync = () => {
-      let saved = "light";
-      try { saved = localStorage.getItem("siamsil-app-theme") || "light"; } catch {}
-      if (!["light", "dark", "system"].includes(saved)) saved = "light";
-      setMode(saved);
-      document.documentElement.dataset.appTheme = saved === "system" ? (media.matches ? "dark" : "light") : saved;
-    };
-    const frame = requestAnimationFrame(sync);
-    media.addEventListener("change", sync);
-    window.addEventListener("siamsil:appearance", sync);
-    return () => { cancelAnimationFrame(frame); media.removeEventListener("change", sync); window.removeEventListener("siamsil:appearance", sync); };
-  }, []);
-  return <select className="app-theme-select" aria-label="Application appearance" value={mode} onChange={(event) => {
-    const value = event.target.value;
-    setMode(value);
-    try { localStorage.setItem("siamsil-app-theme", value); } catch {}
-    document.documentElement.dataset.appTheme = value === "system" ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : value;
-    window.dispatchEvent(new Event("siamsil:appearance"));
-  }}><option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option></select>;
-}
-
 function Navigation({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   return (
     <nav className="side-panel-nav" aria-label="Primary navigation">
@@ -221,7 +197,29 @@ export default function SidebarNav({ children }: { children: ReactNode }) {
 
   const menuExpanded = isDesktop ? !collapsed : mobileOpen;
 
-  if (pathname === "/") return <div className="public-landing"><header className="public-header"><Link href="/" aria-label="Siamsil home"><BrandLockup height={42} /></Link><nav aria-label="Public navigation"><Link href="/zomidictionary">Dictionary</Link><Link href="/zomitranslate">Translate</Link><Link href="/resources">Resources</Link><Link href="/about">About</Link></nav><div className="public-actions"><AppearanceSelect /><Link className="public-start" href="/workspace">Workspace</Link></div></header><main>{children}</main></div>;
+  // The public landing page has its own simple header: no application rail, top bar or bottom navigation.
+  if (pathname === "/") {
+    return (
+      <div className="public-landing">
+        <header className="public-header">
+          <Link href="/" aria-label="Siamsil home" className="public-brand">
+            <BrandLockup height={42} />
+          </Link>
+          <nav aria-label="Public navigation">
+            <Link href="/zomidictionary">Dictionary</Link>
+            <Link href="/zomitranslate">Translate</Link>
+            <Link href="/resources">Resources</Link>
+            <Link href="/about">About</Link>
+          </nav>
+          <div className="public-actions">
+            <AppearanceSelect />
+            <Link className="public-start" href="/workspace">Workspace</Link>
+          </div>
+        </header>
+        <main>{children}</main>
+      </div>
+    );
+  }
 
   return (
     <>

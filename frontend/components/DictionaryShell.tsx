@@ -192,7 +192,7 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                 </svg>
               </div>
-              <p className="font-playfair" style={{ fontSize: 16, fontWeight: 700, color: "var(--navy)", marginBottom: 4 }}>Search the Zomi Dictionary</p>
+              <p className="font-playfair" style={{ fontSize: 16, fontWeight: 700, color: "var(--ds-ink)", marginBottom: 4 }}>Search the Zomi Dictionary</p>
               <p style={{ fontSize: 13, color: "var(--gray)" }}>Type a word above or tap a letter</p>
               {recent.length > 0 && (
                 <div className="dict-suggest-group">
@@ -217,7 +217,7 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
 
           {showNoResults && (
             <div className="dict-empty">
-              <p className="font-playfair" style={{ fontSize: 16, fontWeight: 700, color: "var(--navy)" }}>No results for &ldquo;{query || activeLetter}&rdquo;</p>
+              <p className="font-playfair" style={{ fontSize: 16, fontWeight: 700, color: "var(--ds-ink)" }}>No results for &ldquo;{query || activeLetter}&rdquo;</p>
               <p style={{ fontSize: 13, color: "var(--gray)" }}>
                 {direction === "en-ctd" ? "Try searching from Zomi instead, or check the spelling." : "Try searching from English instead, or check the spelling."}
               </p>
@@ -246,7 +246,7 @@ export default function DictionaryShell({ entries, query, activeLetter, directio
                   onClick={() => selectEntry(entry)}
                 >
                   <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-                    <div className="font-playfair" style={{ fontSize: 17, fontWeight: 700, color: "var(--navy)", lineHeight: 1.2 }}>{entry.english}</div>
+                    <div className="font-playfair" style={{ fontSize: 17, fontWeight: 700, color: "var(--ds-ink)", lineHeight: 1.2 }}>{entry.english}</div>
                     {entry.zomi && <div style={{ fontSize: 14.5, color: "var(--gold)", fontStyle: "italic", marginTop: 2 }}>{entry.zomi}</div>}
                     {entry.definition && entry.definition !== entry.zomi && (
                       <div style={{ fontSize: 13.5, color: "var(--gray)", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
