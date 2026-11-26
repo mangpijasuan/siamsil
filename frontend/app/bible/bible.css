@@ -612,3 +612,26 @@ html[data-bible-focus="true"] .sb-actions { bottom: calc(16px + env(safe-area-in
   .sb-toolbar-group:last-child { flex: 0 0 auto; }
   .sb-pill-book { max-width: min(34vw, 220px); }
 }
+
+/* Immersive reading v2: preserve the existing reader controls and verse actions. */
+.sb-root { background-image: none; --sb-page-bg: #fff; --sb-surface: #fff; }
+html[data-bible-theme="dark"] .sb-root {
+  --sb-page-bg: #121212; --sb-surface: #121212; --sb-text: #f1f1f1;
+  --sb-text-2: #d0d0d0; --sb-muted: #b4b4b4; --sb-chip: #292929;
+}
+html[data-bible-theme="sepia"] .sb-root { --sb-page-bg: #f8f0de; }
+.sb-root .sb-page { background: var(--sb-page-bg); border: 0; border-radius: 0; box-shadow: none; max-width: 780px; }
+.sb-root .sb-toolbar { background: var(--sb-page-bg); border-bottom: 1px solid var(--sb-border); }
+.sb-root .sb-chapter-title { font-family: var(--sb-body-font); }
+.sb-root .sb-verse { grid-template-columns: 1.8em minmax(0,1fr) auto; padding-block: 12px; }
+.sb-root .sb-vnum { font-weight: 500; }
+.sb-root .sb-primary, .sb-root .sb-secondary { overflow-wrap: break-word; }
+@media (max-width: 767px) {
+  .sb-root .sb-main { padding: 0; }
+  .sb-root .sb-page { padding: 24px 22px 36px; }
+  .sb-root .sb-toolbar .sb-icon-btn { min-width: 44px; width: 44px; height: 44px; }
+  .sb-root .sb-pill { min-height: 44px; }
+  .sb-root .sb-verse { grid-template-columns: 1.5em minmax(0,1fr) auto; gap: 0 4px; }
+  .sb-root .sb-vnum { min-width: 24px; }
+  .sb-root .sb-float { box-shadow: none; }
+}
