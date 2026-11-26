@@ -7,12 +7,13 @@ import { SITE_URL, websiteJsonLd } from "@/lib/site";
 import "./siamsil-home.css";
 
 const FEATURES: Array<{ href: string; title: string; subtitle: string; tile: string }> = [
-  { href: "/zomidictionary", title: "Dictionary", subtitle: "Look up English and Zomi words", tile: "dictionary" },
-  { href: "/zomitranslate", title: "Translate", subtitle: "Find stored translations", tile: "translate" },
+  { href: "/zomidictionary", title: "Dictionary", subtitle: "Look up English and Zomi words, with their source", tile: "dictionary" },
+  { href: "/zomitranslate", title: "Translate", subtitle: "Find stored translations. Unreviewed ones are labelled", tile: "translate" },
+  { href: "/chat", title: "Siamsil AI", subtitle: "Source-grounded language help", tile: "ai" },
   { href: "/bible", title: "Bible", subtitle: "Read, search and study", tile: "bible" },
-  { href: "/library", title: "Library", subtitle: "Books and cultural archives", tile: "library" },
   { href: "/learning", title: "Learn", subtitle: "Lessons and reviewed phrases", tile: "learn" },
-  { href: "/chat", title: "AI Tools", subtitle: "Source-grounded language help", tile: "ai" },
+  // Church Hub is a static app, so it is a plain link; its tile is the sidebar's church glyph.
+  { href: "/church-manager/index.html", title: "Church Hub", subtitle: "Private, in-browser tools for churches", tile: "church" },
 ];
 function StatIcon({ kind }: { kind: "words" | "sentences" | "verses" | "global" }) {
   const glyph = { words: "book", sentences: "document", global: "globe" }[kind as "words" | "sentences" | "global"];
@@ -93,7 +94,7 @@ export default async function Home() {
       <h2 id="free-tools" className="sr-section-title font-playfair">Everything you need to explore Zomi</h2>
       <nav className="sr-features" aria-label="Explore Siamsil">
         {FEATURES.map(({href,title,subtitle,tile}) => <Link className="sr-feature" href={href} key={href}>
-          <Image className="sr-feature-tile" src={`/theme/tile-${tile}.png`} alt="" width={74} height={74} unoptimized />
+          <Image className="sr-feature-tile" src={tile === "church" ? "/theme/nav-church.png" : `/theme/tile-${tile}.png`} alt="" width={74} height={74} unoptimized />
           <span className="sr-feature-title">{title}</span>
           <span className="sr-feature-copy">{href === "/zomidictionary" && entries > 0 ? `${compact(entries)} words and growing` : subtitle}</span>
           <IconArrow className="sr-feature-arrow" size={17}/>
