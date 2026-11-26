@@ -36,7 +36,7 @@ export default function SongsClient() {
 
   return (
     <main style={{ maxWidth: 960, margin: "0 auto", padding: "32px 20px 100px", color: "var(--ds-ink)" }}>
-      <Link href="/library" style={{ color: "var(--ds-ink)", fontSize: 14 }}>← Zomi Library</Link>
+      <Link href="/library" style={{ color: "var(--ds-ink)", fontSize: 14, display: "inline-flex", alignItems: "center", minHeight: 32 }}>← Zomi Library</Link>
       <header style={{ margin: "28px 0", padding: 28, borderRadius: 20, background: "linear-gradient(125deg,#14233e,#243d60)", color: "white" }}>
         <p style={{ color: "#d5b66c", fontWeight: 700, letterSpacing: 2, fontSize: 12 }}>SIAMSIL LIBRARY · FREE</p>
         <h1 className="font-playfair" style={{ fontSize: "clamp(28px,5vw,42px)", margin: "10px 0" }}>Zomi Songs & Hymns</h1>
