@@ -50,7 +50,7 @@ class FtsTests(unittest.TestCase):
 
     def test_engine_searches_temp_db(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            db = Path(tmp) / "test.sqlite"
+            db = Path(tmp) / "Language #100%.sqlite"
             con = sqlite3.connect(db)
             con.executescript(
                 """
@@ -98,23 +98,34 @@ class FtsTests(unittest.TestCase):
             self.assertEqual(results[0]["english"], "hope")
             self.assertEqual(results[0]["definition"], "lam-etna")
             self.assertTrue(results[0]["verified"])
+            db.rename(db.with_name("renamed.sqlite"))
 
-    def test_engine_uses_one_read_connection_per_thread(self) -> None:
+    def test_concurrent_reads_use_separate_connections(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             db = Path(tmp) / "test.sqlite"
             sqlite3.connect(db).close()
             engine = LanguageEngine(db)
             barrier = threading.Barrier(4)
 
-            def connection_id() -> int:
-                con = engine.connect()
-                barrier.wait(timeout=2)
-                return id(con)
+            def connection_id(_: int) -> int:
+                with engine.connect() as con:
+                    barrier.wait(timeout=5)
+                    return id(con)
 
             with ThreadPoolExecutor(max_workers=4) as executor:
-                connection_ids = set(executor.map(lambda _: connection_id(), range(4)))
+                connection_ids = set(executor.map(connection_id, range(4)))
 
             self.assertEqual(len(connection_ids), 4)
+
+    def test_read_connection_is_read_only_and_closes_on_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            db = Path(tmp) / "test.sqlite"
+            sqlite3.connect(db).close()
+            with self.assertRaisesRegex(sqlite3.OperationalError, "readonly"):
+                with LanguageEngine(db).connect() as con:
+                    con.execute("CREATE TABLE forbidden (id INTEGER)")
+            with self.assertRaises(sqlite3.ProgrammingError):
+                con.execute("SELECT 1")
 
 
 if __name__ == "__main__":

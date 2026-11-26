@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
-import threading
+from collections.abc import Iterator
+from contextlib import closing, contextmanager
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -107,38 +108,33 @@ def row_to_dict(row: sqlite3.Row | None) -> dict[str, Any] | None:
 class LanguageEngine:
     def __init__(self, db_path: Path) -> None:
         self.db_path = db_path
-        self._connections = threading.local()
 
     @property
     def available(self) -> bool:
         return self.db_path.exists()
 
-    def connect(self) -> sqlite3.Connection:
-        con: sqlite3.Connection | None = getattr(self._connections, "connection", None)
-        if con is None:
-            if not self.available:
-                raise FileNotFoundError(
-                    f"Language database missing at {self.db_path}. "
-                    "Run python3 ml_pipeline/scripts/build_language_db.py"
-                )
-            con = sqlite3.connect(
-                f"file:{self.db_path}?mode=ro",
-                uri=True,
+    @contextmanager
+    def connect(self) -> Iterator[sqlite3.Connection]:
+        if not self.available:
+            raise FileNotFoundError(
+                f"Language database missing at {self.db_path}. "
+                "Run python3 ml_pipeline/scripts/build_language_db.py"
             )
+        uri = self.db_path.absolute().as_uri() + "?mode=ro"
+        with closing(sqlite3.connect(uri, uri=True)) as con:
             con.row_factory = sqlite3.Row
             con.execute("PRAGMA query_only=ON")
-            self._connections.connection = con
-        return con
+            yield con
 
     def counts(self) -> dict[str, int]:
         if not self.available:
             return {"dictionary_entries": 0, "parallel_sentences": 0, "verified_dictionary": 0}
-        con = self.connect()
-        dictionary = con.execute("SELECT COUNT(*) FROM dictionary_entries").fetchone()[0]
-        verified = con.execute(
-            "SELECT COUNT(*) FROM dictionary_entries WHERE verification_status = 'verified'"
-        ).fetchone()[0]
-        parallel = con.execute("SELECT COUNT(*) FROM parallel_sentences").fetchone()[0]
+        with self.connect() as con:
+            dictionary = con.execute("SELECT COUNT(*) FROM dictionary_entries").fetchone()[0]
+            verified = con.execute(
+                "SELECT COUNT(*) FROM dictionary_entries WHERE verification_status = 'verified'"
+            ).fetchone()[0]
+            parallel = con.execute("SELECT COUNT(*) FROM parallel_sentences").fetchone()[0]
         return {
             "dictionary_entries": dictionary,
             "verified_dictionary": verified,
@@ -149,47 +145,48 @@ class LanguageEngine:
         """Version of the loaded language release, e.g. "v2", from its dataset_versions table."""
         if not self.available:
             return None
-        row = self.connect().execute("SELECT version FROM dataset_versions ORDER BY id DESC LIMIT 1").fetchone()
+        with self.connect() as con:
+            row = con.execute("SELECT version FROM dataset_versions ORDER BY id DESC LIMIT 1").fetchone()
         return row[0] if row else None
 
     def letter_counts(self) -> list[dict[str, Any]]:
-        con = self.connect()
-        rows = con.execute(
-            """
-            SELECT letter, COUNT(*) AS count
-            FROM dictionary_entries
-            WHERE letter IS NOT NULL AND letter != ''
-            GROUP BY letter
-            ORDER BY letter
-            """
-        ).fetchall()
+        with self.connect() as con:
+            rows = con.execute(
+                """
+                SELECT letter, COUNT(*) AS count
+                FROM dictionary_entries
+                WHERE letter IS NOT NULL AND letter != ''
+                GROUP BY letter
+                ORDER BY letter
+                """
+            ).fetchall()
         return [{"letter": row["letter"], "count": row["count"]} for row in rows]
 
     def get_entry(self, entry_id: int, *, include_examples: bool = False) -> dict[str, Any] | None:
-        con = self.connect()
-        row = con.execute("SELECT * FROM dictionary_entries WHERE id = ?", (entry_id,)).fetchone()
+        with self.connect() as con:
+            row = con.execute("SELECT * FROM dictionary_entries WHERE id = ?", (entry_id,)).fetchone()
         entry = self._present_entry(row)
         if entry and include_examples:
             entry["examples"] = self.search_parallel(entry["english"], limit=3)
         return entry
 
     def word_of_day(self, seed: int) -> dict[str, Any] | None:
-        con = self.connect()
-        total = con.execute(
-            "SELECT COUNT(*) FROM dictionary_entries WHERE definition IS NOT NULL AND definition != ''"
-        ).fetchone()[0]
-        if not total:
-            return None
-        offset = seed % total
-        row = con.execute(
-            """
-            SELECT * FROM dictionary_entries
-            WHERE definition IS NOT NULL AND definition != ''
-            ORDER BY id
-            LIMIT 1 OFFSET ?
-            """,
-            (offset,),
-        ).fetchone()
+        with self.connect() as con:
+            total = con.execute(
+                "SELECT COUNT(*) FROM dictionary_entries WHERE definition IS NOT NULL AND definition != ''"
+            ).fetchone()[0]
+            if not total:
+                return None
+            offset = seed % total
+            row = con.execute(
+                """
+                SELECT * FROM dictionary_entries
+                WHERE definition IS NOT NULL AND definition != ''
+                ORDER BY id
+                LIMIT 1 OFFSET ?
+                """,
+                (offset,),
+            ).fetchone()
         return self._present_entry(row)
 
     def search_dictionary(
@@ -201,7 +198,12 @@ class LanguageEngine:
         limit: int = 20,
         offset: int = 0,
     ) -> list[dict[str, Any]]:
-        con = self.connect()
+        with self.connect() as con:
+            return self._search_dictionary_rows(con, query, letter, direction, limit, offset)
+
+    def _search_dictionary_rows(
+        self, con: sqlite3.Connection, query: str, letter: str | None, direction: str, limit: int, offset: int,
+    ) -> list[dict[str, Any]]:
         limit = min(max(limit, 1), 100)
         offset = max(offset, 0)
         params: list[Any] = []
@@ -321,17 +323,17 @@ class LanguageEngine:
         needle = query.strip().lower()
         if not needle:
             return []
-        con = self.connect()
-        rows = con.execute(
-            """
-            SELECT id, source_word, part_of_speech, definition, verification_status
-            FROM dictionary_entries
-            WHERE normalized_word LIKE ? OR lower(source_word) LIKE ?
-            ORDER BY length(source_word) ASC, flagged ASC, id
-            LIMIT ?
-            """,
-            (f"{needle}%", f"{needle}%", min(max(limit, 1), 20)),
-        ).fetchall()
+        with self.connect() as con:
+            rows = con.execute(
+                """
+                SELECT id, source_word, part_of_speech, definition, verification_status
+                FROM dictionary_entries
+                WHERE normalized_word LIKE ? OR lower(source_word) LIKE ?
+                ORDER BY length(source_word) ASC, flagged ASC, id
+                LIMIT ?
+                """,
+                (f"{needle}%", f"{needle}%", min(max(limit, 1), 20)),
+            ).fetchall()
         return [dict(row) for row in rows]
 
     def search_parallel(self, query: str, limit: int = 20, direction: str | None = None,
@@ -348,11 +350,11 @@ class LanguageEngine:
         match = fts_match(query)
         if not match:
             return []
-        return self._search_parallel_rows(query, match, limit, direction, cleared_ids)
+        with self.connect() as con:
+            return self._search_parallel_rows(con, query, match, limit, direction, cleared_ids)
 
-    def _search_parallel_rows(self, query: str, match: str, limit: int, direction: str | None,
+    def _search_parallel_rows(self, con: sqlite3.Connection, query: str, match: str, limit: int, direction: str | None,
                               cleared_ids: frozenset[str] | None) -> list[dict[str, Any]]:
-        con = self.connect()
         limit = min(max(limit, 1), 50)
         forms = exact_forms(query)
         match_expression = f"{PARALLEL_FTS_COLUMN[direction]} : ({match})" if direction else match

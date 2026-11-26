@@ -74,11 +74,11 @@ class ZomiWords:
 
     def _texts(self) -> dict[str, list[str]]:
         zomi = [version["id"] for version in self.versions.versions() if version["language_iso"] == ZOMI]
-        con = self.versions.connect()
-        return {
-            version_id: [row[0] for row in con.execute("SELECT text FROM verses WHERE version_id = ?", (version_id,))]
-            for version_id in zomi
-        }
+        with self.versions.connect() as con:
+            return {
+                version_id: [row[0] for row in con.execute("SELECT text FROM verses WHERE version_id = ?", (version_id,))]
+                for version_id in zomi
+            }
 
     def word_list(self) -> WordList:
         identity = self.versions._file_identity()
