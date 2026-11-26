@@ -10,7 +10,7 @@ const TABS = [
   { href: "/bible", Icon: IconCross, label: "Bible" },
 ];
 
-const MORE_PAGES = ["/church-manager", "/library", "/learning", "/chat", "/resources", "/about", "/help", "/workspace", "/profile"];
+const MORE_PAGES = ["/services", "/products", "/church-manager", "/library", "/learning", "/chat", "/resources", "/about", "/help", "/workspace", "/profile"];
 
 function MoreIcon() {
   return (

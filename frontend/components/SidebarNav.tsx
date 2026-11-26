@@ -60,6 +60,8 @@ const COMMUNITY_TABS: NavTab[] = [
   { href: "/church-manager/index.html", Icon: IconHome, glyph: "church", label: "Church", short: "Church", hint: "People, giving & learning", plain: true },
 ];
 const ABOUT_TABS: NavTab[] = [
+  { href: "/services", Icon: IconResources, glyph: "resources", label: "Services", short: "Services", hint: "Web, mobile & AI development" },
+  { href: "/products", Icon: IconLibrary, glyph: "library", label: "Products", short: "Products", hint: "Explore Siamsil apps" },
   { href: "/resources", Icon: IconResources, glyph: "resources", label: "Resources", short: "Resources", hint: "Where our data comes from" },
   { href: "/about", Icon: IconInfo, glyph: "about", label: "About", short: "About", hint: "What Siamsil is" },
   { href: "/help", Icon: IconHelp, glyph: "help", label: "Help", short: "Help", hint: "Using Siamsil" },

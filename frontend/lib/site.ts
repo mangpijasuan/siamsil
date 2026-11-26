@@ -46,6 +46,8 @@ export const PUBLIC_PAGES: { path: string; changeFrequency: ChangeFrequency; pri
   { path: "/learning/citizenship", changeFrequency: "monthly", priority: 0.6 },
   { path: "/library", changeFrequency: "monthly", priority: 0.5 },
   { path: "/chat", changeFrequency: "monthly", priority: 0.4 },
+  { path: "/services", changeFrequency: "monthly", priority: 0.5 },
+  { path: "/products", changeFrequency: "monthly", priority: 0.5 },
 ];
 
 export function robotsPolicy(site: string | null): RobotsPolicy {
