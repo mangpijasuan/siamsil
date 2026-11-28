@@ -149,8 +149,10 @@ def check_release(manifest: object, env: dict[str, str], *, root: Path | None, f
     """Verify, or stop with every reason. `root` is where the files to check are (staging or the live volume)."""
     environment = env.get("SIAMSIL_ENVIRONMENT", "development").strip() or "development"
     try:
+        override = env.get("SIAMSIL_RIGHTS_FILE", "").strip()
         contract.verify(manifest, environment=environment, root=root, full=full, expected_bundle_sha256=expected,
-                        expected_rights_sha256=env.get("SIAMSIL_RIGHTS_SHA256", "").strip().lower() or None)
+                        expected_rights_sha256=env.get("SIAMSIL_RIGHTS_SHA256", "").strip().lower() or None,
+                        rights_override=Path(override) if override else None)
     except contract.ReleaseVerificationError as error:
         sys.exit("fetch_data: release verification failed:\n  - " + "\n  - ".join(error.problems))
 
@@ -194,6 +196,28 @@ def install(archive: Path, root: Path, expected: str, manifest: dict | None = No
     (root / f".bundle-{expected}").touch()
 
 
+def already_installed(root: Path, expected: str, env: dict[str, str], pinned: str) -> bool:
+    """True when the volume already holds this bundle, after re-checking its stored release manifest.
+
+    The stored manifest is checked cheaply (sizes, and the rights register's digest) so a changed rights.json cannot
+    ride along on a restart. Called before the download and again once the install lock is held: a second process
+    that finds the bundle another process just installed gets the same verification, not a free pass.
+    """
+    if not (expected and (root / f".bundle-{expected}").exists()):
+        return False
+    environment = env.get("SIAMSIL_ENVIRONMENT", "development").strip() or "development"
+    stored = root / contract.INSTALLED_MANIFEST
+    if stored.is_file():
+        check_release(parse_manifest(stored.read_bytes(), pinned), env, root=root, full=False, expected=expected)
+    elif contract.is_strict(environment):
+        sys.exit(f"fetch_data: {environment} needs the installed release manifest ({contract.INSTALLED_MANIFEST}); "
+                 "reinstall the bundle with its release.json")
+    else:
+        print("fetch_data: WARNING installed bundle has no release manifest (allowed in development and test)")
+    print("fetch_data: bundle already present")
+    return True
+
+
 def main() -> None:
     env = dict(os.environ)
     expected = env.get("SIAMSIL_DATA_BUNDLE_SHA256", "").strip().lower()
@@ -203,25 +227,21 @@ def main() -> None:
     pinned = env.get("SIAMSIL_DATA_RELEASE_MANIFEST_SHA256", "").strip().lower()
     if strict and not contract.SHA256_RE.fullmatch(pinned):
         sys.exit(f"fetch_data: {environment} requires SIAMSIL_DATA_RELEASE_MANIFEST_SHA256 (the release.json digest)")
-    # An installed bundle needs no download, so no credentials either. Its stored manifest is re-checked cheaply
-    # (sizes, and the rights register's digest) so a changed rights.json cannot ride along on a restart.
-    if expected and (root / f".bundle-{expected}").exists():
-        stored = root / contract.INSTALLED_MANIFEST
-        if stored.is_file():
-            check_release(parse_manifest(stored.read_bytes(), pinned), env, root=root, full=False, expected=expected)
-        elif strict:
-            sys.exit(f"fetch_data: {environment} needs the installed release manifest ({contract.INSTALLED_MANIFEST}); "
-                     "reinstall the bundle with its release.json")
-        else:
-            print("fetch_data: WARNING installed bundle has no release manifest (allowed in development and test)")
-        print("fetch_data: bundle already present")
+    # An installed bundle needs no download, so no credentials either.
+    if already_installed(root, expected, env, pinned):
         return
     try:
         url = bundle_url(dict(os.environ))
     except ValueError as error:
         sys.exit(f"fetch_data: {error}")
     if not url:
-        print("fetch_data: no data bundle configured (SIAMSIL_DATA_BUNDLE_S3_ENDPOINT or _URL); skipping")
+        if strict:
+            # No verified bundle is installed (the check above returned) and none can be fetched: starting the API now
+            # would serve with no verified release, so a strict environment stops here.
+            sys.exit(f"fetch_data: {environment} has no verified data bundle installed and none configured "
+                     "(SIAMSIL_DATA_BUNDLE_S3_ENDPOINT or SIAMSIL_DATA_BUNDLE_URL, with SIAMSIL_DATA_BUNDLE_SHA256)")
+        print("fetch_data: no data bundle configured (SIAMSIL_DATA_BUNDLE_S3_ENDPOINT or _URL); skipping "
+              "(allowed in development and test only)")
         return
     if not expected:
         sys.exit("fetch_data: SIAMSIL_DATA_BUNDLE_SHA256 is required with a data bundle")
@@ -241,8 +261,7 @@ def main() -> None:
     root.mkdir(parents=True, exist_ok=True)
     with (root / ".fetch.lock").open("w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)  # one install at a time on this volume
-        if (root / f".bundle-{expected}").exists():
-            print("fetch_data: bundle already present")
+        if already_installed(root, expected, env, pinned):
             return
         handle, name = tempfile.mkstemp(dir=root, prefix=".download-", suffix=".tar.gz")
         archive = Path(name)

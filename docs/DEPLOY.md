@@ -102,8 +102,8 @@ Add the records that Vercel and Railway showed: `siamsil.org` and `www` for Verc
 ## Updating
 
 - **Code:** merge a pull request into `main`. Vercel and Railway redeploy on their own.
-- **Data** (new dictionary corrections, a new Bible version, a rebuilt corpus): rebuild and upload the bundle as in step 2, then change `SIAMSIL_DATA_BUNDLE_SHA256` in Railway. The API redeploys and downloads the new bundle.
-- **Rollback:** before uploading a new bundle, keep the previous one under a dated name, for example `siamsil-data-2026-10-31.tar.gz`. To roll back, set `SIAMSIL_DATA_BUNDLE_S3_KEY` to that name and `SIAMSIL_DATA_BUNDLE_SHA256` to its checksum.
+- **Data** (new dictionary corrections, a new Bible version, a rebuilt corpus): rebuild and upload the bundle as in step 2, upload its `release.json` beside it, then change `SIAMSIL_DATA_BUNDLE_SHA256` and `SIAMSIL_DATA_RELEASE_MANIFEST_SHA256` together in Railway. The API redeploys and downloads the new bundle.
+- **Rollback:** before uploading a new bundle, keep the previous one under a dated name, for example `siamsil-data-2026-10-31.tar.gz`. To roll back, set `SIAMSIL_DATA_BUNDLE_S3_KEY` to that name, `SIAMSIL_DATA_BUNDLE_SHA256` to its checksum **and `SIAMSIL_DATA_RELEASE_MANIFEST_SHA256` to the checksum of that release's `release.json`**; leaving the newer manifest's hash in place stops the older release starting ([DATA_RELEASES.md](DATA_RELEASES.md)).
 
 ## Keep private
 

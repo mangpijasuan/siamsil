@@ -50,6 +50,15 @@ class ReleaseFixture(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
 
+        self.repo = self.root / "siamsil-data"
+        self.repo.mkdir()
+        git(self.repo, "init", "-q")
+        git(self.repo, "config", "user.email", "test@example.invalid")
+        git(self.repo, "config", "user.name", "Test")
+        (self.repo / "README.md").write_text("placeholder\n", encoding="utf-8")
+        git(self.repo, "add", "-A")
+        git(self.repo, "commit", "-q", "-m", "placeholder")
+
         corpus = self.root / "corpus.csv"
         with corpus.open("w", encoding="utf-8", newline="") as handle:
             writer = csv.writer(handle)
@@ -60,6 +69,7 @@ class ReleaseFixture(unittest.TestCase):
         con = build.connect(self.language)
         build.create_schema(con)
         stats = build.ingest_parallel(con, corpus, "2026-11-30T00:00:00+00:00")
+        self.record_source(con, build.source_state(self.repo))
         con.commit()
         con.close()
         self.stats = stats
@@ -80,17 +90,26 @@ class ReleaseFixture(unittest.TestCase):
         self.bundle = self.root / "siamsil-data.tar.gz"
         self.make_bundle()
 
-        self.repo = self.root / "siamsil-data"
-        self.repo.mkdir()
-        git(self.repo, "init", "-q")
-        git(self.repo, "config", "user.email", "test@example.invalid")
-        git(self.repo, "config", "user.name", "Test")
-        (self.repo / "README.md").write_text("placeholder\n", encoding="utf-8")
-        git(self.repo, "add", "-A")
-        git(self.repo, "commit", "-q", "-m", "placeholder")
-
         self.evaluation = self.root / "en-zomi-v1.jsonl"
         self.evaluation.write_text('{"id": "ITEM_SECRET_1"}\n{"id": "ITEM_SECRET_2"}\n', encoding="utf-8")
+
+    @staticmethod
+    def record_source(con: sqlite3.Connection, state: dict | None) -> None:
+        """What build_language_db.py stores: the dataset_versions row, with the siamsil-data commit when known."""
+        files = {"parallel_csv": "corpus.csv"}
+        if state is not None:
+            files["siamsil_data_source"] = state
+        con.execute("INSERT INTO dataset_versions (name, version, created_at, script_version, source_files) "
+                    "VALUES (?, ?, ?, ?, ?)", ("siamsil-language", "v2", "2026-11-30T00:00:00+00:00", "test", json.dumps(files)))
+
+    def rebuild_language_db(self, state: dict | None) -> None:
+        """Replace the language database's recorded source state, then re-pack the bundle."""
+        con = sqlite3.connect(self.language)
+        con.execute("DELETE FROM dataset_versions")
+        self.record_source(con, state)
+        con.commit()
+        con.close()
+        self.make_bundle()
 
     def make_bundle(self) -> None:
         with tarfile.open(self.bundle, "w:gz") as archive:
@@ -100,7 +119,7 @@ class ReleaseFixture(unittest.TestCase):
 
     def manifest(self, **overrides) -> dict:
         parts = dict(
-            source=release_manifest.source_record(self.repo),
+            source=release_manifest.source_record(self.repo, self.language),
             approval=release_manifest.approval_record("Owner", "2026-11-30T09:00:00"),
             exports=release_manifest.exports_record(None),
             evaluation=release_manifest.evaluation_record([self.evaluation]),
@@ -126,6 +145,7 @@ class ValidManifestTests(ReleaseFixture):
         self.assertEqual(manifest["schema_version"], 2)
         self.assertEqual(manifest["source"]["siamsil_data_commit"], release_manifest.source_record(self.repo)["siamsil_data_commit"])
         self.assertTrue(manifest["source"]["working_tree_clean"])
+        self.assertEqual(manifest["source"]["binding"], "database")
 
     def test_schema_1_fields_are_kept(self) -> None:
         manifest, legacy = self.manifest(), release_manifest.validate(self.bundle, created_at="2026-11-30T09:30:00+00:00")
@@ -179,19 +199,46 @@ class ValidManifestTests(ReleaseFixture):
     def test_evaluation_sets_are_recorded_by_hash_only(self) -> None:
         record = release_manifest.evaluation_record([self.evaluation])
         self.assertEqual(record["sets"], [{"name": "en-zomi-v1.jsonl", "sha256": hashlib.sha256(
-            self.evaluation.read_bytes()).hexdigest(), "items": 2, "frozen": True}])
-        draft = self.root / "en-zomi-v1.draft.jsonl"
-        draft.write_text('{"id": "x"}\n', encoding="utf-8")
-        self.assertFalse(release_manifest.evaluation_record([draft])["sets"][0]["frozen"])
+            self.evaluation.read_bytes()).hexdigest(), "items": 2, "frozen": False}])
+        self.assertFalse(record["sets"][0]["frozen"])  # nothing is frozen unless a person declares it
         self.assertNotIn("ITEM_SECRET", json.dumps(record))
 
-    def test_a_dirty_data_repository_is_recorded_and_refused_in_production(self) -> None:
-        (self.repo / "uncommitted.txt").write_text("x", encoding="utf-8")
+    def test_a_build_from_a_dirty_data_repository_is_recorded_and_refused_in_production(self) -> None:
+        self.rebuild_language_db({**build.source_state(self.repo), "working_tree_clean": False})
         manifest = self.manifest()
         self.assertFalse(manifest["source"]["working_tree_clean"])
         with self.assertRaisesRegex(contract.ReleaseVerificationError, "working_tree_clean"):
             contract.verify(manifest, environment="production")
         contract.verify(manifest, environment="development")
+
+    def test_the_source_commit_must_be_the_one_the_shipped_database_was_built_from(self) -> None:
+        (self.repo / "later.txt").write_text("a later commit", encoding="utf-8")
+        git(self.repo, "add", "-A")
+        git(self.repo, "commit", "-q", "-m", "later")
+        with self.assertRaisesRegex(ValueError, "built from siamsil-data"):
+            release_manifest.source_record(self.repo, self.language)
+
+    def test_an_operator_supplied_commit_is_labelled_and_refused_in_production(self) -> None:
+        self.rebuild_language_db(None)  # a database built before the commit was recorded
+        manifest = self.manifest()
+        self.assertEqual(manifest["source"]["binding"], "operator_supplied")
+        contract.verify(manifest, environment="development")
+        with self.assertRaisesRegex(contract.ReleaseVerificationError, "binding"):
+            contract.verify(manifest, environment="production")
+
+    def test_freezing_an_evaluation_set_is_explicit_and_tied_to_its_hash(self) -> None:
+        named_like_final = self.root / "eval.jsonl"  # a draft with an innocent-looking name
+        named_like_final.write_text('{"id": "x"}\n', encoding="utf-8")
+        self.assertFalse(release_manifest.evaluation_record([named_like_final])["sets"][0]["frozen"])
+        digest = hashlib.sha256(named_like_final.read_bytes()).hexdigest()
+        self.assertTrue(release_manifest.evaluation_record([named_like_final], {"eval.jsonl": digest})["sets"][0]["frozen"])
+        with self.assertRaisesRegex(ValueError, "not the version declared frozen"):
+            release_manifest.evaluation_record([named_like_final], {"eval.jsonl": "0" * 64})
+        with self.assertRaisesRegex(ValueError, "declared frozen but not supplied"):
+            release_manifest.evaluation_record([named_like_final], {"other.jsonl": digest})
+        named_like_final.write_text('{"id": "changed"}\n', encoding="utf-8")  # edited after the declaration
+        with self.assertRaisesRegex(ValueError, "not the version declared frozen"):
+            release_manifest.evaluation_record([named_like_final], {"eval.jsonl": digest})
 
 
 class MismatchedManifestTests(ReleaseFixture):
@@ -206,6 +253,30 @@ class MismatchedManifestTests(ReleaseFixture):
         contract.verify(manifest, environment="production", expected_rights_sha256=manifest["rights_registry"]["sha256"])
         with self.assertRaisesRegex(contract.ReleaseVerificationError, "configured rights snapshot"):
             contract.verify(manifest, environment="production", expected_rights_sha256="1" * 64)
+
+    def test_a_rights_override_must_be_the_verified_register_in_strict_environments(self) -> None:
+        manifest = self.manifest()
+        other = self.root / "other-rights.json"
+        other.write_text(json.dumps({"sources": {"bible_web": {"display": "cleared"}, "extra": {}}}), encoding="utf-8")
+        with self.assertRaisesRegex(contract.ReleaseVerificationError, "SIAMSIL_RIGHTS_FILE"):
+            contract.verify(manifest, environment="production", rights_override=other)
+        with self.assertRaisesRegex(contract.ReleaseVerificationError, "SIAMSIL_RIGHTS_FILE"):
+            contract.verify(manifest, environment="production", rights_override=self.root / "absent.json")
+        contract.verify(manifest, environment="production", rights_override=self.rights)  # the same bytes: fine
+        contract.verify(manifest, environment="development", rights_override=other)  # a developer's own register
+
+    def test_the_api_refuses_to_start_with_a_different_rights_register_in_production(self) -> None:
+        from settings import Settings
+        data_dir = self.root / "json"
+        data_dir.mkdir()
+        (data_dir / "rights.json").write_text("{}", encoding="utf-8")
+        common = dict(environment="production", database_url="postgresql+psycopg://u:p@h/db", data_dir=data_dir,
+                      _env_file=None)
+        Settings(**common)
+        Settings(**common, rights_file=data_dir / "rights.json")
+        with self.assertRaisesRegex(ValueError, "SIAMSIL_RIGHTS_FILE"):
+            Settings(**common, rights_file=self.root / "elsewhere.json")
+        Settings(environment="development", rights_file=self.root / "elsewhere.json", _env_file=None)
 
     def test_a_manifest_for_another_bundle_is_refused(self) -> None:
         manifest = self.manifest()
@@ -382,6 +453,36 @@ class InstallAndRestartTests(ReleaseFixture):
         with mock.patch.dict(os.environ, {**base, "SIAMSIL_ENVIRONMENT": "development"}, clear=True):
             fetch_data.main()
         self.assertTrue((self.root / "volume" / "siamsil_language.sqlite").is_file())
+
+    def test_production_with_a_valid_pin_but_no_bundle_to_install_fails_instead_of_skipping(self) -> None:
+        _, raw, digest = self.release()
+        env = {**self.env(raw), "SIAMSIL_DATA_BUNDLE_SHA256": digest, "SIAMSIL_DATA_ROOT": str(self.root / "volume")}
+        with mock.patch.dict(os.environ, env, clear=True):
+            with self.assertRaisesRegex(SystemExit, "no verified data bundle"):
+                fetch_data.main()
+        with mock.patch.dict(os.environ, {"SIAMSIL_ENVIRONMENT": "development",
+                                          "SIAMSIL_DATA_ROOT": str(self.root / "volume")}, clear=True):
+            fetch_data.main()  # development with nothing configured still starts
+
+    def test_a_second_process_re_verifies_a_bundle_another_process_just_installed(self) -> None:
+        manifest, raw, digest = self.release()
+        volume = self.root / "volume"
+        volume.mkdir()
+        env = {**self.env(raw), "SIAMSIL_DATA_BUNDLE_SHA256": digest, "SIAMSIL_DATA_ROOT": str(volume),
+               "SIAMSIL_DATA_BUNDLE_URL": self.bundle.as_uri(), "SIAMSIL_DATA_RELEASE_MANIFEST_URL": self.root.joinpath(
+                   "release.json").as_uri()}
+        (self.root / "release.json").write_bytes(raw)
+
+        def installed_by_a_competitor_with_a_tampered_register(*_args, **_kwargs):
+            # The moment the lock is granted, the other process has finished installing... a changed rights.json.
+            fetch_data.install(self.bundle, volume, digest, manifest, raw, self.env(raw))
+            (volume / "json" / "rights.json").write_text(json.dumps({"sources": {}}), encoding="utf-8")
+
+        with mock.patch.dict(os.environ, env, clear=True), \
+                mock.patch.object(fetch_data.fcntl, "flock", side_effect=installed_by_a_competitor_with_a_tampered_register):
+            with self.assertRaises(SystemExit) as raised:
+                fetch_data.main()
+        self.assertIn("release verification failed", str(raised.exception))
 
     def test_a_manifest_that_does_not_match_its_pin_is_refused(self) -> None:
         _, raw, _ = self.release()

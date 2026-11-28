@@ -16,11 +16,11 @@ A new source commit, including terminology corrections, does **not** imply permi
 
 | Field | What it declares | Checked |
 |---|---|---|
-| `source.siamsil_data_commit`, `source.working_tree_clean` | the `siamsil-data` commit the bundle was built from, and that no uncommitted change was in the tree | 40-hex SHA; production needs a clean tree |
-| `rights_registry.sha256` | digest of `json/rights.json` | equals the digest in `contents` and the installed file; optionally equals `SIAMSIL_RIGHTS_SHA256` |
+| `source.siamsil_data_commit`, `working_tree_clean`, `binding` | the `siamsil-data` commit the **language database** was built from, read from the database itself (`build_language_db.py` stores it in `dataset_versions`), and whether the tree was clean at build time | the supplied checkout must be that commit; production needs `binding: "database"` and a clean build. A database built before this field existed gives `binding: "operator_supplied"`, which is a claim, not evidence, and is accepted only in development and test. The Bible database and the JSON files are not bound to a commit |
+| `rights_registry.sha256` | digest of `json/rights.json` | equals the digest in `contents` and the installed file; optionally equals `SIAMSIL_RIGHTS_SHA256`. The API reads `SIAMSIL_RIGHTS_FILE` ahead of the installed register, so in staging and production an override must be that same file: the installer checks its hash and the API refuses to start with any other (`settings.py`) |
 | `approval.status`, `approved_by`, `approved_at_utc` | `unapproved` or `approved`, and by whom and when | production needs `approved` with a name and a time. **Only a person supplies these** (`--approved-by`, `--approved-at`); no tool or AI approves a release |
 | `exports.approved_counts`, `export_manifest_sha256` | export counts per split, from an `export_datasets.py` manifest | refused if that manifest admitted any uncleared source |
-| `protected_evaluation.sets`, `sets_sha256` | evaluation sets by name, SHA-256, item count and `frozen`; never their text | structure and the combined hash |
+| `protected_evaluation.sets`, `sets_sha256` | evaluation sets by name, SHA-256, item count and `frozen`; never their text. `frozen` is true only when a person declares it with `--freeze-eval-set NAME=<sha256>` (which needs `--approved-by`) and the file's hash matches; a file name never decides | structure and the combined hash |
 | `derivation.parallel_corpus` | source rows, rows kept, rows removed by reason, and the SHA-256 of the per-row removal record | `source_rows = kept + removed`; the record is checked against the kept pairs |
 
 ### Where the 1,777,002 → 1,775,043 difference comes from
@@ -39,7 +39,7 @@ python backend/scripts/release_manifest.py dist/siamsil-data.tar.gz --output dis
   --approved-by "<name>" --approved-at 2026-11-30T09:00:00
 ```
 
-The command prints the manifest's own digest. Upload `release.json` beside the bundle (a folder per release holds `release.json`; a flat dated name `siamsil-data-2026-11-30.tar.gz` gets `siamsil-data-2026-11-30.release.json`; `SIAMSIL_DATA_RELEASE_MANIFEST_KEY` overrides) and set `SIAMSIL_DATA_RELEASE_MANIFEST_SHA256` with the bundle's digest. On boot `fetch_data.py` verifies the manifest against its pin, every unpacked file against the manifest, and the rights register against its declared digest, **before** it replaces anything live; any failure installs nothing. A restart re-checks the stored copy (`/data/.release.json`): file sizes and the rights register's digest. `check_release.py --data-root /data --sha256 <bundle>` hashes every installed file.
+The command prints the manifest's own digest. Upload `release.json` beside the bundle (a folder per release holds `release.json`; a flat dated name `siamsil-data-2026-11-30.tar.gz` gets `siamsil-data-2026-11-30.release.json`; `SIAMSIL_DATA_RELEASE_MANIFEST_KEY` overrides) and set `SIAMSIL_DATA_RELEASE_MANIFEST_SHA256` with the bundle's digest. On boot `fetch_data.py` verifies the manifest against its pin, every unpacked file against the manifest, and the rights register against its declared digest, **before** it replaces anything live; any failure installs nothing. A restart re-checks the stored copy (`/data/.release.json`): file sizes and the rights register's digest. The same re-check runs again after the install lock is taken, so a process that finds a bundle another process just installed verifies it too. In staging and production, starting with no installed bundle and none configured is an error, not a skip. `check_release.py --data-root /data --sha256 <bundle>` hashes every installed file.
 
 ### Rollout note for existing production deployments
 
@@ -73,6 +73,7 @@ Each release receives an immutable, digest-specific key. Keep older keys for rol
 ```text
 SIAMSIL_DATA_BUNDLE_S3_KEY=releases/sha256-<full-bundle-sha256>/siamsil-data.tar.gz
 SIAMSIL_DATA_BUNDLE_SHA256=<full-bundle-sha256>
+SIAMSIL_DATA_RELEASE_MANIFEST_SHA256=<sha256-of-this-release's-release.json>
 ```
 
 R2 access remains private; the FastAPI container fetches the selected bundle via its read-only R2 credentials. Promotion is a separate owner-controlled step and is NOT performed by this GitHub workflow.
@@ -94,7 +95,7 @@ python scripts/check_release.py --url http://127.0.0.1:8000 \
 
 The local check validates the installed `.bundle-<sha256>` marker and required database files. It is not a remote cryptographic attestation; the bundle itself was verified against SHA-256 when installed.
 
-Rollback is controlled by selecting the **previous immutable key and its matching SHA-256** in Railway, redeploying, and repeating both checks. Preserve a release ledger recording code commit, source-repo commit, bundle SHA, R2 key, rollout timestamp, reviewer, benchmark results, and permission approval. Database schema compatibility and application version compatibility must be checked before rollback.
+Rollback is controlled by selecting the **previous immutable key, its bundle SHA-256 and its matching release manifest**, redeploying, and repeating both checks. A release is three settings that change together: `SIAMSIL_DATA_BUNDLE_S3_KEY` + `SIAMSIL_DATA_BUNDLE_SHA256` + `SIAMSIL_DATA_RELEASE_MANIFEST_SHA256` (plus `SIAMSIL_DATA_RELEASE_MANIFEST_KEY` and `SIAMSIL_RIGHTS_SHA256` if you set them). Leaving the newer manifest's hash in place makes the older release refuse to start. Keep each release's manifest hash in the release ledger. Preserve a release ledger recording code commit, source-repo commit, bundle SHA, R2 key, rollout timestamp, reviewer, benchmark results, and permission approval. Database schema compatibility and application version compatibility must be checked before rollback.
 
 ## Future hardening
 

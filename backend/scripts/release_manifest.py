@@ -90,18 +90,49 @@ def validate(bundle: Path, *, created_at: str | None = None) -> dict:
 # ---- schema 2 declarations ------------------------------------------------------------------------------------
 
 
-def source_record(data_repo: Path) -> dict:
-    """The siamsil-data commit this release was built from, and whether its working tree had uncommitted changes."""
+def source_record(data_repo: Path, language_db: Path | None = None) -> dict:
+    """The siamsil-data commit this release was built from.
+
+    When the language database records the commit and cleanliness it was built from (build_language_db.py stores them
+    in dataset_versions), the supplied checkout must be that commit, and the record is bound to the database that
+    ships ("binding": "database"). Without that record the commit is only what the operator supplied
+    ("binding": "operator_supplied"): useful provenance, not proof, and refused in staging and production.
+    """
     def git(*args: str) -> str:
         done = subprocess.run(["git", "-C", str(data_repo), *args], capture_output=True, text=True, check=False)
         if done.returncode != 0:
             raise ValueError(f"{data_repo} is not a readable git repository: {done.stderr.strip()}")
         return done.stdout.strip()
 
-    return {
-        "siamsil_data_commit": git("rev-parse", "HEAD"),
-        "working_tree_clean": git("status", "--porcelain") == "",
-    }
+    head = git("rev-parse", "HEAD")
+    recorded = recorded_source(language_db) if language_db is not None else None
+    if recorded is None:
+        return {"siamsil_data_commit": head, "working_tree_clean": git("status", "--porcelain") == "",
+                "binding": "operator_supplied"}
+    if recorded["commit"] != head:
+        raise ValueError(f"the language database was built from siamsil-data {recorded['commit']}, but {data_repo} is "
+                         f"at {head}: check out the commit it was built from")
+    return {"siamsil_data_commit": recorded["commit"], "working_tree_clean": recorded["working_tree_clean"],
+            "binding": "database"}
+
+
+def recorded_source(language_db: Path) -> dict | None:
+    """The source commit stored inside a language database by build_language_db.py, or None for an older build."""
+    con = sqlite3.connect(f"file:{language_db}?mode=ro", uri=True)
+    try:
+        row = con.execute("SELECT source_files FROM dataset_versions ORDER BY id DESC LIMIT 1").fetchone()
+    except sqlite3.Error:
+        return None
+    finally:
+        con.close()
+    try:
+        state = json.loads(row[0]).get("siamsil_data_source") if row else None
+    except (ValueError, AttributeError):
+        return None
+    if isinstance(state, dict) and isinstance(state.get("commit"), str) \
+            and isinstance(state.get("working_tree_clean"), bool):
+        return state
+    return None
 
 
 def exports_record(export_manifest: Path | None) -> dict:
@@ -119,14 +150,26 @@ def exports_record(export_manifest: Path | None) -> dict:
     }
 
 
-def evaluation_record(paths: list[Path]) -> dict:
-    """Protected evaluation sets by name and SHA-256 only. The text of an evaluation item never enters a release."""
+def evaluation_record(paths: list[Path], frozen: dict[str, str] | None = None) -> dict:
+    """Protected evaluation sets by name and SHA-256 only. The text of an evaluation item never enters a release.
+
+    A set is `frozen` only when its name is in `frozen` (name -> SHA-256) and the file's actual hash equals the hash
+    given: freezing is an explicit declaration by a person about one exact version of a set, never inferred from a
+    file name.
+    """
+    frozen = dict(frozen or {})
     sets = []
     for path in sorted((Path(p) for p in paths), key=lambda p: p.name):
         text = path.read_text(encoding="utf-8")
         lines = [line for line in text.splitlines() if line.strip()]
         items = len(lines) if path.suffix == ".jsonl" else max(0, len(lines) - 1)
-        sets.append({"name": path.name, "sha256": sha256(path), "items": items, "frozen": ".draft" not in path.name})
+        digest = sha256(path)
+        declared = frozen.pop(path.name, None)
+        if declared is not None and declared != digest:
+            raise ValueError(f"{path.name} is not the version declared frozen (its SHA-256 is {digest})")
+        sets.append({"name": path.name, "sha256": digest, "items": items, "frozen": declared is not None})
+    if frozen:
+        raise ValueError(f"declared frozen but not supplied with --eval-set: {', '.join(sorted(frozen))}")
     return {"sets": sets, "sets_sha256": contract.canonical_hash(sets)}
 
 
@@ -189,6 +232,8 @@ def main() -> None:
     parser.add_argument("--export-manifest", type=Path, help="export_datasets.py manifest.json")
     parser.add_argument("--no-exports", action="store_true", help="declare that this release approves no export")
     parser.add_argument("--eval-set", type=Path, action="append", default=[], help="evaluation set file (repeatable)")
+    parser.add_argument("--freeze-eval-set", action="append", default=[], metavar="NAME=SHA256",
+                        help="declare an --eval-set frozen, tied to its exact SHA-256 (repeatable; needs --approved-by)")
     parser.add_argument("--quality-report", type=Path, help="build_language_db.py quality_report.json")
     parser.add_argument("--removals", type=Path, help="parallel-removals.jsonl from the same build")
     parser.add_argument("--approved-by", help="who approved this release (a person)")
@@ -196,7 +241,7 @@ def main() -> None:
     args = parser.parse_args()
 
     extended = any((args.production, args.data_repo, args.export_manifest, args.no_exports, args.eval_set,
-                    args.quality_report, args.removals, args.approved_by, args.approved_at))
+                    args.quality_report, args.removals, args.approved_by, args.approved_at, args.freeze_eval_set))
     try:
         if not extended:
             manifest = validate(args.bundle)
@@ -208,14 +253,24 @@ def main() -> None:
                 missing.append("--export-manifest or --no-exports")
             if args.production and not (args.approved_by and args.approved_at):
                 missing.append("--approved-by and --approved-at")
+            if args.freeze_eval_set and not (args.approved_by and args.approved_at):
+                missing.append("--approved-by and --approved-at (freezing an evaluation set is a person's decision)")
             if missing:
                 parser.error("a schema 2 release needs " + ", ".join(missing))
+            frozen = {}
+            for declaration in args.freeze_eval_set:
+                name, _, digest = declaration.partition("=")
+                if not name or not contract.SHA256_RE.fullmatch(digest):
+                    parser.error("--freeze-eval-set expects NAME=<full SHA-256>")
+                frozen[name] = digest
+            with tempfile.TemporaryDirectory() as directory:
+                source = source_record(args.data_repo, extract_language_db(args.bundle, Path(directory)))
             manifest = build_v2(
                 args.bundle,
-                source=source_record(args.data_repo),
+                source=source,
                 approval=approval_record(args.approved_by, args.approved_at),
                 exports=exports_record(args.export_manifest),
-                evaluation=evaluation_record(args.eval_set),
+                evaluation=evaluation_record(args.eval_set, frozen),
                 derivation=derivation_record(args.quality_report, args.removals),
             )
             with tempfile.TemporaryDirectory() as directory:

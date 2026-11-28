@@ -715,6 +715,22 @@ def ingest_parallel(con: sqlite3.Connection, path: Path | ParallelParts, created
     }
 
 
+def source_state(root: Path) -> dict | None:
+    """The siamsil-data commit this build read and whether its working tree was clean, or None if it is not a git
+    checkout. Stored in the database's dataset_versions row, so the commit travels with the bundle's data."""
+    import subprocess
+
+    def git(*args: str) -> str | None:
+        done = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, check=False)
+        return done.stdout.strip() if done.returncode == 0 else None
+
+    commit = git("rev-parse", "HEAD")
+    status = git("status", "--porcelain")
+    if not commit or status is None:
+        return None
+    return {"commit": commit, "working_tree_clean": status == ""}
+
+
 def write_removals(removals: list[dict], path: Path) -> dict:
     """Write the per-row removal record (JSONL, in source order) and describe it for the manifests.
 
@@ -1248,6 +1264,9 @@ def main() -> None:
     }
     if args.applied_dictionary is not None:
         source_files["applied_dictionary"] = display_path(args.applied_dictionary)
+    state = source_state(repo.root) if repo is not None else None
+    if state is not None:
+        source_files["siamsil_data_source"] = state
     con.execute(
         """
         INSERT INTO dataset_versions (name, version, created_at, script_version, source_files)

@@ -10,7 +10,8 @@ release.json has two schema versions:
 
 Version 2 adds, and the verifier checks:
 
-  source                 siamsil-data commit SHA (40 hex) and whether its working tree was clean
+  source                 siamsil-data commit SHA (40 hex), whether its tree was clean, and its binding: "database"
+                         (read from the shipped language database) or "operator_supplied" (development only)
   rights_registry        SHA-256 of json/rights.json; must equal the file inside the bundle
   approval               status "unapproved" or "approved"; "approved" names who approved and when. A person's
                          decision recorded as data, never produced by code or by an AI
@@ -122,6 +123,10 @@ def _check_v2(manifest: dict, contents: dict, *, strict: bool) -> list[str]:
     elif strict and source.get("working_tree_clean") is not True:
         problems.append("source.working_tree_clean must be true: a release built from uncommitted data is not "
                         "tied to any commit")
+    elif strict and source.get("binding") != "database":
+        problems.append('source.binding must be "database": the commit has to be the one recorded inside the shipped '
+                        "language database; an operator-supplied commit is a claim, not evidence (rebuild with "
+                        "build_language_db.py from a siamsil-data checkout)")
 
     rights = manifest.get("rights_registry")
     if not isinstance(rights, dict) or rights.get("member") != RIGHTS_MEMBER \
@@ -216,7 +221,8 @@ def check_installed(manifest: dict, root: Path, *, full: bool = True) -> list[st
 
 
 def verify(manifest: object, *, environment: str, root: Path | None = None, full: bool = True,
-           expected_bundle_sha256: str | None = None, expected_rights_sha256: str | None = None) -> None:
+           expected_bundle_sha256: str | None = None, expected_rights_sha256: str | None = None,
+           rights_override: Path | None = None) -> None:
     """Raise ReleaseVerificationError listing every problem; return quietly when the release verifies."""
     strict = is_strict(environment)
     problems = check_structure(manifest, strict=strict)
@@ -228,6 +234,12 @@ def verify(manifest: object, *, environment: str, root: Path | None = None, full
                 or ((manifest.get("contents") or {}).get(RIGHTS_MEMBER) or {}).get("sha256")
             if declared != expected_rights_sha256:
                 problems.append("the release's rights register is not the configured rights snapshot")
+        if rights_override is not None and strict:
+            # The API reads SIAMSIL_RIGHTS_FILE ahead of the installed register, so it must be the verified one.
+            declared = (manifest.get("rights_registry") or {}).get("sha256")
+            override = Path(rights_override)
+            if not override.is_file() or sha256_file(override) != declared:
+                problems.append("SIAMSIL_RIGHTS_FILE is not the rights register this release declares; unset it")
         if root is not None and not problems:
             problems += check_installed(manifest, root, full=full)
     if problems:
