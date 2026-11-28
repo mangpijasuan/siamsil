@@ -108,6 +108,24 @@ def forbidden(data_dir: Path, rights: dict[str, dict]) -> tuple[dict[str, str], 
     return sources, fragments
 
 
+def owner_review_state(data_dir: Path) -> tuple[str, str | None]:
+    """("pending" | "approved" | "invalid", detail) for data/governance.json's owner_review field.
+
+    "approved" needs an object naming who approved and when. This only reads the field: it cannot tell whether the
+    claim is true, and nothing in this code or any AI step ever writes it.
+    """
+    governance = Path(data_dir) / "governance.json"
+    if not governance.is_file():
+        return "invalid", "data/governance.json is missing"
+    value = load_json(governance).get("owner_review")
+    if value == "pending":
+        return "pending", None
+    if isinstance(value, dict) and str(value.get("approved_by") or "").strip() \
+            and contract.ISO_UTC_RE.match(str(value.get("approved_at") or "")):
+        return "approved", f"{value['approved_by']} on {value['approved_at']}"
+    return "invalid", 'owner_review must be "pending" or {"approved_by": "<name>", "approved_at": "YYYY-MM-DDTHH:MM:SS"}'
+
+
 def hit(text: str, fragments: dict[str, str]) -> list[str]:
     lowered = text.lower()
     return [fragment for fragment in fragments if fragment in lowered]
@@ -139,6 +157,10 @@ def check_registry(data_dir: Path = DATA) -> Report:
     report.fact("rights_status_by_use", by_use)
     never, fragments = forbidden(data_dir, rights)
     report.fact("forbidden_sources", sorted(never))
+    state, detail = owner_review_state(data_dir)
+    report.fact("governance_json_owner_review", state if detail is None or state == "invalid" else f"{state} ({detail})")
+    if state == "invalid":
+        report.fail(f"data/governance.json: {detail}")
 
     # Every source the committed configuration names has a rights entry.
     referenced: dict[str, list[str]] = {}
@@ -186,7 +208,7 @@ def sha256_file(path: Path) -> str:
     return contract.sha256_file(path)
 
 
-def check_data_repo(repo: Path, data_dir: Path = DATA) -> Report:
+def check_data_repo(repo: Path, data_dir: Path = DATA, require_quarantined: bool = False) -> Report:
     report = Report("data-repo")
     repo = Path(repo)
     rights = load_json(data_dir / "rights.json")["sources"]
@@ -238,7 +260,19 @@ def check_data_repo(repo: Path, data_dir: Path = DATA) -> Report:
         for name in restricted:
             if name in declared or any(name == spec["path"] for spec in pins.values()):
                 report.fail(f"restricted material is declared as a pinned source: {name}")
-        if restricted:
+        inner = []
+        # Only while restricted files remain: after a migration an upstream manifest that still lists them is expected.
+        for name in files if restricted else []:
+            if name.lower().endswith(".json") and "manifest" in name.lower() and name != "MANIFEST.sha256":
+                path = repo / name
+                if path.is_file() and path.stat().st_size < 50_000_000 and hit(path.read_text(encoding="utf-8", errors="ignore"), fragments):
+                    inner.append(name)
+        report.fact("manifests_listing_restricted_paths", inner)
+        if inner:
+            report.warn(f"{len(inner)} manifest files list restricted paths and need a quarantine notice: {', '.join(inner)}")
+        if restricted and require_quarantined:
+            report.fail(f"{len(restricted)} restricted files are still tracked in this archive (--require-quarantined)")
+        elif restricted:
             report.warn(f"{len(restricted)} restricted files are present in the archive; keep them in a separately "
                         "access-controlled area and out of every manifest (docs/DATA_GOVERNANCE.md)")
         commit = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True, check=False)
@@ -469,6 +503,8 @@ def main(argv: list[str] | None = None) -> int:
     commands.add_parser("registry")
     repo = commands.add_parser("data-repo")
     repo.add_argument("--data-repo", type=Path, required=True)
+    repo.add_argument("--require-quarantined", action="store_true",
+                      help="fail while any restricted file is still tracked (use after the migration)")
     exports = commands.add_parser("exports")
     exports.add_argument("--export-dir", type=Path, required=True)
     release = commands.add_parser("release")
@@ -486,7 +522,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "registry":
         report = check_registry(args.data_dir)
     elif args.command == "data-repo":
-        report = check_data_repo(args.data_repo, args.data_dir)
+        report = check_data_repo(args.data_repo, args.data_dir, args.require_quarantined)
     elif args.command == "exports":
         report = check_exports(args.export_dir, args.data_dir)
     elif args.command == "release":

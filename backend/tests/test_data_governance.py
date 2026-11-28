@@ -49,7 +49,7 @@ class DataDirCase(unittest.TestCase):
         write(self.data / "dictionary_sources.json", {"sources": {"one": {"rights": "dict_one"}}})
         write(self.data / "reference_dictionaries.json", {"sources": {}})
         write(self.data / "source_files.json", {"sources": over.get("pins", {})})
-        write(self.data / "governance.json", {"forbidden_sources": {"extra_forbidden": "test"},
+        write(self.data / "governance.json", {"owner_review": "pending", "forbidden_sources": {"extra_forbidden": "test"},
                                               "forbidden_path_fragments": {"churchfile": "test"}})
 
 
@@ -100,9 +100,35 @@ class RegistryTests(DataDirCase):
         self.assertEqual(gov.check_registry(ROOT / "data").failures, [])
 
 
+class OwnerReviewTests(DataDirCase):
+    def state(self, value: object):
+        write(self.data / "governance.json", {"forbidden_sources": {}, "forbidden_path_fragments": {}, "owner_review": value})
+        return gov.owner_review_state(self.data)
+
+    def test_pending_approved_and_invalid_forms(self) -> None:
+        self.assertEqual(self.state("pending"), ("pending", None))
+        approved = self.state({"approved_by": "Owner", "approved_at": "2026-12-01T09:00:00"})
+        self.assertEqual(approved[0], "approved")
+        for bad in ("approved", {"approved_by": "Owner"}, {"approved_by": "", "approved_at": "2026-12-01T09:00:00"},
+                    {"approved_by": "Owner", "approved_at": "yesterday"}, None):
+            with self.subTest(bad=bad):
+                self.assertEqual(self.state(bad)[0], "invalid")
+
+    def test_registry_reports_the_state_and_fails_on_an_invalid_one(self) -> None:
+        self.assertEqual(gov.check_registry(self.data).facts["governance_json_owner_review"], "pending")
+        write(self.data / "governance.json", {"owner_review": "approved"})
+        self.assertTrue(any("owner_review" in f for f in gov.check_registry(self.data).failures))
+
+    def test_the_tool_never_writes_the_field(self) -> None:
+        before = (self.data / "governance.json").read_text(encoding="utf-8")
+        gov.check_registry(self.data)
+        gov.main(["--data-dir", str(self.data), "registry"])
+        self.assertEqual((self.data / "governance.json").read_text(encoding="utf-8"), before)
+
+
 class DataRepoTests(DataDirCase):
-    def make_repo(self, files: dict[str, str], declare: list[str] | None = None) -> Path:
-        repo = self.root / "archive"
+    def make_repo(self, files: dict[str, str], declare: list[str] | None = None, name: str = "archive") -> Path:
+        repo = self.root / name
         repo.mkdir()
         subprocess.run(["git", "-C", str(repo), "init", "-q"], check=True)
         subprocess.run(["git", "-C", str(repo), "config", "user.email", "t@example.invalid"], check=True)
@@ -150,6 +176,29 @@ class DataRepoTests(DataDirCase):
         self.root.joinpath("archive").rename(self.root / "archive-old")
         declared = self.make_repo({"zomi/churchfile_raw.txt": "private"})
         self.assertTrue(any("declared as a pinned source" in f for f in gov.check_data_repo(declared, self.data).failures))
+
+    def test_require_quarantined_fails_while_restricted_files_are_tracked(self) -> None:
+        repo = self.make_repo({"a/one.txt": "one", "zomi/churchfile_raw.txt": "private"}, declare=["a/one.txt"])
+        self.assertEqual(gov.check_data_repo(repo, self.data).failures, [])
+        self.assertTrue(any("still tracked" in f for f in gov.check_data_repo(repo, self.data, True).failures))
+        clean = self.root / "clean"
+        clean.mkdir()
+        self.root.joinpath("archive").rename(self.root / "archive-with-restricted")
+        repo = self.make_repo({"a/one.txt": "one"})
+        self.assertEqual(gov.check_data_repo(repo, self.data, True).failures, [])
+
+    def test_an_inner_manifest_listing_a_restricted_path_is_reported_only_while_the_files_remain(self) -> None:
+        listing = json.dumps({"files": [{"path": "zomi/churchfile_raw.txt", "sha256": "0" * 64}]})
+        before = self.make_repo({"a/one.txt": "one", "zomi/source-manifest.json": listing,
+                                 "zomi/churchfile_raw.txt": "private"}, declare=["a/one.txt"])
+        report = gov.check_data_repo(before, self.data)
+        self.assertEqual(report.facts["manifests_listing_restricted_paths"], ["zomi/source-manifest.json"])
+        self.assertTrue(any("quarantine notice" in w for w in report.warnings))
+        after = self.make_repo({"a/one.txt": "one", "zomi/source-manifest.json": listing}, declare=["a/one.txt"],
+                               name="after-migration")
+        done = gov.check_data_repo(after, self.data, require_quarantined=True)
+        self.assertEqual(done.facts["manifests_listing_restricted_paths"], [])
+        self.assertEqual(done.failures, [])
 
     def test_a_pinned_original_that_changed_fails(self) -> None:
         repo = self.make_repo({"a/one.txt": "one"})

@@ -41,6 +41,12 @@ The app repo's CI also runs the release-contract tests and the staging drill on 
 - **`registry` cannot see the private archive.** Anything that depends on private files is checked only where those files exist.
 - **A check passing is not a clearance.** Rights stay `needs_review` until a person records evidence in `rights.json`.
 
+## Decisions, migration and setup (documents for the owner)
+
+- [GOVERNANCE_DECISIONS.md](GOVERNANCE_DECISIONS.md): what `data/governance.json` does and the decisions it needs (it is `owner_review: pending`; the checks report that state and never write it).
+- [RESTRICTED_SOURCE_MIGRATION.md](RESTRICTED_SOURCE_MIGRATION.md): a non-destructive plan for the two church-capture files. Nothing has been moved. `data-repo --require-quarantined` fails while they are tracked and passes after an approved migration.
+- [PRIVATE_REPO_GOVERNANCE_SETUP.md](PRIVATE_REPO_GOVERNANCE_SETUP.md): the permissions checklist for enabling the workflow in `siamsil-data`.
+
 ## Not in this PR (next in the sequence)
 
 Aligning the sole-owner linguistic approval documents and workflows; the protected human evaluation workflow; security headers, secret scanning, an end-to-end smoke test and a restore drill. The protected `data-release.yml` workflow remains paused.
