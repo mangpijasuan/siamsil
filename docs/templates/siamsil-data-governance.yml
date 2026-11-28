@@ -1,0 +1,54 @@
+# TEMPLATE for the PRIVATE siamsil-data repository. It is not active here: copy it to
+# siamsil-data/.github/workflows/data-governance.yml when the owner decides to enable it.
+#
+# It checks that every file in MANIFEST.sha256 exists and matches, that the pinned originals in the app repo's
+# data/source_files.json match, which tracked files have no recorded checksum, and whether restricted material is
+# declared as a source. Its log holds counts, file paths and hashes only, never record text
+# (docs/DATA_GOVERNANCE.md).
+#
+# Rules this workflow must keep (PR #64 broke them):
+#   - no actions/upload-artifact, no cache of data, no outputs that contain record text
+#   - read-only token (contents: read); no R2 or other write credentials
+#   - runs the app repo's checker from the PUBLIC app repo; nothing from this archive is sent anywhere
+name: Data governance (siamsil-data)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out this archive
+        uses: actions/checkout@v4
+        with:
+          path: data-repo
+          # lfs: true   # enable if the large files are stored with Git LFS
+
+      - name: Check out the checker (public app repo)
+        uses: actions/checkout@v4
+        with:
+          repository: mangpijasuan/siamsil
+          path: app
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -r app/ml_pipeline/requirements.txt
+
+      - name: Archive integrity, pins and restricted material
+        run: python app/ml_pipeline/scripts/data_governance.py --data-dir app/data data-repo --data-repo data-repo
+
+      # Optional, when an export folder is committed or restored in this archive:
+      # - name: Exports
+      #   run: python app/ml_pipeline/scripts/data_governance.py --data-dir app/data exports --export-dir data-repo/exports
