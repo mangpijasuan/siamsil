@@ -332,14 +332,16 @@ class ReleaseTests(DataDirCase):
 
 class CommandLineTests(DataDirCase):
     def test_exit_status_follows_failures_and_strict_warnings(self) -> None:
-        self.assertEqual(gov.main(["--data-dir", str(self.data), "registry"]), 0)
-        self.rights["bible_web"]["display"] = "maybe"
-        self.write_config()
-        self.assertEqual(gov.main(["--data-dir", str(self.data), "registry"]), 1)
+        with redirect_stdout(io.StringIO()):  # the report is printed; keep test logs quiet
+            self.assertEqual(gov.main(["--data-dir", str(self.data), "registry"]), 0)
+            self.rights["bible_web"]["display"] = "maybe"
+            self.write_config()
+            self.assertEqual(gov.main(["--data-dir", str(self.data), "registry"]), 1)
 
     def test_a_json_report_is_written(self) -> None:
         out = self.root / "report.json"
-        gov.main(["--data-dir", str(self.data), "--json", str(out), "registry"])
+        with redirect_stdout(io.StringIO()):
+            gov.main(["--data-dir", str(self.data), "--json", str(out), "registry"])
         self.assertTrue(json.loads(out.read_text(encoding="utf-8"))["passed"])
 
 
