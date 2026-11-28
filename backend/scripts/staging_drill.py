@@ -22,10 +22,15 @@ import sqlite3
 import subprocess
 import sys
 import tarfile
+import socket
+import ssl
 import threading
+import urllib.parse
 import time
+import urllib.request
 from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from datetime import datetime, timedelta, timezone
+from http.server import BaseHTTPRequestHandler, SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -34,6 +39,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(ROOT / "ml_pipeline" / "scripts"))
 import build_language_db as build  # noqa: E402
 import check_release  # noqa: E402
+import fetch_data  # noqa: E402
 import release_contract as contract  # noqa: E402
 import release_manifest  # noqa: E402
 
@@ -340,13 +346,208 @@ class Drill:
         self.expect("restart after rollback", "rollback", rc, text, accept=True, contains="already present")
 
 
+ACCESS_KEY, SECRET_KEY, BUCKET = "AKIDDRILLEXAMPLE", "drill/secret+key", "siamsil-staging-bundle"
+
+
+def start_bucket(objects: dict[str, bytes], work: Path) -> tuple[ThreadingHTTPServer, str, Path]:
+    """A local S3-compatible HTTPS endpoint (path style) that serves `objects` only for a correctly signed,
+    unexpired SigV4 query-string request, checked with the same algorithm botocore produces (see the PR notes)."""
+    cert, key = work / "bucket-cert.pem", work / "bucket-key.pem"
+    subprocess.run(["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", str(key), "-out", str(cert),
+                    "-days", "1", "-subj", "/CN=localhost", "-addext", "subjectAltName=IP:127.0.0.1,DNS:localhost"],
+                   check=True, capture_output=True)
+    holder: dict[str, str] = {}
+
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, *_args) -> None:
+            pass
+
+        def do_GET(self) -> None:  # noqa: N802
+            split = urllib.parse.urlsplit(self.path)
+            query = dict(urllib.parse.parse_qsl(split.query))
+            prefix = f"/{BUCKET}/"
+            if not split.path.startswith(prefix):
+                return self.send_error(404)
+            name = urllib.parse.unquote(split.path[len(prefix):])
+            try:
+                when = datetime.strptime(query["X-Amz-Date"], "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+                expires = int(query["X-Amz-Expires"])
+                access = query["X-Amz-Credential"].split("/")[0]
+            except (KeyError, ValueError):
+                return self.send_error(403, "malformed signature")
+            expected = fetch_data.presigned_url(holder["endpoint"], BUCKET, name, ACCESS_KEY, SECRET_KEY, expires=expires,
+                                                now=when)
+            expected_signature = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(expected).query))["X-Amz-Signature"]
+            if access != ACCESS_KEY or query.get("X-Amz-Signature") != expected_signature:
+                return self.send_error(403, "signature does not match")
+            if datetime.now(timezone.utc) > when + timedelta(seconds=expires):
+                return self.send_error(403, "expired")
+            if name not in objects:
+                return self.send_error(404)
+            body = objects[name]
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(cert, key)
+    server.socket = context.wrap_socket(server.socket, server_side=True)
+    holder["endpoint"] = f"https://127.0.0.1:{server.server_address[1]}"
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server, holder["endpoint"], cert
+
+
+def s3_scenarios(drill: Drill) -> None:
+    """The bucket path (SIAMSIL_DATA_BUNDLE_S3_*): presigned links, the manifest key beside the bundle key, and what
+    a bad signature or a missing object looks like in the boot log. Needs openssl for a throwaway certificate."""
+    folder_release = drill.release("s3-folder", rights_note="bucket release, folder layout")
+    flat_release = drill.release("s3-flat", rights_note="bucket release, flat layout")
+
+    def read(name: str) -> bytes:
+        return (drill.serve / name).read_bytes()
+
+    folder = f"releases/sha256-{folder_release['bundle_sha']}"
+    objects = {
+        f"{folder}/siamsil-data.tar.gz": read("s3-folder.tar.gz"),
+        f"{folder}/release.json": read("s3-folder.release.json"),
+        "siamsil-data-2026-11-30.tar.gz": read("s3-flat.tar.gz"),
+        "siamsil-data-2026-11-30.release.json": read("s3-flat.release.json"),
+        "orphan.tar.gz": read("s3-flat.tar.gz"),  # a bundle with no manifest beside it
+    }
+    server, endpoint, cert = start_bucket(objects, drill.work)
+
+    def bucket_env(rel: dict, key: str, volume: Path, **over: str | None) -> dict[str, str]:
+        env = drill.env(rel, volume, SIAMSIL_DATA_BUNDLE_URL=None, SIAMSIL_DATA_RELEASE_MANIFEST_URL=None)
+        env.update({"SIAMSIL_DATA_BUNDLE_S3_ENDPOINT": endpoint, "SIAMSIL_DATA_BUNDLE_S3_BUCKET": BUCKET,
+                    "SIAMSIL_DATA_BUNDLE_S3_ACCESS_KEY_ID": ACCESS_KEY, "SIAMSIL_DATA_BUNDLE_S3_SECRET_ACCESS_KEY": SECRET_KEY,
+                    "SIAMSIL_DATA_BUNDLE_S3_KEY": key, "SSL_CERT_FILE": str(cert)})
+        env.update({k: v for k, v in over.items() if v is not None})
+        return env
+
+    try:
+        rc, text, _ = drill.fetch(bucket_env(folder_release, f"{folder}/siamsil-data.tar.gz", drill.volume("s3-1")))
+        drill.expect("bucket: signed links, folder layout (release.json beside the bundle)", "bucket", rc, text, accept=True)
+        rc, text, _ = drill.fetch(bucket_env(flat_release, "siamsil-data-2026-11-30.tar.gz", drill.volume("s3-2")))
+        drill.expect("bucket: flat dated key (<name>.release.json)", "bucket", rc, text, accept=True)
+        rc, text, _ = drill.fetch(bucket_env(flat_release, "siamsil-data-2026-11-30.tar.gz", drill.volume("s3-3"),
+                                             SIAMSIL_DATA_BUNDLE_S3_SECRET_ACCESS_KEY="not-the-secret"))
+        drill.expect("bucket: wrong secret is refused (HTTP 403) without printing the link", "bucket", rc, text,
+                     accept=False, contains="HTTP 403")
+        drill.expect("the boot log never contains a signature", "bucket", 1 if "X-Amz-Signature" in text else 0, "", accept=True)
+        rc, text, _ = drill.fetch(bucket_env(flat_release, "orphan.tar.gz", drill.volume("s3-4")))
+        drill.expect("bucket: bundle with no manifest beside it", "bucket", rc, text, accept=False,
+                     contains="cannot download the release manifest (HTTP 404)")
+        rc, text, _ = drill.fetch(bucket_env(flat_release, "siamsil-data-2026-11-30.tar.gz", drill.volume("s3-5"),
+                                             SIAMSIL_DATA_RELEASE_MANIFEST_KEY=f"{folder}/release.json"))
+        drill.expect("bucket: a manifest key from another release is refused", "bucket", rc, text, accept=False)
+    finally:
+        server.shutdown()
+
+
+def free_port() -> int:
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
+
+
+def api_scenarios(drill: Drill, database_url: str) -> None:
+    """Start the real API the way backend/Dockerfile does (fetch_data, migrations, uvicorn) in STAGING mode against a
+    PostgreSQL database the caller provides. Needs PostgreSQL, so it runs only when --database-url is given."""
+    a = drill.release("api-a", rights_note="api release A")
+    b = drill.release("api-b", rights_note="api release B")
+    backend = ROOT / "backend"
+
+    def start(rel: dict, volume: Path, **over: str):
+        port = free_port()
+        env = drill.env(rel, volume, SIAMSIL_DATABASE_URL=database_url, SIAMSIL_DATABASE_REQUIRED="true",
+                        SIAMSIL_CORS_ORIGINS='["https://staging.example.invalid"]',
+                        SIAMSIL_LANGUAGE_DB=str(volume / "siamsil_language.sqlite"),
+                        SIAMSIL_BIBLE_VERSIONS_DB=str(volume / "bible_versions.sqlite"),
+                        SIAMSIL_DATA_DIR=str(volume / "json"), SIAMSIL_RATE_LIMIT_PER_MINUTE="0", **over)
+        chain = (f"{sys.executable} scripts/fetch_data.py && {sys.executable} -m alembic upgrade head && "
+                 f"exec {sys.executable} -m uvicorn main:app --host 127.0.0.1 --port {port} --no-access-log")
+        process = subprocess.Popen(["bash", "-c", chain], cwd=backend, env=env, stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT, text=True)
+        return process, port
+
+    def ready(process: subprocess.Popen, port: int) -> tuple[bool, str]:
+        deadline = time.time() + 40
+        while time.time() < deadline and process.poll() is None:
+            try:
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/health/ready", timeout=2) as response:
+                    return response.status == 200, response.read().decode("utf-8")
+            except OSError:
+                time.sleep(0.5)
+        return False, (process.stdout.read() if process.poll() is not None else "timed out")[-300:]
+
+    def stop(process: subprocess.Popen) -> str:
+        if process.poll() is None:
+            process.terminate()
+        try:
+            return (process.communicate(timeout=10)[0] or "").strip().replace("\n", " | ")[-260:]
+        except subprocess.TimeoutExpired:
+            process.kill()
+            return ""
+
+    volume = drill.volume("api")
+    process, port = start(a, volume)
+    ok, body = ready(process, port)
+    state = json.loads(body) if ok else {}
+    drill.expect("staging API starts after verified install, migrations and PostgreSQL", "api",
+                 0 if ok and state.get("status") == "ok" else 1, body[-200:], accept=True)
+    database = (state.get("checks") or {}).get("application_database") or {}
+    drill.expect("readiness reports the application database as ready", "api",
+                 0 if database.get("ready") or database.get("status") == "ok" else 1, json.dumps(database), accept=True)
+    served = sha(volume / "json" / "rights.json")
+    drill.expect("the API reads the verified rights register", "api",
+                 0 if served == a["manifest"]["rights_registry"]["sha256"] else 1, "", accept=True)
+    stop(process)
+
+    # A rights override that is not the verified register: the container stops before serving anything.
+    other = drill.work / "api-other-rights.json"
+    other.write_text(json.dumps({"sources": {}}), encoding="utf-8")
+    process, port = start(a, volume, SIAMSIL_RIGHTS_FILE=str(other))
+    ok, body = ready(process, port)
+    drill.expect("SIAMSIL_RIGHTS_FILE override stops the container before it serves", "api", 0 if ok else 1, body[-200:],
+                 accept=False, contains="SIAMSIL_RIGHTS_FILE")
+    stop(process)
+
+    # A rights register tampered after install: fetch_data fails, so nothing after it in the start chain runs.
+    (volume / "json" / "rights.json").write_text(json.dumps({"sources": {}}), encoding="utf-8")
+    process, port = start(a, volume)
+    ok, body = ready(process, port)
+    drill.expect("tampered rights register on the volume: the API never starts", "api", 0 if ok else 1, body[-200:],
+                 accept=False, contains="rights")
+    stop(process)
+
+    # Upgrade to B, roll back to A, and the API serves A's register again.
+    volume = drill.volume("api-rollback")
+    for rel, label in ((a, "A"), (b, "B"), (a, "A (rollback)")):
+        process, port = start(rel, volume)
+        ok, body = ready(process, port)
+        right = sha(volume / "json" / "rights.json") == rel["manifest"]["rights_registry"]["sha256"]
+        drill.expect(f"API serves release {label} with its own rights register", "api", 0 if ok and right else 1, body[-160:],
+                     accept=True)
+        stop(process)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--work", type=Path, required=True, help="scratch folder (emptied first)")
+    parser.add_argument("--database-url", help="a PostgreSQL URL (postgresql+psycopg://...) to also run the staging-mode "
+                        "API scenarios; use a throwaway database")
     parser.add_argument("--json", type=Path, help="write the results here")
     args = parser.parse_args()
     drill = Drill(args.work)
     drill.run()
+    if shutil.which("openssl"):
+        s3_scenarios(drill)
+    else:
+        print("skipped the bucket scenarios: openssl is not installed")
+    if args.database_url:
+        api_scenarios(drill, args.database_url)
     failed = [r for r in drill.results if not r["passed"]]
     print(f"\n{len(drill.results) - len(failed)} of {len(drill.results)} scenarios behaved as required")
     if args.json:
