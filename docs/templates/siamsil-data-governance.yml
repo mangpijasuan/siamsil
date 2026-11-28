@@ -1,0 +1,74 @@
+# TEMPLATE for the PRIVATE siamsil-data repository. It is not active here: after the review in
+# docs/PRIVATE_REPO_GOVERNANCE_SETUP.md, copy it to siamsil-data/.github/workflows/data-governance.yml.
+#
+# It checks that every file in MANIFEST.sha256 exists and matches, that the pinned originals in the app repo's
+# data/source_files.json match, which tracked files have no recorded checksum, and whether restricted material is
+# declared as a source. Its log holds counts, file paths and hashes only, never record text (docs/DATA_GOVERNANCE.md).
+#
+# Rules this workflow must keep (PR #64 broke them):
+#   - no actions/upload-artifact, no cache of data, no outputs that contain record text
+#   - read-only token (contents: read); no secrets, no R2 or other write credentials
+#   - the checker comes from the PUBLIC app repo at a commit you reviewed; nothing from this archive is sent anywhere
+name: Data governance (siamsil-data)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: data-governance-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # A commit SHA of mangpijasuan/siamsil that you have reviewed (after the governance PRs merge, use the merge commit).
+  # The first step fails while this is the placeholder, so the workflow cannot run an unreviewed checker by accident.
+  CHECKER_REF: REPLACE_WITH_REVIEWED_COMMIT_SHA
+
+jobs:
+  governance:
+    # Do not run workflow code from forks next to private data.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Require a reviewed checker commit
+        run: |
+          if ! printf '%s' "$CHECKER_REF" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::Set CHECKER_REF to a reviewed 40-character commit SHA of mangpijasuan/siamsil."
+            exit 1
+          fi
+
+      - name: Check out this archive
+        uses: actions/checkout@v4
+        with:
+          path: data-repo
+          persist-credentials: false
+          # lfs: true   # enable only if large files are ever stored with Git LFS
+
+      - name: Check out the checker (public app repo, reviewed commit)
+        uses: actions/checkout@v4
+        with:
+          repository: mangpijasuan/siamsil
+          path: app
+          ref: ${{ env.CHECKER_REF }}
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -r app/ml_pipeline/requirements.txt
+
+      - name: Archive integrity, pins and restricted material
+        run: python app/ml_pipeline/scripts/data_governance.py --data-dir app/data data-repo --data-repo data-repo
+        # After the church-capture files are migrated (docs/RESTRICTED_SOURCE_MIGRATION.md), add --require-quarantined.
+
+      # Optional, when an export folder is committed or restored in this archive:
+      # - name: Exports
+      #   run: python app/ml_pipeline/scripts/data_governance.py --data-dir app/data exports --export-dir data-repo/exports

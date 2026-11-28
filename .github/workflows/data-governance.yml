@@ -1,0 +1,66 @@
+name: Data governance
+
+# Checks the rights register, committed data configuration and release contract on every change that touches them.
+# It reads only files in this public repository and builds small SYNTHETIC releases; it never checks out the private
+# siamsil-data repository, uses no secrets, and uploads no artifacts (PR #64 exposed restricted data that way).
+# The checks that need the private archive run in the private repository's own CI or locally; see
+# docs/DATA_GOVERNANCE.md and docs/templates/siamsil-data-governance.yml.
+on:
+  push:
+    paths:
+      - "data/**"
+      - "backend/scripts/release_*.py"
+      - "backend/scripts/fetch_data.py"
+      - "backend/scripts/check_release.py"
+      - "backend/scripts/staging_drill.py"
+      - "backend/services/rights_policy.py"
+      - "ml_pipeline/scripts/data_governance.py"
+      - "ml_pipeline/scripts/build_language_db.py"
+      - ".github/workflows/data-governance.yml"
+  pull_request:
+    paths:
+      - "data/**"
+      - "backend/scripts/release_*.py"
+      - "backend/scripts/fetch_data.py"
+      - "backend/scripts/check_release.py"
+      - "backend/scripts/staging_drill.py"
+      - "backend/services/rights_policy.py"
+      - "ml_pipeline/scripts/data_governance.py"
+      - "ml_pipeline/scripts/build_language_db.py"
+      - ".github/workflows/data-governance.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  governance:
+    name: Data governance checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+            ml_pipeline/requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r backend/requirements-dev.txt -r ml_pipeline/requirements.txt
+
+      - name: Registry, configuration and committed manifests
+        run: python ml_pipeline/scripts/data_governance.py --strict registry
+
+      - name: Governance and release-contract tests
+        run: |
+          python -m unittest discover -s backend/tests -p "test_data_governance.py"
+          python -m unittest discover -s backend/tests -p "test_release_contract.py"
+
+      - name: Staging drill on synthetic releases
+        run: python backend/scripts/staging_drill.py --work "$RUNNER_TEMP/drill"

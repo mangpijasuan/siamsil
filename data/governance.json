@@ -1,0 +1,10 @@
+{
+  "_comment": "Enforcement list for ml_pipeline/scripts/data_governance.py (docs/DATA_GOVERNANCE.md). It makes no rights decision: sources blocked or not permitted for every use in rights.json are already forbidden automatically. This file adds sources and path fragments that must never appear in a serving, export, training, evaluation or release manifest, whatever their status elsewhere. Added by engineering from existing notes in rights.json; the project owner confirms or edits it.",
+  "owner_review": "pending",
+  "forbidden_sources": {
+    "zomi_bethel_church_web": "a website capture that holds identifiable people's personal information; nothing is permitted until the church gives written permission (rights.json)"
+  },
+  "forbidden_path_fragments": {
+    "zomibethelchurch": "the church website capture, same reason"
+  }
+}

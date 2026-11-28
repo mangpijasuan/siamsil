@@ -97,6 +97,8 @@ The local check validates the installed `.bundle-<sha256>` marker and required d
 
 Rollback is controlled by selecting the **previous immutable key, its bundle SHA-256 and its matching release manifest**, redeploying, and repeating both checks. A release is three settings that change together: `SIAMSIL_DATA_BUNDLE_S3_KEY` + `SIAMSIL_DATA_BUNDLE_SHA256` + `SIAMSIL_DATA_RELEASE_MANIFEST_SHA256` (plus `SIAMSIL_DATA_RELEASE_MANIFEST_KEY` and `SIAMSIL_RIGHTS_SHA256` if you set them). Leaving the newer manifest's hash in place makes the older release refuse to start. Keep each release's manifest hash in the release ledger. Preserve a release ledger recording code commit, source-repo commit, bundle SHA, R2 key, rollout timestamp, reviewer, benchmark results, and permission approval. Database schema compatibility and application version compatibility must be checked before rollback.
 
+Automated checks of the data around a release (rights coverage, archive checksums, restricted-source exclusion, export and evaluation leakage) are described in [DATA_GOVERNANCE.md](DATA_GOVERNANCE.md).
+
 ## Future hardening
 
 Before unattended production promotion: add a protected training/evaluation pipeline, rights and human-review approvals, semantic API smoke checks, explicit source commit pins, database compatibility checks, remote release-version endpoint, and an alerting monitor. Do not treat this workflow as complete autonomous production synchronization.
