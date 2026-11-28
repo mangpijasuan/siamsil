@@ -49,6 +49,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT_DB = ROOT / "data" / "processed" / "language" / "siamsil_language.sqlite"
 DEFAULT_REPORT = ROOT / "data" / "processed" / "language" / "quality_report.json"
 DEFAULT_MANIFEST = ROOT / "data" / "processed" / "language" / "manifest.json"
+REMOVALS_NAME = "parallel-removals.jsonl"  # written beside the database; backend/scripts/release_contract.py
 DEFAULT_VERSIONS = ROOT / "data" / "versions"
 DEFAULT_REVIEWS = ROOT / "data" / "reviews" / "corpus-reviews.jsonl"
 DEFAULT_REVISIONS = ROOT / "data" / "reviews" / "corpus-revisions.jsonl"
@@ -603,6 +604,9 @@ def ingest_parallel(con: sqlite3.Connection, path: Path | ParallelParts, created
     split_counts: Counter[str] = Counter()
     flag_counts: Counter[str] = Counter()
     model_counts: Counter[str] = Counter()
+    # One record per row left out, so the difference between source rows and kept pairs can be reproduced, not
+    # just counted (docs/DATA_RELEASES.md). source_row is the 1-based data row in the stream read (header excluded).
+    removals: list[dict] = []
 
     insert_sql = """
         INSERT INTO parallel_sentences (
@@ -643,10 +647,12 @@ def ingest_parallel(con: sqlite3.Connection, path: Path | ParallelParts, created
             zomi = normalize_text(raw_zomi)
             if not en or not zomi:
                 stats["empty"] += 1
+                removals.append({"source_row": stats["source_rows"], "reason": "empty_side"})
                 continue
             digest = pair_key(en, zomi)
             if digest in seen_hashes:
                 stats["duplicates"] += 1
+                removals.append({"source_row": stats["source_rows"], "reason": "duplicate_pair", "pair_hash": digest})
                 continue
             seen_hashes.add(digest)
 
@@ -705,7 +711,21 @@ def ingest_parallel(con: sqlite3.Connection, path: Path | ParallelParts, created
         "splits": dict(split_counts),
         "flags": dict(flag_counts),
         "models": dict(model_counts),
+        "removals": removals,
     }
+
+
+def write_removals(removals: list[dict], path: Path) -> dict:
+    """Write the per-row removal record (JSONL, in source order) and describe it for the manifests.
+
+    Rows are identified by position and pair hash, never by text. The file belongs next to release.json in the
+    private bucket (backend/scripts/release_contract.py checks it against the kept pairs).
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as handle:
+        for record in removals:
+            handle.write(json.dumps(record, sort_keys=True) + "\n")
+    return {"file": path.name, "sha256": file_fingerprint(path)["sha256"], "records": len(removals)}
 
 
 def apply_corpus_checks(con: sqlite3.Connection, eval_items: list[dict] | None = None, batch: int = 10_000) -> dict:
@@ -913,12 +933,13 @@ def release_manifest(
     eval_files: list[Path],
     counts: dict,
     created_at: str,
+    derivation: dict | None = None,
 ) -> dict:
     """Describe a language release precisely enough to verify or reproduce it.
 
     Evaluation sets are recorded by hash only; their content stays hidden.
     """
-    return {
+    manifest = {
         "name": "siamsil-language",
         "version": DATASET_VERSION,
         "created_at": created_at,
@@ -932,6 +953,9 @@ def release_manifest(
             {"file": path.name, "sha256": file_fingerprint(path)["sha256"]} for path in eval_files
         ],
     }
+    if derivation is not None:
+        manifest["derivation"] = derivation
+    return manifest
 
 
 def release_counts(dictionary_entries: int, parallel_sentences: int, review_records: list[dict]) -> dict:
@@ -1196,6 +1220,8 @@ def main() -> None:
         except SourceError as error:
             sys.exit(f"Not released: {error}")
     print(f"  unique pairs kept: {parallel_stats['counts'].get('ingested', 0):,}")
+    removals_record = write_removals(parallel_stats["removals"], args.out.with_name(REMOVALS_NAME))
+    print(f"  rows removed: {removals_record['records']:,} (record: {removals_record['file']})")
 
     print("Running whole-corpus checks (template families, alignment, evaluation holdout)…")
     checks = apply_corpus_checks(con, eval_items)
@@ -1261,6 +1287,7 @@ def main() -> None:
             "unique_pairs_kept": parallel_total,
             "duplicates_dropped": parallel_stats["counts"].get("duplicates", 0),
             "empty_dropped": parallel_stats["counts"].get("empty", 0),
+            "removals": removals_record,
             "clean": checks["clean"],
             "needs_review": checks["flagged"],
             "verified": verified_pairs,
@@ -1302,6 +1329,7 @@ def main() -> None:
         eval_files=args.eval,
         counts=release_counts(dict_total, parallel_total, review_records),
         created_at=created_at,
+        derivation={"parallel_removals": removals_record},
     )
     version_file = write_release_manifest(manifest, DEFAULT_MANIFEST, DEFAULT_VERSIONS)
 

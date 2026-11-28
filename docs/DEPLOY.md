@@ -65,6 +65,7 @@ The bundle contains `siamsil_language.sqlite`, `bible_versions.sqlite` and any r
 | `SIAMSIL_DATA_BUNDLE_S3_ACCESS_KEY_ID` | the read-only token's Access Key ID |
 | `SIAMSIL_DATA_BUNDLE_S3_SECRET_ACCESS_KEY` | the read-only token's Secret Access Key |
 | `SIAMSIL_DATA_BUNDLE_SHA256` | the SHA-256 that `package_data.py` printed |
+| `SIAMSIL_DATA_RELEASE_MANIFEST_SHA256` | the SHA-256 that `release_manifest.py` printed for the bundle's `release.json`; required in production ([DATA_RELEASES.md](DATA_RELEASES.md)) |
 
 The Dockerfile already points the API at `/data` (`SIAMSIL_LANGUAGE_DB`, `SIAMSIL_BIBLE_VERSIONS_DB`, `SIAMSIL_DATA_DIR`). On its first start the API downloads the bundle into the volume. It unpacks the whole bundle before replacing anything, and removes files an earlier bundle had that the new one leaves out. That takes a few minutes, which is why the health check waits up to 10 minutes. It then applies the database migrations and starts. Later restarts skip the download while the SHA-256 is unchanged.
 

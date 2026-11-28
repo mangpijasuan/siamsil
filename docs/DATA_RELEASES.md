@@ -10,6 +10,45 @@ Private `siamsil-data` clone → pinned SHA-256 sources (`data/source_files.json
 
 A new source commit, including terminology corrections, does **not** imply permission to publish it. Human review and rights gates remain separate; a release must be explicitly initiated. The live application does not hot-read the source repo.
 
+## The release manifest contract (release.json, schema 2)
+
+`release.json` says what a bundle is. Schema 1 (bundle digest, per-file digests, creation time) is kept as it was; **schema 2 extends it** and is what the code in `backend/scripts/release_contract.py` checks. Schema 1 is accepted only when `SIAMSIL_ENVIRONMENT` is `development` or `test`; staging and production require schema 2.
+
+| Field | What it declares | Checked |
+|---|---|---|
+| `source.siamsil_data_commit`, `source.working_tree_clean` | the `siamsil-data` commit the bundle was built from, and that no uncommitted change was in the tree | 40-hex SHA; production needs a clean tree |
+| `rights_registry.sha256` | digest of `json/rights.json` | equals the digest in `contents` and the installed file; optionally equals `SIAMSIL_RIGHTS_SHA256` |
+| `approval.status`, `approved_by`, `approved_at_utc` | `unapproved` or `approved`, and by whom and when | production needs `approved` with a name and a time. **Only a person supplies these** (`--approved-by`, `--approved-at`); no tool or AI approves a release |
+| `exports.approved_counts`, `export_manifest_sha256` | export counts per split, from an `export_datasets.py` manifest | refused if that manifest admitted any uncleared source |
+| `protected_evaluation.sets`, `sets_sha256` | evaluation sets by name, SHA-256, item count and `frozen`; never their text | structure and the combined hash |
+| `derivation.parallel_corpus` | source rows, rows kept, rows removed by reason, and the SHA-256 of the per-row removal record | `source_rows = kept + removed`; the record is checked against the kept pairs |
+
+### Where the 1,777,002 → 1,775,043 difference comes from
+
+`build_language_db.py` writes `parallel-removals.jsonl` beside the database: one line per row left out, `{"source_row": N, "reason": "duplicate_pair" | "empty_side", "pair_hash": ...}`, with the row's position in the source stream and, for duplicates, the pair hash. It holds no text. `release_contract.check_derivation` re-derives the claim: the file matches its SHA-256, its counts match the manifest, every removed duplicate's hash is present among the kept pairs, and the database holds `kept` pairs. Keep the file beside `release.json` in the private bucket.
+
+### Building and installing
+
+```bash
+# development bundle, schema 1
+python backend/scripts/release_manifest.py dist/siamsil-data.tar.gz --output dist/release.json
+# production release, schema 2 (see the script's docstring for every option)
+python backend/scripts/release_manifest.py dist/siamsil-data.tar.gz --output dist/release.json --production \
+  --data-repo ../siamsil-data --no-exports --quality-report data/processed/language/quality_report.json \
+  --removals data/processed/language/parallel-removals.jsonl --eval-set data/evaluation/human/en-zomi-v1.jsonl \
+  --approved-by "<name>" --approved-at 2026-11-30T09:00:00
+```
+
+The command prints the manifest's own digest. Upload `release.json` beside the bundle (a folder per release holds `release.json`; a flat dated name `siamsil-data-2026-11-30.tar.gz` gets `siamsil-data-2026-11-30.release.json`; `SIAMSIL_DATA_RELEASE_MANIFEST_KEY` overrides) and set `SIAMSIL_DATA_RELEASE_MANIFEST_SHA256` with the bundle's digest. On boot `fetch_data.py` verifies the manifest against its pin, every unpacked file against the manifest, and the rights register against its declared digest, **before** it replaces anything live; any failure installs nothing. A restart re-checks the stored copy (`/data/.release.json`): file sizes and the rights register's digest. `check_release.py --data-root /data --sha256 <bundle>` hashes every installed file.
+
+### Rollout note for existing production deployments
+
+An environment that already runs a bundle has no manifest. Before restarting it in staging or production, upload a schema 2 `release.json` for that bundle and set `SIAMSIL_DATA_RELEASE_MANIFEST_SHA256`; until then `fetch_data.py` stops with a message naming what is missing. The VPS compose file now requires the variable.
+
+### What this does not do
+
+It is not a signature: the manifest is protected by its pinned SHA-256, as the bundle is, so someone who can change both the bucket objects and the deployment settings can still change both. `approval` is a person's recorded decision; the verifier checks it is present and well formed, not that it is true. It grants no licence and does not review any language. The protected data-release workflow stays paused.
+
 ## Required GitHub setup (one-time, performed by repo owner)
 
 1. In GitHub Environments, create `siamsil-data-release` and configure required reviewers for production uploads. Environment protection availability varies with the GitHub plan and repository visibility.
