@@ -484,6 +484,13 @@ class InstallAndRestartTests(ReleaseFixture):
                 fetch_data.main()
         self.assertIn("release verification failed", str(raised.exception))
 
+    def test_a_failed_download_says_why_without_printing_the_address(self) -> None:
+        url = "http://127.0.0.1:9/siamsil-data.tar.gz?X-Amz-Signature=SECRETSIGNATURE"
+        with self.assertRaises(SystemExit) as raised:
+            fetch_data.download_manifest(url)
+        self.assertIn("cannot download the release manifest", str(raised.exception))
+        self.assertNotIn("SECRETSIGNATURE", str(raised.exception))
+
     def test_a_manifest_that_does_not_match_its_pin_is_refused(self) -> None:
         _, raw, _ = self.release()
         with self.assertRaisesRegex(SystemExit, "does not match SIAMSIL_DATA_RELEASE_MANIFEST_SHA256"):

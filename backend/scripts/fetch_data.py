@@ -29,6 +29,7 @@ import shutil
 import sys
 import tarfile
 import tempfile
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -137,9 +138,19 @@ def parse_manifest(raw: bytes, pinned_sha256: str) -> dict:
         sys.exit("fetch_data: release manifest is not valid JSON")
 
 
+def describe_failure(error: Exception) -> str:
+    """A download failure without the address: a presigned link carries a signature that must not reach logs."""
+    if isinstance(error, urllib.error.HTTPError):
+        return f"HTTP {error.code}"
+    return type(error).__name__
+
+
 def download_manifest(url: str) -> bytes:
-    with urllib.request.urlopen(url, timeout=60) as response:
-        raw = response.read(MAX_MANIFEST_BYTES + 1)
+    try:
+        with urllib.request.urlopen(url, timeout=60) as response:
+            raw = response.read(MAX_MANIFEST_BYTES + 1)
+    except (urllib.error.URLError, OSError) as error:
+        sys.exit(f"fetch_data: cannot download the release manifest ({describe_failure(error)})")
     if len(raw) > MAX_MANIFEST_BYTES:
         sys.exit("fetch_data: release manifest is unexpectedly large")
     return raw
@@ -268,10 +279,13 @@ def main() -> None:
         try:
             digest = hashlib.sha256()
             print("fetch_data: downloading bundle")
-            with os.fdopen(handle, "wb") as out, urllib.request.urlopen(url, timeout=60) as response:
-                for chunk in iter(lambda: response.read(1 << 20), b""):
-                    digest.update(chunk)
-                    out.write(chunk)
+            try:
+                with os.fdopen(handle, "wb") as out, urllib.request.urlopen(url, timeout=60) as response:
+                    for chunk in iter(lambda: response.read(1 << 20), b""):
+                        digest.update(chunk)
+                        out.write(chunk)
+            except (urllib.error.URLError, OSError) as error:
+                sys.exit(f"fetch_data: cannot download the data bundle ({describe_failure(error)})")
             if digest.hexdigest() != expected:
                 sys.exit(f"fetch_data: checksum mismatch (got {digest.hexdigest()})")
             install(archive, root, expected, manifest, manifest_raw, env)
