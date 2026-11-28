@@ -20,6 +20,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
+sys.path.insert(0, str(ROOT))  # so `settings` imports when this file is run on its own
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(PROJECT / "ml_pipeline" / "scripts"))
 import build_language_db as build  # noqa: E402
