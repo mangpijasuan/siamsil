@@ -114,7 +114,7 @@ class BundleTests(unittest.TestCase):
         env = {"SIAMSIL_DATA_BUNDLE_URL": (self.root / "missing.tar.gz").as_uri(),
                "SIAMSIL_DATA_BUNDLE_SHA256": "0" * 64, "SIAMSIL_DATA_ROOT": str(data)}
         with mock.patch.dict(os.environ, env, clear=True), redirect_stdout(io.StringIO()):
-            with self.assertRaises(OSError):
+            with self.assertRaisesRegex(SystemExit, "cannot download the data bundle"):
                 fetch_data.main()
         self.assertEqual(sorted(p.name for p in data.iterdir()), [".fetch.lock"])
 

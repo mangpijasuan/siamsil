@@ -10,6 +10,45 @@ Private `siamsil-data` clone → pinned SHA-256 sources (`data/source_files.json
 
 A new source commit, including terminology corrections, does **not** imply permission to publish it. Human review and rights gates remain separate; a release must be explicitly initiated. The live application does not hot-read the source repo.
 
+## The release manifest contract (release.json, schema 2)
+
+`release.json` says what a bundle is. Schema 1 (bundle digest, per-file digests, creation time) is kept as it was; **schema 2 extends it** and is what the code in `backend/scripts/release_contract.py` checks. Schema 1 is accepted only when `SIAMSIL_ENVIRONMENT` is `development` or `test`; staging and production require schema 2.
+
+| Field | What it declares | Checked |
+|---|---|---|
+| `source.siamsil_data_commit`, `working_tree_clean`, `binding` | the `siamsil-data` commit the **language database** was built from, read from the database itself (`build_language_db.py` stores it in `dataset_versions`), and whether the tree was clean at build time | the supplied checkout must be that commit; production needs `binding: "database"` and a clean build. A database built before this field existed gives `binding: "operator_supplied"`, which is a claim, not evidence, and is accepted only in development and test. The Bible database and the JSON files are not bound to a commit |
+| `rights_registry.sha256` | digest of `json/rights.json` | equals the digest in `contents` and the installed file; optionally equals `SIAMSIL_RIGHTS_SHA256`. The API reads `SIAMSIL_RIGHTS_FILE` ahead of the installed register, so in staging and production an override must be that same file: the installer checks its hash and the API refuses to start with any other (`settings.py`) |
+| `approval.status`, `approved_by`, `approved_at_utc` | `unapproved` or `approved`, and by whom and when | production needs `approved` with a name and a time. **Only a person supplies these** (`--approved-by`, `--approved-at`); no tool or AI approves a release |
+| `exports.approved_counts`, `export_manifest_sha256` | export counts per split, from an `export_datasets.py` manifest | refused if that manifest admitted any uncleared source |
+| `protected_evaluation.sets`, `sets_sha256` | evaluation sets by name, SHA-256, item count and `frozen`; never their text. `frozen` is true only when a person declares it with `--freeze-eval-set NAME=<sha256>` (which needs `--approved-by`) and the file's hash matches; a file name never decides | structure and the combined hash |
+| `derivation.parallel_corpus` | source rows, rows kept, rows removed by reason, and the SHA-256 of the per-row removal record | `source_rows = kept + removed`; the record is checked against the kept pairs |
+
+### Where the 1,777,002 → 1,775,043 difference comes from
+
+`build_language_db.py` writes `parallel-removals.jsonl` beside the database: one line per row left out, `{"source_row": N, "reason": "duplicate_pair" | "empty_side", "pair_hash": ...}`, with the row's position in the source stream and, for duplicates, the pair hash. It holds no text. `release_contract.check_derivation` re-derives the claim: the file matches its SHA-256, its counts match the manifest, every removed duplicate's hash is present among the kept pairs, and the database holds `kept` pairs. Keep the file beside `release.json` in the private bucket.
+
+### Building and installing
+
+```bash
+# development bundle, schema 1
+python backend/scripts/release_manifest.py dist/siamsil-data.tar.gz --output dist/release.json
+# production release, schema 2 (see the script's docstring for every option)
+python backend/scripts/release_manifest.py dist/siamsil-data.tar.gz --output dist/release.json --production \
+  --data-repo ../siamsil-data --no-exports --quality-report data/processed/language/quality_report.json \
+  --removals data/processed/language/parallel-removals.jsonl --eval-set data/evaluation/human/en-zomi-v1.jsonl \
+  --approved-by "<name>" --approved-at 2026-11-30T09:00:00
+```
+
+The command prints the manifest's own digest. Upload `release.json` beside the bundle (a folder per release holds `release.json`; a flat dated name `siamsil-data-2026-11-30.tar.gz` gets `siamsil-data-2026-11-30.release.json`; `SIAMSIL_DATA_RELEASE_MANIFEST_KEY` overrides) and set `SIAMSIL_DATA_RELEASE_MANIFEST_SHA256` with the bundle's digest. On boot `fetch_data.py` verifies the manifest against its pin, every unpacked file against the manifest, and the rights register against its declared digest, **before** it replaces anything live; any failure installs nothing. A restart re-checks the stored copy (`/data/.release.json`): file sizes and the rights register's digest. The same re-check runs again after the install lock is taken, so a process that finds a bundle another process just installed verifies it too. In staging and production, starting with no installed bundle and none configured is an error, not a skip. `check_release.py --data-root /data --sha256 <bundle>` hashes every installed file.
+
+### Rollout note for existing production deployments
+
+An environment that already runs a bundle has no manifest. Before restarting it in staging or production, upload a schema 2 `release.json` for that bundle and set `SIAMSIL_DATA_RELEASE_MANIFEST_SHA256`; until then `fetch_data.py` stops with a message naming what is missing. The VPS compose file now requires the variable.
+
+### What this does not do
+
+It is not a signature: the manifest is protected by its pinned SHA-256, as the bundle is, so someone who can change both the bucket objects and the deployment settings can still change both. `approval` is a person's recorded decision; the verifier checks it is present and well formed, not that it is true. It grants no licence and does not review any language. The protected data-release workflow stays paused.
+
 ## Required GitHub setup (one-time, performed by repo owner)
 
 1. In GitHub Environments, create `siamsil-data-release` and configure required reviewers for production uploads. Environment protection availability varies with the GitHub plan and repository visibility.
@@ -34,6 +73,7 @@ Each release receives an immutable, digest-specific key. Keep older keys for rol
 ```text
 SIAMSIL_DATA_BUNDLE_S3_KEY=releases/sha256-<full-bundle-sha256>/siamsil-data.tar.gz
 SIAMSIL_DATA_BUNDLE_SHA256=<full-bundle-sha256>
+SIAMSIL_DATA_RELEASE_MANIFEST_SHA256=<sha256-of-this-release's-release.json>
 ```
 
 R2 access remains private; the FastAPI container fetches the selected bundle via its read-only R2 credentials. Promotion is a separate owner-controlled step and is NOT performed by this GitHub workflow.
@@ -55,7 +95,7 @@ python scripts/check_release.py --url http://127.0.0.1:8000 \
 
 The local check validates the installed `.bundle-<sha256>` marker and required database files. It is not a remote cryptographic attestation; the bundle itself was verified against SHA-256 when installed.
 
-Rollback is controlled by selecting the **previous immutable key and its matching SHA-256** in Railway, redeploying, and repeating both checks. Preserve a release ledger recording code commit, source-repo commit, bundle SHA, R2 key, rollout timestamp, reviewer, benchmark results, and permission approval. Database schema compatibility and application version compatibility must be checked before rollback.
+Rollback is controlled by selecting the **previous immutable key, its bundle SHA-256 and its matching release manifest**, redeploying, and repeating both checks. A release is three settings that change together: `SIAMSIL_DATA_BUNDLE_S3_KEY` + `SIAMSIL_DATA_BUNDLE_SHA256` + `SIAMSIL_DATA_RELEASE_MANIFEST_SHA256` (plus `SIAMSIL_DATA_RELEASE_MANIFEST_KEY` and `SIAMSIL_RIGHTS_SHA256` if you set them). Leaving the newer manifest's hash in place makes the older release refuse to start. Keep each release's manifest hash in the release ledger. Preserve a release ledger recording code commit, source-repo commit, bundle SHA, R2 key, rollout timestamp, reviewer, benchmark results, and permission approval. Database schema compatibility and application version compatibility must be checked before rollback.
 
 ## Future hardening
 

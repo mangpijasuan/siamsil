@@ -99,6 +99,12 @@ class Settings(BaseSettings):
             raise ValueError("SIAMSIL_EXPERIMENTAL_MT_ALLOW_UNCLEARED is only allowed in development")
         if self.environment in {"staging", "production"} and not self.database_url:
             raise ValueError("SIAMSIL_DATABASE_URL is required in staging and production")
+        if self.environment in {"staging", "production"} and self.rights_file is not None:
+            # The installer verifies data_dir/rights.json against the release manifest (backend/scripts/fetch_data.py).
+            # An override that is a different file would let the API serve under a register nobody verified.
+            if Path(self.rights_file).resolve() != (Path(self.data_dir) / "rights.json").resolve():
+                raise ValueError("SIAMSIL_RIGHTS_FILE must be the verified register (SIAMSIL_DATA_DIR/rights.json) "
+                                 "in staging and production; unset it")
         if self.oidc_enabled:
             missing = [
                 name
